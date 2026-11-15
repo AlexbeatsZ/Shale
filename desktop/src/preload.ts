@@ -39,11 +39,13 @@ const desktopApi: DesktopBridge = {
   },
   vaultPath: nativeArg ? decodeURIComponent(nativeArg.slice('--webobsidian-native-vault='.length)) : undefined,
 };
-if (process.contextIsolated) contextBridge.exposeInMainWorld('webobsidianDesktop', desktopApi);
-else {
-  Object.defineProperty(window, 'webobsidianDesktop', { value: desktopApi });
-  // Only present in the explicitly trusted, local desktop renderer.
-  Object.defineProperty(window, 'webobsidianNativeRequire', { value: require });
+if (process.isMainFrame) {
+  if (process.contextIsolated) contextBridge.exposeInMainWorld('webobsidianDesktop', desktopApi);
+  else {
+    Object.defineProperty(window, 'webobsidianDesktop', { value: desktopApi });
+    // Only present in the explicitly trusted, local desktop renderer.
+    Object.defineProperty(window, 'webobsidianNativeRequire', { value: require });
+  }
 }
 
 if (process.isMainFrame) {

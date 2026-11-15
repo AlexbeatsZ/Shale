@@ -4,7 +4,15 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-13 (native host lifecycle)
+Cập nhật lần cuối: 2026-11-14 (isolated JavaScript charts and OpenAI controls)
+
+## Isolated JavaScript charts and OpenAI controls (PRD 1.42)
+- [x] Restore JavaScript highlighting and fenced backgrounds in widget source editing
+- [x] Isolate note scripts from application DOM, native bridges, network and Vault writes
+- [x] Preserve built-in read-only widgets through a capability-limited message channel
+- [x] Bundle official OpenAI controls and theme-aware charts inside the isolated frame
+- [x] Verify the supplied failing script, chart interactions, isolation and lifecycle regressions
+- [~] Build and publish the new native version
 
 ## Native host lifecycle (PRD 1.41)
 - [x] Share native identity, desktop bridge types, exports/back dispatch and server-side plugin requests
@@ -659,6 +667,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+- 2026-11-14 (PRD 1.42) 隔离图表与官方控件实现完成。560 单元、28 专项浏览器、三端类型、生产入口与真实 Electron 验证通过；原始错误代码仅显示块内错误，修正后的 Canvas 和 OpenAI 势能图可交互。Mac/Android69已构建，准备 Windows 与发布。
+- 2026-11-14 (PRD 1.42) 用户将笔记图表明确限制为无破坏权限的嵌入组件。开始隔离脚本执行、修复高亮背景并接入 OpenAI 官方开源控件。
 - 2026-11-13 (PRD1.41) 三端宿主修复已提交并推送。558单元、三端类型、生产入口、独立server和真实Electron生命周期通过；浏览器396/402，6失败在原提交复现。Mac/OMEN/ROG正式67已原位安装并启动，桌面/Android Release已发布，K70正式67原位升级、签名/UID/配置/原STEM健康通过，前台Back/剪贴板/导出待验收。见tests/reports/host-lifecycle-20261113.md。
 - 2026-11-13 (PRD 1.41) 开始按三端审查逐项核实和修复，使用现有 DocumentSession、VaultCatalog、插件请求和保存退出链路，处理宿主启动/关闭及 Android 恢复。
 - 2026-11-08 (PRD 1.40): Android66已原位部署，tabletRelease保留旧.debug身份但manifest/BuildConfig/JNI/WebView调试均关闭；两机无DEBUGGABLE、run-as拒绝，原签名/UID/首次安装/权限保留。Mac/OMEN/ROG65均正常启动无调试参数。Android66两APK大小/标签源核对通过，旧65发布说明标记替代；详见tests/reports/android-release-20261108.md。

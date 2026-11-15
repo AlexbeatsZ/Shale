@@ -227,6 +227,7 @@ function createWindow(starting = false): void {
       // Keep the restricted host by default; trust is a per-install choice.
       contextIsolation: !desktopConfig?.trustedPlugins,
       nodeIntegration: !!desktopConfig?.trustedPlugins,
+      nodeIntegrationInSubFrames: false,
       sandbox: !desktopConfig?.trustedPlugins,
       additionalArguments: [`--webobsidian-version=${app.getVersion()}`, ...(desktopConfig?.trustedPlugins ? [`--webobsidian-native-vault=${encodeURIComponent(desktopConfig.vaultPath ?? '')}`] : [])],
     },

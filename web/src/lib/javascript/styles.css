@@ -8,6 +8,10 @@
   white-space: pre-wrap;
 }
 
+.interactive-js-frame { display: block; width: 100%; height: 1px; border: 0; color-scheme: normal; }
+.interactive-js-native-output:empty { display: none; }
+.interactive-js-native-output { contain: layout style paint; isolation: isolate; position: relative; }
+
 /* Preserved from the former pure-subheading-outline DataviewJS view. */
 .pure-subheading-tree {
   --tree-line: var(--background-modifier-border);

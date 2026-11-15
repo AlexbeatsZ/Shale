@@ -191,12 +191,16 @@ async function main() {
   const publicDir = path.join(__dirname, '..', 'public');
   if (await dirExists(publicDir)) {
     app.use((req, res, next) => {
-      if (!/\bWebObsidian(?:Desktop|Android)\b/.test(req.get('User-Agent') ?? '')) {
+      if (req.path !== '/javascript-widget-runtime.js' && !/\bWebObsidian(?:Desktop|Android)\b/.test(req.get('User-Agent') ?? '')) {
         res.sendStatus(404);
         return;
       }
       next();
-    }, express.static(publicDir));
+    }, express.static(publicDir, { setHeaders(res, file) {
+      // The public chart runtime is a classic script loaded by opaque frames.
+      if (path.basename(file) === 'javascript-widget-runtime.js')
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    } }));
   }
 
   app.use(errorHandler);

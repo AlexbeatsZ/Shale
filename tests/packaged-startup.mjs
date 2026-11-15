@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
-import { chromium, request } from '@playwright/test';
+import { chromium, request, expect } from '@playwright/test';
 
 const resources = path.resolve(process.argv[2] ?? 'desktop/.gen');
 const started = Date.now();
@@ -151,7 +151,7 @@ try {
   await page.locator('.palette-input').fill('features');
   await page.keyboard.press('Enter');
   await page.locator('.cm-body-heading').waitFor();
-  await page.locator('.interactive-js-render').filter({ hasText: 'JS-WIDGET-OK' }).waitFor();
+  await expect(page.frameLocator('.interactive-js-render iframe').locator('#widget-container')).toHaveText('JS-WIDGET-OK');
   await page.locator('.acceptance-card').waitFor();
   await page.locator('.cm-equation-number').first().waitFor();
   assert.equal(await page.locator('.cm-wikilink').filter({ hasText: '(1-1)' }).count(), 1);

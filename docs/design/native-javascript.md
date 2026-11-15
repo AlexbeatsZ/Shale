@@ -1,5 +1,56 @@
 # Native JavaScript blocks
 
+## Isolated charts and OpenAI controls (2026-11-14)
+
+The owner now limits note JavaScript to embedded visualizations. This supersedes
+the original trusted execution and full-app-access decision below. Note source
+executes only inside `sandbox="allow-scripts"` frames, with an opaque origin and
+a restrictive CSP. The iframe's DOM belongs to that chart. Parent/top DOM,
+application globals, native bridges, Vault mutation and direct network requests
+are unavailable. The original pasted example's undeclared `root` must produce a
+block-local error while the application's `#root` and sibling editors survive.
+
+Bundle one standalone IIFE runtime and its CSS through Vite. Load that fixed
+local asset as a classic script in srcdoc, using a narrow CORP exception for the
+public runtime asset. Keep parent CSP unchanged. Apply the frame CSP through both
+the iframe csp attribute and a meta policy. The script source is passed as data
+over a private MessageChannel, never concatenated into HTML. Hosts reject
+opaque-origin API calls. Desktop preload capabilities are main-frame-only.
+
+The frame owns ECharts, DOM controls, timers, chart cleanup and React roots.
+The host owns removal, dependency invalidation and generated Markdown fragments.
+Its message dispatcher exposes only watch, non-executing renderMarkdown and the
+five existing read-only widgets. Ctrl+O/P can open the file/command selector while
+a chart has focus, through these two explicitly allowed commands. Folder-tag configuration uses the existing
+data-only legacy parser. No JavaScript from config notes executes in the host.
+Value helpers return element, current value and setValue. Built-in widget output
+continues through the native Markdown renderer, alongside the isolated chart.
+Generated native output has layout/style/paint containment so note-provided
+HTML classes cannot create fixed overlays outside the block.
+
+OpenAI Apps SDK UI 0.2.2 supplies actual Slider, Button, Switch and
+SegmentedControl components, exposed as ui.slider/button/toggle/segmented.
+Tailwind 4 and the official CSS live entirely in the frame. Chart defaults use
+the official palette and semantic tokens. ECharts 6 setTheme updates existing
+instances when the native theme changes, preserving user options. The public
+UI library establishes reusable controls and tokens. The implementation of
+ChatGPT's internal curve renderer remains unconfirmed.
+
+Both widget fence names use CodeMirror's existing JavaScript language loader.
+Fenced line styles and code wrappers survive shared source-control expansion.
+Explicitly revealed source keeps literal fences. Caret-revealed fences retain
+the existing faint syntax color.
+
+Regression checks include the original pasted script, corrected canvas output,
+parent DOM/native/API denial, controls, theme changes, source transitions and
+native built-in compatibility. This task authorizes runtime checks and native
+packaging, superseding the historical static-only verification below. Iframe
+isolation provides a capability boundary. CPU and memory exhaustion can still
+affect the renderer process.
+
+Sources are https://github.com/openai/apps-sdk-ui and
+https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe.
+
 ## Fragment failure settlement (2026-10-25)
 
 JavascriptRun.renderMarkdown forwards the shared fragment's onError and rejects
@@ -25,7 +76,7 @@ the first-nonempty-line `// @obsidian-js` convention for existing notes without
 rewriting their source. Interactive JS 0.1.0 is the migration reference at
 `C:/Users/Meta/Project/Scripts/TypeScript/obsidian-interactive-js/src`.
 
-The user explicitly chose trusted execution with DOM and full existing `app`
+The user originally chose trusted execution with DOM and full existing `app`
 access, including Vault writes. Private reading views allow these interactive
 blocks: text readOnly does not sandbox trusted JS. Restricted contexts, public
 shares and print do not execute scripts. Keep HTML's iframe execution separate.
@@ -42,8 +93,7 @@ is separate from application-provided block tools.
 
 This correction removes the former JavascriptBlock button/toolbar and its CSS,
 without changing the shared host, compiler, cache, source lifecycle or widgets.
-Only source/Git diff inspection is authorized for this follow-up: no tests,
-typecheck/build/probes, runtime/UI/performance acceptance or new test authoring.
+That follow-up used source/Git diff inspection only.
 
 ## Ownership and dependency direction
 
@@ -98,10 +148,8 @@ DOM/control-state cache.
 
 ## Verification and concurrent work
 
-Static only: types and isolated production bundles. Regression sources may be
-prepared but not executed. Never start browser/Electron/server, touch the original
-Vault, replace server/public or build a new portable package. Preserve the active
-four-feature integration's changes in shared files; commit only this task's hunks.
+The original integration used types and isolated production bundles, with runtime
+acceptance and packaging deferred. Preserve unrelated changes in shared files.
 
 Checks must cover inert fences, directive placement, equal-source siblings, prefix
 position mapping, source controls, dependency refresh/unmount during async work, late cleanup,

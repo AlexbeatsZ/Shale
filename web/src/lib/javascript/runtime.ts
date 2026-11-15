@@ -5,22 +5,17 @@ import { JavascriptRun } from './lifetime';
 export { JavascriptRun } from './lifetime';
 
 import { executableSource } from './directive';
-import { compileJavascript } from './execute';
-import { createWidgets } from './widgets';
-import type { ChartOptions } from './charts';
-import type { EChartsOption } from 'echarts';
 import './styles.css';
 
-type Charts = typeof import('./charts');
-let chartLoading: Promise<Charts> | undefined;
-const loadCharts = () => chartLoading ??= import('./charts').catch(error => { chartLoading = undefined; throw error; });
+type Sandbox = typeof import('./sandbox');
+let sandboxLoading: Promise<Sandbox> | undefined;
+const loadSandbox = () => sandboxLoading ??= import('./sandbox').catch(error => { sandboxLoading = undefined; throw error; });
 
 class JavascriptBlock extends Component {
   private disposed = false;
   private timer?: number;
   private run?: JavascriptRun;
   private complete?: JavascriptRun;
-  private execute?: (...args: any[]) => Promise<unknown>;
   private error?: HTMLElement;
   constructor(private app: App, private source: string, private host: HTMLElement, private ctx: CodeBlockContext) {
     super();
@@ -49,13 +44,8 @@ class JavascriptBlock extends Component {
     this.run = this.addChild(run); void run.load();
     this.host.dataset.renderPending = 'true'; this.host.setAttribute('aria-busy', 'true');
     try {
-      this.execute ??= compileJavascript(this.source,
-        ['app', 'container', 'sourcePath', 'component', 'echarts', 'chart', 'widgets', 'watch', 'onCleanup', 'renderMarkdown', 'signal'],
-        'webobsidian-js/' + encodeURIComponent(this.ctx.sourcePath));
-      const charts = await loadCharts(); run.assertActive();
-      await this.execute(this.app, output, run.sourcePath, run, charts.echarts,
-        (option: EChartsOption, options?: ChartOptions) => { run.assertActive(); return charts.chart(output, run.onCleanup, option, options); },
-        createWidgets(run), run.watch, run.onCleanup, run.renderMarkdown.bind(run), run.signal);
+      const sandbox = await loadSandbox(); run.assertActive();
+      await sandbox.renderJavascriptFrame(this.source, output, run, this.ctx.requestMeasure);
       run.assertActive();
       if (this.complete) this.removeChild(this.complete);
       this.complete = run;

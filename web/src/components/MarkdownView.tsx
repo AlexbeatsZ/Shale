@@ -21,10 +21,9 @@ import { defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { search, searchKeymap } from '@codemirror/search';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { json } from '@codemirror/lang-json';
-import { languages } from '@codemirror/language-data';
 import { indentUnit, syntaxHighlighting } from '@codemirror/language';
 import { analyzeMarkdown, bodyHeadingSyntax, changesBetween, type DocumentSession, type DocumentSnapshot, type SourceChange, type MarkdownModel, type EditHistoryState } from '@webobsidian/markdown-core';
-import { obsidianHighlightStyle } from '../lib/highlight';
+import { codeLanguage, obsidianHighlightStyle } from '../lib/highlight';
 import { obsidianKeymap, markdownListKeymap, toggleInline, toggleLineStyle, toggleChecklist, surroundSelection } from '../lib/editorCommands';
 import { suggesterPlugin } from '../lib/suggest';
 import { syntaxModel, adoptSyntaxModel, documentMetadata, embeddedFormulasField, blockModel, sourceOf } from '../lib/syntaxModel';
@@ -306,7 +305,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
         ])),
         search({ top: true }),
         keymap.of([...physicalKeymap([...defaultKeymap, ...searchKeymap]), ...defaultKeymap, ...searchKeymap, ...markdownListKeymap, indentWithTab]),
-        /\.jsonc?$/i.test(p.snapshot.id) ? json() : markdown({ base: markdownLanguage, codeLanguages: languages, extensions: [bodyHeadingSyntax, blockEffectSyntax, footnoteSyntax] }),
+        /\.jsonc?$/i.test(p.snapshot.id) ? json() : markdown({ base: markdownLanguage, codeLanguages: codeLanguage, extensions: [bodyHeadingSyntax, blockEffectSyntax, footnoteSyntax] }),
         suggesterPlugin,
         mathEditingExtensions,
         ...(p.context.allowPlugins ? [nativeWritingExtensions()] : []),

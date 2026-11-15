@@ -46,3 +46,20 @@ test('native Back closes the most recent dialog and unregisters disposed handler
   });
   expect(result).toEqual({ closed: ['second', 'first'], handled: false });
 });
+
+test('an embedded frame cannot impersonate the Android host port', async ({ page }) => {
+  const text = await page.evaluate(async () => {
+    const { host } = await import('/src/lib/host.ts');
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'WebObsidianAndroid/0.1.69' });
+    const frame = document.createElement('iframe'); frame.sandbox.add('allow-scripts'); document.body.append(frame);
+    const forged = new MessageChannel(), native = new MessageChannel();
+    forged.port1.onmessage = event => forged.port1.postMessage(JSON.stringify({ id: JSON.parse(event.data).id, value: 'forged' }));
+    native.port1.onmessage = event => native.port1.postMessage(JSON.stringify({ id: JSON.parse(event.data).id, value: 'native' }));
+    window.dispatchEvent(new MessageEvent('message', { source: frame.contentWindow, data: 'webobsidian-host', ports: [forged.port2] }));
+    window.postMessage('webobsidian-host', '*', [native.port2]);
+    const result = await host.readClipboardText();
+    forged.port1.close(); forged.port2.close(); native.port1.close(); frame.remove();
+    return result;
+  });
+  expect(text).toBe('native');
+});

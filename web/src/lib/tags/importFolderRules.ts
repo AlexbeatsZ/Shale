@@ -2,11 +2,9 @@ import { parseTree, getNodeValue, type ParseError, type Node } from 'jsonc-parse
 import { normalizeFolderTags } from '@webobsidian/markdown-core';
 import type { FolderTagSettings, FolderTagRule } from '@webobsidian/markdown-core';
 
-/** Read the known data-only object literal without evaluating JavaScript. */
-export function importLegacyFolderRules(note: string): FolderTagSettings {
-  const match = note.match(/```(?:js|javascript)\s*\r?\n\s*\/\/\s*folder-tag-sync-config\s*\r?\n([\s\S]*?)\r?\n```/);
-  if (!match) throw new Error('未找到 folder-tag-sync-config 代码块');
-  let data = match[1].trim();
+/** Shared by legacy import and read-only note widgets. Never evaluates source. */
+export function parseLegacyFolderRuleData(source: string): Record<string, unknown> {
+  let data = source.trim();
   if (data.startsWith('(') && data.endsWith(')')) data = data.slice(1, -1).trim();
   // Quoted strings and comments are copied untouched. Only the known unquoted
   // data keys are normalized to JSONC; calls, expressions and spread fail parse.
@@ -25,7 +23,14 @@ export function importLegacyFolderRules(note: string): FolderTagSettings {
   rejectDuplicates(tree);
   const raw: unknown = getNodeValue(tree);
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('旧配置必须是对象');
-  const config = raw as Record<string, unknown>;
+  return raw as Record<string, unknown>;
+}
+
+/** Read the known data-only object literal without evaluating JavaScript. */
+export function importLegacyFolderRules(note: string): FolderTagSettings {
+  const match = note.match(/```(?:js|javascript)\s*\r?\n\s*\/\/\s*folder-tag-sync-config\s*\r?\n([\s\S]*?)\r?\n```/);
+  if (!match) throw new Error('未找到 folder-tag-sync-config 代码块');
+  const config = parseLegacyFolderRuleData(match[1]);
   if (Object.keys(config).some(key => !['managedRoots', 'recursive', 'typeRules', 'subjectRules'].includes(key)) ||
     !Array.isArray(config.managedRoots) || !config.managedRoots.length || config.managedRoots.some(root => typeof root !== 'string') ||
     (config.recursive !== undefined && typeof config.recursive !== 'boolean')) throw new Error('旧配置的管理目录或字段不受支持');

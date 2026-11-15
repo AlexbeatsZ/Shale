@@ -6,6 +6,7 @@ const requests = new Map<number, { resolve(value: unknown): void; reject(error: 
 let portReady: (() => void) | undefined;
 const ready = new Promise<void>(resolve => { portReady = resolve; });
 if (typeof window !== 'undefined') window.addEventListener('message', event => {
+  if (event.source && event.source !== window) return;
   if (event.data !== 'webobsidian-host' || !event.ports[0] || !isAndroid() || androidPort) return;
   androidPort = event.ports[0];
   androidPort.onmessage = event => {

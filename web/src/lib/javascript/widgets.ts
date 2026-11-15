@@ -1,10 +1,10 @@
 // Personal views adapted from Interactive JS 0.1.0. Copyright (c) 2026 Meta, MIT.
 import type { TFile, TFolder } from '../obsidian/vault';
-import type { JavascriptRun } from './runtime';
+import type { JavascriptRun } from './lifetime';
 import { createEl } from '../obsidian/dom';
-import { compileJavascript } from './execute';
+import { parseLegacyFolderRuleData } from '../tags/importFolderRules';
 import { blockContainers, extractMetadata, BODY_HEADING_LEVEL } from '@webobsidian/markdown-core';
-type WidgetHost = JavascriptRun;
+type WidgetHost = Pick<JavascriptRun, 'app' | 'container' | 'context' | 'sourcePath' | 'note' | 'watch' | 'watchDirectory' | 'renderMarkdown' | 'targetContext'>;
 const collator = new Intl.Collator('zh-Hans-CN', { numeric: true, sensitivity: 'base' });
 export interface UptimerOptions {
   filePath?: string;
@@ -140,8 +140,7 @@ async function parseFolderTagConfig(host: WidgetHost, marker: string): Promise<F
   const block = blockContainers(note.analysis).find(block => block.kind === 'code' &&
     /^(js|javascript)$/i.test(block.language) && block.body.match(/^[\t ]*\/\/[\t ]*([^\r\n]*)/)?.[1].trim() === marker);
   if (!block) throw new Error('找不到 ' + marker + ' 代码块.');
-  return await compileJavascript('return (' + block.body.split('\n').slice(1).join('\n').trim() + ');', [],
-    'webobsidian-js/config/' + encodeURIComponent(host.sourcePath))() as FolderTagConfig;
+  return parseLegacyFolderRuleData(block.body.split('\n').slice(1).join('\n')) as FolderTagConfig;
 }
 
 function renderTag(tagTitle: string, tagConfig: Record<string, string>): string {

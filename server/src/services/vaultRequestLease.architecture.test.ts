@@ -30,6 +30,7 @@ import { vaultConfigurationIdentity } from './vaultConfiguration.js';
 import { filesRouter } from '../routes/files.js';
 import { asyncHandler, errorHandler } from '../middleware/error.js';
 import { nativeFeatureSettings } from './nativeFeatureSettings.js';
+import { requireLocal, isLocalRequest } from '../middleware/localAccess.js';
 
 const base = path.join(os.tmpdir(), '.agents');
 let fixture = '', url = '', server: Server;
@@ -47,8 +48,9 @@ beforeEach(async () => {
     });
   } };
   bindMaintenanceClients(() => [client as unknown as WebSocket]);
-  const app = express(); app.use(express.json()); app.use(guardVaultMutations);
+  const app = express(); app.use(requireLocal, express.json()); app.use(guardVaultMutations);
   app.use('/api/files', filesRouter);
+  app.get('/javascript-widget-runtime.js', (_req, res) => { res.type('js').send('/* public chart runtime */'); });
   app.get('/api/native-features', asyncHandler(async (_req, res) => { res.json(await nativeFeatureSettings()); }));
   app.post('/api/detached', asyncHandler(async (_req, res) => {
     const release = beginBackgroundVaultWrite();
@@ -72,6 +74,21 @@ afterEach(async () => {
   bindMaintenanceClients(() => []);
   if (path.dirname(fixture) !== base) throw new Error('Refusing fixture cleanup outside .agents');
   await fs.rm(fixture, { recursive: true, force: true });
+});
+
+it('denies opaque-origin reads and writes before reaching Vault routes', async () => {
+  const runtime = await fetch(url + '/javascript-widget-runtime.js', { headers: { Origin: 'null' } });
+  expect(runtime.status).toBe(200);
+  expect(isLocalRequest({ headers: { host: '127.0.0.1', origin: 'null' }, socket: { remoteAddress: '127.0.0.1' } } as import('node:http').IncomingMessage)).toBe(false);
+  const read = await fetch(url + '/api/files/content?path=same.md', { headers: { Origin: 'null' } });
+  expect(read.status).toBe(403);
+  const navigation = await fetch(url + '/api/native-features', { headers: { 'Sec-Fetch-Dest': 'iframe' } });
+  expect(navigation.status).toBe(403);
+  const write = await fetch(url + '/api/files/content?path=same.md', {
+    method: 'PUT', headers: { Origin: 'null', 'Content-Type': 'application/json' }, body: JSON.stringify({ content: 'changed' }),
+  });
+  expect(write.status).toBe(403);
+  expect(await fs.readFile(path.join(state.root, 'same.md'), 'utf8')).toBe('same bytes');
 });
 
 it('rejects stale same-path same-revision writes and structural requests without any socket notification', async () => {

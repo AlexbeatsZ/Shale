@@ -6,18 +6,23 @@ function loopback(host: string): boolean {
 }
 
 /** One access rule for this personal, local-only application and its WebSocket. */
-export function isLocalRequest(req: IncomingMessage): boolean {
+export function isLocalRequest(req: IncomingMessage, allowOpaqueOrigin = false): boolean {
   const peer = req.socket.remoteAddress?.replace(/^::ffff:/, '') ?? '';
   if (!loopback(peer)) return false;
+  if (req.headers['sec-fetch-dest'] === 'iframe') return false;
   try {
     if (!loopback(new URL(`http://${req.headers.host ?? ''}`).hostname)) return false;
     const origin = req.headers.origin;
+    if (origin === 'null') return allowOpaqueOrigin;
     if (origin && (!['http:', 'https:'].includes(new URL(origin).protocol) || !loopback(new URL(origin).hostname))) return false;
     return true;
   } catch { return false; }
 }
 
 export function requireLocal(req: Request, res: Response, next: NextFunction): void {
-  if (isLocalRequest(req)) next();
+  // This fixed public script is the only HTTP resource needed by opaque chart
+  // frames. API and WebSocket callers retain the original origin requirement.
+  const chartRuntime = (req.method === 'GET' || req.method === 'HEAD') && req.path === '/javascript-widget-runtime.js';
+  if (isLocalRequest(req, chartRuntime)) next();
   else res.status(403).json({ error: '仅允许本机访问' });
 }

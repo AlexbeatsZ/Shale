@@ -59,7 +59,7 @@ export interface RenderContext {
   renderEmbed: (target: string, signal: AbortSignal) => Promise<EmbeddedNote | null>;
   embedTrail?: readonly string[];
   allowHtmlExecution?: boolean;
-  /** Trusted private-note code; independent of plugin loading and text readOnly. */
+  /** Private-note scripted rendering; note charts execute in isolated frames. */
   allowScriptExecution?: boolean;
   /** Vault-owned block styles/definitions; absent from public-share contexts. */
   allowBlockEffects?: boolean;

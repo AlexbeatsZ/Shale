@@ -1493,7 +1493,8 @@ function buildDecorations(view: EditorView): DecorationSet {
       to,
       enter: (node) => {
         const name = node.name;
-        if (blockEffectOwns(view.state, node) || sourceOwns(view.state, node) ||
+        const codeSource = name === 'FencedCode' || name === 'CodeBlock';
+        if (blockEffectOwns(view.state, node) || (!codeSource && sourceOwns(view.state, node)) ||
           mathRanges.some(formula => formula.kind === 'dollar' && node.from >= formula.from && node.to <= formula.to)) return false;
 
         // Only block code excludes whole lines before structural prefixes.
@@ -1534,6 +1535,7 @@ function buildDecorations(view: EditorView): DecorationSet {
         }
 
         if (name === 'FencedCode') {
+          const explicitSource = sourceOwns(view.state, node);
           const first = doc.lineAt(node.from).number;
           const last = doc.lineAt(Math.min(node.to, doc.length)).number;
           const blockTouched = !readonly && !forceRendered(view.state, node) &&
@@ -1555,9 +1557,10 @@ function buildDecorations(view: EditorView): DecorationSet {
                   'HyperMD-codeblock HyperMD-codeblock-bg' +
                   (i === first ? ' HyperMD-codeblock-begin' : '') +
                   (i === last ? ' HyperMD-codeblock-end' : ''),
-                attributes: !blockTouched && i === first && lang ? { 'data-lang': lang } : undefined,
+                attributes: !explicitSource && !blockTouched && i === first && lang ? { 'data-lang': lang } : undefined,
               }).range(l.from, l.from),
             );
+            if (explicitSource) continue;
             if (i === first && !blockTouched && code?.closed && !contextOf(view).sourceFragment)
               all.push(Decoration.widget({ widget: new CodeReferenceWidget(), side: 1 }).range(l.to));
             if (readonly && fence) pushReplace(l.from, l.to, hidden);

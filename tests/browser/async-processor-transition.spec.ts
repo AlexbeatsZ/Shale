@@ -425,8 +425,8 @@ test('public MarkdownRenderer synchronous mount failure rejects and releases pen
   expect(result.recovered).toBe('Recovered output');
 });
 
-test('native JavascriptBlock retains output during real watched-script refresh and failure', async ({ page }, info) => {
-  const raw = '```js-widget\nwatch("dependency.md");\nawait new Promise((resolve, reject) => window.nativeProcessorProbe.jobs.push({ signal,\n  finish(label) { if (!signal.aborted) container.textContent = label; resolve(); }, fail: reject\n}));\n```';
+test('native JavascriptBlock retains isolated output during watched refresh and failure', async ({ page }, info) => {
+  const raw = '```js-widget\nawait watch("dependency.md");\nawait new Promise((resolve, reject) => { window.nativeProcessorJob = {\n  finish(label) { container.textContent = label; resolve(); }, fail: reject\n}; });\n```';
   await page.evaluate(async raw => {
     const { EditorView } = await import('/node_modules/.vite/deps/@codemirror_view.js');
     const { EditorState } = await import('/node_modules/.vite/deps/@codemirror_state.js');
@@ -437,7 +437,7 @@ test('native JavascriptBlock retains output during real watched-script refresh a
     const { codeBlocks } = await import('/src/lib/obsidian/markdown.ts');
     const { installJavascript } = await import('/src/lib/javascript/runtime.ts');
     const { sharedApp } = await import('/src/lib/obsidian/runtime.ts');
-    const probe: any = { jobs: [], sharedApp }; (window as any).nativeProcessorProbe = probe;
+    const probe: any = { sharedApp }; (window as any).nativeProcessorProbe = probe;
     probe.stop = installJavascript(sharedApp);
     const host = document.createElement('div'); host.id = 'native-processor-fixture'; document.body.prepend(host);
     probe.view = new EditorView({ parent: host, state: EditorState.create({ doc: raw, extensions: [
@@ -445,50 +445,43 @@ test('native JavascriptBlock retains output during real watched-script refresh a
       EditorState.readOnly.of(true), renderContext.of({ sourcePath: 'native.md', allowScriptExecution: true }), codeBlocks,
     ] }) });
   }, raw);
-  await page.waitForFunction(() => (window as any).nativeProcessorProbe.jobs.length === 1);
-  const sample = () => page.evaluate(() => new Promise<any[]>(resolve => {
-    const samples: any[] = [];
-    const frame = (time: number) => {
-      const host = document.querySelector<HTMLElement>('#native-processor-fixture .interactive-js-render')!;
-      samples.push({ time, text: host.innerText, pending: host.hasAttribute('data-render-pending'), height: host.getBoundingClientRect().height });
-      if (samples.length < 8) requestAnimationFrame(frame); else resolve(samples);
-    };
-    requestAnimationFrame(frame);
-  }));
-  const cold = await sample();
-  await page.evaluate(() => (window as any).nativeProcessorProbe.jobs[0].finish('Stable native script output'));
-  await expect(page.locator('#native-processor-fixture .interactive-js-output')).toHaveText('Stable native script output');
-  await page.evaluate(() => (window as any).nativeProcessorProbe.sharedApp.vault.trigger('modify', { path: 'dependency.md' }));
-  await page.waitForFunction(() => (window as any).nativeProcessorProbe.jobs.length === 2);
-  const samples = await sample();
-  await writeFile(info.outputPath('native-js-frames.json'), JSON.stringify({ cold, samples }, null, 2));
-  await page.evaluate(() => (window as any).nativeProcessorProbe.jobs[1].fail(new Error('controlled-native-js-failure')));
-  await expect(page.locator('#native-processor-fixture .interactive-js-error')).toContainText('controlled-native-js-failure');
-  expect(cold.every(sample => Boolean(sample.text.trim()))).toBe(true);
-  expect(samples.every(sample => sample.text.includes('Stable native script output'))).toBe(true);
-  await expect(page.locator('#native-processor-fixture .interactive-js-output')).toHaveText('Stable native script output');
-  expect(await page.evaluate(() => (window as any).nativeProcessorProbe.view.state.doc.toString())).toBe(raw);
-  await page.evaluate(() => (window as any).nativeProcessorProbe.sharedApp.vault.trigger('modify', { path: 'dependency.md' }));
-  await page.waitForFunction(() => (window as any).nativeProcessorProbe.jobs.length === 3);
-  await page.evaluate(() => (window as any).nativeProcessorProbe.jobs[2].finish('Newest native output'));
-  await expect(page.locator('#native-processor-fixture .interactive-js-output')).toHaveText('Newest native output');
-  await page.evaluate(() => (window as any).nativeProcessorProbe.sharedApp.vault.trigger('modify', { path: 'dependency.md' }));
-  await page.waitForFunction(() => (window as any).nativeProcessorProbe.jobs.length === 4);
-  await page.evaluate(() => (window as any).nativeProcessorProbe.sharedApp.vault.trigger('modify', { path: 'dependency.md' }));
-  await page.waitForFunction(() => (window as any).nativeProcessorProbe.jobs.length === 5);
-  expect(await page.evaluate(() => (window as any).nativeProcessorProbe.jobs[3].signal.aborted)).toBe(true);
-  await page.evaluate(() => (window as any).nativeProcessorProbe.jobs[4].finish('Final native output'));
-  await page.evaluate(() => (window as any).nativeProcessorProbe.jobs[3].fail(new Error('obsolete-native-error')));
-  await expect(page.locator('#native-processor-fixture .interactive-js-output')).toHaveText('Final native output');
-  await expect(page.locator('#native-processor-fixture .interactive-js-error')).toHaveCount(0);
-  await page.evaluate(() => (window as any).nativeProcessorProbe.sharedApp.vault.trigger('modify', { path: 'dependency.md' }));
-  await page.waitForFunction(() => (window as any).nativeProcessorProbe.jobs.length === 6);
-  const disposed = await page.evaluate(async () => {
-    const probe = (window as any).nativeProcessorProbe;
-    probe.view.destroy(); probe.jobs[5].fail(new DOMException('cancelled native fixture', 'AbortError'));
-    await new Promise(resolve => setTimeout(resolve, 30));
-    probe.stop(); return { aborted: probe.jobs.map((job: any) => job.signal.aborted),
-      errors: document.querySelectorAll('#native-processor-fixture .interactive-js-error').length };
+  const known = new Set<import('@playwright/test').Frame>();
+  const nextFrame = async () => {
+    await expect.poll(() => page.frames().filter(frame => frame.url() === 'about:srcdoc' && !known.has(frame)).length).toBe(1);
+    const frame = page.frames().find(frame => frame.url() === 'about:srcdoc' && !known.has(frame))!;
+    known.add(frame);
+    await expect.poll(() => frame.evaluate(() => Boolean((window as any).nativeProcessorJob))).toBe(true);
+    return frame;
+  };
+  const refresh = () => page.evaluate(() => (window as any).nativeProcessorProbe.sharedApp.vault.trigger('modify', { path: 'dependency.md' }));
+  const first = await nextFrame();
+  await first.evaluate(() => (window as any).nativeProcessorJob.finish('Stable native script output'));
+  await expect(first.locator('#widget-container')).toHaveText('Stable native script output');
+  await refresh(); const failed = await nextFrame();
+  const retained = await page.evaluate(() => {
+    const host = document.querySelector<HTMLElement>('#native-processor-fixture .interactive-js-render')!;
+    return { pending: host.dataset.renderPending, height: host.getBoundingClientRect().height, frames: host.querySelectorAll('iframe').length };
   });
-  expect(disposed).toEqual({ aborted: [true, true, true, true, true, true], errors: 0 });
+  await writeFile(info.outputPath('native-js-retained.json'), JSON.stringify(retained, null, 2));
+  expect(retained.frames).toBe(2); expect(retained.height).toBeGreaterThan(0);
+  await failed.evaluate(() => (window as any).nativeProcessorJob.fail(new Error('controlled-native-js-failure')));
+  await expect(page.locator('#native-processor-fixture .interactive-js-error')).toContainText('controlled-native-js-failure');
+  expect(failed.isDetached()).toBe(true);
+  await expect(first.locator('#widget-container')).toHaveText('Stable native script output');
+  expect(await page.evaluate(() => (window as any).nativeProcessorProbe.view.state.doc.toString())).toBe(raw);
+  await refresh(); const recovered = await nextFrame();
+  await recovered.evaluate(() => (window as any).nativeProcessorJob.finish('Newest native output'));
+  await expect(recovered.locator('#widget-container')).toHaveText('Newest native output');
+  await expect.poll(() => first.isDetached()).toBe(true);
+  await refresh(); const cancelled = await nextFrame();
+  await refresh(); const final = await nextFrame();
+  expect(cancelled.isDetached()).toBe(true);
+  await final.evaluate(() => (window as any).nativeProcessorJob.finish('Final native output'));
+  await expect(final.locator('#widget-container')).toHaveText('Final native output');
+  await expect(page.locator('#native-processor-fixture .interactive-js-error')).toHaveCount(0);
+  await refresh(); const disposed = await nextFrame();
+  await page.evaluate(() => {
+    const probe = (window as any).nativeProcessorProbe; probe.view.destroy(); probe.stop();
+  });
+  expect(disposed.isDetached()).toBe(true); expect(final.isDetached()).toBe(true);
 });

@@ -1,0 +1,11 @@
+@import "tailwindcss" source(none);
+@import "@openai/apps-sdk-ui/css";
+@source "../../../../node_modules/@openai/apps-sdk-ui/dist/es";
+
+html, body { margin: 0; padding: 0; background: transparent; }
+body { color: var(--color-text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+#widget-container { display: flow-root; min-width: 0; }
+.interactive-js-control { margin-block: 12px; min-width: 0; }
+.interactive-js-chart { width: 100%; min-height: 240px; }
+.interactive-js-error { color: var(--red-500); white-space: pre-wrap; padding-block: 8px; }
+canvas, svg { max-width: 100%; }

@@ -1,5 +1,13 @@
-import { HighlightStyle } from '@codemirror/language';
+import { HighlightStyle, LanguageDescription } from '@codemirror/language';
+import { languages } from '@codemirror/language-data';
 import { tags as t } from '@lezer/highlight';
+
+/** Widget fences share the ordinary JavaScript parser, including in source mode. */
+export function codeLanguage(info: string) {
+  const name = info.trim().split(/\s+/, 1)[0].toLowerCase();
+  return LanguageDescription.matchLanguageName(languages,
+    name === 'js-widget' || name === 'javascript-widget' ? 'javascript' : name);
+}
 
 /**
  * Obsidian-style syntax colors (docs §19, "Variable editor/markdown"):
