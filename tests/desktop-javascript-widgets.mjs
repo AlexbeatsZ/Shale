@@ -13,7 +13,7 @@ const vault = path.join(fixture, 'vault'), profile = path.join(fixture, 'profile
 const evidence = path.join(fixture, 'evidence');
 await fs.mkdir(vault); await fs.mkdir(profile); await fs.mkdir(evidence);
 const pasted = await fs.readFile(path.join(root, 'tests/fixtures/js-widget-undeclared-root.md'), 'utf8');
-const examples = await fs.readFile(path.join(root, 'docs/examples/javascript-blocks.md'), 'utf8');
+const examples = (await fs.readFile(path.join(root, 'docs/examples/javascript-blocks.md'), 'utf8')).replace(/\r\n/g, '\n');
 const official = examples.split('## Effective potential with an OpenAI slider')[1].match(/```js-widget\n([\s\S]*?)\n```/)[1];
 const wrap = source => '# Widget fixture\n\n' + source + '\n\nend';
 const fence = source => wrap('```js-widget\n' + source + '\n```');
@@ -45,6 +45,10 @@ try {
   app.on('close', () => { void fs.writeFile(path.join(evidence, 'diagnostics.json'), JSON.stringify(diagnostics, null, 2)); });
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });
+  for (const name of ['折叠/展开左侧边栏', '折叠/展开右侧边栏']) {
+    const toggle = page.getByRole('button', { name, exact: true });
+    if (await toggle.getAttribute('aria-expanded') === 'true') await toggle.click();
+  }
   assert.equal(await page.evaluate(() => typeof window.webobsidianNativeRequire), 'function');
   await page.evaluate(() => { window.widgetAcceptanceRoot = document.getElementById('root'); });
   const open = async name => {
@@ -82,7 +86,11 @@ try {
   await fs.writeFile(path.join(evidence, 'result.json'), JSON.stringify(result, null, 2));
   console.log(JSON.stringify({ ...result, evidence }, null, 2));
 } finally {
-  await app?.close();
+  if (app) {
+    // Exit the disposable fixture directly after graph acceptance.
+    await app.evaluate(({ app }) => app.exit(0)).catch(() => {});
+    await app.close();
+  }
   await fs.rm(profile, { recursive: true, force: true });
   await fs.rm(vault, { recursive: true, force: true });
 }
