@@ -67,6 +67,21 @@ OMEN 本轮隔离源码、依赖、中间包和脚本已删除，原仓库脏状
 | latest.yml | 370 |
 | Android 手机 APK | 135671603 |
 | Android 平板 APK | 135671607 |
-本轮自动验收使用临时数据。当前已安装 Mac 仍为 0.1.69，其内置 Wiki 文件名滤镜会作用于已改色源图，
-因此实际日常显示需要升级到删除旧规则的 0.1.70。原位安装因用户提供的程序升级权限规则待确认，
-真实设备交互与跨设备 Vault 同步未验收。
+本轮自动验收使用临时数据。后续用户明确授权升级所有可连接设备，实际部署记录如下。
+
+## 设备原位升级
+
+2026-11-15，复用已发布的 0.1.70 交付物。
+
+| 设备 | 升级结果 | 启动与数据检查 |
+| --- | --- | --- |
+| Mac arm64 | 0.1.69 → 0.1.70 | 正常退出后原位替换，codesign deep/strict 通过，原 Vault health200 且 PID90599 与端点一致，desktop-config/settings 字节保留 |
+| OMEN x64 | 0.1.69.0 → 0.1.70.0 | 交互用户 NSIS exit0，新版进程运行，原 Vault health200 且 PID21052 与端点一致，desktop-config/settings 字节保留 |
+| ROG x64 | 0.1.69.0 → 0.1.70.0 | 交互用户 NSIS exit0，新版进程运行，保留已有选库状态，desktop-config/settings 字节保留 |
+| Redmi K70 | 待连接 | 本机、OMEN 均无现有 ADB transport，当前 Bonjour 广播的 LAN/Tailscale 调试端口均拒绝连接，已向用户询问当前无线调试地址 |
+| Xiaomi Pad 6 Pro | 待连接 | ADB 与有界 Bonjour 发现未找到设备，未执行安装 |
+
+Mac 当前运行的 0.1.70 已删除旧 Wiki 文件名滤镜，使用本次永久改色的源 SVG。
+Mac staging/旧应用副本已清理。Windows 临时安装器、脚本、配置快照与一次性计划任务均已清理。
+安装回执在 `/tmp/.agents/webobsidian-deploy-0.1.70/`。
+本轮设备检查覆盖升级、启动与既有服务健康，Android 前台交互和跨设备 Vault 文件同步尚未验收。

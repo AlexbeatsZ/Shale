@@ -15,6 +15,8 @@ Cập nhật lần cuối: 2026-11-15 (embed properties and reading controls)
 - [x] Remove migrated Hider/image rules, preserve current UI and report remaining dependencies
 - [x] Verify shared source, native renderer, PDF/virtual navigation and image regressions
 - [x] Build and publish the new native version
+- [x] Upgrade reachable Mac, OMEN and ROG to 0.1.70 with existing configuration preserved
+- [ ] Upgrade Android after K70 wireless debugging reconnects and the tablet becomes reachable
 
 ## Isolated JavaScript charts and OpenAI controls (PRD 1.42)
 - [x] Restore JavaScript highlighting and fenced backgrounds in widget source editing
