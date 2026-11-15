@@ -78,10 +78,10 @@ OMEN 本轮隔离源码、依赖、中间包和脚本已删除，原仓库脏状
 | Mac arm64 | 0.1.69 → 0.1.70 | 正常退出后原位替换，codesign deep/strict 通过，原 Vault health200 且 PID90599 与端点一致，desktop-config/settings 字节保留 |
 | OMEN x64 | 0.1.69.0 → 0.1.70.0 | 交互用户 NSIS exit0，新版进程运行，原 Vault health200 且 PID21052 与端点一致，desktop-config/settings 字节保留 |
 | ROG x64 | 0.1.69.0 → 0.1.70.0 | 交互用户 NSIS exit0，新版进程运行，保留已有选库状态，desktop-config/settings 字节保留 |
-| Redmi K70 | 待连接 | 本机、OMEN 均无现有 ADB transport，当前 Bonjour 广播的 LAN/Tailscale 调试端口均拒绝连接，已向用户询问当前无线调试地址 |
+| Redmi K70 | 0.1.69 → 0.1.70 / code70 | 用户重新开启无线调试后经 transport17105 仅 user0 原位升级，UID10246、首次安装2026-11-10 21:38:13和设置文件字节保留，非调试身份保留，private-space user12仍未安装，原Vault health200/PID23386匹配 |
 | Xiaomi Pad 6 Pro | 待连接 | ADB 与有界 Bonjour 发现未找到设备，未执行安装 |
 
 Mac 当前运行的 0.1.70 已删除旧 Wiki 文件名滤镜，使用本次永久改色的源 SVG。
 Mac staging/旧应用副本已清理。Windows 临时安装器、脚本、配置快照与一次性计划任务均已清理。
-安装回执在 `/tmp/.agents/webobsidian-deploy-0.1.70/`。
+安装回执在 `/tmp/.agents/webobsidian-deploy-0.1.70/`。K70 使用本次已发布原签名手机包安装并启动，临时转发与本机部署脚本已清理。
 本轮设备检查覆盖升级、启动与既有服务健康，Android 前台交互和跨设备 Vault 文件同步尚未验收。
