@@ -69,7 +69,28 @@ assets. Android android-v0.1.69 is published as a prerelease with two assets.
 Both tags point to 9c6f46571446ecedea6cadf5091a95531d034858. All remote asset sizes
 match the final local files and GitHub reports each asset uploaded.
 
-Daily-device installation and Android foreground acceptance remain pending.
+The subsequent user request authorized deployment to every reachable device.
+Mac, OMEN, ROG and Redmi K70 were all reachable and upgraded from 0.1.68 in place.
+The tablet was absent from ADB and bounded Bonjour discovery, so deployment to
+it was skipped as requested. Its previous 0.1.66 remains the recorded version.
+
+| Device | Installed version | Deployment verification |
+| --- | --- | --- |
+| Mac arm64 | 0.1.69 | Normal application quit completed, replacement passed codesign deep/strict, new application running and original Vault health200 with matching server PID71277 |
+| OMEN x64 | 0.1.69.0 | Interactive-user NSIS installer exit0, installed executable running, original Vault health200 with matching server PID35208 |
+| ROG x64 | 0.1.69.0 | Interactive-user NSIS installer exit0, installed executable running, existing Vault-selection state preserved |
+| Redmi K70 | 0.1.69/code69 | User0-only adb install -r success, application launched, original Vault health200 with matching PID425 |
+
+Desktop configuration and server settings compare byte-for-byte with their
+pre-install values on Mac, OMEN and ROG. K70 settings also compare byte-for-byte,
+UID10246 and firstInstallTime2026-11-10 21:38:13 are retained. Android remains
+non-debuggable, and private-space user12 remains uninstalled.
+
+Deployment receipts are in `/tmp/.agents/webobsidian-widgets-20261114/deploy`.
+The temporary old Mac application, both Windows installation directories and
+the two one-time scheduled deployment tasks were removed after success. Daily
+device checks covered installation, startup and service readiness. Android
+foreground chart interaction remains pending.
 
 Both Android variants report versionCode 69/versionName 0.1.69 and have no
 application-debuggable flag. Their signing certificates match the previous

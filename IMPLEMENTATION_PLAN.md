@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-14 (isolated JavaScript charts and OpenAI controls)
+Cập nhật lần cuối: 2026-11-14 (0.1.69 deployment to reachable devices)
 
 ## Isolated JavaScript charts and OpenAI controls (PRD 1.42)
 - [x] Restore JavaScript highlighting and fenced backgrounds in widget source editing
@@ -13,6 +13,7 @@ Cập nhật lần cuối: 2026-11-14 (isolated JavaScript charts and OpenAI con
 - [x] Bundle official OpenAI controls and theme-aware charts inside the isolated frame
 - [x] Verify the supplied failing script, chart interactions, isolation and lifecycle regressions
 - [x] Build and publish the new native version
+- [x] Install 0.1.69 on reachable Mac, OMEN, ROG and Redmi K70, verify startup and existing configuration, skip the offline tablet
 
 ## Native host lifecycle (PRD 1.41)
 - [x] Share native identity, desktop bridge types, exports/back dispatch and server-side plugin requests
@@ -667,6 +668,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+- 2026-11-14 (PRD 1.42) 用户要求部署所有可连接设备。Mac/OMEN/ROG/K70均由68原位升级69并启动；Mac/OMEN/K70健康检查通过，配置逐字节保留；ROG沿用原选库流程。K70仅user0，UID10246/首次安装时间保留，仍为非调试包。平板ADB与局域网发现均离线，按要求跳过。临时旧Mac应用、Windows安装输入和部署计划任务已清理。Android实机图表交互待验收。
 - 2026-11-14 (PRD 1.42) 桌面v0.1.69已设Latest，7资产；android-v0.1.69预发布2个非调试APK。所有资产大小与完整标签源核对通过。Mac/Windows真实69包在临时库完成原始脚本拒绝、修正Canvas、官方控件图表及隔离验证。Android签名沿用原证书；日常安装与Android实机交互待验收。
 - 2026-11-14 (PRD 1.42) 隔离图表与官方控件实现完成。560 单元、28 专项浏览器、三端类型、生产入口与真实 Electron 验证通过；原始错误代码仅显示块内错误，修正后的 Canvas 和 OpenAI 势能图可交互。Mac/Android69已构建，准备 Windows 与发布。
 - 2026-11-14 (PRD 1.42) 用户将笔记图表明确限制为无破坏权限的嵌入组件。开始隔离脚本执行、修复高亮背景并接入 OpenAI 官方开源控件。

@@ -6,7 +6,7 @@
 个人使用的 WebObsidian 原生桌面/Android 应用(fork 自 xnohat/webobsidian,远程 `AlexbeatsZ/webobsidian`)。
 
 ## Current State
-- 2026-11-14 已发布桌面v0.1.69(Latest，7资产)与android-v0.1.69预发布(2非调试APK/code69)，标签源码9c6f465。js-widget/javascript-widget源码复用JS高亮并保留展开背景；笔记代码在opaque-origin iframe执行，app/应用DOM/Node/原生桥与应用API不再暴露。OpenAI Apps SDK UI0.2.2实际控件通过ui.slider/button/toggle/segmented使用，ECharts配套主题跟随深浅色。旧app脚本需改，五个内置只读组件保留，配置JS改数据解析。560单元、28专项浏览器、三端类型、生产入口与Mac/Windows实际69包图表验收通过。日常设备仍为此前安装版本，本轮只构建发布。设计docs/design/native-javascript.md；示例docs/examples/javascript-blocks.md；验收tests/reports/javascript-widgets-20261114.md。
+- 2026-11-14 已发布桌面v0.1.69(Latest，7资产)与android-v0.1.69预发布(2非调试APK/code69)，标签源码9c6f465。js-widget/javascript-widget源码复用JS高亮并保留展开背景；笔记代码在opaque-origin iframe执行，app/应用DOM/Node/原生桥与应用API不再暴露。OpenAI Apps SDK UI0.2.2实际控件通过ui.slider/button/toggle/segmented使用，ECharts配套主题跟随深浅色。旧app脚本需改，五个内置只读组件保留，配置JS改数据解析。560单元、28专项浏览器、三端类型、生产入口与Mac/Windows实际69包图表验收通过。随后已原位部署Mac/OMEN/ROG/K70并启动，Mac/OMEN/K70原服务health200，配置字节一致；ROG原生选库流程保留。K70 UID10246/首次安装/非调试身份保留，仅user0升级；平板离线跳过，维持66。设计docs/design/native-javascript.md；示例docs/examples/javascript-blocks.md；验收tests/reports/javascript-widgets-20261114.md。
 - 2026-11-14 同步连接统一只用 `http://100.106.169.46:18744/webobsidian-sync/v1/`。ROG 的 WebObsidianNativeSync 已按原任务改用该 Tailscale IP 监听，活动 server.json 与 connection.json 已更新，workspaceId 沿用原库。Mac/OMEN 已实同步成功。K70 原 STEM sync.jsonc 已原子改写并回读，后台本地 API 超时，实际同步待应用恢复响应。平板离线待改。ROG 桌面端尚无活动 Vault。运行配置调整，无客户端发版。
 - 2026-11-08补正:Android已升级0.1.66/code66（源码3899d5f）；日常仅用不可调试release/tabletRelease，后者保留旧.debug包名与证书但debuggable/JNI/BuildConfig.DEBUG均false，WebView调试关闭。两实机无DEBUGGABLE、run-as拒绝，原UID/首次安装/权限保留。Mac/OMEN/ROG65正常启动无inspect或remote-debugging参数。Android独立android-v0.1.66预发布两非调试APK大小/tag源已核对，取代65Android日常交付。详见tests/reports/android-release-20261108.md。
 - 源码main已推送。桌面发布提供Mac arm64 DMG/ZIP/blockmap/latest-mac与Windows x64 NSIS/blockmap/latest，Android提供正式手机与非调试平板两APK。Mac仅Apple Silicon arm64。
@@ -18,7 +18,7 @@
 - Mac用户数据：~/Library/Application Support/@webobsidian/desktop；服务日志logs/server.log。
 
 ## Active Work
-- 0.1.69日常设备安装、Android实机图表交互待验收。CPU/内存耗尽仍可能影响渲染进程，iframe不提供运算资源配额。
+- 0.1.69已部署所有可连接设备，Android实机图表交互待验收。CPU/内存耗尽仍可能影响渲染进程，iframe不提供运算资源配额。
 - 2026-11-13 正在实施 PRD1.41 三端宿主整理，用户最终要求部署 Mac、OMEN、ROG 和 K70，均已完成0.1.67升级和启动，桌面/Android Release已发布。用户要求停止进一步检查。实现a0e230a已推送；558单元/类型/生产和原生生命周期通过，浏览器396/402且6失败原提交复现；K70正式67原位升级/签名UID配置和原STEM健康通过，Back/剪贴板/导出UI待用户空闲。设计 docs/design/host-lifecycle.md，验收 tests/reports/host-lifecycle-20261113.md。
 - 2026-11-14 标签页统一宽度0.1.68已部署Mac/OMEN/ROG/K70并发布v0.1.68与android-v0.1.68；平板维持0.1.66。
 - 此前 Mac/OMEN/ROG/K70为0.1.67。桌面部署仅确认升级任务成功和启动命令，未追加功能验收。K70返回键/剪贴板/导出交互未验收，用户已停止进一步检查。
