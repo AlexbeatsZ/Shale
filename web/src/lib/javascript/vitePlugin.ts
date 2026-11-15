@@ -1,9 +1,11 @@
 import { build, type Plugin, type Rollup } from 'vite';
 import tailwindcss from '@tailwindcss/postcss';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 
 /** A separate bundle keeps application modules and globals out of note scripts. */
 export function javascriptFramePlugin(): Plugin {
+  const uiLicense = readFileSync(new URL('../../../LICENSE', import.meta.resolve('@openai/apps-sdk-ui/css')), 'utf8');
   let serving = false;
   let compiled: Promise<{ script: string; css: string }> | undefined;
   const compile = () => compiled ??= (async () => {
@@ -22,7 +24,7 @@ export function javascriptFramePlugin(): Plugin {
         write: false, emptyOutDir: false, minify: true, cssMinify: true,
         target: 'es2022', cssCodeSplit: false,
         lib: { entry: fileURLToPath(new URL('./frame.ts', import.meta.url)), name: 'WebObsidianChart', formats: ['iife'] },
-        rollupOptions: { onwarn(warning, warn) {
+        rollupOptions: { output: { banner: `/*! @openai/apps-sdk-ui\n${uiLicense}\n*/` }, onwarn(warning, warn) {
           if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes('use client')) return;
           warn(warning);
         } },
