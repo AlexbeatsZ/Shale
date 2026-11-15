@@ -1,7 +1,8 @@
 import { RangeSet, StateField, type Range, type EditorState, type Transaction } from '@codemirror/state';
 import { BlockWrapper, Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet } from '@codemirror/view';
-import { blockEffectList, tableModels, type SourceSpan, type MarkdownModel } from '@webobsidian/markdown-core';
-import { syntaxModel } from '../syntaxModel';
+import { blockEffectList, imageEmbeds, tableModels, type SourceSpan, type MarkdownModel } from '@webobsidian/markdown-core';
+import { equationsOf, sourceOf, syntaxModel } from '../syntaxModel';
+import { imageMenuItems } from '../imageMenu';
 import { contextOf, renderContext, nonExecutingContext } from '../renderContext';
 import { livePreviewState, livePreviewReadonly } from '../renderState';
 import { sourceIsOpen, sourceButton } from '../sourceControls';
@@ -14,11 +15,33 @@ import type { JavascriptRun } from '../javascript/lifetime';
 type Identity = { range: SourceSpan; target: BoundBlock; model: MarkdownModel };
 const mounts = new WeakMap<HTMLElement, { stop(): void }>();
 class EffectWidget extends WidgetType {
-  constructor(readonly identity: Identity, readonly source: string, readonly block: BoundBlock, readonly path: string) { super(); }
-  eq(other: EffectWidget) { return this.identity === other.identity && this.source === other.source && this.block.script?.execute === other.block.script?.execute && this.path === other.path && this.block.classes.join(' ') === other.block.classes.join(' '); }
+  constructor(readonly identity: Identity, readonly source: string, readonly block: BoundBlock, readonly path: string, readonly imageReferences: string) { super(); }
+  eq(other: EffectWidget) { return this.identity === other.identity && this.source === other.source && this.block.script?.execute === other.block.script?.execute && this.path === other.path && this.block.classes.join(' ') === other.block.classes.join(' ') && this.imageReferences === other.imageReferences; }
   toDOM(view: EditorView) {
     const doc = view.dom.ownerDocument, host = doc.createElement('div');
     host.className = ['native-block-effect', ...this.block.classes].join(' ');
+    const sources = new WeakMap<HTMLElement, { relativeFrom: number; from: number; text: string }>();
+    const imageMenu = (event: MouseEvent) => {
+      const image = (event.target as Element).closest<HTMLElement>('.cm-image-wrap');
+      if (!image) return;
+      let binding: { relativeFrom: number; from: number; text: string } | undefined;
+      for (let element: HTMLElement | null = image; element && element !== host; element = element.parentElement) {
+        binding = sources.get(element);
+        if (binding) break;
+      }
+      if (!binding) return;
+      const element = image.closest<HTMLElement>('.cm-editor'), fragment = element ? EditorView.findFromDOM(element) : undefined;
+      if (!fragment) return;
+      const from = this.identity.target.target.from + binding.relativeFrom;
+      if (view.state.sliceDoc(from, from + binding.text.length) !== binding.text) return;
+      const offset = sourceOf(fragment.state).from - binding.from + fragment.posAtDOM(image);
+      if (offset < 0 || offset >= binding.text.length) return;
+      const items = imageMenuItems(view, image, from + offset);
+      if (!items) return;
+      event.preventDefault(); event.stopPropagation();
+      contextOf(view).openMenu({ x: event.clientX, y: event.clientY, items });
+    };
+    host.addEventListener('contextmenu', imageMenu, true);
     let stopped = false, run: JavascriptRun | undefined, complete: JavascriptRun | undefined, queued = false, errorOutput: HTMLElement | undefined;
     const measure = () => { if (!stopped) view.requestMeasure(); };
     const render = async () => {
@@ -37,7 +60,7 @@ class EffectWidget extends WidgetType {
       }, measure); run = current; host.dataset.renderPending = 'true';
       current.register(() => { pending.remove(); stage.remove(); });
       try {
-        const model = this.identity.model, target = this.identity.target;
+        const model = this.identity.model, target = this.identity.target, origin = sourceOf(view.state), equations = equationsOf(view.state);
         const raw = model.text.slice(target.target.from, target.to);
         const quoteDepth = (target.prefix.match(/>/g) ?? []).length;
         const source = quoteDepth ? raw.split('\n').map(line => { for (let n = 0; n < quoteDepth; n++) line = line.replace(/^\s*> ?/, ''); return line; }).join('\n') : raw;
@@ -46,8 +69,20 @@ class EffectWidget extends WidgetType {
           model, range: target.target, node: target.node,
           list: () => { current.assertActive(); return blockEffectList(model, target.node); },
           table: () => { current.assertActive(); return tableModels(model).find(t => t.from === target.target.from && t.to === target.to); },
+          supportsSourceRanges: true,
           signal: current.signal, onCleanup: current.onCleanup, component: current,
-          watch: current.watch, renderMarkdown: current.renderMarkdown.bind(current),
+          watch: current.watch, renderMarkdown: (markdown: string, destination = output, sourceRange?: SourceSpan) => {
+            current.assertActive();
+            if (!sourceRange) return current.renderMarkdown(markdown, destination);
+            const { from, to } = sourceRange;
+            if (!Number.isSafeInteger(from) || !Number.isSafeInteger(to) || from < target.target.from || to > target.to || from > to ||
+              model.text.slice(from, to) !== markdown) throw new Error('块渲染来源范围与原始源码不一致');
+            const absoluteFrom = origin.from + from;
+            sources.set(destination, { relativeFrom: from - target.target.from, from: absoluteFrom, text: markdown });
+            current.register(() => sources.delete(destination));
+            return current.renderMarkdown(markdown, destination, current.context, { sourceFrom: absoluteFrom,
+              mathSource: { model: origin.model, from: absoluteFrom }, equations: { ...equations, from: absoluteFrom } });
+          },
           renderSource: (target = output) => current.renderMarkdown(source, target, nonExecutingContext(current.context)),
         });
         current.assertActive();
@@ -65,7 +100,7 @@ class EffectWidget extends WidgetType {
         }
       } finally { pending.remove(); if (!stopped && run === current) { delete host.dataset.renderPending; measure(); if (current.signal.aborted) run = complete; } }
     };
-    mounts.set(host, { stop() { stopped = true; run?.unload(); if (complete !== run) complete?.unload(); delete host.dataset.renderPending; } });
+    mounts.set(host, { stop() { stopped = true; host.removeEventListener('contextmenu', imageMenu, true); run?.unload(); if (complete !== run) complete?.unload(); delete host.dataset.renderPending; } });
     if (!view.state.readOnly) host.append(sourceButton(view, () => this.identity.range, '块效果'));
     void render(); return host;
   }
@@ -76,6 +111,7 @@ class EffectWidget extends WidgetType {
 function build(state: EditorState, previous?: DecorationSet, tr?: Transaction): DecorationSet {
   if (!state.field(livePreviewState) || !state.facet(renderContext).allowBlockEffects) return Decoration.none;
   const model = state.field(syntaxModel), replacements = activeBlockReplacements(state);
+  const imageReferences = JSON.stringify(imageEmbeds(sourceOf(state).model).map(image => [image.target, image.number, image.alias]));
   const prior = new Map<string, EffectWidget>();
   previous?.between(0, tr?.startState.doc.length ?? state.doc.length, (from, to, d) => {
     if (d.spec.widget instanceof EffectWidget) prior.set(`${tr?.changes.mapPos(from, 1) ?? from}:${tr?.changes.mapPos(to, -1) ?? to}`, d.spec.widget);
@@ -93,7 +129,7 @@ function build(state: EditorState, previous?: DecorationSet, tr?: Transaction): 
       const source = model.text.slice(block.target.from, block.to), old = prior.get(`${block.target.from}:${block.to}`);
       const identity = old?.source === source && old.block.script?.execute === block.script.execute && old.path === state.facet(renderContext).sourcePath ? old.identity : { range: block, target: block, model };
       identity.range = block; identity.target = block; identity.model = model;
-      ranges.push(Decoration.replace({ block: true, widget: new EffectWidget(identity, source, block, state.facet(renderContext).sourcePath) }).range(block.target.from, block.to));
+      ranges.push(Decoration.replace({ block: true, widget: new EffectWidget(identity, source, block, state.facet(renderContext).sourcePath, imageReferences) }).range(block.target.from, block.to));
     }
   }
   return Decoration.set(ranges, true);

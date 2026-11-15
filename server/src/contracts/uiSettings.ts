@@ -10,6 +10,7 @@ export const UiSettingsSchema = z.object({
   defaultView: z.enum(['live', 'source', 'reading']).default('live'),
   debugRecording: z.boolean().default(false),
   debugSource: z.boolean().default(true),
+  ctrlWheelFontSize: z.boolean().default(false),
   fontTextSize: z.number().int().min(documentAppearance.fontTextSize.min).max(documentAppearance.fontTextSize.max)
     .default(documentAppearance.fontTextSize.default),
   fileLineWidth: z.number().int().min(documentAppearance.fileLineWidth.min).max(documentAppearance.fileLineWidth.max)

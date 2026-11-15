@@ -22,6 +22,7 @@ export interface ClipboardOptions {
   writable: () => boolean;
   projection: () => boolean;
   format: (text: string, view: EditorView) => string;
+  pasteImages?: (files: readonly File[], view: EditorView) => void | Promise<void>;
   reportError: (error: unknown) => void;
 }
 
@@ -179,7 +180,15 @@ export function contentClipboard(options: ClipboardOptions) {
     paste(event, view) {
       if (!writable(view)) { event.preventDefault(); event.stopPropagation(); return true; }
       if (!event.clipboardData || view.composing) return false;
-      if (event.clipboardData.files.length) { event.preventDefault(); return true; }
+      if (event.clipboardData.files.length) {
+        event.preventDefault();
+        if (options.pasteImages) {
+          event.stopPropagation();
+          try { void Promise.resolve(options.pasteImages(Array.from(event.clipboardData.files), view)).catch(options.reportError); }
+          catch (error) { options.reportError(error); }
+        }
+        return true;
+      }
       const metadata = event.clipboardData.getData(CONTENT_CLIPBOARD_MIME) || event.clipboardData.getData(browserMime);
       if (!metadata) return false;
       event.preventDefault();
@@ -206,16 +215,28 @@ export function contentClipboard(options: ClipboardOptions) {
       try {
         let content: ClipboardContent | undefined;
         if (navigator.clipboard.read) {
-          try {
-            const items = await navigator.clipboard.read();
-            if (items.some(item => item.types.some(type => type.startsWith('image/')))) return;
+          let items: ClipboardItems | undefined;
+          try { items = await navigator.clipboard.read(); } catch { }
+          if (items) {
+            if (items.some(item => item.types.some(type => type.startsWith('image/')))) {
+              const files: File[] = [];
+              for (const item of items) {
+                const type = item.types.find(type => type.startsWith('image/'));
+                if (!type) continue;
+                const blob = await item.getType(type);
+                const extension = type === 'image/jpeg' ? 'jpg' : type === 'image/svg+xml' ? 'svg' : type.split('/')[1] || 'png';
+                files.push(new File([blob], `image.${extension}`, { type }));
+              }
+              if (view.state === before && writable(view)) await options.pasteImages?.(files, view);
+              return;
+            }
             for (const item of items) if (item.types.includes('text/plain')) {
               const metadataType = item.types.find(type => type === browserMime || type === CONTENT_CLIPBOARD_MIME);
               content = { text: await (await item.getType('text/plain')).text(),
                 metadata: metadataType ? await (await item.getType(metadataType)).text() : undefined };
               break;
             }
-          } catch { }
+          }
         }
         content ??= { text: await host.readClipboardText() };
         if (view.state === before && writable(view)) { apply(view, content); view.focus(); }

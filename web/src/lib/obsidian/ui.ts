@@ -244,6 +244,9 @@ export function promptInput(app: unknown, message: string, initial = '', signal?
     })(app);
     const abort = () => modal.close();
     modal.setTitle(message);
+    modal.modalEl.setAttribute('role', 'dialog');
+    modal.modalEl.setAttribute('aria-modal', 'true');
+    modal.modalEl.setAttribute('aria-label', message);
     const input = document.createElement('input'); input.className = 'text-input'; input.value = initial;
     const button = document.createElement('button'); button.className = 'btn'; button.textContent = '确定';
     const submit = () => { accepted = true; resolve(input.value); modal.close(); };

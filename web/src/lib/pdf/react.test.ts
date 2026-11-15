@@ -3,8 +3,9 @@ import { activatePdfSession, getActivePdfSession, getMainPdfSession, registerPdf
 import type { PdfSession } from './session';
 
 function session(path: string, viewId: string) {
-  let destroyed = false;
-  return { path, viewId, getSnapshot: () => ({ status: destroyed ? 'destroyed' : 'ready' }),
+  let destroyed = false, dark = false;
+  return { path, viewId, getSnapshot: () => ({ status: destroyed ? 'destroyed' : 'ready', dark }),
+    setDark: (value: boolean) => { dark = value; }, subscribe: () => () => {},
     destroy: () => { destroyed = true; } } as unknown as PdfSession;
 }
 

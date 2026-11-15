@@ -88,6 +88,29 @@ test('button sits immediately left of the sidebar toggle and the toolbar default
   await expect(rightToggle(page)).toHaveAttribute('aria-expanded', 'false');
 });
 
+test('Ctrl wheel zooms PDF pages around the pointer and shares the toolbar multiplier', async ({ page }) => {
+  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openFile('paper.pdf'));
+  const surface = main(page).locator('[data-page-number="1"]');
+  await expect(surface.locator('.pdf-page-surface.is-ready')).toBeVisible();
+  const initial = await surface.boundingBox();
+  const pointer = { x: initial!.x + initial!.width * 0.5, y: initial!.y + 220 };
+  const fraction = { x: (pointer.x - initial!.x) / initial!.width, y: (pointer.y - initial!.y) / initial!.height };
+  const ui = await toggle(page).boundingBox();
+  await page.mouse.move(pointer.x, pointer.y);
+  await page.keyboard.down('Control'); await page.mouse.wheel(0, -160); await page.keyboard.up('Control');
+  await expect.poll(async () => (await surface.boundingBox())!.width).toBeGreaterThan(initial!.width);
+  const enlarged = await surface.boundingBox();
+  expect(Math.abs(enlarged!.x + enlarged!.width * fraction.x - pointer.x)).toBeLessThan(2);
+  expect(Math.abs(enlarged!.y + enlarged!.height * fraction.y - pointer.y)).toBeLessThan(2);
+  expect(await toggle(page).boundingBox()).toEqual(ui);
+  await toggle(page).click();
+  const multiplier = await main(page).locator('.pdf-zoom').textContent();
+  expect(Number(multiplier!.replace('%', ''))).toBeGreaterThan(100);
+  await main(page).locator('.pdf-zoom').click();
+  await expect(main(page).locator('.pdf-zoom')).toHaveText('100%');
+  await expect.poll(async () => (await surface.boundingBox())!.width).toBeCloseTo(initial!.width, 0);
+});
+
 test('toggle is an overlay below the titlebar and preserves layout, scroll, pages, search, page and zoom', async ({ page }) => {
   await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openFile('paper.pdf'));
   await expect(main(page).locator('.pdf-page-surface.is-ready').first()).toBeVisible();

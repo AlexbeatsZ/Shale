@@ -15,9 +15,13 @@ import { calloutStyle } from './calloutStyles';
 import { iconPaths, setIcon } from './icons';
 import { diagramRenderer } from './diagrams';
 import { openLightbox } from './imageLightbox';
+import { imageMenuItems, imageSourceEdit } from './imageMenu';
+import { bindDarkMedia } from './mediaFilter';
+import { resolveImageReference, subscribeImageReferences } from './imageReferences';
+import { imageAt, imageCaption, imageEmbeds, imageReferenceText, isImageTarget, isTableCellRange, parseImageParameters, wikiLinkParts, type ImageEmbed } from '@webobsidian/markdown-core';
 import { applyImagePresentation, presentHtmlImages, markdownImageAt } from './imagePresentation';
 import { VIDEO_EXT_RE, AUDIO_EXT_RE } from './media';
-import { syntaxModel, blockModel, equationsOf, documentMetadata, embeddedFormulasField, setEmbeddedFormulas } from './syntaxModel';
+import { syntaxModel, blockModel, equationsOf, documentMetadata, embeddedFormulasField, setEmbeddedFormulas, sourceOf } from './syntaxModel';
 import { compositionSelection } from './inlineHtml';
 import { sourceButton, sourceIsOpen, sourceOwns, forceRendered } from './sourceControls';
 import { blockControls, knownReferenceButtons, referenceButtons } from './blockControls';
@@ -25,7 +29,7 @@ import { livePreviewState, livePreviewReadonly, setLivePreviewEnabled, setLivePr
 export { livePreviewState, livePreviewReadonly, setLivePreviewEnabled, setLivePreviewReadonly } from './renderState';
 import { BODY_HEADING_NODE, BODY_HEADING_LEVEL, bodyHeadingParts, changeTable, editTableCell, type SourceChange, type TableModel, type TableOperation, type MathRegion, type SourceSpan, stripQuotePrefix, sourceLinePrefix, caretTouches, sanitizeHtmlFragment as sanitizeHtml } from '@webobsidian/markdown-core';
 import { contextOf, renderContext, type RenderMenuItem as LpMenuItem } from './renderContext';
-import { followRenderedLink, revealNavigation } from './fragmentNavigation';
+import { followRenderedLink, revealNavigation, linkIntent } from './fragmentNavigation';
 import { bindRenderedLink } from './linkPreview';
 import { renderMath, readMathMetrics, type MathMetrics, mathDefinitionContext, subscribeMathConfiguration } from './mathjax';
 import { editorMathRegions, mathSourceVisible, mathPreview, mathPreviewTex } from './writing/latex/editor_context/mathPresentation';
@@ -156,6 +160,47 @@ class WikilinkWidget extends WidgetType {
   }
 }
 
+const imageReferenceMounts = new WeakMap<HTMLElement, RenderLifetime>();
+class ImageReferenceWidget extends WidgetType {
+  constructor(readonly target: string, readonly alias: string | null, readonly length: number, readonly model: MarkdownModel, readonly at: number) { super(); }
+  eq(other: ImageReferenceWidget) {
+    return other.target === this.target && other.alias === this.alias && other.length === this.length && other.model === this.model && other.at === this.at;
+  }
+  destroy(element: HTMLElement) { imageReferenceMounts.get(element)?.unload(); imageReferenceMounts.delete(element); }
+  toDOM(view: EditorView) {
+    const anchor = view.dom.ownerDocument.createElement('a');
+    anchor.className = 'cm-hmd-internal-link cm-wikilink internal-link'; anchor.dataset.menuLink = this.target;
+    anchor.dataset.imageReference = this.target;
+    anchor.textContent = imageReferenceText(undefined, this.alias, this.target) ?? this.target;
+    bindRenderedLink(anchor, view, this.target);
+    const lifetime = new RenderLifetime(); imageReferenceMounts.set(anchor, lifetime);
+    let generation = 0;
+    let resolved: Awaited<ReturnType<typeof resolveImageReference>> | undefined;
+    const navigate = (event: MouseEvent) => {
+      if (event.button > 1 || !resolved?.sourcePath || resolved.line === undefined) return;
+      event.preventDefault(); event.stopImmediatePropagation();
+      contextOf(view).openLink(resolved.sourcePath, { ...linkIntent(event), source: view, line: resolved.line });
+    };
+    anchor.addEventListener('click', navigate, true); anchor.addEventListener('auxclick', navigate, true);
+    const paint = () => {
+      const version = ++generation, context = contextOf(view);
+      void resolveImageReference(this.target + (this.alias === null ? '' : '|' + this.alias), context.sourcePath,
+        this.model, this.at, lifetime.signal, context.files()).then(reference => {
+        if (lifetime.signal.aborted || version !== generation) return;
+        resolved = reference;
+        anchor.textContent = reference.label ?? imageReferenceText(undefined, this.alias, this.target) ?? this.target;
+        anchor.classList.toggle('is-unresolved', this.alias === null && reference.status !== 'resolved');
+        anchor.title = reference.image ? imageCaption(reference.image) : this.target;
+        view.requestMeasure();
+      }).catch(error => {
+        if (!lifetime.signal.aborted) { anchor.classList.add('is-unresolved'); context.reportError?.(String(error)); }
+      });
+    };
+    lifetime.register(subscribeImageReferences(paint)); paint();
+    return anchor;
+  }
+}
+
 class CheckboxWidget extends WidgetType {
   constructor(readonly checked: boolean, readonly pos: number) {
     super();
@@ -183,62 +228,15 @@ class CheckboxWidget extends WidgetType {
 const pointX = (e: MouseEvent | TouchEvent): number =>
   'touches' in e ? (e.touches[0] ?? e.changedTouches[0]).clientX : e.clientX;
 
-/**
- * Write a new pixel width back into the embed source that `wrap` renders, as the
- * Obsidian size param: `![[img|W]]` for wikilink embeds, `![alt|W](url)` for
- * markdown images. The widget's document position is recovered via posAtDOM, then
- * the embed token covering it is re-found and rewritten (an existing trailing
- * numeric size segment is replaced; otherwise one is appended).
- */
-function writeImageWidth(view: EditorView, wrap: HTMLElement, width: number): void {
-  if (view.state.readOnly) return;
-  let pos: number;
-  try {
-    pos = view.posAtDOM(wrap);
-  } catch {
-    return;
-  }
-  const line = view.state.doc.lineAt(pos);
-  const isSize = (s: string) => /^\s*\d+\s*(?:x\s*\d+\s*)?$/.test(s);
-  const withSize = (segs: string[]): string => {
-    if (segs.length > 1 && isSize(segs[segs.length - 1])) segs.pop();
-    segs.push(String(width));
-    return segs.join('|');
-  };
-  const tokens: Array<{ re: RegExp; build: (m: RegExpExecArray) => string }> = [
-    { re: /!\[\[([^\]]+?)\]\]/g, build: (m) => `![[${withSize(m[1].split('|'))}]]` },
-    { re: /!\[([^\]]*)\]\(([^)]+)\)/g, build: (m) => `![${withSize(m[1].split('|'))}](${m[2]})` },
-  ];
-  for (const { re, build } of tokens) {
-    re.lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(line.text))) {
-      const from = line.from + m.index;
-      const parsed = line.text.slice(m.index, m.index + 3) !== '![[' ? markdownImageAt(view.state.field(syntaxModel), from) : undefined;
-      const to = parsed?.to ?? from + m[0].length;
-      re.lastIndex = to - line.from;
-      if (from <= pos && pos <= to) {
-        if (parsed) {
-          // Resize only the alt; preserve every byte of the URL/title/payload.
-          view.dispatch({ changes: { from: from + 2, to: parsed.altTo, insert: withSize(parsed.alt.split('|')) } });
-          return;
-        }
-        view.dispatch({ changes: { from, to: from + m[0].length, insert: build(m) } });
-        return;
-      }
-    }
-  }
-}
-
 const imageMounts = new WeakMap<HTMLElement, RenderLifetime>();
 class ImageWidget extends WidgetType {
   destroy(dom: HTMLElement) { const lifetime = imageMounts.get(dom); imageMounts.delete(dom); lifetime?.unload(); }
   /** `width`/`height` from the Obsidian size param `![[img|300]]` / `![[img|300x200]]`. */
-  constructor(readonly src: string, readonly alt: string, readonly width?: number, readonly height?: number, readonly ro = false, readonly target = src) {
+  constructor(readonly src: string, readonly alt: string, readonly width?: number, readonly height?: number, readonly ro = false, readonly target = src, readonly image?: ImageEmbed) {
     super();
   }
   eq(o: ImageWidget) {
-    return o.src === this.src && o.alt === this.alt && o.width === this.width && o.height === this.height && o.ro === this.ro && o.target === this.target;
+    return o.src === this.src && o.alt === this.alt && o.width === this.width && o.height === this.height && o.ro === this.ro && o.target === this.target && o.image?.number === this.image?.number && o.image?.rawAlias === this.image?.rawAlias;
   }
   toDOM(view: EditorView) {
     const doc = view.dom.ownerDocument, win = doc.defaultView!;
@@ -246,7 +244,8 @@ class ImageWidget extends WidgetType {
     const lifetime = new RenderLifetime(); imageMounts.set(wrap, lifetime);
     let cancelResize: (() => void) | undefined;
     lifetime.register(() => cancelResize?.());
-    applyImagePresentation(wrap, this.target, this.alt);
+    applyImagePresentation(wrap, this.target, this.alt, this.image);
+    lifetime.register(bindDarkMedia(wrap, () => wrap.hasAttribute('data-image-dark')));
     const img = doc.createElement('img');
     img.src = this.src;
     img.alt = this.alt;
@@ -254,7 +253,10 @@ class ImageWidget extends WidgetType {
     img.draggable = false;
     img.addEventListener('load', () => view.requestMeasure(), { once: true, signal: lifetime.signal });
     if (this.width) img.width = this.width;
-    if (this.height) img.height = this.height;
+    if (this.height) {
+      img.height = this.height;
+      img.style.height = this.height + 'px';
+    }
     // Missing attachment → Obsidian-style "could not be found" box.
     img.addEventListener('error', () => {
       cancelResize?.();
@@ -269,12 +271,11 @@ class ImageWidget extends WidgetType {
     // Plain click (no drag) → full-screen zoom/pan viewer.
     img.addEventListener('click', (e) => {
       e.preventDefault();
-      openLightbox(this.src, this.alt);
+      openLightbox(this.src, this.alt, this.image?.parameters ?? parseImageParameters(this.target, this.alt));
     }, { signal: lifetime.signal });
-    wrap.appendChild(img);
+    wrap.prepend(img);
 
-    // Drag-to-resize — left/right edge bars; width is written back as `|W`,
-    // keeping aspect ratio (height auto), like Obsidian's image resize.
+    // Dragging changes this instance's width. An explicit height remains fixed.
     const startResize = (e: MouseEvent | TouchEvent, side: 'left' | 'right') => {
       if (lifetime.signal.aborted || view.state.readOnly) return;
       cancelResize?.();
@@ -300,14 +301,13 @@ class ImageWidget extends WidgetType {
         const dx = (pointX(ev) - startX) / zoom;
         curW = Math.min(maxW, Math.max(40, Math.round(side === 'right' ? startW + dx : startW - dx)));
         img.style.width = curW + 'px';
-        img.style.height = 'auto';
+        img.style.height = this.height ? this.height + 'px' : 'auto';
         img.setAttribute('width', String(curW));
-        img.removeAttribute('height');
       };
       const onUp = () => {
         if (cancelResize !== stopResize) return;
         stopResize();
-        writeImageWidth(view, wrap, curW);
+        imageSourceEdit(view, wrap, 'width', curW);
       };
       cancelResize = stopResize;
       win.addEventListener('mousemove', onMove);
@@ -1175,11 +1175,11 @@ class TableWidget extends WidgetType {
           const rendering = fragment = new RenderLifetime();
           content.replaceChildren();
           const host = document.createElement('div'); content.appendChild(host);
+          const source = sourceOf(view.state);
           const stop = context.mountFragment?.(host, raw, {
             id: context.sourcePath + ':cell:' + ri + ':' + col, sourceFrom: token?.from ?? row.to,
             equations: { ...equationsOf(view.state), from: equationsOf(view.state).from + (token?.from ?? row.to) },
-            mathSource: { model: context.mathSource?.model ?? view.state.field(syntaxModel),
-              from: (context.mathSource?.from ?? 0) + (token?.from ?? row.to) },
+            mathSource: { model: source.model, from: source.from + (token?.from ?? row.to) },
             mode, autoFocus: mode === 'live',
             onCommit: mode === 'live' ? (value) => {
               if (lifetime.signal.aborted || rendering.signal.aborted) return;
@@ -1216,7 +1216,19 @@ class TableWidget extends WidgetType {
             }
           }, true);
           cell.addEventListener('contextmenu', (e) => {
+            const image = (e.target as Element).closest<HTMLElement>('.cm-image-wrap');
+            if (editing && image) return;
             e.preventDefault(); e.stopPropagation(); if (editing) return;
+            if (image && token) {
+              const editor = image.closest<HTMLElement>('.cm-editor');
+              const fragment = editor ? EditorView.findFromDOM(editor) : undefined;
+              const position = fragment ? token.from + fragment.posAtDOM(image) : undefined;
+              const items = position === undefined ? undefined : imageMenuItems(view, image, position);
+              if (items) {
+                context.openMenu({ x: e.clientX, y: e.clientY, items });
+                return;
+              }
+            }
             context.openMenu({ x: e.clientX, y: e.clientY, items: [
               { label: 'Insert column left', onClick: () => structural({ kind: 'insertColumn', column: col }) },
               { label: 'Insert column right', onClick: () => structural({ kind: 'insertColumn', column: col + 1 }) },
@@ -1232,7 +1244,7 @@ class TableWidget extends WidgetType {
               { label: 'Delete column', onClick: () => structural({ kind: 'deleteColumn', column: col }) },
               ...(ri > 0 ? [{ label: 'Delete row', onClick: () => structural({ kind: 'deleteRow', row: ri - 1 }) }] : []),
             ] });
-          });
+          }, true);
         }
         tr.appendChild(cell);
       }
@@ -1870,37 +1882,28 @@ function buildDecorations(view: EditorView): DecorationSet {
         const inner = m[2];
         if (inner.includes('[[')) continue;
         const isEmbed = m[1] === '!';
-        const pi = inner.indexOf('|');
+        const source = sourceOf(view.state), tableCell = isTableCellRange(source.model, source.from + s, source.from + e);
+        const parts = wikiLinkParts(inner, tableCell), pi = parts.dividerFrom;
         if (touches(s, e)) {
           // Brackets and an aliased target are not shown once rendered.
           const open = s + m[1].length + 2;
-          all.push(sourceSyntax('link').range(s, pi > 0 ? open + pi + 1 : open));
+          all.push(sourceSyntax('link').range(s, pi > 0 ? open + parts.dividerTo : open));
           all.push(sourceSyntax('link').range(e - 2, e));
           continue;
         }
-        const href = semantic.target
+        const href = (tableCell ? wikiDestination(inner, true) : semantic.target)
           .replace(/\\$/, '')
           .replace(/ /g, ' ')
           .trim()
           .normalize('NFC');
-        const alias = pi > 0 ? inner.slice(pi + 1).trim() : null;
+        const alias = parseLinkTarget(inner, tableCell).alias?.trim() ?? null;
         const defaultDisplay = href.split('#').filter(Boolean).join(' > ');
         if (isEmbed && /\.(bmp|png|jpe?g|gif|svg|webp|avif)$/i.test(href.split(/[?#]/)[0])) {
-          // image size param: the LAST `|` segment, `300` or `300x200`
-          let w: number | undefined;
-          let h: number | undefined;
-          let caption = alias ?? href;
-          if (pi > 0) {
-            const segs = inner.split('|');
-            const sm = segs[segs.length - 1].match(/^\s*([0-9]+)\s*(?:x\s*([0-9]+)\s*)?$/);
-            if (sm) {
-              w = Number(sm[1]);
-              h = sm[2] ? Number(sm[2]) : undefined;
-              caption = segs.slice(1, -1).join('|') || href;
-            }
-          }
+          const image = imageAt(source.model, source.from + s);
+          const parameters = image?.parameters ?? parseImageParameters(href, alias, tableCell);
           hasRenderedImage = true;
-          pushReplace(s, e, Decoration.replace({ widget: new ImageWidget(attachmentUrl(href, view), caption, w, h, readonly, href) }));
+          pushReplace(s, e, Decoration.replace({ widget: new ImageWidget(attachmentUrl(parameters.target, view), alias ?? '',
+            parameters.width, parameters.height, readonly, href, image) }));
         } else if (isEmbed && (VIDEO_EXT_RE.test(href) || AUDIO_EXT_RE.test(href))) {
           // `![[clip.mp4]]` / `![[song.mp3]]` → native HTML5 player like Obsidian.
           const kind = VIDEO_EXT_RE.test(href) ? 'video' : 'audio';
@@ -1925,11 +1928,10 @@ function buildDecorations(view: EditorView): DecorationSet {
           const formulas = referenceName !== undefined ? equationsOf(view.state) : undefined;
           const local = formulas && equationOccurrenceBefore(formulas, 'eq-' + referenceName, formulas.from + s);
           const label = equation ? equationReferenceText(equation, alias, local) : alias || (alias === '' && referenceName !== undefined ? referenceName : href);
-          pushReplace(
-            s,
-            e,
-            Decoration.replace({ widget: new WikilinkWidget(href, label, isEmbed, defaultDisplay !== label ? defaultDisplay : undefined, alias, e - s, referenceName !== undefined ? contextOf(view).sourcePath : undefined, local) }),
-          );
+          const widget = !isEmbed && isImageTarget(href)
+            ? new ImageReferenceWidget(href, alias, e - s, source.model, source.from + s)
+            : new WikilinkWidget(href, label, isEmbed, defaultDisplay !== label ? defaultDisplay : undefined, alias, e - s, referenceName !== undefined ? contextOf(view).sourcePath : undefined, local);
+          pushReplace(s, e, Decoration.replace({ widget }));
         }
       }
 
@@ -1952,26 +1954,14 @@ function buildDecorations(view: EditorView): DecorationSet {
           if (doc.sliceString(altEnd, altEnd + 2) === '](' && altEnd < e) all.push(sourceSyntax('image').range(altEnd, e));
           continue;
         }
-        // size param lives in the alt text: `![alt|300](url)` / `![|300x200](url)`
-        let alt = parsed?.alt ?? m[1];
-        let w: number | undefined;
-        let h: number | undefined;
-        const ai = alt.lastIndexOf('|');
-        if (ai >= 0) {
-          const sm = alt.slice(ai + 1).match(/^\s*([0-9]+)\s*(?:x\s*([0-9]+)\s*)?$/);
-          if (sm) {
-            w = Number(sm[1]);
-            h = sm[2] ? Number(sm[2]) : undefined;
-            alt = alt.slice(0, ai);
-          }
-        }
+        const source = sourceOf(view.state), image = imageAt(source.model, source.from + s);
+        const alt = parsed?.alt ?? m[1];
         const url = parsed?.target ?? m[2].replace(/\s+"[^"]*"$/, '').trim();
-        // Browser-loadable URLs load directly; anything else (a relative path or
-        // any custom scheme) is resolved by basename via the vault file index.
-        const webLoadable = /^(https?|data|blob|file):/i.test(url);
-        const src = webLoadable ? url : attachmentUrl(url, view);
+        const parameters = image?.parameters ?? parseImageParameters(url, alt);
+        const webLoadable = /^(https?|data|blob|file):/i.test(parameters.target);
+        const src = webLoadable ? parameters.target : attachmentUrl(parameters.target, view);
         hasRenderedImage = true;
-        pushReplace(s, e, Decoration.replace({ widget: new ImageWidget(src, alt, w, h, readonly, url) }));
+        pushReplace(s, e, Decoration.replace({ widget: new ImageWidget(src, alt, parameters.width, parameters.height, readonly, url, image) }));
       }
 
       let withoutImages = text;
@@ -2138,18 +2128,18 @@ function buildTables(state: EditorState): DecorationSet {
   const tables = state.field(blockModel).tables.filter((table) => !sourceIsOpen(state, table) && !blockEffectOwns(state, table));
   if (!tables.length) return Decoration.none;
   const ro = state.field(livePreviewReadonly, false) ?? false;
-  const source = state.facet(renderContext).mathSource;
-  const model = source?.model ?? state.field(syntaxModel);
+  const source = sourceOf(state), model = source.model;
   const equations = equationsOf(state);
   // Source version alone changes on every keystroke. Cells depend on prior
   // definitions and reference presentation, not unrelated paragraph edits.
   const referenceKey = tables.some(t => t.key.includes('[[')) ? JSON.stringify(
-    [equations.equations.map(e => [e.id, e.number, e.ambiguous, e.tex]), equations.occurrences.map(o => [o.id, o.number, o.embed])]) : '';
+    [equations.equations.map(e => [e.id, e.number, e.ambiguous, e.tex]), equations.occurrences.map(o => [o.id, o.number, o.embed]),
+      imageEmbeds(model).map(image => [image.from, image.to, image.target, image.number, image.alias])]) : '';
   // Like Obsidian, tables are ALWAYS shown as the interactive widget (never as raw
   // pipes) — editing happens in-cell, so the selection no longer reveals raw.
   const ranges: Range<Decoration>[] = tables.map((t) =>
     sourceBlockReplacement(state, t, new TableWidget(t, ro, JSON.stringify([
-      t.key.includes('[[') ? referenceKey : '', mathDefinitionContext(model, t.to + (source?.from ?? 0)),
+      t.key.includes('[[') ? referenceKey : '', mathDefinitionContext(model, t.to + source.from),
     ]))),
   );
   return Decoration.set(ranges, true);

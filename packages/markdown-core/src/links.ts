@@ -4,6 +4,19 @@ export interface ResolvedTarget extends LinkTarget {
   candidates: string[];
 }
 
+/** Raw wiki fields retain source offsets and alias escapes for property edits. */
+export function wikiLinkParts(raw: string, tableCell = false): { destination: string; alias: string | null; dividerFrom: number; dividerTo: number } {
+  for (let at = 0; at < raw.length; at++) {
+    if (raw[at] !== '|') continue;
+    let escapes = 0;
+    for (let before = at - 1; before >= 0 && raw[before] === '\\'; before--) escapes++;
+    if (!tableCell && escapes % 2) continue;
+    const from = at - (tableCell ? escapes % 2 : 0);
+    return { destination: raw.slice(0, from), alias: raw.slice(at + 1), dividerFrom: from, dividerTo: at + 1 };
+  }
+  return { destination: raw, alias: null, dividerFrom: -1, dividerTo: -1 };
+}
+
 /** The only list of typed content-target ID namespaces. */
 export const CONTENT_TARGET_NAMESPACES = ['heading', 'eq', 'code', 'callout', 'table', 'html', 'range'] as const;
 /** Matches a typed namespace prefix such as `table-` at the start of an ID. */
@@ -15,19 +28,19 @@ export function isGlobalContentTarget(raw: string): boolean {
 }
 
 /** Normalized link destination without alias, as stored in metadata link occurrences. */
-export function wikiDestination(raw: string): string {
-  const target = parseLinkTarget(raw);
+export function wikiDestination(raw: string, tableCell = false): string {
+  const target = parseLinkTarget(raw, tableCell);
   return isGlobalContentTarget(raw) ? target.fragment : target.path + (target.fragment ? '#' + target.fragment : '');
 }
 
-export function parseLinkTarget(raw: string): LinkTarget {
-  const aliasAt = raw.search(/(?<!\\)\|/);
-  const destination = (aliasAt < 0 ? raw : raw.slice(0, aliasAt)).trim();
+export function parseLinkTarget(raw: string, tableCell = false): LinkTarget {
+  const parts = wikiLinkParts(raw, tableCell);
+  const destination = parts.destination.trim();
   const hashAt = destination.indexOf('#');
   return {
     path: (isGlobalContentTarget(destination) ? '' : hashAt < 0 ? destination : destination.slice(0, hashAt)).replace(/\\\|/g, '|').trim(),
     fragment: isGlobalContentTarget(destination) ? destination : hashAt < 0 ? '' : destination.slice(hashAt + 1),
-    alias: aliasAt < 0 ? null : raw.slice(aliasAt + 1).replace(/\\\|/g, '|'),
+    alias: parts.alias?.replace(/\\\|/g, '|') ?? null,
   };
 }
 

@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { PdfSession } from './session';
+import { useStore } from '../store';
 
 const sessions: PdfSession[] = [];
 const listeners = new Set<() => void>();
@@ -10,10 +11,17 @@ export function activatePdfSession(session: PdfSession) {
   active = session; notify();
 }
 export function registerPdfSession(session: PdfSession) {
+  const readDark = () => session.setDark(useStore.getState().pdfDarkPaths.includes(session.path));
+  readDark();
+  const stopStore = useStore.subscribe(readDark);
+  const stopSession = session.subscribe(() => {
+    if (session.getSnapshot().status !== 'destroyed') useStore.getState().setPdfDark(session.path, session.getSnapshot().dark);
+  });
   sessions.push(session); active = session; notify();
   return () => {
     const index = sessions.indexOf(session);
     if (index === -1) return;
+    stopStore(); stopSession();
     sessions.splice(index, 1);
     if (active === session) active = sessions.findLast(candidate => candidate.getSnapshot().status !== 'destroyed') ?? null;
     notify();

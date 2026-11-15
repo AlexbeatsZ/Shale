@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.42 · Cập nhật: 2026-11-14 · Trạng thái: Draft
+> Phiên bản: 1.43 · Cập nhật: 2026-11-15 · Trạng thái: Draft
+> Changelog 1.43 (嵌入属性、图片编号与阅读缩放) 图片属性采用 `![[file.png|别名#width=320#dark]]`，无参开关与英文键值参数共用原生模型，保留 dark、移除 Wiki 特判。图片默认小字图注“图aa-bb 别名或文件名”，普通图片引用显示最近前置显式实例图号，空别名显示原名。图片右键“添加属性”提供勾选/参数与用户 CSS 自定义属性。按当前背景实时过滤图片/PDF，原生 PDF 与连续文档 PDF 支持 Ctrl+滚轮缩放，Markdown 字号滚轮开关默认关闭。修复异步图片粘贴位置并清理已迁移的 Hider/图片旧规则，保留当前 UI 与用户仍依赖的效果。现有 Wiki SVG 按用户后续要求直接永久应用旧 Wiki 颜色变换，保留笔记引用原文。设计见 docs/design/embed-properties.md。
 > Changelog 1.42 (隔离 JavaScript 图表与官方控件) `js-widget` / `javascript-widget` 复用 JavaScript 高亮，编辑和源码展开保留代码块背景。笔记脚本仅在独立 opaque-origin iframe 内执行，禁止访问应用 DOM、Vault 写入、原生桥与网络请求。保留绘图、DOM 交互、生命周期及只读内置组件桥。接入 OpenAI Apps SDK UI 的滑块、按钮、开关、分段选择与配套深浅色图表主题。设计见 docs/design/native-javascript.md。
 > Changelog 1.41 (三端宿主整理与故障恢复) 统一平台身份、宿主能力与导出入口，复用服务端插件请求；服务自行分配端口并在冷建索引期间报告未就绪，正常退出等待文件更新、同步与缓存持久化。修复 Android 选库恢复、同版本资源刷新、UTF-8 路径、返回键与原生导出，桌面启动期关窗、无响应页面关闭及 Tunnel 退出。验证三端构建，按原身份部署 Redmi K70。设计见 docs/design/host-lifecycle.md。
 > Changelog 1.40 (日常构建关闭调试): 日常部署只使用不可调试的正式构建，关闭 Android debuggable、JNI 和 WebView 调试。平板保留原 `.debug` 应用 ID 与原证书以原位升级，不把历史包名/签名误当成构建类型；独立 tabletRelease 使用 release 配置并禁用调试。桌面不以 inspect/remote-debugging 参数启动。

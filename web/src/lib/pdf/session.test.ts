@@ -47,3 +47,19 @@ it('discards a delayed old query after replacement and never publishes after des
   expect(session.getSnapshot()).toBe(destroyed);
   expect(fixture.release).toHaveBeenCalledTimes(1);
 });
+
+it('keeps independent display controls without reloading or resetting PDF search and page', async () => {
+  const session = open(); await session.ready;
+  session.goToPage(4);
+  session.setQuery('needle');
+  await vi.waitFor(() => expect(session.getSnapshot().searchPending).toBe(false));
+  const resource = session.resource, matches = session.getSnapshot().matches;
+  session.setZoom(1.25); session.toggleDark();
+  expect(session.getSnapshot()).toMatchObject({ currentPage: 4, query: 'needle', zoom: 1.25, dark: true });
+  expect(session.getSnapshot().matches).toBe(matches);
+  expect(session.resource).toBe(resource);
+  session.setZoom(99); expect(session.getSnapshot().zoom).toBe(3);
+  session.setZoom(Number.NaN); expect(session.getSnapshot().zoom).toBe(3);
+  session.destroy(); session.setZoom(1); session.toggleDark();
+  expect(session.getSnapshot()).toMatchObject({ status: 'destroyed', zoom: 3, dark: true });
+});

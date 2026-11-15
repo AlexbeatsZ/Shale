@@ -3,6 +3,7 @@ import { parseLinkTarget, wikiDestination } from './links.js';
 import { BODY_HEADING_NODE, BODY_HEADING_LEVEL, bodyHeadingParts } from './bodyHeadings.js';
 import { mathRegions } from './math.js';
 import { decodeHtmlEntity } from './html.js';
+import { isTableCellRange } from './tables.js';
 
 export interface Heading extends SourceSpan { level: number; text: string; kind?: 'body' }
 export interface LinkOccurrence extends SourceSpan {
@@ -29,8 +30,9 @@ export function extractMetadata(source: string | MarkdownModel): Metadata {
   const escaped = (at: number) => { let count = 0; while (at > 0 && text[--at] === '\\') count++; return count % 2 !== 0; };
   for (const match of text.matchAll(/!?\[\[([^\]\n]+?)\]\]/g)) {
     if (intersects(match.index!, match.index! + match[0].length) || escaped(match.index!) || match[1].includes('[[')) continue;
-    const target = parseLinkTarget(match[1]);
-    const destination = wikiDestination(match[1]);
+    const tableCell = isTableCellRange(model, match.index!, match.index! + match[0].length);
+    const target = parseLinkTarget(match[1], tableCell);
+    const destination = wikiDestination(match[1], tableCell);
     linkOccurrences.push({ from: match.index!, to: match.index! + match[0].length, target: destination,
       label: target.alias ?? destination, kind: 'wiki', embed: match[0].startsWith('!') });
     links.add(destination);
@@ -62,6 +64,17 @@ export function extractMetadata(source: string | MarkdownModel): Metadata {
       kind: node.name === 'Autolink' ? 'url' : url ? 'markdown' : 'reference' });
     if (!/^[a-z][a-z\d+.-]*:/i.test(target)) links.add(target);
   });
+  // The native image renderer accepts old Vault filenames containing spaces
+  // without CommonMark's angle brackets. Keep that existing source form in the
+  // shared metadata so captions, property edits and attachment lookup agree.
+  for (const match of text.matchAll(/!\[([^\]\n]*)\]\(([^)\n]+)\)/g)) {
+    const from = match.index!, to = from + match[0].length;
+    if (escaped(from) || intersects(from, to) || linkOccurrences.some(link => from < link.to && to > link.from)) continue;
+    const target = match[2].replace(/\s+"[^"]*"$/, '').trim();
+    if (!/\s/.test(target)) continue;
+    linkOccurrences.push({ from, to, target, label: match[1], embed: true, kind: 'markdown' });
+    if (!/^[a-z][a-z\d+.-]*:/i.test(target)) links.add(target);
+  }
   for (const match of text.matchAll(/\b(?:https?:\/\/|mailto:)[^\s<>"\[\]]+/g)) {
     const from = match.index!, target = match[0].replace(/[.,;!?]+$/, ''), to = from + target.length;
     if (!intersects(from, to) && !linkOccurrences.some(link => from < link.to && to > link.from))

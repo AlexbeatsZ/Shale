@@ -1,5 +1,28 @@
 # Vault-defined block effects
 
+## Generated cells retain explicit source ranges (2026-11-15)
+
+Trusted configuration scripts can call `block.renderMarkdown(markdown, element, sourceRange)`
+with the original `TableCell` or another exact `SourceSpan` inside their current block.
+The host checks integer boundaries, block ownership and an exact source-text match before
+passing the owning note's full `mathSource` and equation context to the shared fragment.
+The existing two-argument generated-Markdown call retains its behavior. Source text alone
+does not identify a cell because equal-source siblings have independent image numbers.
+
+The block host intercepts generated-image context menus during capture and maps their
+explicit cell range into the current parent editor. Image attribute transactions use that
+parent's version/read-only checks and existing history. Relative cell offsets follow mapped
+block identity after prefix edits. The current cell text must still match before routing.
+The owning note's image signature invalidates effect output when figure numbering changes.
+
+The personal `merged-table.js` now retains each anchor's original cell as `sourceRange` and
+passes it as the third argument when `block.supportsSourceRanges` is true. Earlier hosts
+receive `undefined` and keep their original default RenderContext argument during a mixed-version
+Vault synchronization. This is a Vault configuration dependency, alongside the
+repository regression fixture. The iframe message dispatcher for note JavaScript continues
+to accept its existing generated-text operation. Source ranges enter through the trusted
+configuration-block host.
+
 ## Built-in query and fence selection (2026-10-25)
 
 `queryBlock.ts` registers the built-in query language through the existing code

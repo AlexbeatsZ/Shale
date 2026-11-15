@@ -16,7 +16,8 @@
 .pdf-page-slot { position:relative; margin:0 auto 20px; background:white; box-shadow:0 1px 5px #0003; }
 .pdf-page-surface { position:relative; background:white; color:#111; overflow:hidden; }
 .pdf-page-paint { position:absolute; inset:0; }
-.pdf-page-paint canvas { display:block; max-width:none; }
+.pdf-page-paint canvas { display:block; max-width:none; filter:var(--embed-filter,none); }
+.pdf-page-surface[data-pdf-dark] { background:var(--embed-paper,white); }
 .pdf-match-layer { position:absolute; inset:0; pointer-events:none; }
 .pdf-match { position:absolute; background:#ffd54f88; box-shadow:0 0 0 1px #c8972244; }
 .pdf-match.is-selected { background:#fb923c99; box-shadow:0 0 0 1px #b45309; }

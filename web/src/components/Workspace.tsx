@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore, GRAPH_PATH, isHomepagePath } from '../lib/store';
 import { api } from '../lib/api';
-import { documents } from '../lib/documents';
 import { activateNavigation } from '../lib/activeEditor';
 import { isFolderPath } from '../lib/tree';
 import { VIDEO_EXT_RE, AUDIO_EXT_RE } from '../lib/media';
@@ -14,6 +13,8 @@ import StatusBar from './StatusBar';
 import WorkspaceLauncher from './WorkspaceLauncher';
 import VirtualDocumentView from './VirtualDocumentView';
 import { findNode } from '../lib/tree';
+import { EditorView } from '@codemirror/view';
+import { insertImageFiles } from '../lib/attachmentImages';
 
 function EditorPane({ path: activePath, navigationId }: { path: string; navigationId: 'main' | 'split' }) {
   const collection = useStore(state => findNode(state.tree, activePath)?.virtualDocument);
@@ -74,7 +75,6 @@ export default function Workspace() {
   const activePath = useStore((s) => s.activePath);
   const splitPath = useStore((s) => s.splitPath);
 
-  const notify = useStore((s) => s.notify);
   const splitDirection = useStore((s) => s.splitDirection);
   const tree = useStore((s) => s.tree);
   const activeIsHome = isHomepagePath(activePath);
@@ -128,45 +128,19 @@ export default function Workspace() {
     else if ((target.view === 'split' ? s.splitPath : s.activePath) !== path) void s.openFile(path, true, target.view);
   };
 
-  // Paste / drop image → upload to attachments and insert an embed.
-  const handleFiles = async (files: FileList | File[], sourcePath: string) => {
-    const session = documents.get(sourcePath);
-    if (!session || session.snapshot.locked) return;
-    for (const file of Array.from(files)) {
-      if (!file.type.startsWith('image/')) continue;
-      try {
-        const { path } = await api.upload(file, undefined, sourcePath);
-        if (documents.get(session.id) !== session) throw new Error(`笔记已关闭，附件已保存到 ${path}`);
-        session.setRawText(`${session.snapshot.raw}\n![[${path}]]\n`);
-        notify(`已插入 ${path}`);
-      } catch (e: any) {
-        notify(e.message);
-      }
-    }
-  };
-  const onPaste = (e: React.ClipboardEvent) => {
-    // Chromium names raw clipboard bitmaps image.png; name those like Obsidian's pasted
-    // images. Copied files keep their own names (the server still avoids replacement).
-    const imgs = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith('image/')).map((f) => {
-      if (f.name !== 'image.png') return f;
-      const stamp = new Date(), pad = (n: number) => String(n).padStart(2, '0');
-      const time = `${stamp.getFullYear()}${pad(stamp.getMonth() + 1)}${pad(stamp.getDate())}${pad(stamp.getHours())}${pad(stamp.getMinutes())}${pad(stamp.getSeconds())}`;
-      return new File([f], `Pasted image ${time}.png`, { type: f.type });
-    });
-    if (imgs.length) {
-      e.preventDefault();
-      void handleFiles(imgs, (e.target as Element).closest<HTMLElement>('[data-document-id]')?.dataset.documentId ?? activePath ?? '');
-    }
-  };
+  // Paste uses each MarkdownView's clipboard handler, including sidebar embeds.
   const onDrop = (e: React.DragEvent) => {
     if (e.dataTransfer.files.length) {
       e.preventDefault();
       if ((e.target as Element).closest('[data-mode="reading"]')) return;
-      void handleFiles(e.dataTransfer.files, (e.target as Element).closest<HTMLElement>('[data-document-id]')?.dataset.documentId ?? activePath ?? '');
+      const editor = (e.target as Element).closest<HTMLElement>('.cm-editor');
+      const view = editor && EditorView.findFromDOM(editor);
+      if (view) void insertImageFiles(view, Array.from(e.dataTransfer.files), false,
+        view.posAtCoords({ x: e.clientX, y: e.clientY }) ?? undefined);
     }
   };
   return (
-    <div className="workspace" ref={workspace} onPaste={onPaste} onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
+    <div className="workspace" ref={workspace} onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
       <div className={`editor-area ${splitDirection === 'down' ? 'split-down' : ''}`}
         onDragOverCapture={onTabDragOver} onDropCapture={onTabDrop}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrop(null); }}>

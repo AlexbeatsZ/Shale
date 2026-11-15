@@ -5,6 +5,7 @@ import { printDocument } from './printDocument';
 import { createVaultRenderContext } from './vaultRenderContext';
 import { requestHotkeySettings } from './search';
 import { getPdfSession } from './pdf/react';
+import { pdfFilterCommand } from './pdf/commands';
 import { contentReferenceCommands } from './contentReferenceCommands';
 import { addCurrentMcpContext } from './review/client';
 
@@ -30,6 +31,7 @@ async function focusPane(direction: number) {
   if (target) { const view = target.view as import('./obsidian/workspace').MarkdownView; view.editor?.focus(); }
 }
 export const nativeWorkspaceCommands: NativeCommand[] = [
+  pdfFilterCommand,
   ...contentReferenceCommands,
   { id: 'vault-switch', title: '切换仓库', run: () => {
     useStore.getState().setSettings(true);

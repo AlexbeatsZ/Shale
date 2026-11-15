@@ -7,6 +7,7 @@ import { readingWindow, type VirtualDocument, type VirtualSource } from '../lib/
 import { VirtualReadingSession, registerVirtualReading, type ReadingTarget } from '../lib/virtualReading';
 import { PdfSession } from '../lib/pdf/session';
 import { registerPdfSession, usePdfSnapshot } from '../lib/pdf/react';
+import { usePdfZoom } from '../lib/pdf/zoom';
 import { PageSlot } from './PdfViewer';
 import MarkdownView from './MarkdownView';
 import { useDocumentSession } from '../lib/useDocumentSession';
@@ -138,6 +139,12 @@ function VirtualTextEditor({ path, reader, mode, target, layoutVersion = 0, conf
   </div>;
 }
 
+function scrollToPdfPage(host: HTMLElement | null, page: number) {
+  const slot = host?.querySelector<HTMLElement>(`[data-page-number="${page}"]`);
+  slot?.scrollIntoView({ block: 'start' });
+  return slot;
+}
+
 function PdfChapter({ source, reader, root, width, target, layoutVersion, onLayoutScroll }: { source: VirtualSource; reader: VirtualReadingSession;
   root: RefObject<HTMLDivElement>; width: number; target?: ReadingTarget; layoutVersion: number; onLayoutScroll: (delta: number) => void }) {
   const session = useMemo(() => new PdfSession(source.path, 'virtual:' + reader.viewId), [source.path, reader.viewId]);
@@ -149,7 +156,7 @@ function PdfChapter({ source, reader, root, width, target, layoutVersion, onLayo
   useEffect(() => {
     if (state.status !== 'ready' || !target?.page) return;
     const frame = requestAnimationFrame(() => {
-      host.current?.querySelector<HTMLElement>(`[data-page-number="${target.page}"]`)?.scrollIntoView({ block: 'start' });
+      scrollToPdfPage(host.current, target.page!);
       session.observePage(target.page!);
     });
     return () => cancelAnimationFrame(frame);
@@ -236,17 +243,27 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
   const stream = reader.document.streams.find(stream => stream.id === state.stream)!;
   const root = useRef<HTMLDivElement>(null), cover = useRef<HTMLElement>(null);
   const progress = reader.progress();
-  const [heights, setHeights] = useState(() => progress?.stream === stream.id && progress.heights.length === stream.files.length ? progress.heights : stream.files.map(file => file.kind === 'pdf' ? 1400 : Math.max(800, Math.min(16000, file.size / 2))));
+  const [layout, setLayout] = useState(() => ({ zoom: state.pdfZoom,
+    heights: progress?.stream === stream.id && progress.heights.length === stream.files.length ? progress.heights
+      : stream.files.map(file => file.kind === 'pdf' ? 1400 : Math.max(800, Math.min(16000, file.size / 2))) }));
+  const measuredLayout = useRef(layout);
+  // An external-store zoom update renders synchronously. Derive placeholders in
+  // that same render, retaining measurements whose normal state commit is pending.
+  // PDF outline updates can re-render between ResizeObserver entries in one batch.
+  const heights = measuredLayout.current.zoom === state.pdfZoom ? measuredLayout.current.heights : measuredLayout.current.heights.map((height, index) =>
+    stream.files[index].kind === 'pdf' ? height * state.pdfZoom / measuredLayout.current.zoom : height);
   const heightRef = useRef(heights); heightRef.current = heights;
   const layoutVersion = useRef(0);
   const [window, setWindow] = useState({ first: 0, last: 1 });
   const [width, setWidth] = useState(760);
   const stale = useStore(state => state.vaultSessionStale);
   const navigating = useRef(false);
+  const zooming = useRef(false);
   const navigationIndex = useRef<number | null>(null);
   const anchor = useRef<{ index: number; offset: number } | null>(null);
   const observedTop = useRef(0);
   const correcting = useRef(false), correctionFrame = useRef(0), releaseFrame = useRef(0), navigationFrame = useRef(0);
+  const pendingPredecessorCorrection = useRef(false);
   const noteScrollDelta = () => {
     const element = root.current;
     if (!element) return;
@@ -259,6 +276,7 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
     const element = root.current;
     if (!element) return;
     noteScrollDelta();
+    if (pendingPredecessorCorrection.current) return;
     // Until a real input releases navigation, only the requested source owns
     // the anchor. A transient DOM position must not rewrite its offset either.
     if (navigationIndex.current !== null) return;
@@ -296,21 +314,29 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
     // Navigation already mounts the target and both neighbours. Recomputing
     // from an expanded DOM and an as-yet unmeasured height table can evict the
     // predecessor and clamp scrollTop before its correction has committed.
-    if (!element || correcting.current || navigationIndex.current !== null) return;
+    if (!element || correcting.current || pendingPredecessorCorrection.current || navigationIndex.current !== null) return;
     setWindow(readingWindow(heightRef.current, Math.max(0, element.scrollTop - (cover.current?.offsetHeight ?? 0)), element.clientHeight));
   };
   const restoreAnchor = () => {
     correcting.current = true;
     cancelAnimationFrame(correctionFrame.current); cancelAnimationFrame(releaseFrame.current);
     correctionFrame.current = requestAnimationFrame(() => {
+      if (pendingPredecessorCorrection.current) return;
       noteScrollDelta();
       const element = root.current, current = anchor.current;
       const slot = element?.querySelectorAll<HTMLElement>('[data-virtual-source]')[current?.index ?? -1];
       if (element && current && slot) {
-        element.scrollTop += slot.getBoundingClientRect().top - element.getBoundingClientRect().top + current.offset;
+        const target = reader.getSnapshot().target;
+        const page = navigationIndex.current === current.index && target?.path === stream.files[current.index]?.path && target.page;
+        if (page && scrollToPdfPage(slot, page)) {
+          current.offset = element.getBoundingClientRect().top - slot.getBoundingClientRect().top;
+        } else element.scrollTop += slot.getBoundingClientRect().top - element.getBoundingClientRect().top + current.offset;
         observedTop.current = element.scrollTop;
       }
-      releaseFrame.current = requestAnimationFrame(() => { correcting.current = false; captureAnchor(); updateWindow(); });
+      releaseFrame.current = requestAnimationFrame(() => {
+        if (pendingPredecessorCorrection.current) return;
+        correcting.current = false; captureAnchor(); updateWindow();
+      });
     });
   };
   useLayoutEffect(() => {
@@ -327,7 +353,12 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
       noteScrollDelta();
       cancelAnimationFrame(frame); frame = requestAnimationFrame(() => { if (!correcting.current && !navigating.current) captureAnchor(); updateWindow(); });
     };
-    const userScroll = () => {
+    const userScroll = (event: Event) => {
+      if (event instanceof KeyboardEvent && !['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key)) return;
+      // PDF zoom releases navigation together with its page anchor in beforeChange.
+      // Releasing on Control or on the earlier wheel listener exposes pending chapter measurements.
+      if (event instanceof WheelEvent && event.ctrlKey && !event.metaKey && !event.altKey && event.deltaY
+        && (event.target as Element).closest('.virtual-pdf-pages')) return;
       cancelAnimationFrame(navigationFrame.current);
       navigating.current = false;
       navigationIndex.current = null;
@@ -368,16 +399,28 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
     if (Math.abs(old - height) < 2) return;
     noteScrollDelta();
     layoutVersion.current++;
-    const next = [...heightRef.current]; next[index] = height; heightRef.current = next; setHeights(next);
-    if (anchor.current && index < anchor.current.index) restoreAnchor();
-    else updateWindow();
+    const next = [...heightRef.current]; next[index] = height; heightRef.current = next;
+    if (anchor.current && index < anchor.current.index) {
+      pendingPredecessorCorrection.current = true;
+      correcting.current = true;
+    }
+    measuredLayout.current = { zoom: state.pdfZoom, heights: next };
+    setLayout(measuredLayout.current);
   };
+  useLayoutEffect(() => {
+    // React can commit normal height state after the next animation frame.
+    // Restore only once the corresponding section minHeight is present in the DOM.
+    if (pendingPredecessorCorrection.current) {
+      pendingPredecessorCorrection.current = false;
+      restoreAnchor();
+    } else updateWindow();
+  }, [layout]);
   const pageLayoutScroll = (index: number, delta: number) => {
     // A predecessor PDF's full height is already handled by restoreAnchor.
     // While seeking, the requested source/page remains the only scroll owner.
     // Otherwise preserve a page within the current PDF without treating its
     // own layout compensation as fresh wheel/touch input.
-    if (!root.current || !anchor.current || anchor.current.index !== index || navigationIndex.current !== null) return;
+    if (zooming.current || !root.current || !anchor.current || anchor.current.index !== index || navigationIndex.current !== null) return;
     noteScrollDelta();
     const before = root.current.scrollTop;
     root.current.scrollTop += delta;
@@ -401,13 +444,39 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
       if (slot) current.offset = element.getBoundingClientRect().top - slot.getBoundingClientRect().top;
     } else restoreAnchor();
   };
+  usePdfZoom(root, {
+    zoom: state.pdfZoom,
+    setZoom: reader.setPdfZoom,
+    accepts: event => !!(event.target as Element).closest('.virtual-pdf-pages'),
+    beforeChange: (_next, _previous, page) => {
+      noteScrollDelta();
+      cancelAnimationFrame(navigationFrame.current); cancelAnimationFrame(correctionFrame.current); cancelAnimationFrame(releaseFrame.current);
+      const path = page.closest<HTMLElement>('[data-virtual-source]')?.dataset.virtualSource;
+      const index = stream.files.findIndex(source => source.path === path);
+      navigating.current = false; correcting.current = true; zooming.current = true;
+      navigationIndex.current = index >= 0 ? index : null;
+      reader.releaseTarget();
+    },
+    afterChange: page => {
+      const element = root.current;
+      const source = page.closest<HTMLElement>('[data-virtual-source]');
+      const index = stream.files.findIndex(item => item.path === source?.dataset.virtualSource);
+      if (element && source && index >= 0) {
+        anchor.current = { index, offset: element.getBoundingClientRect().top - source.getBoundingClientRect().top };
+        observedTop.current = element.scrollTop;
+        reader.activateSource(stream.files[index].path);
+      }
+      zooming.current = false; correcting.current = pendingPredecessorCorrection.current; navigationIndex.current = null;
+      updateWindow();
+    },
+  });
   if (stale) return <p role="alert">Vault 已切换，请重新加载；源文件草稿保留。</p>;
-  return <div ref={root} className="virtual-document-scroll" tabIndex={0} aria-label="连续文档阅读">
+  return <div ref={root} className="virtual-document-scroll" tabIndex={0} aria-label="连续文档阅读" data-pdf-zoom={state.pdfZoom}>
     <article ref={cover} className="virtual-document-cover">
       <CoverIndex reader={reader} stream={stream} />
     </article>
     {stream.files.map((source, index) => <SourceSlot key={source.path} source={source} mounted={index >= window.first && index <= window.last}
-      estimate={heights[index]} onMeasure={height => measured(index, height)} reader={reader} root={root} width={width}
+      estimate={heights[index]} onMeasure={height => measured(index, height)} reader={reader} root={root} width={Math.max(180, width * state.pdfZoom)}
       onLayoutScroll={delta => pageLayoutScroll(index, delta)}
       editorLayoutScroll={{ read: editorLayoutRead, commit: before => editorLayoutCommit(index, before) }}
       layoutVersion={layoutVersion.current} mode={state.mode}

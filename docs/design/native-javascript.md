@@ -51,6 +51,19 @@ affect the renderer process.
 Sources are https://github.com/openai/apps-sdk-ui and
 https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/iframe.
 
+
+## Configured table fragment sources (2026-11-15)
+
+Vault-owned block definitions can pass the original TableCell span as the third
+argument to `block.renderMarkdown(markdown, element, sourceRange)`. The host
+validates the span against the current block and exact source text, then passes
+the existing full model, offset and equation context into the shared fragment.
+This retains image instance numbering and escaped Wiki aliases in generated
+cells. The owning block captures image context menus and submits changes through
+its parent editor transaction. Read-only parents retain their existing boundary.
+The two-argument configured-block API continues to render generated text. The
+isolated note chart dispatcher retains its existing capability set.
+
 ## Fragment failure settlement (2026-10-25)
 
 JavascriptRun.renderMarkdown forwards the shared fragment's onError and rejects

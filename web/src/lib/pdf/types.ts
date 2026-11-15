@@ -11,6 +11,8 @@ export interface PdfSnapshot {
   pageCount: number;
   currentPage: number;
   navigation: number;
+  zoom: number;
+  dark: boolean;
   outline: readonly PdfOutlineEntry[];
   outlineError: string;
   query: string;

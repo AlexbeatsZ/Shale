@@ -162,6 +162,27 @@ test('real Appearance entry updates both mounted modes, title and formulas witho
   await page.screenshot({ path: info.outputPath('appearance-both-modes.png') });
 });
 
+test('Ctrl wheel font sizing defaults off and becomes a persisted Appearance option', async ({ page, backend }) => {
+  const body = page.locator('.main-pane .cm-content');
+  const initial = await page.locator('.status-bar').evaluate(element => getComputedStyle(element).fontSize);
+  await body.hover();
+  await page.keyboard.down('Control'); await page.mouse.wheel(0, -120); await page.keyboard.up('Control');
+  await expect(body).toHaveCSS('font-size', '18px');
+  await openAppearance(page);
+  const option = page.getByRole('checkbox', { name: 'Ctrl＋滚轮调整正文字号', exact: true });
+  await expect(option).not.toBeChecked(); await option.check();
+  await expect(page.locator('.settings-content [role="status"]')).toHaveText('已保存');
+  await page.getByRole('button', { name: '关闭设置' }).click();
+  await body.hover();
+  await page.keyboard.down('Control'); await page.mouse.wheel(0, -120); await page.keyboard.up('Control');
+  for (const pane of ['main-pane', 'split-pane']) await expect(page.locator(`.${pane} .cm-content`)).toHaveCSS('font-size', '19px');
+  await expect.poll(async () => JSON.parse(await fs.readFile(path.join(backend.data, 'settings.json'), 'utf8')).ui)
+    .toMatchObject({ ctrlWheelFontSize: true, fontTextSize: 19 });
+  expect(await page.locator('.status-bar').evaluate(element => getComputedStyle(element).fontSize)).toBe(initial);
+  await page.reload(); await expect(body).toHaveCSS('font-size', '19px');
+  await page.waitForLoadState('networkidle');
+});
+
 test('appearance persists to the real settings file, survives reload and resets through the UI', async ({ page, backend }, info) => {
   await openAppearance(page);
   await change(page, 'size', '26'); await change(page, 'width', '1024');

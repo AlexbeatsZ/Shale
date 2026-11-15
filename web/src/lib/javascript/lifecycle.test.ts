@@ -3,6 +3,7 @@ import { JavascriptRun } from './runtime';
 import { Component, Events } from '../obsidian/events';
 import type { App } from '../obsidian/runtime';
 import { nonExecutingContext, type RenderContext } from '../renderContext';
+import { analyzeMarkdown, equationContext } from '@webobsidian/markdown-core';
 
 function fixture() {
   const vault = new Events(), remove = vi.fn();
@@ -86,4 +87,18 @@ it('preserves execution denial through every embedded context', async () => {
     expect(restricted.allowScriptExecution).toBe(false); expect(restricted.allowPlugins).toBe(false);
     const child = await restricted.renderEmbed('B.md', new AbortController().signal); restricted = child!.context;
   }
+});
+
+it('forwards host-validated source context to a non-executing Markdown fragment', async () => {
+  const { run, context } = fixture(), model = analyzeMarkdown('# Chapter\n\n![[image.png|caption]]');
+  const from = model.text.indexOf('![[image.png'), equations = equationContext(model, from);
+  let options: Parameters<NonNullable<RenderContext['mountFragment']>>[2];
+  context.allowScriptExecution = true;
+  context.mountFragment = (_host, _source, next) => { options = next; queueMicrotask(() => next.onReady?.()); return () => {}; };
+  await run.renderMarkdown(model.text.slice(from), undefined, context, { sourceFrom: from, mathSource: { model, from }, equations });
+  expect(options!.sourceFrom).toBe(from);
+  expect(options!.mathSource).toEqual({ model, from });
+  expect(options!.equations).toBe(equations);
+  expect(options!.context?.allowScriptExecution).toBe(false);
+  run.unload();
 });

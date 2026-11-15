@@ -57,8 +57,6 @@
   --document-nested-surface: #f5f5f5;
   --document-border: hsl(0 0% 88%);
   --document-pure: #000000;
-  --document-image-filter: invert(100%) contrast(130.77%) hue-rotate(180deg);
-  --callout-image-filter: invert(100%) contrast(125.6%) hue-rotate(180deg);
   --color-base-00: #ffffff;
   --color-base-05: #fcfcfc;
   --color-base-10: #fafafa;
@@ -158,8 +156,6 @@
   --document-nested-surface: #2c2c2c;
   --document-border: hsl(0 0% 28%);
   --document-pure: #ffffff;
-  --document-image-filter: none;
-  --callout-image-filter: brightness(1.233) contrast(1);
   --color-base-00: #1e1e1e;
   --color-base-05: #212121;
   --color-base-10: #242424;
@@ -1682,7 +1678,7 @@ html[data-desktop-titlebar] .app.mobile .drawer-backdrop { top: 32px; }
     display: block !important; background: #fff !important; }
   .markdown-source-view, .markdown-preview { color: #000 !important; }
   .cm-host { height: auto !important; }
-  .cm-image-wrap:is([data-image-dark], [data-image-wiki]) > img { filter: none !important; }
+  .cm-image-wrap[data-image-dark] > img { filter: none !important; }
   .cm-host .chem-cell svg { filter: invert(100%) hue-rotate(180deg) contrast(1.3); }
   @page { margin: 16mm; }
 }
@@ -1691,21 +1687,14 @@ html[data-desktop-titlebar] .app.mobile .drawer-backdrop { top: 32px; }
 .cm-image-row { display: flex; align-items: flex-end; width: fit-content; }
 .cm-image-row > .cm-image-wrap { flex: none; }
 .cm-image-wrap { position: relative; display: inline-block; max-width: 100%; line-height: 0; vertical-align: bottom; }
-.cm-image-wrap::after { content: attr(data-image-caption); display: block; margin: 0.5rem 0 0; font-size: 0.65rem; line-height: 1.2; color: var(--text-muted); text-align: center; overflow-wrap: anywhere; }
-.cm-image-wrap[data-image-caption=""]::after { display: none; }
-.cm-image-wrap > img { filter: var(--document-image-filter); zoom: var(--image-scale, 1); }
-.cm-image-wrap > img[alt*="."] { max-height: 100vh; object-fit: cover; }
-.cm-image-wrap:is([data-image-full], [data-image-svg]) { max-width: none; --image-max-width: none; }
-.cm-image-wrap[data-image-svg] > img { width: auto !important; }
+.cm-image-caption { display: block; margin: 0.5rem 0 0; font-size: 0.65rem; line-height: 1.2; color: var(--text-muted); text-align: center; overflow-wrap: anywhere; white-space: normal; }
+.cm-image-wrap > img { filter: var(--embed-filter, none); zoom: var(--image-scale, 1); object-fit: var(--image-fit, contain); }
+.cm-image-wrap[data-image-full] { max-width: none; --image-max-width: none; }
 .cm-image-wrap[data-image-center] { display: block; width: fit-content; margin-inline: auto; }
-.cm-image-row:has(> [data-image-center]) { display: block; width: auto; }
-.md-callout .cm-image-wrap:not([data-image-svg]) > img { filter: var(--callout-image-filter); }
-/* The original STEM conventions deliberately match both filenames and fragments. */
-.theme-dark .cm-image-wrap[data-image-dark] > img { filter: invert(88.235%) hue-rotate(180deg); }
-.theme-dark .cm-image-wrap[data-image-wiki] > img { filter: invert(100%) hue-rotate(180deg); }
-.theme-dark .md-callout .cm-image-wrap[data-image-dark] > img { filter: invert(88.235%) hue-rotate(180deg) brightness(1.233) contrast(1); }
-.theme-light .cm-image-wrap:is([data-image-dark], [data-image-wiki]) > img { filter: none; }
+.cm-image-wrap[data-image-align="right"] { display: block; width: fit-content; margin-inline-start: auto; }
+.cm-image-row:has(> :is([data-image-center],[data-image-align="right"])) { display: block; width: auto; }
 .cm-image-wrap img.cm-embed-image { max-width: var(--image-max-width, 100%); height: auto; border-radius: var(--radius); cursor: zoom-in; display: block; margin: 6px 0; }
+.cm-table .cm-image-wrap:has(> img[width]) { max-width: none; --image-max-width: none; }
 .cm-table-wrap { display: block; width: fit-content; min-width: 100%; max-width: none; padding: 8px 0 18px; }
 .cm-table-frame { position: relative; width: fit-content; }
 .cm-table .cm-col-handle, .cm-table .cm-row-handle { position: absolute; z-index: 3; display: grid; place-items: center;
@@ -1768,6 +1757,7 @@ audio.media-embed { display: block; width: min(100%, 480px); max-width: 100%; ma
   position: absolute; top: 0; left: 0;
   transform-origin: 0 0; cursor: grab;
   will-change: transform; -webkit-user-drag: none;
+  filter: var(--embed-filter, none);
 }
 .image-lightbox-img:active { cursor: grabbing; }
 .image-lightbox-close {

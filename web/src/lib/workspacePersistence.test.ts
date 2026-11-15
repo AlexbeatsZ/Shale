@@ -35,6 +35,16 @@ beforeEach(async () => {
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('workspace persistence acknowledgements', () => {
+  it('restores PDF dark properties and persists subsequent changes through the shared workspace state', async () => {
+    host.getUiState.mockResolvedValue({ pdfDarkPaths: ['paper.pdf', null, 42] });
+    await workspace.useStore.getState().loadUiState();
+    expect(workspace.useStore.getState().pdfDarkPaths).toEqual(['paper.pdf']);
+    workspace.useStore.getState().setPdfDark('other.pdf', true);
+    workspace.useStore.getState().setPdfDark('paper.pdf', false);
+    await workspace.flushWorkspaceState();
+    expect(host.putUiState.mock.calls.at(-1)?.[0].pdfDarkPaths).toEqual(['other.pdf']);
+  });
+
   it('retries an unchanged desired snapshot after failure instead of acknowledging the attempt', async () => {
     await workspace.useStore.getState().loadUiState();
     host.putUiState.mockRejectedValueOnce(new Error('HTTP 500'));

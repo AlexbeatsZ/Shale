@@ -4,7 +4,17 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-14 (0.1.69 deployment to reachable devices)
+Cập nhật lần cuối: 2026-11-15 (embed properties and reading controls)
+
+## Embed properties and reading controls (PRD 1.43)
+- [x] Unify image source properties, numbered captions and implicit image references
+- [x] Add image property context menus and Vault-owned custom property CSS
+- [x] Apply background-aware dark filtering to images and native/continuous PDF pages
+- [x] Repair asynchronous image paste/drop insertion and preserve source/history ownership
+- [x] Add PDF Ctrl+wheel zoom and a default-off Markdown Ctrl+wheel font-size setting
+- [x] Remove migrated Hider/image rules, preserve current UI and report remaining dependencies
+- [x] Verify shared source, native renderer, PDF/virtual navigation and image regressions
+- [~] Build and publish the new native version
 
 ## Isolated JavaScript charts and OpenAI controls (PRD 1.42)
 - [x] Restore JavaScript highlighting and fenced backgrounds in widget source editing

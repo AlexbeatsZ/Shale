@@ -1,4 +1,5 @@
-import type { MarkdownModel, SourceSpan } from '@webobsidian/markdown-core';
+import { imageCaption, imageName, parseImageParameters, type ImageEmbed, type MarkdownModel, type SourceSpan } from '@webobsidian/markdown-core';
+import { bindDarkMedia } from './mediaFilter';
 
 interface MarkdownImage extends SourceSpan { alt: string; altTo: number; target: string }
 const markdownImages = new WeakMap<MarkdownModel, Map<number, MarkdownImage>>();
@@ -28,31 +29,35 @@ export function markdownImageAt(model: MarkdownModel, from: number): MarkdownIma
 
 /** Presentation metadata is kept separate from the resolved/request URL. */
 export function imagePresentation(target: string, alt: string) {
-  const dataImage = /^data:image\//i.test(target);
-  // Encoded SVG text/base64 is image content, never a filename/theme marker.
-  const presentation = dataImage ? '' : target;
-  const path = presentation.split(/[?#]/)[0];
-  let scale = 1;
-  for (const value of [1.5, 2, 0.5]) if (presentation.includes('#x' + value)) scale = value;
+  const parameters = parseImageParameters(target, alt);
+  const path = parameters.target.split(/[?#]/)[0];
   return {
-    target, alt,
-    // Preserve the active STEM rule: only .jpg/.png filename alts are suppressed.
-    caption: alt && !alt.endsWith('.jpg') && !alt.endsWith('.png') ? alt : '',
+    ...parameters, alt,
+    caption: parameters.alias?.trim() || imageName(parameters.target),
     svg: /\.svg$/i.test(path) || /^data:image\/svg\+xml(?:[;,])/i.test(target),
-    center: presentation.includes('#center'), full: presentation.includes('#full'), scale,
-    dark: presentation.includes('dark'), wiki: presentation.includes('Wiki'),
+    center: parameters.align === 'center',
   };
 }
 
-export function applyImagePresentation(wrap: HTMLElement, target: string, alt: string): void {
+export function applyImagePresentation(wrap: HTMLElement, target: string, alt: string, instance?: ImageEmbed): void {
   const image = imagePresentation(target, alt);
+  const parameters = instance?.parameters ?? image;
   wrap.classList.add('cm-image-wrap');
   wrap.dataset.imageSource = target;
-  wrap.dataset.imageCaption = image.caption;
-  for (const key of ['svg', 'center', 'full', 'dark', 'wiki'] as const) {
-    wrap.toggleAttribute('data-image-' + key, image[key]);
-  }
-  wrap.style.setProperty('--image-scale', String(image.scale));
+  wrap.dataset.imageCaption = instance ? imageCaption(instance) : image.caption;
+  if (instance) wrap.dataset.imageNumber = instance.number;
+  wrap.toggleAttribute('data-image-svg', image.svg);
+  wrap.toggleAttribute('data-image-center', parameters.align === 'center');
+  wrap.toggleAttribute('data-image-full', parameters.full);
+  wrap.toggleAttribute('data-image-dark', parameters.dark);
+  wrap.dataset.imageAlign = parameters.align;
+  wrap.style.setProperty('--image-scale', String(parameters.scale));
+  wrap.style.setProperty('--image-fit', parameters.fit);
+  for (const [name, value] of Object.entries(parameters.attributes))
+    if (/^[a-z][a-z0-9-]*$/.test(name) && value === true) wrap.classList.add('embed-property-' + name);
+  const caption = wrap.ownerDocument.createElement('span');
+  caption.className = 'cm-image-caption'; caption.textContent = wrap.dataset.imageCaption;
+  wrap.append(caption);
 }
 
 /** HTML images receive the same presentation as Markdown images after sanitizing. */
@@ -61,7 +66,9 @@ export function presentHtmlImages(host: HTMLElement, targets: string[], onLoad: 
     const wrap = img.ownerDocument.createElement('span');
     applyImagePresentation(wrap, targets[index] ?? img.getAttribute('src') ?? '', img.alt);
     img.classList.add('cm-embed-image');
-    img.replaceWith(wrap); wrap.appendChild(img);
+    img.replaceWith(wrap); wrap.prepend(img);
+    const stop = bindDarkMedia(wrap, () => wrap.hasAttribute('data-image-dark'));
+    signal.addEventListener('abort', stop, { once: true });
     img.addEventListener('load', onLoad, { once: true, signal });
     img.addEventListener('error', onLoad, { once: true, signal });
   });

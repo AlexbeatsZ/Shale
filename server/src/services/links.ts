@@ -108,7 +108,19 @@ export function resolveLink(target: string, sourcePath = ''): string | undefined
 
 /** Notes that link *to* the given vault-relative path. */
 export function backlinksFor(relative: string): string[] {
-  return [...(graph.incoming.get(relative) ?? [])].filter((source) => source !== relative).sort();
+  const incoming = new Set(graph.incoming.get(relative));
+  // Attachments use the existing dependency graph, whose source metadata already
+  // includes image embeds. Recheck only candidates affected by this path.
+  if (!/\.(?:md|markdown)$/i.test(relative)) {
+    const candidates = new Set<string>();
+    for (const key of catalog.targets.keysFor(relative))
+      for (const source of graph.dependencies.get(key) ?? []) candidates.add(source);
+    for (const source of candidates) if (catalog.notes.get(source)?.links.some(raw => {
+      const target = catalog.resolve(raw, source);
+      return target.status === 'resolved' && target.path === relative;
+    })) incoming.add(source);
+  }
+  return [...incoming].filter((source) => source !== relative).sort();
 }
 
 /** node kinds drive client-side filtering (Tags / Attachments / Existing files only). */

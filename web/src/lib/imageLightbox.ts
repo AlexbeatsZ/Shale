@@ -1,4 +1,6 @@
 import { registerBackHandler } from './host';
+import type { ImageParameters } from '@webobsidian/markdown-core';
+import { bindDarkMedia } from './mediaFilter';
 /**
  * Full-screen image viewer (lightbox) — opens on image click in BOTH Live Preview
  * and Reading view. Wheel/pinch zoom toward the cursor/focal point, drag (or
@@ -13,10 +15,12 @@ const MAX_SCALE = 16;
 let stopBack: (() => void) | undefined;
 let overlay: HTMLDivElement | null = null;
 let keyHandler: ((e: KeyboardEvent) => void) | null = null;
+let stopFilter: (() => void) | undefined;
 
 export function closeLightbox(): void {
   if (!overlay) return;
   stopBack?.(); stopBack = undefined;
+  stopFilter?.(); stopFilter = undefined;
   overlay.remove();
   overlay = null;
   if (keyHandler) {
@@ -25,7 +29,7 @@ export function closeLightbox(): void {
   }
 }
 
-export function openLightbox(src: string, alt = ''): void {
+export function openLightbox(src: string, alt = '', properties?: ImageParameters): void {
   closeLightbox();
 
   const root = document.createElement('div');
@@ -186,4 +190,9 @@ export function openLightbox(src: string, alt = ''): void {
   window.addEventListener('keydown', keyHandler);
 
   document.body.appendChild(root);
+  if (properties) {
+    for (const [name, value] of Object.entries(properties.attributes))
+      if (/^[a-z][a-z0-9-]*$/.test(name) && value === true) root.classList.add('embed-property-' + name);
+    stopFilter = bindDarkMedia(root, () => properties.dark, () => root);
+  }
 }

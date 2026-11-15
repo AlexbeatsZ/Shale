@@ -16,6 +16,7 @@ import { readHotkeys, patchHotkeys } from '../services/hotkeySettings.js';
 import { DebugLog } from '../services/debugLog.js';
 import { UiSettingsSchema } from '../contracts/uiSettings.js';
 import { FilePlacementSchema } from '../contracts/filePlacement.js';
+import { readVaultConfiguration } from '../services/vaultConfiguration.js';
 import { gitPreferences, redactGitPreferences, saveGitPreferences } from '../services/gitPreferences.js';
 
 let switchRuntime = async (_commit: () => Promise<void>): Promise<void> => { throw new Error('Vault switch runtime is not ready'); };
@@ -34,6 +35,7 @@ settingsRouter.post('/debug', asyncHandler(async (req, res) => {
 settingsRouter.get('/debug', asyncHandler(async (_req, res) => { res.json({ text: await debugLog.read() }); }));
 settingsRouter.delete('/debug', asyncHandler(async (_req, res) => { await debugLog.clear(); res.json({ ok: true }); }));
 settingsRouter.get('/css-snippets', asyncHandler(async (_req, res) => { res.json(await readCssSnippets()); }));
+settingsRouter.get('/embed-properties', asyncHandler(async (_req, res) => { res.json(await readVaultConfiguration('embeds.css', undefined, ['.css'])); }));
 settingsRouter.put('/css-snippets', asyncHandler(async (req, res) => {
   const input = z.object({ source: z.object({ path: z.literal('appearance.json'), content: z.string().max(1024 * 1024),
     exists: z.boolean(), revision: z.string().optional(), vault: z.string() }).strict(), name: z.string(), enabled: z.boolean() }).strict().parse(req.body);

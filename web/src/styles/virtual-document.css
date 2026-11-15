@@ -16,7 +16,7 @@
 :is(.virtual-source-body,.virtual-document-cover) .cm-content{padding:0!important}
 :is(.virtual-source-body,.virtual-document-cover) .cm-inline-title{padding-top:0;padding-inline:0}
 :is(.virtual-source-body,.virtual-document-cover) .cm-properties{display:none}
-.virtual-pdf-pages{display:flex;flex-direction:column;align-items:center;gap:16px}.virtual-pdf-pages .pdf-page-slot{flex-shrink:0}
+.virtual-pdf-pages{display:flex;flex-direction:column;align-items:center;gap:16px;width:max-content;min-width:100%}.virtual-pdf-pages .pdf-page-slot{flex-shrink:0}
 .virtual-outline section{padding-bottom:12px}.virtual-outline .virtual-outline-file{font-weight:600;display:block;width:100%;padding:10px 4px}
 .virtual-outline .outline-item{display:block;width:100%;font-size:var(--font-ui-small)}.virtual-outline ul{padding-left:16px;list-style:none}
 .view-mode-trigger.virtual-group-trigger{display:flex;align-items:center;gap:5px;width:auto;padding:0 5px;font:inherit}

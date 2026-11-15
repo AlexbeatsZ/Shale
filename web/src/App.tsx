@@ -33,6 +33,7 @@ import { documents } from './lib/documents';
 import { initializePropertyTypes } from './lib/propertyTypes';
 import { configureDebug, debugEnabled, recordDebug } from './lib/debug';
 import { defaultUiSettings, type UiSettings } from '../../server/src/contracts/uiSettings';
+import { configureMarkdownWheelZoom, type DocumentFontPreview } from './lib/markdownWheelZoom';
 
 export default function App() {
   const loadTree = useStore((s) => s.loadTree);
@@ -46,17 +47,25 @@ export default function App() {
   const save = useStore((s) => s.save);
   const toast = useStore((s) => s.toast);
   const [ui, setUi] = useState<UiSettings>(defaultUiSettings);
+  const [fontPreview, setFontPreview] = useState<number | null>(null);
   const theme = ui.theme === 'obsidian-dark' ? 'theme-dark' : 'theme-light';
 
   useEffect(() => {
     let active = true, changed = false;
     const apply = (settings: { ui: UiSettings }) => {
-      setUi({ ...defaultUiSettings, ...settings.ui });
+      const next = { ...defaultUiSettings, ...settings.ui };
+      configureMarkdownWheelZoom(next); setUi(next);
     };
     const update = (event: Event) => { changed = true; apply((event as CustomEvent<{ ui: UiSettings }>).detail); };
     window.addEventListener('settings-changed', update);
     void api.getSettings().then(settings => { if (active && !changed) apply(settings); }).catch(() => {});
     return () => { active = false; window.removeEventListener('settings-changed', update); };
+  }, []);
+
+  useEffect(() => {
+    const update = (event: Event) => setFontPreview((event as CustomEvent<DocumentFontPreview>).detail.fontTextSize);
+    window.addEventListener('document-font-preview', update);
+    return () => window.removeEventListener('document-font-preview', update);
   }, []);
 
   useEffect(() => { host.setChrome(theme === 'theme-dark', true);
@@ -68,13 +77,13 @@ export default function App() {
   useLayoutEffect(() => {
     const body = document.body;
     const size = body.style.getPropertyValue('--font-text-size'), width = body.style.getPropertyValue('--file-line-width');
-    body.style.setProperty('--font-text-size', `${ui.fontTextSize}px`);
+    body.style.setProperty('--font-text-size', `${fontPreview ?? ui.fontTextSize}px`);
     body.style.setProperty('--file-line-width', `${ui.fileLineWidth}px`);
     return () => {
       if (size) body.style.setProperty('--font-text-size', size); else body.style.removeProperty('--font-text-size');
       if (width) body.style.setProperty('--file-line-width', width); else body.style.removeProperty('--file-line-width');
     };
-  }, [ui.fontTextSize, ui.fileLineWidth]);
+  }, [ui.fontTextSize, ui.fileLineWidth, fontPreview]);
 
   useEffect(() => documents.subscribe(snapshot => {
     if (debugEnabled()) recordDebug('document.state', { path: snapshot.id, version: snapshot.version,

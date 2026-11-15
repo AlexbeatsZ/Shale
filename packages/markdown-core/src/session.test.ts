@@ -1,5 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { DocumentSession } from './session.js';
+import { SourceDocument, type SourceChange } from './source.js';
 
 it('preserves exact raw line endings across distant changes from a source adapter', () => {
   const raw = '\ufefffirst\r\nsecond\nthird\rfourth';
@@ -75,4 +76,26 @@ it('rejects stale view edits and serializes saves using the new revision', async
   await Promise.all([saving, again]);
   expect(doc.snapshot.dirty).toBe(false);
   expect(doc.snapshot.revision).toBe('r3');
+});
+
+it('publishes exact source patches before snapshots, including grouped undo/redo and external updates', async () => {
+  const doc = new DocumentSession('a.md', 'before\nafter', 'r1', async () => ({}));
+  const mirror = new SourceDocument(doc.snapshot.raw), batches: (readonly SourceChange[])[] = [];
+  const off = doc.subscribeChanges(changes => { batches.push(changes); mirror.apply(changes); });
+  doc.subscribe(() => { expect(mirror.text).toBe(doc.snapshot.text); });
+  doc.edit(0, [{ from: 6, to: 6, insert: '\r\n![[one]]' }], 'input.type:test');
+  expect(batches[0]).toEqual([{ from: 6, to: 6, insert: '\n![[one]]' }]);
+  doc.edit(1, [{ from: 0, to: 0, insert: 'new ' }], 'input.type:test');
+  expect(doc.undo()).toBe(true);
+  expect(doc.snapshot.text).toBe('before\nafter');
+  expect(batches).toHaveLength(4);
+  expect(doc.redo()).toBe(true);
+  expect(batches).toHaveLength(6);
+  await doc.save();
+  doc.acceptExternal('remote\r\nbody', 'r2');
+  expect(mirror.text).toBe('remote\nbody');
+  const count = batches.length;
+  const release = doc.holdEdits(); release();
+  expect(batches).toHaveLength(count);
+  off();
 });

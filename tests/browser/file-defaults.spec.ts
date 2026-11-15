@@ -206,3 +206,47 @@ test('pasted images retain every attachment and leave the other split unchanged'
   expect(await fs.readFile(path.join(vault, 'Notes/taken.md'), 'utf8')).toBe('existing target');
   for (const file of ['first.png', 'second.png']) expect((await fs.stat(path.join(vault, 'Notes/assets', file))).size).toBeGreaterThan(0);
 });
+
+test('a delayed image upload stays at its original caret while typing and split focus change', async ({ page }) => {
+  const source = 'start\nmiddle\ntail\n';
+  await page.evaluate(async source => {
+    const documentsPath = '/src/lib/documents.ts', storePath = '/src/lib/store.ts';
+    const { documents } = await import(documentsPath), { useStore } = await import(storePath);
+    documents.get('Notes/original.md')!.setText(source);
+    await useStore.getState().openToSide('Notes/taken.md', 'right');
+  }, source);
+  await expect(page.locator('.main-pane .cm-content')).toContainText('middle');
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let uploading = false;
+  await page.route('**/api/files/upload', async route => {
+    uploading = true;
+    await gate;
+    await route.fallback();
+  });
+  try {
+    await page.locator('.main-pane .cm-content').evaluate(async element => {
+      const { EditorView } = await import('/node_modules/.vite/deps/@codemirror_view.js');
+      const view = EditorView.findFromDOM(element)!;
+      view.dispatch({ selection: { anchor: 6 } }); view.focus();
+      const data = new DataTransfer();
+      const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII='), character => character.charCodeAt(0));
+      data.items.add(new File([png], 'anchored.png', { type: 'image/png' }));
+      element.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    });
+    await expect.poll(() => uploading).toBe(true);
+    await page.locator('.main-pane .cm-content').evaluate(async element => {
+      const { EditorView } = await import('/node_modules/.vite/deps/@codemirror_view.js');
+      const view = EditorView.findFromDOM(element)!;
+      view.dispatch({ changes: { from: 0, insert: 'typed ' }, selection: { anchor: view.state.doc.length + 6 } });
+    });
+    await page.locator('.split-pane .cm-content').click();
+    release();
+    await expect.poll(() => fs.readFile(path.join(vault, 'Notes/original.md'), 'utf8'))
+      .toBe('typed start\n![[attachments/anchored.png]]\nmiddle\ntail\n');
+    expect(await fs.readFile(path.join(vault, 'Notes/taken.md'), 'utf8')).toBe('existing target');
+    await page.locator('.main-pane .cm-content').focus();
+    await page.keyboard.press('Control+z');
+    await expect.poll(() => fs.readFile(path.join(vault, 'Notes/original.md'), 'utf8')).toBe('typed ' + source);
+  } finally { release(); }
+});

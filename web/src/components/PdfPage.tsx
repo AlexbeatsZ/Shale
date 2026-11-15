@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject, type CSSProperties } from 'react';
 import type { PdfSession } from '../lib/pdf/session';
 import { usePdfSnapshot } from '../lib/pdf/react';
+import { bindDarkMedia } from '../lib/mediaFilter';
 import '../styles/pdf.css';
 
 export function usePdfVisible(root: RefObject<HTMLElement>, element: RefObject<HTMLElement>, margin = 300) {
@@ -21,6 +22,13 @@ export default function PdfPage({ session, page, width, thumbnail = false, onSiz
 }) {
   const snapshot = usePdfSnapshot(session);
   const host = useRef<HTMLDivElement>(null);
+  const surface = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const element = surface.current;
+    if (!element) return;
+    return bindDarkMedia(element, () => snapshot.dark,
+      () => element.closest<HTMLElement>('.pdf-pages,.virtual-document-scroll,.pdf-thumbnails') ?? element.parentElement!);
+  }, [snapshot.dark]);
   const [dimensions, setDimensions] = useState({ width, height: width * 792 / 612 });
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
@@ -60,7 +68,7 @@ export default function PdfPage({ session, page, width, thumbnail = false, onSiz
   }, [session, page, width, thumbnail, snapshot.status]);
   const matches = snapshot.matchesByPage[page] ?? [];
   const selected = snapshot.matches[snapshot.activeMatch]?.id;
-  return <div className={`pdf-page-surface${ready ? ' is-ready' : ''}`} data-pdf-page={page}
+  return <div ref={surface} className={`pdf-page-surface${ready ? ' is-ready' : ''}`} data-pdf-page={page} data-pdf-dark={snapshot.dark || undefined}
     style={{ width: dimensions.width, height: dimensions.height }}>
     <div className="pdf-page-paint" ref={host} />
     <div className="pdf-match-layer" aria-hidden="true">

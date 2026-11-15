@@ -128,6 +128,7 @@ export const linkPreview = ViewPlugin.fromClass(class {
   }
   over = (event: MouseEvent) => {
     if ((event.target as Element).closest('.cm-editor') !== this.view.dom) return;
+    if ((event.target as Element).closest('.cm-image-wrap,[data-image-reference]')) { this.close(); return; }
     this.modifier = event.ctrlKey || event.metaKey;
     const element = (event.target as Element).closest<HTMLElement>('[data-preview-link]');
     let target = element?.dataset.previewLink, footnote = !!element?.dataset.footnote;

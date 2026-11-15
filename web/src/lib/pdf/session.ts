@@ -1,6 +1,7 @@
 import { acquirePdfResource, type PdfResource } from './resource';
 import { findPageMatches } from './text';
 import type { PdfSnapshot } from './types';
+import { clampPdfZoom } from './zoom';
 
 export class PdfSession {
   private state: PdfSnapshot;
@@ -11,7 +12,7 @@ export class PdfSession {
   resource?: PdfResource;
   readonly ready: Promise<void>;
   constructor(readonly path: string, readonly viewId = 'main') {
-    this.state = { path, status: 'loading', pageCount: 0, currentPage: 1, navigation: 0, outline: [], outlineError: '',
+    this.state = { path, status: 'loading', pageCount: 0, currentPage: 1, navigation: 0, zoom: 1, dark: false, outline: [], outlineError: '',
       query: '', matches: [], matchesByPage: {}, activeMatch: -1, searchPending: false, searchedPages: 0, truncated: false, error: '' };
     this.ready = this.load();
   }
@@ -39,6 +40,11 @@ export class PdfSession {
   observePage = (page: number) => {
     if (this.state.status === 'ready' && this.state.currentPage !== page) this.update({ currentPage: page });
   };
+  setZoom = (value: number) => {
+    if (Number.isFinite(value) && clampPdfZoom(value) !== this.state.zoom) this.update({ zoom: clampPdfZoom(value) });
+  };
+  setDark = (dark: boolean) => { if (dark !== this.state.dark) this.update({ dark }); };
+  toggleDark = () => this.setDark(!this.state.dark);
   setQuery = (query: string) => {
     const version = ++this.queryVersion;
     this.update({ query, matches: [], matchesByPage: {}, activeMatch: -1, searchPending: !!query.trim(), searchedPages: 0, truncated: false, error: '' });

@@ -34,6 +34,14 @@ function row(text: string, from: number, to: number): TableRow {
 }
 
 const tablesByModel=new WeakMap<MarkdownModel,TableModel[]>();
+/** Fragment source inherits table escaping only when its full range belongs to a parsed cell. */
+export function isTableCellRange(model: MarkdownModel, from: number, to = from): boolean {
+  for (let node = model.tree.resolveInner(from, 1); node; node = node.parent!) {
+    if (node.name === 'TableCell') return node.from <= from && to <= node.to;
+  }
+  return false;
+}
+
 export function tableModels(model: MarkdownModel): TableModel[] {
   const existing=tablesByModel.get(model);if(existing)return existing;
   const tables=model.nodes.filter(n => n.name === 'Table' && !(model.frontmatter && n.from < model.frontmatter.to)).map(n => {

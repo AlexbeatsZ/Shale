@@ -136,6 +136,8 @@ interface AppState {
   pdfToolbarOpen: boolean;
   setPdfToolbarOpen: (open: boolean) => void;
   togglePdfToolbar: () => void;
+  pdfDarkPaths: string[];
+  setPdfDark: (path: string, dark: boolean) => void;
 
   // expanded folders in the file tree (persisted)
   expanded: string[];
@@ -287,6 +289,7 @@ function remapWorkspacePaths(state: AppState, from: string, to?: string): Partia
     rightActiveId: rightTabs.some(tab => tab.id === state.rightActiveId) ? state.rightActiveId : null,
     leftActiveId: rightTabs.some(tab => tab.id === state.leftActiveId) ? state.leftActiveId : null,
     recent: list(state.recent), bookmarks: list(state.bookmarks), expanded: list(state.expanded), selected: list(state.selected),
+    pdfDarkPaths: list(state.pdfDarkPaths),
     history: state.history.flatMap(location => { const path = map(location.path); return path === null ? [] : [{ ...location, path }]; }),
     histIndex: state.history.slice(0, state.histIndex + 1).filter(location => map(location.path) !== null).length - 1,
     viewHistories: Object.fromEntries(Object.entries(state.viewHistories).map(([id, stack]) => [id, {
@@ -302,7 +305,7 @@ function remapWorkspacePaths(state: AppState, from: string, to?: string): Partia
 const PERSIST_KEYS = [
   'tabs', 'activePath', 'viewMode', 'expanded', 'splitPath', 'splitDirection', 'parkedSplit',
   'recent', 'bookmarks', 'leftPanel', 'rightPanel', 'leftOpen', 'rightOpen', 'graphSettings',
-  'treeSort', 'autoReveal',
+  'treeSort', 'autoReveal', 'pdfDarkPaths',
   'rightTabs', 'rightActiveId', 'leftActiveId',
 ] as const;
 
@@ -339,6 +342,7 @@ function applyPersisted(s: any, set: (p: any) => void): void {
     tabs: Array.isArray(s.tabs) ? s.tabs : [],
     activePath: typeof s.activePath === 'string' ? s.activePath : null,
     viewMode: ['live', 'source', 'reading'].includes(s.viewMode) ? s.viewMode : 'live',
+    pdfDarkPaths: Array.isArray(s.pdfDarkPaths) ? s.pdfDarkPaths.filter((path: unknown) => typeof path === 'string') : [],
     expanded: Array.isArray(s.expanded) ? s.expanded : [],
     treeSort: TREE_SORTS.includes(s.treeSort) ? s.treeSort : 'name-asc',
     autoReveal: s.autoReveal === true,
@@ -564,6 +568,9 @@ export const useStore = create<AppState>()(
       pdfToolbarOpen: false,
       setPdfToolbarOpen: (open) => set({ pdfToolbarOpen: open }),
       togglePdfToolbar: () => set((s) => ({ pdfToolbarOpen: !s.pdfToolbarOpen })),
+      pdfDarkPaths: [],
+      setPdfDark: (path, dark) => set(state => state.pdfDarkPaths.includes(path) === dark ? state
+        : { pdfDarkPaths: dark ? [...state.pdfDarkPaths, path] : state.pdfDarkPaths.filter(value => value !== path) }),
 
       expanded: [],
       toggleFolder: (path) =>

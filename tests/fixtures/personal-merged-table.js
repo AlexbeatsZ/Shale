@@ -10,7 +10,7 @@ for (let r = 0; r < model.rows.length; r++) {
     if (value === '<') anchor = grid[r][c - 1];
     else if (value === '^') anchor = grid[r - 1]?.[c];
     else {
-      anchor = { row: r, col: c, lastRow: r, lastCol: c, source: model.rows[r].cells[c].text };
+      anchor = { row: r, col: c, lastRow: r, lastCol: c, source: model.rows[r].cells[c].text, sourceRange: model.rows[r].cells[c] };
       anchors.push(anchor);
     }
     if (!anchor) throw new Error('A table merge marker has no preceding cell.');
@@ -35,5 +35,5 @@ await Promise.all(anchors.map(async anchor => {
   cell.colSpan = anchor.lastCol - anchor.col + 1;
   cell.style.textAlign = model.align[anchor.col] || '';
   rows[anchor.row].append(cell);
-  await block.renderMarkdown(anchor.source, cell);
+  await block.renderMarkdown(anchor.source, cell, block.supportsSourceRanges ? anchor.sourceRange : undefined);
 }));

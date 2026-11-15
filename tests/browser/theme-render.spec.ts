@@ -162,14 +162,14 @@ test('Markdown and HTML image rows preserve captions, aliases, sizing and source
     const host = page.locator(`[data-slot="${slot}"]`);
     const row = host.locator('.cm-image-row').first();
     const first = row.locator('.cm-image-wrap').nth(0), second = row.locator('.cm-image-wrap').nth(1);
-    await expect(first).toHaveAttribute('data-image-caption', '图一');
-    await expect(second).toHaveAttribute('data-image-caption', '图二');
+    await expect(first).toHaveAttribute('data-image-caption', '图1-1 图一');
+    await expect(second).toHaveAttribute('data-image-caption', '图1-2 图二');
     const a = await first.locator('img').boundingBox(), b = await second.locator('img').boundingBox();
     expect(Math.abs(a!.y + a!.height - b!.y - b!.height)).toBeLessThan(1);
     expect(b!.x).toBeGreaterThanOrEqual(a!.x + a!.width);
     expect(a!.width).toBe(140); expect(b!.width).toBe(100);
     const hidden = host.locator('[data-image-source="/theme-media/plain.png"]');
-    expect(await hidden.evaluate(el => getComputedStyle(el, '::after').display)).toBe('none');
+    await expect(hidden.locator('.cm-image-caption')).toHaveText('图1-3 plain.png');
     const html = host.locator('.cm-html-block');
     await expect(html.locator('.cm-image-wrap').first()).toHaveAttribute('data-image-caption', 'HTML 说明');
     await expect(html.locator('.cm-image-row')).toHaveCount(1);
@@ -177,7 +177,7 @@ test('Markdown and HTML image rows preserve captions, aliases, sizing and source
   // Changing only alt text must replace a widget with the same image URL and width.
   const at = source.indexOf('图一');
   await page.evaluate(at => window.renderHarness.edit(0, [{ from: at, to: at + 2, insert: '新图' }]), at);
-  await expect(page.locator('[data-slot="1"] .cm-image-wrap').first()).toHaveAttribute('data-image-caption', '新图');
+  await expect(page.locator('[data-slot="1"] .cm-image-wrap').first()).toHaveAttribute('data-image-caption', '图1-1 新图');
   await page.evaluate(() => window.renderHarness.undo(0));
   expect(await page.evaluate(() => window.renderHarness.source(0))).toBe(source);
   await page.screenshot({ path: test.info().outputPath('image-rows.png') });
@@ -193,8 +193,8 @@ test('image presentation fragments survive resolution and theme changes', async 
   await expect(host.locator('[data-image-source*="#x1.5"] img')).toHaveCSS('zoom', '1.5');
   await expect(host.locator('[data-image-svg] img')).toHaveCSS('max-width', 'none');
   await page.evaluate(() => { document.querySelector('.theme-light')!.className = 'theme-dark'; });
-  await expect(host.locator('[data-image-source="/theme-media/inside.png"] img')).toHaveCSS('filter', 'brightness(1.233) contrast(1)');
-  await expect(host.locator('[data-image-dark] img')).toHaveCSS('filter', 'invert(0.88235) hue-rotate(180deg) brightness(1.233) contrast(1)');
+  await expect(host.locator('[data-image-source="/theme-media/inside.png"] img')).toHaveCSS('filter', 'none');
+  await expect(host.locator('[data-image-dark] img')).toHaveCSS('filter', 'invert(0.854902) hue-rotate(180deg)');
   await page.emulateMedia({ media: 'print' });
   await expect(host.locator('[data-image-dark] img')).toHaveCSS('filter', 'none');
   await page.emulateMedia({ media: 'screen' });
@@ -245,7 +245,7 @@ test('wide blocks keep intrinsic width and print retains image presentation', as
   await expect(highlighted).toHaveCSS('background-color', 'rgb(224, 224, 224)');
   await page.evaluate(() => window.renderHarness.preparePrint());
   const printed = page.frameLocator('.note-print-frame');
-  await expect(printed.locator('[data-image-caption="打印说明"]')).toHaveCount(1);
+  await expect(printed.locator('[data-image-caption="图1-1 打印说明"]')).toHaveCount(1);
   await expect(printed.locator('.cm-image-resize')).toHaveCount(0);
   await expect(printed.locator('.cm-content').first()).toContainText('end');
   expect(await page.evaluate(() => window.renderHarness.source(0))).toBe(source);
@@ -261,7 +261,7 @@ test('resizing a magnified image patches only its source width', async ({ page }
   const box = await handle.boundingBox();
   await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
   await page.mouse.down(); await page.mouse.move(box!.x + box!.width / 2 + 60, box!.y + box!.height / 2); await page.mouse.up();
-  await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe(source.replace('|100', '|130'));
+  await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe('![[/theme-media/resize.png|图示#width=130#scale=2]]\n\nend');
   await page.evaluate(() => window.renderHarness.undo(0));
   expect(await page.evaluate(() => window.renderHarness.source(0))).toBe(source);
 });

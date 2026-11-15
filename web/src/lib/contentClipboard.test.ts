@@ -3,7 +3,7 @@ import { EditorState, EditorSelection, Annotation } from '@codemirror/state';
 import { analyzeMarkdown, contentTargets } from '@webobsidian/markdown-core';
 
 vi.mock('./writing/editing', () => ({ writingOperation: Annotation.define<string>() }));
-import { ContentClipboardPolicy, contentClipboard, CONTENT_CLIPBOARD_MIME } from './contentClipboard';
+import { ContentClipboardPolicy, contentClipboard, CONTENT_CLIPBOARD_MIME, type ClipboardOptions } from './contentClipboard';
 import { syntaxModel } from './syntaxModel';
 import { EditorView } from '@codemirror/view';
 
@@ -96,13 +96,13 @@ it.each([
   if (target.kind === 'code') expect(result).toContain('const text = "^code-one";');
 });
 
-function editor(text = '', writable = true, projection = false) {
+function editor(text = '', writable = true, projection = false, pasteImages?: ClipboardOptions['pasteImages']) {
   let state = EditorState.create({ doc: text, extensions: [syntaxModel, EditorState.allowMultipleSelections.of(true)] });
   const view = { get state() { return state; }, composing: false, focus: vi.fn(),
     dispatch: (spec: Parameters<EditorState['update']>[0]) => { state = state.update(spec).state; } } as unknown as EditorView;
   const controller = contentClipboard({ source: () => ({ identity: 'source.md', model: state.field(syntaxModel), offset: 0, read: () => state.field(syntaxModel) }),
     writable: () => writable, projection: () => projection,
-    format: text => text, reportError: error => { throw error; } });
+    format: text => text, pasteImages, reportError: error => { throw error; } });
   return { view, controller, setWritable: (value: boolean) => { writable = value; } };
 }
 
@@ -166,9 +166,9 @@ it.each([false, true])('fails anchored async copy/cut explicitly when custom for
   } finally { vi.unstubAllGlobals(); }
 });
 
-function nativeEditor(text = '', writable = true) {
+function nativeEditor(text = '', writable = true, pasteImages?: ClipboardOptions['pasteImages']) {
   const spy = vi.spyOn(EditorView, 'domEventHandlers');
-  const current = editor(text, writable);
+  const current = editor(text, writable, false, pasteImages);
   const handlers = spy.mock.calls.at(-1)![0];
   spy.mockRestore();
   return { ...current, handlers };
@@ -234,6 +234,32 @@ it('async menu operations do not edit a changed selection or a newly locked view
     target.setWritable(false);
     finish(heading);
     await locked;
+    expect(target.view.state.doc.toString()).toBe('before');
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it('native image paste calls the shared insertion once and stops the outer workspace handler', async () => {
+  const pasteImages = vi.fn(), target = nativeEditor('', true, pasteImages);
+  const file = new File(['image'], 'one.png', { type: 'image/png' });
+  const event = clipboardEvent([file]);
+  expect(target.handlers.paste!(event, target.view)).toBe(true);
+  expect(event.preventDefault).toHaveBeenCalled();
+  expect(event.stopPropagation).toHaveBeenCalled();
+  expect(pasteImages).toHaveBeenCalledExactlyOnceWith([file], target.view);
+});
+
+it('Ctrl+V and context-menu image paste use the same insertion callback', async () => {
+  const pasteImages = vi.fn(), target = editor('before', true, false, pasteImages);
+  vi.stubGlobal('navigator', { clipboard: { read: async () => [
+    { types: ['image/png'], getType: async () => new Blob(['png'], { type: 'image/png' }) },
+    { types: ['image/svg+xml'], getType: async () => new Blob(['svg'], { type: 'image/svg+xml' }) },
+  ] } });
+  try {
+    await target.controller.paste(target.view);
+    expect(pasteImages).toHaveBeenCalledTimes(1);
+    expect(pasteImages.mock.calls[0][0].map((file: File) => [file.name, file.type])).toEqual([
+      ['image.png', 'image/png'], ['image.svg', 'image/svg+xml'],
+    ]);
     expect(target.view.state.doc.toString()).toBe('before');
   } finally { vi.unstubAllGlobals(); }
 });

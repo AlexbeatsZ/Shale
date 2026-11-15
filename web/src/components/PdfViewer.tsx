@@ -4,6 +4,7 @@ import { activatePdfSession, registerPdfSession, usePdfSnapshot } from '../lib/p
 import PdfPage, { usePdfVisible } from './PdfPage';
 import Icon from './Icon';
 import { useStore } from '../lib/store';
+import { PDF_MIN_ZOOM, PDF_MAX_ZOOM, usePdfZoom } from '../lib/pdf/zoom';
 import '../styles/pdf.css';
 
 export function PageSlot({ session, page, width, root, anchorWithin, onLayoutScroll }: {
@@ -37,7 +38,9 @@ function Reader({ session, main }: { session: PdfSession; main: boolean }) {
   const setToolbarOpen = useStore(s => s.setPdfToolbarOpen);
   const toolbarVisible = !main || toolbarOpen;
   const [available, setAvailable] = useState(780);
-  const [zoom, setZoom] = useState(1);
+  const zoom = state.zoom;
+  const setZoom = usePdfZoom(viewport, { zoom, setZoom: session.setZoom,
+    beforeChange: () => { navigationTop.current = undefined; } });
   const [pageInput, setPageInput] = useState('1');
   const width = Math.max(180, Math.min(available - 40, 900) * zoom);
   useEffect(() => {
@@ -99,9 +102,9 @@ function Reader({ session, main }: { session: PdfSession; main: boolean }) {
       <label className="pdf-page-control"><input aria-label="PDF 页码" inputMode="numeric" value={pageInput} onChange={event => setPageInput(event.target.value)}
         onBlur={() => session.goToPage(Number(pageInput))} onKeyDown={event => { if (event.key === 'Enter') session.goToPage(Number(pageInput)); }} /><span>/ {state.pageCount}</span></label>
       <button className="tool-btn" aria-label="下一页" disabled={state.currentPage >= state.pageCount} onClick={() => session.goToPage(state.currentPage + 1)}><Icon name="chevron-down" /></button>
-      <button className="tool-btn" aria-label="缩小 PDF" disabled={zoom <= 0.5} onClick={() => setZoom(value => Math.max(0.5, value - 0.25))}><Icon name="minus" /></button>
+      <button className="tool-btn" aria-label="缩小 PDF" disabled={zoom <= PDF_MIN_ZOOM} onClick={() => setZoom(zoom - 0.25)}><Icon name="minus" /></button>
       <button className="pdf-zoom" onClick={() => setZoom(1)} title="适合宽度">{Math.round(zoom * 100)}%</button>
-      <button className="tool-btn" aria-label="放大 PDF" disabled={zoom >= 3} onClick={() => setZoom(value => Math.min(3, value + 0.25))}><Icon name="plus" /></button>
+      <button className="tool-btn" aria-label="放大 PDF" disabled={zoom >= PDF_MAX_ZOOM} onClick={() => setZoom(zoom + 0.25)}><Icon name="plus" /></button>
       <div className="pdf-search">
         <Icon name="search" /><input ref={search} type="search" aria-label="搜索 PDF" placeholder="搜索 PDF" value={state.query} onChange={event => session.setQuery(event.target.value)}
           onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); session.nextMatch(event.shiftKey ? -1 : 1); } }} />

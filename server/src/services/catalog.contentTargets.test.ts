@@ -34,6 +34,20 @@ it('filters by exact file before applying the suggestion limit', () => {
   expect(catalog.suggestContentTargets('', 1, 'missing.md')).toEqual([]);
 });
 
+it('finds attachment backlinks from dependency candidates and rejects ambiguous filenames', () => {
+  catalog.putPath('assets/diagram.png');
+  put('chapter.md', '![[diagram.png|示意图#width=300#dark]]');
+  put('other.md', '[[assets/diagram.png]]');
+  put('unrelated.md', '[[missing.png]]');
+  expect(backlinksFor('assets/diagram.png')).toEqual(['chapter.md', 'other.md']);
+  catalog.putPath('another/diagram.png');
+  expect(backlinksFor('assets/diagram.png')).toEqual(['other.md']);
+  catalog.remove('another/diagram.png');
+  expect(backlinksFor('assets/diagram.png')).toEqual(['chapter.md', 'other.md']);
+  put('chapter.md', 'removed');
+  expect(backlinksFor('assets/diagram.png')).toEqual(['other.md']);
+});
+
 it('resolves typed global targets independently of source and preserves explicit local fragments', () => {
   put('folder/target.md', '# Title ^heading-title\n\ntext');
   put('source.md', 'legacy ^old\n');

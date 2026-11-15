@@ -6,6 +6,7 @@ import { nativeCommands, resolveNativeCommandId } from '../nativeCommands';
 import { CommandManager, type Command } from '../commands';
 import { Automation } from '../userCommands';
 import { initializeCssSnippets } from '../cssSnippets';
+import { initializeEmbedProperties } from '../embedProperties';
 import { adaptNativePlusModules, migratedPluginIds } from '../nativePluginPolicy';
 import * as cmState from '@codemirror/state';
 import * as cmView from '@codemirror/view';
@@ -811,6 +812,7 @@ export async function loadPlugins(): Promise<void> {
     const stopQueryBlocks = installQueryBlocks();
     const stopBlocks = installBlockEffects(sharedApp);
     const stopCssSnippets = initializeCssSnippets(error => useStore.getState().notify(error));
+    const stopEmbedProperties = initializeEmbedProperties(error => useStore.getState().notify(error));
     stopHost = () => {
       window.removeEventListener('file-path-changed', pathChanged);
       sharedApp.automation.dispose();
@@ -818,6 +820,7 @@ export async function loadPlugins(): Promise<void> {
       stopQueryBlocks();
       stopBlocks();
       stopCssSnippets();
+      stopEmbedProperties();
       stopMenus();
       unsub(); stopActiveNavigation();
       metadataStopped = true;

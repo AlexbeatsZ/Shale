@@ -45,7 +45,7 @@ export function MenuList({ items, onClose }: { items: ConfiguredMenuItem[]; onCl
               e.stopPropagation();
               if (it.disabled) return;
               if (it.submenu) {
-                e.stopPropagation();
+                setOpenSub(i);
                 return;
               }
               try { it.onClick?.(e.nativeEvent); }
@@ -57,7 +57,17 @@ export function MenuList({ items, onClose }: { items: ConfiguredMenuItem[]; onCl
             {it.checked && <Icon name="check" size={14} />}
             {it.submenu && <Icon name="chevron-right" size={14} className="ctx-arrow" />}
             {it.submenu && !it.disabled && openSub === i && (
-              <div className="context-menu submenu" role="menu">
+              <div className="context-menu submenu" role="menu" ref={element => {
+                if (!element) return;
+                const row = element.parentElement!.getBoundingClientRect();
+                const bounds = element.getBoundingClientRect();
+                const left = row.right + bounds.width + 8 <= window.innerWidth ? row.right + 2 : row.left - bounds.width - 2;
+                element.style.position = 'fixed';
+                element.style.left = Math.max(8, Math.min(left, window.innerWidth - bounds.width - 8)) + 'px';
+                element.style.top = Math.max(8, Math.min(row.top - 5, window.innerHeight - bounds.height - 8)) + 'px';
+                element.style.maxHeight = 'calc(100dvh - 16px)';
+                element.style.overflowY = 'auto';
+              }}>
                 <MenuList items={it.submenu} onClose={onClose} />
               </div>
             )}

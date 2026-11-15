@@ -2,12 +2,14 @@ import { useSyncExternalStore } from 'react';
 import type { VirtualDocument } from './virtualDocuments';
 import type { PdfOutlineEntry } from './pdf/types';
 import type { ViewMode } from './store';
+import { clampPdfZoom } from './pdf/zoom';
 
 export interface ReadingTarget { path: string; fragment?: string; page?: number; line?: number }
 export interface VirtualReadingSnapshot {
   stream: string; serial: number; target?: ReadingTarget;
   configuration: boolean; mode: ViewMode; activeSource?: string;
   pdfOutlines: Readonly<Record<string, readonly PdfOutlineEntry[]>>;
+  pdfZoom: number;
 }
 const readers = new Map<string, VirtualReadingSession>(), listeners = new Set<() => void>();
 const queuedTargets = new Map<string, ReadingTarget>();
@@ -23,12 +25,13 @@ const notify = () => { for (const listener of listeners) listener(); };
 export class VirtualReadingSession {
   private listeners = new Set<() => void>();
   private state: VirtualReadingSnapshot;
+  private pdfZooms = new Map<string, number>();
   readonly progressKey: string;
   constructor(public document: VirtualDocument, readonly viewId: string, mode: ViewMode = 'live') {
     this.progressKey = key(document.path, viewId);
     const selected = selectedStreams.get(this.progressKey);
     this.state = { stream: document.streams.find(stream => stream.id === selected)?.id ?? document.streams[0].id,
-      serial: 0, pdfOutlines: {}, configuration: false, mode };
+      serial: 0, pdfOutlines: {}, pdfZoom: 1, configuration: false, mode };
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   getSnapshot = () => this.state;
@@ -38,10 +41,18 @@ export class VirtualReadingSession {
   selectStream(id: string) {
     if (!this.document.streams.some(stream => stream.id === id)) return;
     selectedStreams.set(this.progressKey, id);
-    if (id !== this.state.stream || this.state.configuration) this.update({ stream: id, configuration: false, activeSource: undefined, target: undefined, serial: this.state.serial + 1 });
+    if (id !== this.state.stream || this.state.configuration) this.update({ stream: id, configuration: false, activeSource: undefined, target: undefined,
+      pdfZoom: this.pdfZooms.get(id) ?? 1, serial: this.state.serial + 1 });
   }
   selectConfiguration() { this.update({ configuration: true, target: undefined }); }
   setMode = (mode: ViewMode) => { if (mode !== this.state.mode) this.update({ mode }); };
+  setPdfZoom = (value: number) => {
+    if (!Number.isFinite(value)) return;
+    const pdfZoom = clampPdfZoom(value);
+    if (pdfZoom === this.state.pdfZoom) return;
+    this.pdfZooms.set(this.state.stream, pdfZoom);
+    this.update({ pdfZoom });
+  };
   activateSource(path: string | undefined) { if (path !== this.state.activeSource) this.update({ activeSource: path }); }
   replaceDocument(document: VirtualDocument) {
     if (JSON.stringify(document) === JSON.stringify(this.document)) return;
@@ -52,7 +63,7 @@ export class VirtualReadingSession {
     }
     this.document = document;
     const stream = document.streams.some(stream => stream.id === this.state.stream) ? this.state.stream : document.streams[0].id;
-    this.update({ stream });
+    this.update({ stream, pdfZoom: this.pdfZooms.get(stream) ?? 1 });
   }
   go = (target: ReadingTarget) => {
     if (target.path === this.document.path) {
@@ -61,7 +72,8 @@ export class VirtualReadingSession {
     }
     const stream = this.document.streams.find(stream => stream.id === this.state.stream && stream.files.some(file => file.path === target.path))
       ?? this.document.streams.find(stream => stream.files.some(file => file.path === target.path));
-    if (stream) this.update({ stream: stream.id, configuration: false, activeSource: target.path, target, serial: this.state.serial + 1 });
+    if (stream) this.update({ stream: stream.id, configuration: false, activeSource: target.path, target,
+      pdfZoom: this.pdfZooms.get(stream.id) ?? 1, serial: this.state.serial + 1 });
   };
   releaseTarget() { if (this.state.target) this.update({ target: undefined }); }
   outline(path: string, entries: readonly PdfOutlineEntry[]) {
@@ -87,3 +99,4 @@ export function useVirtualReading(path: string | null, viewId: string) {
   return useSyncExternalStore(listener => { listeners.add(listener); return () => { listeners.delete(listener); }; },
     () => path ? readers.get(key(path, viewId)) : undefined);
 }
+export const getVirtualReading = (path: string | null, viewId: string) => path ? readers.get(key(path, viewId)) : undefined;

@@ -578,13 +578,15 @@ const pluginStateLabels: Record<PluginState, string> = {
 function Appearance({ s }: { s: any }) {
   const [fontTextSize, setFontTextSize] = useState(String(s.ui.fontTextSize ?? documentAppearance.fontTextSize.default));
   const [fileLineWidth, setFileLineWidth] = useState(String(s.ui.fileLineWidth ?? documentAppearance.fileLineWidth.default));
+  const [ctrlWheelFontSize, setCtrlWheelFontSize] = useState(s.ui.ctrlWheelFontSize ?? false);
   const [uiError, setUiError] = useState(''), [saving, setSaving] = useState(false), [saved, setSaved] = useState(false);
   const saveGeneration = useRef(0);
   useEffect(() => {
     if (saving || uiError) return;
     setFontTextSize(String(s.ui.fontTextSize ?? documentAppearance.fontTextSize.default));
     setFileLineWidth(String(s.ui.fileLineWidth ?? documentAppearance.fileLineWidth.default));
-  }, [s.ui.fontTextSize, s.ui.fileLineWidth, saving, uiError]);
+    setCtrlWheelFontSize(s.ui.ctrlWheelFontSize ?? false);
+  }, [s.ui.fontTextSize, s.ui.fileLineWidth, s.ui.ctrlWheelFontSize, saving, uiError]);
   const [snippets, setSnippets] = useState<CssSnippets>();
   const [query, setQuery] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const reloadSnippets = () => {
@@ -602,10 +604,14 @@ function Appearance({ s }: { s: any }) {
     const generation = ++saveGeneration.current;
     setUiError(''); setSaving(true); setSaved(false);
     try {
-      await api.putSettings({ ui: patch });
+      const persisted = await api.putSettings({ ui: patch });
+      if (patch.ctrlWheelFontSize !== undefined && generation === saveGeneration.current) setCtrlWheelFontSize(persisted.ui.ctrlWheelFontSize ?? false);
       if (generation === saveGeneration.current) setSaved(true);
     } catch (cause) {
-      if (generation === saveGeneration.current) setUiError(`保存失败：${String(cause)}`);
+      if (generation === saveGeneration.current) {
+        if (patch.ctrlWheelFontSize !== undefined) setCtrlWheelFontSize(s.ui.ctrlWheelFontSize ?? false);
+        setUiError(`保存失败：${String(cause)}`);
+      }
     } finally { if (generation === saveGeneration.current) setSaving(false); }
   };
   const changeNumber = (key: keyof typeof documentAppearance, value: string) => {
@@ -631,6 +637,10 @@ function Appearance({ s }: { s: any }) {
       </Row>
       </SettingGroup>
       <SettingGroup title="正文">
+        <Row name="Ctrl＋滚轮调整正文字号" desc="默认关闭。开启后，在 Markdown 编辑和阅读区域按住 Ctrl 滚动鼠标滚轮可调整正文字号。">
+          <input type="checkbox" checked={ctrlWheelFontSize}
+            onChange={event => { setCtrlWheelFontSize(event.target.checked); void save({ ctrlWheelFontSize: event.target.checked }); }} />
+        </Row>
         <Row name="正文字号" desc={`编辑和阅读同步生效，${documentAppearance.fontTextSize.min}–${documentAppearance.fontTextSize.max} px；不改变界面字号。`}>
           <input className="text-input" type="number" min={documentAppearance.fontTextSize.min} max={documentAppearance.fontTextSize.max}
             step={1} value={fontTextSize} onChange={event => changeNumber('fontTextSize', event.target.value)} />
@@ -649,6 +659,9 @@ function Appearance({ s }: { s: any }) {
       {uiError && <p role="alert">{uiError}</p>}
       <p role="status" aria-live="polite">{saving ? '正在保存…' : saved ? '已保存' : ''}</p>
       <SettingGroup title="CSS 样式片段">
+        <ConfigurationFile name="图片自定义属性" path=".obsidian/webobsidian/embeds.css">
+          <span>在此文件定义 .embed-property-NAME 样式，NAME 会出现在图片的“添加属性”菜单。</span>
+        </ConfigurationFile>
         <ConfigurationFile name="片段文件夹" path=".obsidian/snippets">
           <button type="button" disabled={busy} onClick={reloadSnippets}>刷新</button>
         </ConfigurationFile>

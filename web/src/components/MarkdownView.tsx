@@ -7,6 +7,9 @@ import { Annotation, Compartment, EditorState, Prec } from '@codemirror/state';
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
 import { editorSelection } from '../lib/editorSelection';
 import { editorDebugging } from '../lib/editorDebug';
+import { bindMarkdownWheelZoom } from '../lib/markdownWheelZoom';
+import { imageMenuItems } from '../lib/imageMenu';
+import { insertImageFiles } from '../lib/attachmentImages';
 import { bindEditorMode } from '../lib/activeEditor';
 import { editorPhrases } from '../lib/editorPhrases';
 import { bindFragmentNavigation, navigationExtensions, followRenderedLink } from '../lib/fragmentNavigation';
@@ -97,6 +100,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
   const openContextMenu = context.openMenu;
   const setLeftPanel = (_panel: string) => props.onSearch?.();
   const clipboard = useMemo(() => contentClipboard({
+    pasteImages: (files, current) => insertImageFiles(current, files, true),
     source: () => {
       const current = view.current;
       const session = latest.current.documentSession;
@@ -157,6 +161,16 @@ export default function MarkdownView(props: MarkdownViewProps) {
     if (e.defaultPrevented) return;
     e.preventDefault();
     const v = view.current;
+    const image = (e.target as Element).closest<HTMLElement>('.cm-image-wrap');
+    if (v && image) {
+      const items = imageMenuItems(v, image);
+      if (items) {
+        e.stopPropagation();
+        v.state.facet(renderContext).openMenu({ x: e.clientX, y: e.clientY, items, context: { kind: 'image', source: mode === 'reading' ? 'reading' : 'editor',
+          activePath: context.sourcePath, paths: [context.sourcePath], modifiers: menuModifiers(e.nativeEvent) } });
+        return;
+      }
+    }
     const tag = (e.target as Element).closest<HTMLElement>('[data-native-tag]');
     if (tag && context.tagMenu) {
       e.stopPropagation();
@@ -334,6 +348,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
       ],
     });
     const v = new EditorView({ state, parent: host.current });
+    const stopWheelZoom = bindMarkdownWheelZoom(v);
     const stopMode = bindEditorMode(v, request => {
       const current = latest.current;
       const mode = request === 'toggle-preview' ? (current.mode === 'reading' ? 'live' : 'reading')
@@ -343,7 +358,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
     view.current = v;
     p.onReady?.(v);
     if (p.autoFocus) v.focus();
-    return () => { stopMode(); p.onReady?.(null); view.current = null; v.destroy(); };
+    return () => { stopMode(); stopWheelZoom(); p.onReady?.(null); view.current = null; v.destroy(); };
   }, [props.documentSession ?? snapshot.id]);
 
   useEffect(() => {

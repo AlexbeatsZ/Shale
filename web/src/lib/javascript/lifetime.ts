@@ -1,6 +1,6 @@
 import type { App } from '../obsidian/runtime';
 import { RenderLifetime } from '../obsidian/renderLifetime';
-import { nonExecutingContext, type RenderContext } from '../renderContext';
+import { nonExecutingContext, type FragmentOptions, type RenderContext } from '../renderContext';
 import { documents } from '../documents';
 
 /** One run owns everything it creates, including resources registered after await. */
@@ -50,7 +50,8 @@ export class JavascriptRun extends RenderLifetime {
     this.versions.set(path, note.snapshot.version);
     return note;
   }
-  async renderMarkdown(markdown: string, target = this.container, context = this.context) {
+  async renderMarkdown(markdown: string, target = this.container, context = this.context,
+    source?: Pick<FragmentOptions, 'sourceFrom' | 'mathSource' | 'equations'>) {
     this.assertActive();
     const mount = this.context.mountFragment;
     if (!mount) throw new Error('Markdown 片段渲染不可用');
@@ -65,7 +66,7 @@ export class JavascriptRun extends RenderLifetime {
       const failed = (error: unknown) => { if (clear()) reject(error); };
       this.signal.addEventListener('abort', done, { once: true });
       try {
-        this.register(mount(target, markdown, { id: context.sourcePath, context: nonExecutingContext(context),
+        this.register(mount(target, markdown, { ...source, id: context.sourcePath, context: nonExecutingContext(context),
           onReady: () => { if (settled || this.signal.aborted) return; this.measure(); done(); }, onError: failed }));
       } catch (error) { failed(error); }
     });

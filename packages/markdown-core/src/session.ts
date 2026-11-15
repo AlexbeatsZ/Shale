@@ -28,6 +28,7 @@ export class DocumentSession {
   private pending: Promise<void> | undefined;
   private requested = false;
   private listeners = new Set<() => void>();
+  private changeListeners = new Set<(changes: readonly SourceChange[]) => void>();
   private undoStack: UndoGroup[] = [];
   private redoStack: UndoGroup[] = [];
   private current: DocumentSnapshot;
@@ -83,6 +84,11 @@ export class DocumentSession {
     this.listeners.add(listener);
     return () => { this.listeners.delete(listener); };
   };
+  /** Exact normalized patches for mapping pending operations before view updates. */
+  subscribeChanges = (listener: (changes: readonly SourceChange[]) => void): (() => void) => {
+    this.changeListeners.add(listener);
+    return () => { this.changeListeners.delete(listener); };
+  };
 
   edit(baseVersion: number, changes: readonly SourceChange[], origin = 'edit', state?: EditHistoryState): void {
     if (this.editLocks) throw new Error('Document path is changing; editing is temporarily paused');
@@ -102,7 +108,7 @@ export class DocumentSession {
     } else this.undoStack.push({ edits: [inverse], origin, at: now, state });
     this.redoStack = [];
     this.version++;
-    this.emit();
+    this.emit([changes]);
   }
 
   /** Compatibility for callers supplying a complete editor string; patch only its difference. */
@@ -135,7 +141,9 @@ export class DocumentSession {
   acceptExternal(raw: string, revision?: string): boolean {
     if (raw === this.savedRaw) return true;
     if (this.current.dirty || this.saving) { this.conflict = true; this.emit(); return false; }
-    this.source = new SourceDocument(raw);
+    const source = new SourceDocument(raw);
+    const changes = changesBetween(this.source.text, source.text);
+    this.source = source;
     this.savedRaw = raw;
     this.revision = revision;
     this.version++;
@@ -143,7 +151,7 @@ export class DocumentSession {
     this.redoStack = [];
     this.historyState = undefined;
     this.conflict = false;
-    this.emit();
+    this.emit([changes]);
     return true;
   }
 
@@ -185,12 +193,13 @@ export class DocumentSession {
     const group = from.pop();
     if (!group) return false;
     const inverse: SourceChange[][] = [];
-    for (const edit of [...group.edits].reverse()) inverse.push(this.source.apply(edit));
+    const edits = [...group.edits].reverse();
+    for (const edit of edits) inverse.push(this.source.apply(edit));
     to.push({ edits: inverse, origin: group.origin, at: 0, state: group.state });
     this.historyState = group.state ? { owner: group.state.owner, value: redo ? group.state.after : group.state.before } : undefined;
     this.userEdits++;
     this.version++;
-    this.emit();
+    this.emit(edits);
     return true;
   }
 
@@ -199,8 +208,12 @@ export class DocumentSession {
       historyState: this.historyState,
       revision: this.revision, dirty: this.source.raw !== this.savedRaw, saving: this.saving, conflict: this.conflict, locked: this.editLocks > 0 });
   }
-  private emit(): void {
+  private emit(batches: readonly (readonly SourceChange[])[] = []): void {
     this.current = this.createSnapshot();
+    if (this.changeListeners.size) for (const changes of batches) if (changes.length) {
+      const normalized = changes.map(change => ({ ...change, insert: change.insert.replace(/\r\n|\r/g, '\n') }));
+      for (const listener of this.changeListeners) listener(normalized);
+    }
     for (const listener of this.listeners) listener();
   }
 }
