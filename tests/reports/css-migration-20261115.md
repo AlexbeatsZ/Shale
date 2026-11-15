@@ -122,4 +122,4 @@ Vault 配置先同步到 0.1.69 时也能继续渲染。
 
 仓库 `tests/fixtures/personal-merged-table.js` 同步上述参数。
 原文件临时备份为 `/tmp/.agents/webobsidian-release-0.1.70/merged-table.before-source-range.js`，
-交付清理阶段删除。其他设备仍需收到这一 Vault 配置更新后才能获得生成表格的来源语义。
+交付清理阶段已删除。其他设备仍需收到这一 Vault 配置更新后才能获得生成表格的来源语义。

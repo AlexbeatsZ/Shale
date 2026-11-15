@@ -44,5 +44,29 @@
 
 ## 交付
 
-Mac arm64、Windows x64 与原证书 Android 手机/平板包的发布核对待完成。
-本轮的自动验收使用临时数据，真实设备交互与跨设备 Vault 同步分别记录。
+源码提交 `b0a399fe2f9a9b5fce35a16d693837876e7d59d0` 已推送 main。
+Mac arm64 DMG/ZIP 和两 Android APK 构建通过，Mac 包 codesign deep/strict 验证通过。
+手机与平板签名均和 0.1.69 原包一致，applicationId 沿用原值，versionCode 70，均无 debuggable 标志。
+Android 临时签名输入、隔离源码及旧 APK 中间输出已清理，仅保留当前交付物。
+Windows x64 已由同一 SHA 的 git archive 隔离构建，安装包 ProductVersion 为 0.1.70.0，
+安装包 129905719 字节、blockmap 135271 字节、latest.yml 370 字节，回传大小与远端 receipt 一致。
+更新元数据 version/path/files.size 核对通过，沿用已有未配置代码签名的 Windows 发布设置。
+OMEN 本轮隔离源码、依赖、中间包和脚本已删除，原仓库脏状态与缓存保留。
+已发布桌面 `v0.1.70`（Latest，7 个资产）与 `android-v0.1.70`（预发布，2 个 APK）。
+两标签都指向上述完整源码 SHA，发布后 API 核对 draft=false、预发布标志、全部文件大小及 Latest 指向通过。
+桌面发布时间为 2026-11-15 17:21:40 UTC，Android 为 17:21:42 UTC。
+
+| 资产 | 字节数 |
+| --- | ---: |
+| Mac arm64 DMG | 166487994 |
+| Mac arm64 ZIP | 160343440 |
+| Mac ZIP blockmap | 167263 |
+| latest-mac.yml | 362 |
+| Windows x64 NSIS | 129905719 |
+| Windows NSIS blockmap | 135271 |
+| latest.yml | 370 |
+| Android 手机 APK | 135671603 |
+| Android 平板 APK | 135671607 |
+本轮自动验收使用临时数据。当前已安装 Mac 仍为 0.1.69，其内置 Wiki 文件名滤镜会作用于已改色源图，
+因此实际日常显示需要升级到删除旧规则的 0.1.70。原位安装因用户提供的程序升级权限规则待确认，
+真实设备交互与跨设备 Vault 同步未验收。

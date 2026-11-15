@@ -14,7 +14,7 @@ Cập nhật lần cuối: 2026-11-15 (embed properties and reading controls)
 - [x] Add PDF Ctrl+wheel zoom and a default-off Markdown Ctrl+wheel font-size setting
 - [x] Remove migrated Hider/image rules, preserve current UI and report remaining dependencies
 - [x] Verify shared source, native renderer, PDF/virtual navigation and image regressions
-- [~] Build and publish the new native version
+- [x] Build and publish the new native version
 
 ## Isolated JavaScript charts and OpenAI controls (PRD 1.42)
 - [x] Restore JavaScript highlighting and fenced backgrounds in widget source editing
