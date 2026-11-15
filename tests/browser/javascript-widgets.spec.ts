@@ -143,11 +143,12 @@ test('explicit source keeps its background and highlighting and remounts a fresh
 });
 
 test('read-only Markdown bridge uses the native renderer and suppresses nested scripts', async ({ page }) => {
-  await mount(page, fence('await renderMarkdown("**Native output**\\n\\n<div class=\"settings-overlay\">overlay attempt</div>\\n\\n```js-widget\\nthrow new Error(\'nested\');\\n```");'));
+  const markdown = '**Native output**\n\n<div class="settings-overlay">overlay attempt</div>\n\n```js-widget\nthrow new Error("nested");\n```';
+  await mount(page, fence(`await renderMarkdown(${JSON.stringify(markdown)});`));
   await expect(page.locator('#javascript-fixture .interactive-js-native-output .cm-strong')).toHaveText('Native output');
   await expect(page.locator('#javascript-fixture iframe')).toHaveCount(1);
   await expect(page.locator('#javascript-fixture .interactive-js-error')).toHaveCount(0);
-  expect(await page.locator('#javascript-fixture .interactive-js-native-output').evaluate(element => getComputedStyle(element).contain)).toContain('paint');
+  expect(await page.locator('#javascript-fixture .interactive-js-native-output').evaluate(element => getComputedStyle(element).contain)).toBe('content');
   expect(await page.evaluate(() => document.elementFromPoint(innerWidth - 5, innerHeight - 5)?.closest('.settings-overlay') === null)).toBe(true);
   await page.evaluate(() => (window as any).javascriptFixture.unmount());
   await expect(page.locator('#javascript-fixture iframe')).toHaveCount(0);

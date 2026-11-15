@@ -31,7 +31,7 @@ container.textContent = JSON.stringify(result);
 `));
 // Exercise isolation even when the main application explicitly trusts plugins.
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: true }));
-const executablePath = process.argv[2] ?? path.join(root, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
+const executablePath = process.argv[2] ? path.resolve(process.argv[2]) : path.join(root, 'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
 const args = process.argv[2] ? [] : [path.join(root, 'desktop/dist/main.js')];
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
 let app;

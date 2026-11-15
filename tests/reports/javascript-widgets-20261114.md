@@ -47,6 +47,9 @@ expansion skipped both the fenced line styles and the code block wrapper.
 
 Native evidence is in
 `/var/folders/td/w919x1754kb93qf72km7vffh0000gn/T/.agents/javascript-native-UO9olR/evidence`.
+The final ad-hoc-signed Mac arm64 app reports version 0.1.69 and passed the same
+native regression. Its evidence is in
+`/var/folders/td/w919x1754kb93qf72km7vffh0000gn/T/.agents/javascript-native-0YZeOH/evidence`.
 Build/test logs are in `/tmp/.agents/webobsidian-widgets-20261114`.
 
 ## Delivery
@@ -55,6 +58,10 @@ Version 0.1.69, Android code 69. Mac arm64 and both non-debuggable Android
 variants have been built. Windows packaging and release publication are in
 progress. Daily-device installation and Android foreground acceptance remain
 pending.
+
+Both Android variants report versionCode 69/versionName 0.1.69 and have no
+application-debuggable flag. Their signing certificates match the previous
+phone/tablet deliveries. Sizes are 135655611 and 135655619 bytes respectively.
 
 ## Boundaries
 
