@@ -10,7 +10,7 @@
 
 ## Current State
 - 2026-11-15 已发布桌面 v0.1.71（Latest，7资产）与 android-v0.1.71（2原证书非调试APK/code71），标签源码 b2095a6，main 另含后续交付记录。PPT/PPTX 静态查看复用 PDF 分页/搜索/缩放、右侧大纲与等比例缩略图，同用 `pdf:toggle-dark` 并保留旧快捷键和按文件状态。600单元、24相关浏览器、三端类型、Mac/Windows实际Electron33包与生产入口通过。Android构建/lint/包身份通过，真机课件与触摸待验收。设计 `docs/design/presentation-viewer.md`，验收 `tests/reports/presentation-viewer-20261115.md`。
-- 当前设备安装记录为 Mac/OMEN/ROG/K70 的0.1.70，最近原位升级记录见 `tests/reports/embed-properties-20261115.md`。Mac/OMEN/K70在11月15日验收时原Vault健康、配置保留，ROG为原选库状态。K70仅user0、UID10246，原签名/首次安装/非调试身份已核对。Xiaomi Pad6Pro最后记录为0.1.66，离线待恢复连接。
+- 2026-11-16 品牌改名：安装后显示名为 **Shale**（Pixel 2026 白底图标），appId `com.xnohat.webobsidian`、Android 包名、数据目录与签名不变。0.1.72 已原位装到 Mac（新 `/Applications/Shale.app`，旧 WebObsidian.app 已移入废纸篓）、OMEN（保持未运行）、ROG（正常关闭后升级并重新启动）、K70（code72，user0，首次安装时间不变）。按用户要求未发 Release、未做界面/同步验收。平板离线，最后记录为0.1.66。
 - 0.1.70 的统一图片属性/图号引用/菜单、按背景适配滤镜、PDF和连续文档Ctrl+滚轮、默认关闭MD字号滚轮已交付。实际STEM Theme/Hider已清理，14张Wiki SVG按用户要求永久改色，exTable已补来源透传。设计 `docs/design/embed-properties.md`。
 - JavaScript图表在opaque-origin iframe运行，应用DOM/Node/原生桥/应用API保持隔离，内置只读组件与OpenAI控件已接通。CPU/内存耗尽仍可能影响渲染进程，iframe没有运算配额。设计 `docs/design/native-javascript.md`。
 - 原生同步地址为 `http://100.106.169.46:18744/webobsidian-sync/v1/`。ROG WebObsidianNativeSync按11月14日任务使用该IP监听，server.json/connection.json已更新且沿用workspaceId；Mac/OMEN已实同步。K70 sync.jsonc已改写并回读，实际同步待应用恢复响应。ROG桌面端无活动Vault，平板离线待改。
@@ -32,9 +32,10 @@
 - JS图表回归运行`node tests/desktop-javascript-widgets.mjs <打包应用可执行文件>`，使用临时Vault/profile；图表验收完成后直接退出临时进程。专项浏览器为javascript-widgets、async-processor-transition、host、source-syntax、render-script-lifetime五个规格。构建core与浏览器运行串行。
 - Mac 本机包(只打当前架构,不发布):
   `cd desktop && node scripts/build.mjs && CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac dir --arm64 --publish never`
-  产物在 `desktop/release/<版本>/mac-arm64/WebObsidian.app`(gitignored)。
+  产物在 `desktop/release/<版本>/mac-arm64/Shale.app`(gitignored)。
 - Mac 发布包仅arm64:`npx electron-builder --mac --arm64 --publish never` 后 `gh release upload v<版本> ...dmg ...zip ...blockmap latest-mac.yml`。不要添加Intel/x64或universal产物；旧构建可清理，原签名密钥/SDK/用户数据/验收记录/历史Release保留。
-- 安装:退出应用后替换 `/Applications/WebObsidian.app`,`codesign --verify --deep --strict` 通过后启动;用服务端口的 `/healthz` 验证(端口用 `lsof -iTCP -sTCP:LISTEN | grep -i webobs` 查)。
+- 安装:退出应用后替换 `/Applications/Shale.app`,`codesign --verify --deep --strict` 通过后启动;用服务端口的 `/healthz` 验证(端口用 `lsof -iTCP -sTCP:LISTEN | grep -i shale` 查)。
+- Windows 安装在 Session1 进行(一次性 Interactive 计划任务):先 `CloseMainWindow` 正常关闭，再 `Shale-<ver>-win-x64-setup.exe /S`。Android 从 OMEN `git archive` 隔离目录构建时需把 Mac 已解压的 `android/.runtime`(nodejs-mobile)放入，并临时复制 `meta-obsidian/android/.signing`,构建后删除。
 
 ## Durable Lessons
 - 仅副作用导入的上游 Worker 包装可能被 package sideEffects 树摇删除，须使用真实打包入口。Electron33 Worker 请求不继承页面 User-Agent 标记，课件本地 blob 内联也受 connect-src 限制，原生包必须覆盖实际 Worker 与图片页。
@@ -55,6 +56,8 @@
 - 跑浏览器套件期间不要改源码：Vite HMR 带 `?t=` 的导入可能与测试里动态导入的无版本模块各生成一份 store/StateField，造成错误的状态身份或空分栏。若发生，废弃该轮并重启 Vite 后从干净服务复验。
 
 - Android 构建前先 `node android/scripts/prepare.mjs` 刷新 `.gen`，否则 APK 用旧前端；仅手机包时 `./gradlew :app:assembleRelease -x requireTabletKey`。
+
+- 改名 Shale 后 Windows NSIS(同 appId)会沿用旧安装目录 `%LOCALAPPDATA%\Programs\WebObsidian`,其中可执行文件变为 `Shale.exe`,不会出现 `Programs\Shale`。数据目录取自 package `name`(Mac `~/Library/Application Support/@webobsidian/desktop`),改 productName 不影响。
 
 ## Docs Index
 - PowerPoint与共用分页阅读 → `docs/design/presentation-viewer.md`、`document-navigation.md`、`document-media-theme.md`。
