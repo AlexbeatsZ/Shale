@@ -27,7 +27,7 @@ Thiết kế chính thức nằm ở
 - Ngôn ngữ: TypeScript cho cả server và web. Tránh `any` khi có thể.
 - Cấu hình runtime: chỉ dùng file JSON (`data/settings.json`) — không thêm DB engine.
 - Bảo mật: không log secret/token/API key; hash trước khi lưu; guard path traversal.
-- Commit/push git **chỉ khi người dùng yêu cầu**.
+- Với personal fork này, commit các thay đổi có ý nghĩa, bao gồm `AGENTS.md`, `docs/` và nhật ký dự án, rồi push nhánh hiện tại và phát hành bản build theo chỉ dẫn của chủ kho. Khi gửi PR cho upstream, giữ nhật ký agent ngoài PR.
 
 ## Lệnh hữu ích
 ```bash

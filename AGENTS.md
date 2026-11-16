@@ -5,7 +5,11 @@
 ## Goal
 个人使用的 WebObsidian 原生桌面/Android 应用(fork 自 xnohat/webobsidian,远程 `AlexbeatsZ/webobsidian`)。
 
+## Repository Records
+- 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
+
 ## Current State
+- 2026-11-15 已发布桌面 v0.1.70（Latest，7资产）与 android-v0.1.70（2非调试APK/code70），源码 b0a399f。统一图片属性/图号引用/菜单与 embeds.css，修复异步图片光标插入，PDF实时dark与Ctrl滚轮、默认关闭MD字号滚轮。595单元、75相关浏览器、三端类型、两轮Mac原生严格验收通过。实际STEM Theme/Hider清理，14 Wiki SVG按用户要求永久改色，exTable补来源透传。用户已授权升级所有可连接设备，Mac/OMEN/ROG/K70已原位70并启动，Mac/OMEN/K70原Vault健康、配置保留，ROG原选库状态保留。K70仅user0，UID10246/首次安装时间/非调试身份保留，平板仍离线待升级。设计docs/design/embed-properties.md，验收tests/reports/embed-properties-20261115.md。
 - 2026-11-14 已发布桌面v0.1.69(Latest，7资产)与android-v0.1.69预发布(2非调试APK/code69)，标签源码9c6f465。js-widget/javascript-widget源码复用JS高亮并保留展开背景；笔记代码在opaque-origin iframe执行，app/应用DOM/Node/原生桥与应用API不再暴露。OpenAI Apps SDK UI0.2.2实际控件通过ui.slider/button/toggle/segmented使用，ECharts配套主题跟随深浅色。旧app脚本需改，五个内置只读组件保留，配置JS改数据解析。560单元、28专项浏览器、三端类型、生产入口与Mac/Windows实际69包图表验收通过。随后已原位部署Mac/OMEN/ROG/K70并启动，Mac/OMEN/K70原服务health200，配置字节一致；ROG原生选库流程保留。K70 UID10246/首次安装/非调试身份保留，仅user0升级；平板离线跳过，维持66。设计docs/design/native-javascript.md；示例docs/examples/javascript-blocks.md；验收tests/reports/javascript-widgets-20261114.md。
 - 2026-11-14 同步连接统一只用 `http://100.106.169.46:18744/webobsidian-sync/v1/`。ROG 的 WebObsidianNativeSync 已按原任务改用该 Tailscale IP 监听，活动 server.json 与 connection.json 已更新，workspaceId 沿用原库。Mac/OMEN 已实同步成功。K70 原 STEM sync.jsonc 已原子改写并回读，后台本地 API 超时，实际同步待应用恢复响应。平板离线待改。ROG 桌面端尚无活动 Vault。运行配置调整，无客户端发版。
 - 2026-11-08补正:Android已升级0.1.66/code66（源码3899d5f）；日常仅用不可调试release/tabletRelease，后者保留旧.debug包名与证书但debuggable/JNI/BuildConfig.DEBUG均false，WebView调试关闭。两实机无DEBUGGABLE、run-as拒绝，原UID/首次安装/权限保留。Mac/OMEN/ROG65正常启动无inspect或remote-debugging参数。Android独立android-v0.1.66预发布两非调试APK大小/tag源已核对，取代65Android日常交付。详见tests/reports/android-release-20261108.md。
@@ -18,6 +22,7 @@
 - Mac用户数据：~/Library/Application Support/@webobsidian/desktop；服务日志logs/server.log。
 
 ## Active Work
+- 2026-11-15 图片属性与阅读缩放0.1.70已实现并发布，用户已授权全部可连接设备原位升级。Mac/OMEN/ROG/K70完成70升级和启动，K70新广播42471可连且原Vault健康。平板未发现，待其可连接后升级。部署证据/tmp/.agents/webobsidian-deploy-0.1.70。
 - 0.1.69已部署所有可连接设备，Android实机图表交互待验收。CPU/内存耗尽仍可能影响渲染进程，iframe不提供运算资源配额。
 - 2026-11-13 正在实施 PRD1.41 三端宿主整理，用户最终要求部署 Mac、OMEN、ROG 和 K70，均已完成0.1.67升级和启动，桌面/Android Release已发布。用户要求停止进一步检查。实现a0e230a已推送；558单元/类型/生产和原生生命周期通过，浏览器396/402且6失败原提交复现；K70正式67原位升级/签名UID配置和原STEM健康通过，Back/剪贴板/导出UI待用户空闲。设计 docs/design/host-lifecycle.md，验收 tests/reports/host-lifecycle-20261113.md。
 - 2026-11-14 标签页统一宽度0.1.68已部署Mac/OMEN/ROG/K70并发布v0.1.68与android-v0.1.68；平板维持0.1.66。
