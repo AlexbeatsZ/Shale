@@ -27,4 +27,22 @@
 
 ## 交付状态
 
-Mac arm64 和 Android 两非调试发布包已构建。Windows x64 构建与两组 Release 仍在收尾。Android 实机显示、触摸与长期运行尚未验收。
+源码 `b2095a6978e6a1b072ac691ef9314480462354cb` 已推送 main。桌面 `v0.1.71` 已作为 Latest 发布，7 个资产；Android `android-v0.1.71` 已作为预发布发布，2 个原证书非调试 APK/code71。两标签均指向该源码，发布后 API 已核对全部文件名、大小、状态和 Latest 指向。
+
+Windows 从同一源码的 git archive 在 OMEN 临时目录通过 npm ci 和完整构建，NSIS 的 ProductVersion 为 0.1.71.0。实际 Windows Electron 包通过与 Mac 相同的两种格式、图片/表格、搜索、右侧栏、反色恢复、Ctrl+滚轮和只读字节验收，renderer/控制台错误均为零。Windows 原生证据位于 `C:/Users/Meta/AppData/Local/Temp/.agents/presentation-native-w9GSk8/evidence`。
+
+Android 两 APK 的 applicationId 分别为 `io.github.alexbeatsz.webobsidian` 与 `io.github.alexbeatsz.webobsidian.debug`，versionName 0.1.71、versionCode71，均无 debuggable 标志。两证书与 0.1.70 对应原包一致，16KiB zipalign 验证通过。Android 实机显示、触摸与长期运行尚未验收。
+
+| 资产 | 字节 |
+| --- | ---: |
+| Mac arm64 DMG | 166657955 |
+| Mac arm64 ZIP | 160535867 |
+| Mac ZIP blockmap | 167486 |
+| latest-mac.yml | 362 |
+| Windows x64 NSIS | 130078031 |
+| Windows NSIS blockmap | 135503 |
+| latest.yml | 370 |
+| Android 手机 APK | 135869550 |
+| Android 平板 APK | 135869558 |
+
+本地按平台保留 0.1.71 交付物。临时签名输入、研究源码及 Windows 隔离构建目录已清理。

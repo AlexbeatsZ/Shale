@@ -10,7 +10,7 @@ Cập nhật lần cuối: 2026-11-15 (PowerPoint viewing)
 - [x] Integrate local PPT/PPTX parsing through the shared PDF reader resource contract
 - [x] Reuse toolbar, navigation, search, right outline/thumbnails and persisted dark command
 - [x] Verify formats, cancellation, identity, native production rendering and PDF regressions
-- [~] Build and publish the new native version
+- [x] Build and publish the new native version
 
 ## Embed properties and reading controls (PRD 1.43)
 - [x] Unify image source properties, numbered captions and implicit image references
@@ -687,7 +687,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
-- 2026-11-15 (PRD 1.44): 开始实现 PowerPoint 静态阅读，复用 PDF 阅读与侧栏结构、搜索及同一反色命令。
+- 2026-11-15 (PRD 1.44): PowerPoint 静态阅读已完成并发布 0.1.71，复用 PDF 阅读与侧栏结构、搜索及同一反色命令。600 单元、24 相关浏览器、Mac/Windows 实际原生包、生产入口与 Android 构建通过。OMEN/ROG 独有日志已归并并随项目入口推送 GitHub。
 
 - 2026-11-15 (PRD 1.43) K70 无线调试恢复后仅 user0 原位升级0.1.70/code70，原签名、UID10246、首次安装时间与设置字节保留，非调试身份和原Vault health200通过。Mac/OMEN/ROG已完成70部署，平板仍离线待升级。
 - 2026-11-14 (PRD 1.42) 用户要求部署所有可连接设备。Mac/OMEN/ROG/K70均由68原位升级69并启动；Mac/OMEN/K70健康检查通过，配置逐字节保留；ROG沿用原选库流程。K70仅user0，UID10246/首次安装时间保留，仍为非调试包。平板ADB与局域网发现均离线，按要求跳过。临时旧Mac应用、Windows安装输入和部署计划任务已清理。Android实机图表交互待验收。
