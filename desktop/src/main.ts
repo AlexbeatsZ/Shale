@@ -86,7 +86,7 @@ function requestWindowClose(window: BrowserWindow, quit: boolean): Promise<void>
       if (!window.isDestroyed()) {
         window.webContents.send('desktop:close-cancelled');
         window.show();
-        dialog.showErrorBox('无法关闭 WebObsidian', String(error));
+        dialog.showErrorBox('无法关闭 Shale', String(error));
       }
     } finally { quitRequested = false; quitRequest = undefined; }
   })();
@@ -156,7 +156,7 @@ async function startServer(cfg: DesktopConfig): Promise<void> {
     },
     onExit: error => {
       serverReady = false;
-      dialog.showErrorBox('本地服务已停止', `${error.message}\n请重新启动 WebObsidian，当前页面的编辑仍保留在窗口中。`);
+      dialog.showErrorBox('本地服务已停止', `${error.message}\n请重新启动 Shale，当前页面的编辑仍保留在窗口中。`);
       mainWindow?.webContents.send('desktop:server-stopped');
     },
   });
@@ -196,7 +196,7 @@ async function ensureVault(cfg: DesktopConfig): Promise<DesktopConfig | undefine
 async function pickVaultDialog(): Promise<string | undefined> {
   const result = await dialog.showOpenDialog({
     title: "选择仓库文件夹",
-    message: '选择用作 WebObsidian 仓库的文件夹',
+    message: '选择用作 Shale 仓库的文件夹',
     properties: ['openDirectory', 'createDirectory'],
     buttonLabel: '使用此文件夹',
   });
@@ -213,7 +213,7 @@ function createWindow(starting = false): void {
     minWidth: 720,
     minHeight: 480,
     backgroundColor: '#1e1e1e',
-    title: 'WebObsidian',
+    title: 'Shale',
     icon: app.isPackaged ? undefined : DEVELOPMENT_ICON,
     titleBarStyle: 'hidden',
     ...(process.platform === 'darwin' ? {
@@ -282,7 +282,7 @@ function createWindow(starting = false): void {
   // Show a real window before cold Vault indexing. A second click must focus
   // this window rather than looking as though the first launch did nothing.
   void mainWindow.loadURL(starting ? `data:text/html;charset=utf-8,${encodeURIComponent(`<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>WebObsidian</title>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>Shale</title>
 <style>html{color-scheme:dark}body{margin:0;background:#1e1e1e;color:#ddd;font:15px system-ui;display:grid;place-content:center;height:100vh;text-align:center}.drag{-webkit-app-region:drag;position:fixed;inset:0 140px auto 0;height:32px}p{color:#aaa;font-size:13px}.spinner{margin:0 auto 20px;width:28px;height:28px;border:3px solid #444;border-top-color:#b9a3e3;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}</style></head>
 <body><div class="drag"></div><div class="spinner"></div><div role="status">正在打开笔记库</div><p>正在准备本地服务与索引，首次打开可能需要一些时间。</p></body></html>`)}` : baseUrl(serverPort));
 }
@@ -292,18 +292,18 @@ function buildMenu(): void {
   // Native menus dispatch the same registered commands as the palette/hotkeys.
   const command = (id: DesktopCommand) => () => mainWindow?.webContents.send('desktop:command', id);
   const template: MenuItemConstructorOptions[] = [
-    ...(isMac ? [{ label: 'WebObsidian', submenu: [
-      { role: 'about' as const, label: '关于 WebObsidian' },
+    ...(isMac ? [{ label: 'Shale', submenu: [
+      { role: 'about' as const, label: '关于 Shale' },
       { type: 'separator' as const },
       { label: '设置…', click: command('settings') },
       { type: 'separator' as const },
       { role: 'services' as const, label: '服务' },
       { type: 'separator' as const },
-      { role: 'hide' as const, label: '隐藏 WebObsidian' },
+      { role: 'hide' as const, label: '隐藏 Shale' },
       { role: 'hideOthers' as const, label: '隐藏其他' },
       { role: 'unhide' as const, label: '全部显示' },
       { type: 'separator' as const },
-      { role: 'quit' as const, label: '退出 WebObsidian' },
+      { role: 'quit' as const, label: '退出 Shale' },
     ] }] : []),
     {
       label: "文件",
@@ -503,7 +503,7 @@ if (!app.requestSingleInstanceLock()) {
       if (mainWindow && !mainWindow.isDestroyed()) await mainWindow.loadURL(baseUrl(serverPort));
     } catch (err) {
       await serverProcess?.stop();
-      if (!quitRequested && !finishingQuit) dialog.showErrorBox('WebObsidian failed to start', String(err instanceof Error ? err.stack ?? err.message : err));
+      if (!quitRequested && !finishingQuit) dialog.showErrorBox('Shale failed to start', String(err instanceof Error ? err.stack ?? err.message : err));
       app.quit();
     }
   });
@@ -521,7 +521,7 @@ if (!app.requestSingleInstanceLock()) {
     if (!finishingQuit && (mcpLauncher || serverProcess)) {
       event.preventDefault();
       if (!quitRequest) quitRequest = Promise.resolve().then(async () => { await mcpLauncher?.stop(); await serverProcess?.stop(); finishingQuit = true; app.quit(); })
-        .catch(error => dialog.showErrorBox('无法退出 WebObsidian', String(error))).finally(() => { quitRequest = undefined; });
+        .catch(error => dialog.showErrorBox('无法退出 Shale', String(error))).finally(() => { quitRequest = undefined; });
       return;
     }
   });

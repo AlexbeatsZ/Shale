@@ -1,8 +1,8 @@
 {
   "name": "@webobsidian/desktop",
-  "version": "0.1.71",
+  "version": "0.1.72",
   "private": true,
-  "description": "WebObsidian native desktop application",
+  "description": "Shale native desktop application",
   "author": "xnohat <xnohat@gmail.com>",
   "homepage": "https://github.com/AlexbeatsZ/webobsidian",
   "license": "MIT",
@@ -29,7 +29,7 @@
   },
   "build": {
     "appId": "com.xnohat.webobsidian",
-    "productName": "WebObsidian",
+    "productName": "Shale",
     "copyright": "Copyright © 2026 xnohat",
     "electronVersion": "33.4.11",
     "beforePack": "scripts/before-pack.cjs",

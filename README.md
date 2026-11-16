@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="desktop/buildResources/icon-macos.png" alt="WebObsidian 当前 macOS / Android 图标" width="120" />
+  <img src="desktop/buildResources/icon-macos.png" alt="WebObsidian 当前 macOS 图标" width="120" />
 
 # WebObsidian
 
@@ -50,7 +50,7 @@ WebObsidian 基于 [xnohat/webobsidian](https://github.com/xnohat/webobsidian) �
 
 首次启动选择或创建 Vault 文件夹。笔记、图片与 Vault 配置不会因卸载应用或升级安装包自动改写。需要跨设备同步时，再按 [同步服务说明](sync-server/README.md) **单独**安装后端并在客户端启用同步；单机使用无需部署服务器。
 
-> **图标说明**：本页展示当前 macOS/Android 风格图标；Windows 使用[专用透明图标](desktop/buildResources/icon-windows.png)，Linux 使用 `desktop/buildResources/icon.png`。旧 `assets/logo.png` 不再是项目主页图标来源。安装包的真实图标由 `desktop/package.json` 和 Android 图标生成脚本确定。
+> **图标说明**：本页展示当前 macOS 风格图标（Pixel 2026 渐变风格的叠页文档，白色底板）；Windows 使用[专用透明图标](desktop/buildResources/icon-windows.png)，Linux 使用 `desktop/buildResources/icon.png`，Android 由 `desktop/buildResources/icon-android.png` 经 `android/scripts/generate-icons.py` 生成，并带有主题图标单色层。旧 `assets/logo.png` 不再是项目主页图标来源。安装包的真实图标由 `desktop/package.json` 和 Android 图标生成脚本确定。
 
 ## 从源码构建
 

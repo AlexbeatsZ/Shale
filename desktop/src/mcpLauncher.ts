@@ -103,10 +103,10 @@ export class McpLauncher {
     this.busy = true;
     try {
       const state = await this.inspect();
-      if (!state.available) throw new Error('安装包缺少内置 MCP 组件，请重新安装 WebObsidian');
+      if (!state.available) throw new Error('安装包缺少内置 MCP 组件，请重新安装 Shale');
       if (!state.tunnelId || !state.hasKey) throw new Error('请先在连接设置中填写 Tunnel ID 和运行密钥');
       const local = await fetch(`${this.options.serverUrl}/healthz`, { signal: AbortSignal.timeout(3000) });
-      if (!local.ok) throw new Error('本机 WebObsidian 服务尚未就绪');
+      if (!local.ok) throw new Error('本机 Shale 服务尚未就绪');
       if (await this.healthy()) return { ...state, connected: true, ok: true, output: '已连接' };
       await this.stop();
       const connection = await this.readConnection();
