@@ -1,13 +1,13 @@
-import type { TextContent, TextItem } from 'pdfjs-dist/types/src/display/api';
+import type { TextContent } from 'pdfjs-dist/types/src/display/api';
 import type { PdfBox, PdfMatch } from './types';
 
-export interface PdfPageText {
-  content: TextContent;
+export interface PageText {
   text: string;
   width: number;
   height: number;
-  runs: { from: number; to: number; item: TextItem; box: PdfBox; axis: 'x' | 'y'; reverse: boolean }[];
+  runs: { from: number; to: number; box: PdfBox; axis: 'x' | 'y'; reverse: boolean }[];
 }
+export interface PdfPageText extends PageText { content: TextContent }
 
 export function pageText(content: TextContent, viewport: { width: number; height: number; transform: number[] }): PdfPageText {
   let text = '';
@@ -32,7 +32,7 @@ export function pageText(content: TextContent, viewport: { width: number; height
     const endY = topY + axisY / advance * item.width * scale;
     const axis = Math.abs(axisY) > Math.abs(axisX) ? 'y' : 'x';
     const reverse = ((axis === 'y' ? axisY : axisX) < 0) !== (item.dir === 'rtl');
-    runs.push({ from, to: text.length, item, axis, reverse, box: {
+    runs.push({ from, to: text.length, axis, reverse, box: {
       x: Math.min(topX, endX, topX - verticalX) / viewport.width,
       y: Math.min(topY, endY, topY - verticalY) / viewport.height,
       width: (Math.abs(endX - topX) + Math.abs(verticalX)) / viewport.width,
@@ -57,7 +57,7 @@ function folded(text: string) {
   return { value, offsets };
 }
 
-export function findPageMatches(model: PdfPageText, query: string, page: number): PdfMatch[] {
+export function findPageMatches(model: PageText, query: string, page: number): PdfMatch[] {
   const needle = folded(query.trim()).value;
   if (!needle) return [];
   const haystack = folded(model.text), matches: PdfMatch[] = [];

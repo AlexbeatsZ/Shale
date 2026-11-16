@@ -5,10 +5,12 @@ import { readFileSync } from 'node:fs';
 import { mathJaxAssets, mathJaxVersion } from './mathjaxAssets';
 import { pdfAssetsPlugin } from './src/lib/pdf/vitePlugin';
 import { javascriptFramePlugin } from './src/lib/javascript/vitePlugin';
+import { presentationLicenses } from './src/lib/ppt/vitePlugin';
 
 // Shared native renderer assets, bundled by the desktop and Android shells.
 export default defineConfig({
-  plugins: [react(), mathJaxAssets(), pdfAssetsPlugin(), javascriptFramePlugin()],
+  plugins: [react(), mathJaxAssets(), pdfAssetsPlugin(), javascriptFramePlugin(), presentationLicenses()],
+  optimizeDeps: { include: ['@web-ppt/core', '@web-ppt/core/worker'] },
   define: { __MATHJAX_VERSION__: JSON.stringify(mathJaxVersion),
     __APP_VERSION__: JSON.stringify(JSON.parse(readFileSync(resolve(__dirname, '../desktop/package.json'), 'utf8')).version) },
   build: {

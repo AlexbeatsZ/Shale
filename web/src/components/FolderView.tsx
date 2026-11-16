@@ -9,6 +9,7 @@ function entryIcon(n: TreeNode): string {
   if (/\.(md|markdown)$/i.test(ext)) return 'file-text';
   if (/\.(png|jpe?g|gif|svg|webp)$/i.test(ext)) return 'image';
   if (ext === '.pdf') return 'file-pdf';
+  if (/^\.pptx?$/.test(ext)) return 'presentation';
   return 'paperclip';
 }
 

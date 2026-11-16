@@ -335,7 +335,7 @@ export default function WorkspaceTabs() {
       </button>
       <div className="titlebar-drag-space" />
       {mainPdf && <button type="button" className={`tab-new tab-ctl pdf-toolbar-toggle${pdfToolbarOpen ? ' is-active' : ''}`}
-        title="显示/隐藏 PDF 工具栏" aria-label="显示/隐藏 PDF 工具栏" aria-expanded={pdfToolbarOpen}
+        title={`显示/隐藏 ${mainPdf.label} 工具栏`} aria-label={`显示/隐藏 ${mainPdf.label} 工具栏`} aria-expanded={pdfToolbarOpen}
         onClick={togglePdfToolbar}>
         <Icon name="panel-top" size={16} />
       </button>}

@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.43 · Cập nhật: 2026-11-15 · Trạng thái: Draft
+> Phiên bản: 1.44 · Cập nhật: 2026-11-15 · Trạng thái: Draft
+> Changelog 1.44 (PowerPoint 阅读) 原生工作区支持 `.ppt` 与 `.pptx` 静态幻灯片查看，复用 PDF 的分页、工具栏、搜索、右侧大纲与缩略图布局。PDF 与 PPT 共用深色背景适配命令，保留原命令 ID 与快捷键配置，按文件保存显示状态。使用本地打包的开源解析器，文件通过原 Vault 身份范围读取。设计见 docs/design/presentation-viewer.md。
 > Changelog 1.43 (嵌入属性、图片编号与阅读缩放) 图片属性采用 `![[file.png|别名#width=320#dark]]`，无参开关与英文键值参数共用原生模型，保留 dark、移除 Wiki 特判。图片默认小字图注“图aa-bb 别名或文件名”，普通图片引用显示最近前置显式实例图号，空别名显示原名。图片右键“添加属性”提供勾选/参数与用户 CSS 自定义属性。按当前背景实时过滤图片/PDF，原生 PDF 与连续文档 PDF 支持 Ctrl+滚轮缩放，Markdown 字号滚轮开关默认关闭。修复异步图片粘贴位置并清理已迁移的 Hider/图片旧规则，保留当前 UI 与用户仍依赖的效果。现有 Wiki SVG 按用户后续要求直接永久应用旧 Wiki 颜色变换，保留笔记引用原文。设计见 docs/design/embed-properties.md。
 > Changelog 1.42 (隔离 JavaScript 图表与官方控件) `js-widget` / `javascript-widget` 复用 JavaScript 高亮，编辑和源码展开保留代码块背景。笔记脚本仅在独立 opaque-origin iframe 内执行，禁止访问应用 DOM、Vault 写入、原生桥与网络请求。保留绘图、DOM 交互、生命周期及只读内置组件桥。接入 OpenAI Apps SDK UI 的滑块、按钮、开关、分段选择与配套深浅色图表主题。设计见 docs/design/native-javascript.md。
 > Changelog 1.41 (三端宿主整理与故障恢复) 统一平台身份、宿主能力与导出入口，复用服务端插件请求；服务自行分配端口并在冷建索引期间报告未就绪，正常退出等待文件更新、同步与缓存持久化。修复 Android 选库恢复、同版本资源刷新、UTF-8 路径、返回键与原生导出，桌面启动期关窗、无响应页面关闭及 Tunnel 退出。验证三端构建，按原身份部署 Redmi K70。设计见 docs/design/host-lifecycle.md。
@@ -510,7 +511,7 @@ cùng một codebase React.
 ### FR-16 · 工作区与阅读辅助
 - 设计见 [工作区侧栏](docs/design/workspace-sidebars.md)、[文档导航](docs/design/document-navigation.md)。
 - 分屏编辑(左右/上下),命令和导航跟随当前聚焦的页面;左右侧栏支持固定入口和动态标签页。
-- PDF 阅读器(页面缩略图、目录大纲)、Markdown 小地图、链接悬停预览、内容引用与块引用跳转。
+- PDF 与 PowerPoint (`.ppt` / `.pptx`) 阅读器共用分页、缩放、搜索、右侧大纲/缩略图和反色命令，按文件保存反色状态。PPT 大纲来自幻灯片标题及原有分节，按静态终态展示。Markdown 小地图、链接悬停预览、内容引用与块引用跳转。
 - 虚拟文档用文件夹中的 `.virtual-document.json` 声明有序分组，在文件树和快速切换器中显示为一个文档。
   自动生成首页目录与跨来源大纲，连续阅读按邻近窗口加载 Markdown/PDF，原始文件保持独立，在连续页面中按真实来源独立编辑。
   分组选择与 JSON 高亮配置入口位于右下角状态栏，不增加顶部栏；默认分组 MD/PDF。右键可在系统文件管理器定位。

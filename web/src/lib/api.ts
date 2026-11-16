@@ -48,7 +48,7 @@ export function subscribeMutations(listener: () => void) {
 const mutationChanged = () => { for (const listener of mutationListeners) listener(); };
 let uiSettingsWrites: Promise<unknown> = Promise.resolve();
 
-async function req<T>(url: string, opts: RequestInit & { vault?: string } = {}, trackMutation = true): Promise<T> {
+async function req<T>(url: string, opts: RequestInit & { vault?: string } = {}, trackMutation = true, binary = false): Promise<T> {
   const scoped = url.startsWith('/api/') && url !== '/api/vault-identity';
   if (vaultSessionStale && scoped && !url.startsWith('/api/settings'))
     throw new ApiError('Vault 已切换，请重新加载应用；旧文档会话保留', 409);
@@ -90,7 +90,7 @@ async function req<T>(url: string, opts: RequestInit & { vault?: string } = {}, 
     throw new ApiError(msg, res.status);
   }
   const ct = res.headers.get('content-type') ?? '';
-  const result = await (ct.includes('application/json') ? res.json() : res.text()) as T;
+  const result = await (binary ? res.arrayBuffer() : ct.includes('application/json') ? res.json() : res.text()) as T;
   if (scoped && vaultSessionStale && !url.startsWith('/api/settings'))
     throw new ApiError('Vault 已切换，已忽略旧请求结果', 409);
   return result;
@@ -99,6 +99,7 @@ async function req<T>(url: string, opts: RequestInit & { vault?: string } = {}, 
 
 // Feature modules share the core request and error-handling path.
 export { req as request };
+export const requestBinary = (url: string, opts: RequestInit & { vault?: string } = {}) => req<ArrayBuffer>(url, opts, false, true);
 
 export class ApiError extends Error {
   constructor(

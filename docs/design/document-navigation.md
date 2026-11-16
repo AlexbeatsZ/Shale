@@ -2,7 +2,7 @@
 
 ## 第一版范围
 
-- PDF 在应用内只读查看，不进入 Markdown DocumentSession，也不参与文本保存。
+- PDF 与 PowerPoint (`.ppt` / `.pptx`) 在应用内只读查看，共用分页阅读器、工具栏与右侧栏，不进入 Markdown DocumentSession。PPT 解析与静态幻灯片规则见 `presentation-viewer.md`。
 - 大纲和固定的“缩略图”入口均位于右侧栏；左侧固定入口不变。
 - Markdown 大纲继续使用 DocumentSession.analysis 的标题；PDF 使用文件内置目录和目的位置。没有目录时明确提示，不把页列表伪装成目录。
 - Markdown 缩略图展示全文分布和当前视口，支持点击、拖动视口定位；PDF 缩略图按页排列，标记当前页，点击跳页。

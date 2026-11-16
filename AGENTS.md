@@ -22,6 +22,7 @@
 - Mac用户数据：~/Library/Application Support/@webobsidian/desktop；服务日志logs/server.log。
 
 ## Active Work
+- 2026-11-15 PPT/PPTX 静态查看与 PDF 共用分页、搜索、侧栏和 `pdf:toggle-dark` 已完成，0.1.71 Mac/Android 发布包已构建，Windows与发布正在收尾。600单元、24相关浏览器、Mac Electron33实际包与生产入口通过。设计 docs/design/presentation-viewer.md，验收 tests/reports/presentation-viewer-20261115.md。
 - 2026-11-15 图片属性与阅读缩放0.1.70已实现并发布，用户已授权全部可连接设备原位升级。Mac/OMEN/ROG/K70完成70升级和启动，K70新广播42471可连且原Vault健康。平板未发现，待其可连接后升级。部署证据/tmp/.agents/webobsidian-deploy-0.1.70。
 - 0.1.69已部署所有可连接设备，Android实机图表交互待验收。CPU/内存耗尽仍可能影响渲染进程，iframe不提供运算资源配额。
 - 2026-11-13 正在实施 PRD1.41 三端宿主整理，用户最终要求部署 Mac、OMEN、ROG 和 K70，均已完成0.1.67升级和启动，桌面/Android Release已发布。用户要求停止进一步检查。实现a0e230a已推送；558单元/类型/生产和原生生命周期通过，浏览器396/402且6失败原提交复现；K70正式67原位升级/签名UID配置和原STEM健康通过，Back/剪贴板/导出UI待用户空闲。设计 docs/design/host-lifecycle.md，验收 tests/reports/host-lifecycle-20261113.md。

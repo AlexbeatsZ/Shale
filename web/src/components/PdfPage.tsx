@@ -41,7 +41,6 @@ export default function PdfPage({ session, page, width, thumbnail = false, onSiz
     const canvas = document.createElement('canvas');
     canvas.setAttribute('aria-label', `第 ${page} 页${thumbnail ? '缩略图' : ''}`);
     const text = document.createElement('div'); text.className = 'pdf-text-layer textLayer';
-    let layer: import('pdfjs-dist').TextLayer | undefined;
     root.replaceChildren(canvas);
     setReady(false); setError('');
     const rendering = resource.render(page, canvas, width, signal.signal).then(async viewport => {
@@ -49,19 +48,15 @@ export default function PdfPage({ session, page, width, thumbnail = false, onSiz
       setDimensions({ width: viewport.width, height: viewport.height });
       size.current?.(viewport.height / viewport.width);
       if (!thumbnail) {
-        const [{ TextLayer }, model] = await Promise.all([import('../lib/pdf/runtime'), resource.text(page)]);
-        if (signal.signal.aborted) return;
-        text.style.setProperty('--total-scale-factor', String(viewport.scale));
-        layer = new TextLayer({ textContentSource: model.content, container: text, viewport });
         root.append(text);
-        await layer.render();
+        await resource.renderText(page, text, width, signal.signal);
       }
       if (!signal.signal.aborted) setReady(true);
     }).catch(cause => {
       if (!signal.signal.aborted) setError(String(cause));
     });
     return () => {
-      signal.abort(); layer?.cancel();
+      signal.abort();
       root.replaceChildren();
       void rendering.finally(() => { canvas.width = 0; canvas.height = 0; });
     };

@@ -15,9 +15,10 @@ function Entries({ entries, session, current }: { entries: readonly PdfOutlineEn
 
 export default function PdfOutlinePanel({ session }: { session: PdfSession }) {
   const state = usePdfSnapshot(session);
-  if (state.status === 'loading') return <p className="pdf-panel-message" role="status">正在读取 PDF 目录…</p>;
-  if (state.status !== 'ready') return <p className="pdf-panel-message" role="alert">{state.error || 'PDF 已关闭'}</p>;
-  if (state.outlineError) return <p className="pdf-panel-message" role="alert">PDF 目录读取失败：{state.outlineError}</p>;
-  if (!state.outline.length) return <p className="pdf-panel-message">此 PDF 没有内置目录。</p>;
-  return <nav className="pdf-outline" aria-label="PDF 内置目录"><Entries entries={state.outline} session={session} current={state.currentPage} /></nav>;
+  const label = session.label;
+  if (state.status === 'loading') return <p className="pdf-panel-message" role="status">正在读取 {label} 目录…</p>;
+  if (state.status !== 'ready') return <p className="pdf-panel-message" role="alert">{state.error || `${label} 已关闭`}</p>;
+  if (state.outlineError) return <p className="pdf-panel-message" role="alert">{label} 目录读取失败：{state.outlineError}</p>;
+  if (!state.outline.length) return <p className="pdf-panel-message">此 {label} 没有内置目录。</p>;
+  return <nav className="pdf-outline" aria-label={label === 'PDF' ? 'PDF 内置目录' : 'PPT 幻灯片大纲'}><Entries entries={state.outline} session={session} current={state.currentPage} /></nav>;
 }

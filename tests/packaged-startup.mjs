@@ -90,6 +90,11 @@ try {
   });
   browserVersion = browser.version();
   assert.equal((await fetch(base)).status, 404, 'The local runtime does not serve a standalone browser application');
+  const worker = (await fs.readdir(path.join(resources, 'server/public/assets'))).find(name => /^worker-[\w.-]+\.js$/.test(name));
+  assert(worker, 'The production package contains its PPT parser worker');
+  const workerHeaders = { 'Sec-Fetch-Dest': 'worker' };
+  assert.equal((await fetch(base + '/assets/' + worker, { headers: workerHeaders })).status, 200, 'Native workers can load their bundled script without inheriting the page User-Agent');
+  assert.equal((await fetch(base, { headers: workerHeaders })).status, 404, 'A worker destination does not expose application HTML');
   const nativeHeaders = { 'User-Agent': 'WebObsidianDesktop packaged-renderer-contract' };
   assert.equal((await fetch(base, { headers: nativeHeaders })).status, 200, 'The native shell can load its bundled renderer');
   assert.equal((await fetch(base + '/note/Home.md', { headers: nativeHeaders })).status, 404, 'Retired note URLs have no SPA fallback');

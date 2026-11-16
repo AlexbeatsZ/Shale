@@ -14,7 +14,13 @@ return session ? <PdfOutlinePanel session={session} /> : null;
 Both panels accept `{ session: PdfSession }` and subscribe internally. Mount them
 in the RIGHT sidebar. They share the viewer's controller/document; they must not
 load another PDF. `PdfViewer` accepts `{ path: string; viewId?: string }` and is
-dispatched by the existing Editor adapter for PDF paths.
+dispatched by the existing Editor adapter for PDF, PPT and PPTX paths.
+The `PagedDocumentResource` contract keeps the same controller, page renderer,
+search results and sidebar subscriptions. PDF uses `PdfResource`; PowerPoint
+uses `PptResource`. `session.label` supplies the format-specific accessible names.
+PowerPoint resources also expose the slide aspect ratio for page placeholders
+and landscape thumbnails. Both formats share `pdf:toggle-dark` and its existing
+per-path persisted state.
 
 `PdfSession.subscribe` and `getSnapshot` are stable methods for useSyncExternalStore.
 Snapshot: status (`loading | ready | error | destroyed`), path, pageCount,
@@ -41,10 +47,6 @@ WASM-free decoder fallback loads that a hashed-URL glob cannot satisfy.
 QuickJS/sandbox assets are excluded. PDF.js v6 has removed `isEvalSupported`;
 the module does not supply obsolete options or instantiate scripting services.
 
-- Owner write set: new lib/pdf/*, components/Pdf*.tsx and styles/pdf.css;
-  existing Editor.tsx/AttachmentView.tsx, web/package.json and root package-lock.json;
-  focused tests/browser/pdf-identity.spec.ts, new PDF test fixtures/report.
-- Preserve all earlier binary/identity guards. No public store/RightSidebar edits.
 - Official pdfjs-dist document/worker local Vite asset; getDocument/getPage,
   getOutline/getDestination/getPageIndex, page render/text APIs are authoritative.
 - Share document/page/text resources for visible body pages, embedded outline,
@@ -53,4 +55,5 @@ the module does not supply obsolete options or instantiate scripting services.
 - Guard all asynchronous results by resource/controller lifetime. No PDF scripts,
   remote-link actions or fabricated headings. Vault URLs remain identity scoped.
 - Focused unit cancellation/search/resource tests, valid generated PDF browser
-  fixtures and identity regression; no production build/install/commit.
+  fixtures and identity regression. Native packaging is verified through
+  `tests/desktop-presentations.mjs` and `tests/packaged-startup.mjs`.

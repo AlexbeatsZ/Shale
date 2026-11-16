@@ -7,13 +7,15 @@ import '../styles/pdf.css';
 function Thumbnail({ session, page, root, onNavigate }: { session: PdfSession; page: number; root: React.RefObject<HTMLDivElement>; onNavigate?: (page: number) => void }) {
   const state = usePdfSnapshot(session);
   const host = useRef<HTMLButtonElement>(null);
-  const [ratio, setRatio] = useState(792 / 612);
+  const [ratio, setRatio] = useState(session.resource?.pageRatio ?? 792 / 612);
   const visible = usePdfVisible(root, host, 160);
   const count = state.matchesByPage[page]?.length ?? 0;
   return <button ref={host} className={`pdf-thumbnail${state.currentPage === page ? ' is-current' : ''}${count ? ' has-matches' : ''}`}
     data-thumbnail-page={page} aria-label={`第 ${page} 页${count ? `，${count} 个匹配` : ''}`}
     aria-current={state.currentPage === page ? 'page' : undefined} onClick={() => onNavigate ? onNavigate(page) : session.goToPage(page)}>
-    <div className="pdf-thumbnail-image">{visible && <PdfPage session={session} page={page} width={Math.min(132, 171 / ratio)} onSize={setRatio} thumbnail />}</div>
+    <div className="pdf-thumbnail-image" style={session.resource?.pageRatio ? { height: Math.min(171, 132 * ratio) } : undefined}>
+      {visible && <PdfPage session={session} page={page} width={Math.min(132, 171 / ratio)} onSize={setRatio} thumbnail />}
+    </div>
     <span className="pdf-thumbnail-label"><span>{page}</span>{count > 0 && <span className="pdf-match-count">{count} 个匹配</span>}</span>
   </button>;
 }
@@ -28,8 +30,8 @@ export default function PdfThumbnailsPanel({ session, onNavigate }: { session: P
     if (box.top < parent.top || box.bottom > parent.bottom) root.current.scrollTop = current.offsetTop - 12;
   }, [state.currentPage]);
   if (state.status === 'loading') return <p className="pdf-panel-message">正在加载缩略图…</p>;
-  if (state.status !== 'ready') return <p className="pdf-panel-message" role="alert">{state.error || 'PDF 已关闭'}</p>;
-  return <div className="pdf-thumbnails" ref={root} aria-label="PDF 页面缩略图">
+  if (state.status !== 'ready') return <p className="pdf-panel-message" role="alert">{state.error || `${session.label} 已关闭`}</p>;
+  return <div className="pdf-thumbnails" ref={root} aria-label={`${session.label} 页面缩略图`}>
     {Array.from({ length: state.pageCount }, (_, index) => <Thumbnail key={index} session={session} page={index + 1} root={root} onNavigate={onNavigate} />)}
   </div>;
 }

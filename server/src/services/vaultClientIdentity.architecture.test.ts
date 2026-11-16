@@ -4,6 +4,23 @@ const modulePath = '../../../web/src/lib/api.ts';
 beforeEach(() => { vi.resetModules(); });
 afterEach(() => { vi.unstubAllGlobals(); });
 
+it('preserves every binary byte with the captured Vault identity and rejects a late response after invalidation', async () => {
+  const bytes = new Uint8Array([0, 0xff, 0xd0, 0xcf, 0x80, 0x50, 0x4b]);
+  let finish!: (response: Response) => void;
+  vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {
+    if (url === '/api/vault-identity') return Response.json({ vault: 'vault-A' });
+    expect(new Headers(options?.headers).get('X-Vault-Identity')).toBe('vault-A');
+    if (url.includes('slow')) return new Promise<Response>(resolve => { finish = resolve; });
+    return new Response(bytes, { headers: { 'Content-Type': 'application/vnd.ms-powerpoint' } });
+  }));
+  const { requestBinary, invalidateVaultRequests } = await import(modulePath);
+  expect(new Uint8Array(await requestBinary('/api/files/content?path=slides.ppt'))).toEqual(bytes);
+  const pending = requestBinary('/api/files/content?path=slow.ppt');
+  await vi.waitFor(() => expect(finish).toBeTypeOf('function'));
+  invalidateVaultRequests(); finish(new Response(bytes));
+  await expect(pending).rejects.toMatchObject({ status: 409 });
+});
+
 it('bootstraps once and carries the captured identity on file, structural and raw requests', async () => {
   const fetcher = vi.fn(async (url: string, options?: RequestInit) => {
     if (url === '/api/vault-identity') return Response.json({ vault: 'vault-A' });

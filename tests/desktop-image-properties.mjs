@@ -276,7 +276,7 @@ try {
   const standaloneWidth = (await pdfPage.boundingBox()).width;
   await wheel(pdfPage, -180);
   await expect.poll(async () => (await pdfPage.boundingBox()).width).toBeGreaterThan(standaloneWidth);
-  await command('切换 PDF 深色背景适配滤镜');
+  await command('切换 PDF / PPT 反色');
   await expect(pdfPage.locator('.pdf-page-surface')).toHaveAttribute('data-pdf-dark', 'true');
   await expect(pdfPage.locator('canvas')).toHaveCSS('filter', /invert/);
   await page.screenshot({ path: path.join(evidence, 'native-pdf-zoom-dark.png') });
@@ -343,7 +343,7 @@ try {
   await recordVirtualGeometry('after-wheel');
   assert(await continuous.evaluate(element => element.scrollWidth > element.clientWidth), 'Enlarged virtual pages must remain horizontally reachable');
   await recordVirtualGeometry('before-dark-command');
-  await command('切换 PDF 深色背景适配滤镜');
+  await command('切换 PDF / PPT 反色');
   await expect(virtualPage.locator('.pdf-page-surface')).toHaveAttribute('data-pdf-dark', 'true');
   await expect(virtualPage.locator('canvas')).toHaveCSS('filter', /invert/);
   await expect(virtualPage.locator('.pdf-page-surface.is-ready')).toBeInViewport();

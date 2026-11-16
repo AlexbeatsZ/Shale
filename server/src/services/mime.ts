@@ -8,6 +8,8 @@ const MIME: Record<string, string> = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
   '.svg': 'image/svg+xml', '.webp': 'image/webp', '.bmp': 'image/bmp', '.avif': 'image/avif',
   '.ico': 'image/x-icon', '.pdf': 'application/pdf',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   // video
   '.mp4': 'video/mp4', '.webm': 'video/webm', '.ogv': 'video/ogg',
   '.mov': 'video/quicktime', '.mkv': 'video/x-matroska',

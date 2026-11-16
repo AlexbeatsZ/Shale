@@ -13,6 +13,7 @@ import type { LinkIntent } from '../lib/fragmentNavigation';
 import { TEXT_EXT_RE } from '../lib/media';
 import AttachmentView from './AttachmentView';
 import PdfViewer from './PdfViewer';
+import { isPagedDocument } from '../lib/pdf/documentResource';
 import { BacklinksPanel, OutgoingPanel } from './NoteLinks';
 import { findNode } from '../lib/tree';
 import VirtualDocumentView from './VirtualDocumentView';
@@ -72,7 +73,7 @@ export default function Editor({ path: suppliedPath, reading = false, embedded =
     return { ...context, sourceFragment: !!fragment, equations: equationContext(model, from), mathSource: { model, from } };
   }, [context, session, snapshot.version, fragment]);
   if (collection) return <VirtualDocumentView document={collection} viewId={navigationId ?? (suppliedPath ? 'split' : 'main')} />;
-  if (path && /\.pdf$/i.test(path)) return <PdfViewer key={path} path={path} viewId={navigationId ?? (suppliedPath ? 'split' : 'main')} />;
+  if (path && isPagedDocument(path)) return <PdfViewer key={path} path={path} viewId={navigationId ?? (suppliedPath ? 'split' : 'main')} />;
   if (path && !textPath) return <AttachmentView key={path} path={path} />;
   if (error) return <div className="editor-error" role="alert">{error.message}</div>;
   if (!session) return <div className="editor-loading">加载中…</div>;

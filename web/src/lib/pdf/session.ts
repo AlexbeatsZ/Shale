@@ -1,4 +1,6 @@
-import { acquirePdfResource, type PdfResource } from './resource';
+import { acquirePdfResource } from './resource';
+import type { PagedDocumentResource } from './documentResource';
+import { pagedDocumentLabel } from './documentResource';
 import { findPageMatches } from './text';
 import type { PdfSnapshot } from './types';
 import { clampPdfZoom } from './zoom';
@@ -9,9 +11,11 @@ export class PdfSession {
   private lifetime = new AbortController();
   private queryVersion = 0;
   private release?: () => void;
-  resource?: PdfResource;
+  resource?: PagedDocumentResource;
+  readonly label: string;
   readonly ready: Promise<void>;
   constructor(readonly path: string, readonly viewId = 'main') {
+    this.label = pagedDocumentLabel(path);
     this.state = { path, status: 'loading', pageCount: 0, currentPage: 1, navigation: 0, zoom: 1, dark: false, outline: [], outlineError: '',
       query: '', matches: [], matchesByPage: {}, activeMatch: -1, searchPending: false, searchedPages: 0, truncated: false, error: '' };
     this.ready = this.load();
@@ -74,7 +78,7 @@ export class PdfSession {
       }
       if (version === this.queryVersion) this.update({ searchPending: false });
     } catch (error) {
-      if (version === this.queryVersion) this.update({ searchPending: false, error: `PDF 搜索失败：${String(error)}` });
+      if (version === this.queryVersion) this.update({ searchPending: false, error: `${this.label} 搜索失败：${String(error)}` });
     }
   }
   nextMatch = (direction: 1 | -1) => {

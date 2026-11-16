@@ -63,6 +63,7 @@ function fileIcon(node: TreeNode): string | null {
   if (/\.(md|markdown)$/.test(ext)) return null; // markdown: text only, like Obsidian
   if (/\.(png|jpe?g|gif|svg|webp)$/.test(ext)) return 'image';
   if (ext === '.pdf') return 'file-pdf';
+  if (/^\.pptx?$/.test(ext)) return 'presentation';
   return 'paperclip';
 }
 

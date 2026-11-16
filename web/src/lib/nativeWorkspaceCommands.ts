@@ -54,7 +54,7 @@ export const nativeWorkspaceCommands: NativeCommand[] = [
   { id: 'app:go-forward', title: '前进', run: () => useStore.getState().goForward() },
   { id: 'app:toggle-left-sidebar', title: '显示或隐藏左侧栏', hotkeys: [{ modifiers: ['Ctrl'], key: '\\' }], run: () => useStore.getState().toggleLeft() },
   { id: 'app:toggle-right-sidebar', title: '显示或隐藏右侧栏', run: () => useStore.getState().toggleRight() },
-  { id: 'pdf:toggle-toolbar', title: '显示或隐藏 PDF 工具栏', available: () => { const state = useStore.getState(); return !!getPdfSession(state.currentPath(), state.currentViewId()); }, run: () => useStore.getState().togglePdfToolbar() },
+  { id: 'pdf:toggle-toolbar', title: '显示或隐藏 PDF / PPT 工具栏', available: () => { const state = useStore.getState(); return !!getPdfSession(state.currentPath(), state.currentViewId()); }, run: () => useStore.getState().togglePdfToolbar() },
   { id: 'file-explorer', title: '打开文件列表', run: () => useStore.getState().setLeftPanel('files') },
   { id: 'tags', title: '打开标签面板', run: () => useStore.getState().setRightPanel('tags') },
   { id: 'outline', title: '打开大纲', run: () => useStore.getState().setRightPanel('outline') },

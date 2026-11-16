@@ -10,7 +10,7 @@ function currentPdf() {
   return snapshot?.activeSource ? getPdfSession(snapshot.activeSource, 'virtual:' + view) : null;
 }
 export const pdfFilterCommand = {
-  id: 'pdf:toggle-dark', title: '切换 PDF 深色背景适配滤镜',
+  id: 'pdf:toggle-dark', title: '切换 PDF / PPT 反色（深色背景适配）',
   available: () => !!currentPdf(),
   run: () => currentPdf()?.toggleDark(),
 };

@@ -3,8 +3,10 @@ import { api, request, vaultRequestIdentity } from '../api';
 import { assertLive, aborted, pdfRenderQueue, pdfTextQueue } from './queue';
 import { pageText, type PdfPageText } from './text';
 import type { PdfOutlineEntry } from './types';
+import type { PagedDocumentResource } from './documentResource';
+import { isPresentation } from './documentResource';
 
-export class PdfResource {
+export class PdfResource implements PagedDocumentResource {
   readonly lifetime = new AbortController();
   private pages = new Map<number, { promise: Promise<PDFPageProxy>; uses: number }>();
   private texts = new Map<number, Promise<PdfPageText>>();
@@ -110,6 +112,19 @@ export class PdfResource {
     };
     return convert(await document.getOutline() ?? []);
   }
+  async renderText(number: number, container: HTMLElement, width: number, signal: AbortSignal) {
+    const [{ TextLayer }, model] = await Promise.all([import('./runtime'), this.text(number)]);
+    assertLive(signal);
+    await this.withPage(number, async page => {
+      const viewport = page.getViewport({ scale: width / page.getViewport({ scale: 1 }).width });
+      container.style.setProperty('--total-scale-factor', String(viewport.scale));
+      const layer = new TextLayer({ textContentSource: model.content, container, viewport });
+      const cancel = () => layer.cancel();
+      signal.addEventListener('abort', cancel, { once: true });
+      try { await layer.render(); assertLive(signal); }
+      finally { signal.removeEventListener('abort', cancel); }
+    });
+  }
   async destroy() {
     if (this.lifetime.signal.aborted) return;
     this.lifetime.abort();
@@ -120,15 +135,21 @@ export class PdfResource {
   }
 }
 
-const resources = new Map<string, { resource: PdfResource; users: number }>();
+const resources = new Map<string, { resource: PagedDocumentResource; users: number }>();
 export async function acquirePdfResource(path: string, signal: AbortSignal) {
   const vault = await vaultRequestIdentity();
   assertLive(signal);
   const key = `${vault}\0${path}`;
   let entry = resources.get(key);
   if (!entry) {
-    entry = { resource: new PdfResource(path, vault, api.rawUrl(path)), users: 0 };
-    resources.set(key, entry);
+    const Resource = isPresentation(path) ? (await import('../ppt/resource')).PptResource : PdfResource;
+    assertLive(signal);
+    // The dynamic import may yield while another pane acquires this same file.
+    entry = resources.get(key);
+    if (!entry) {
+      entry = { resource: new Resource(path, vault, api.rawUrl(path)), users: 0 };
+      resources.set(key, entry);
+    }
   }
   entry.users++;
   let released = false;

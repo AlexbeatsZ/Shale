@@ -138,7 +138,7 @@ async function main() {
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
           fontSrc: ["'self'", 'data:'],
-          connectSrc: ["'self'", 'ws:', 'wss:'],
+          connectSrc: ["'self'", 'blob:', 'ws:', 'wss:'],
           objectSrc: ["'none'"],
           frameSrc: ["'self'", 'blob:'],
           baseUri: ["'self'"],
@@ -191,7 +191,10 @@ async function main() {
   const publicDir = path.join(__dirname, '..', 'public');
   if (await dirExists(publicDir)) {
     app.use((req, res, next) => {
-      if (req.path !== '/javascript-widget-runtime.js' && !/\bWebObsidian(?:Desktop|Android)\b/.test(req.get('User-Agent') ?? '')) {
+      // Chromium workers use the session's default UA, independently of the
+      // native page's override. Their bundled entry scripts still belong here.
+      const workerAsset = req.get('Sec-Fetch-Dest') === 'worker' && /^\/assets\/(?:worker-|pdf\.worker\.)[\w.-]+\.(?:js|mjs)$/.test(req.path);
+      if (req.path !== '/javascript-widget-runtime.js' && !workerAsset && !/\bWebObsidian(?:Desktop|Android)\b/.test(req.get('User-Agent') ?? '')) {
         res.sendStatus(404);
         return;
       }

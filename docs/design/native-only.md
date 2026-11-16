@@ -36,6 +36,11 @@ ordinary browser requests return 404. No SPA catch-all or note-URL route remains
 The marker is a product selection mechanism, not authentication. Existing
 loopback/Vault/operation guards remain authoritative.
 
+Chromium worker requests can use the session default User-Agent even when the
+native page sets its marker. Requests with `Sec-Fetch-Dest: worker` may load the
+bundled hashed PDF/PPT worker entry scripts under `/assets/`. They still pass
+the loopback request guard. Application HTML keeps the native marker selection.
+
 Restore discards retired WebViewer layout entries without touching the original
 plugin/script files or stored script values. The legacy userscript plugin is
 blocked by the existing plugin policy so it cannot recreate the removed core
