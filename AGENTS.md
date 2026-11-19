@@ -10,7 +10,8 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-19 已发布桌面 v0.1.74（Latest，7 个资产，标签源码 6bf3d1a）。本机 `/Applications/Shale.app` 已原位升级。实际工作区验证中央主页打开顶部浏览器标签，既有右侧网页标签保留；本地服务和签名通过。隔离实包回归覆盖左右侧栏入口、侧栏文件/图谱、布局重启恢复和脚本更新。Windows x64 安装器构建和版本检查通过，实机界面待验收。
+- 2026-11-19 桌面 0.1.75 修复 Homepage 打开内容时遗留空标签的问题。本机 `/Applications/Shale.app` 已原位升级，签名、启动和本地服务通过。隔离实包回归覆盖原位替换、浏览器脚本自动更新和布局重启恢复；Windows x64 安装器构建和版本检查通过，实机界面待验收。
+- 2026-11-19 已发布桌面 v0.1.74（7 个资产，标签源码 6bf3d1a）。本机 `/Applications/Shale.app` 已原位升级。实际工作区验证中央主页打开顶部浏览器标签，既有右侧网页标签保留；本地服务和签名通过。隔离实包回归覆盖左右侧栏入口、侧栏文件/图谱、布局重启恢复和脚本更新。Windows x64 安装器构建和版本检查通过，实机界面待验收。
 - 2026-11-19 已将本机 `/Applications/Shale.app` 从 0.1.72 原位升级到 0.1.73，并正常启动。实际 STEM 工作区首页已确认有「打开网页浏览器」，本地服务健康，签名校验通过。
 - 2026-11-19 已发布桌面 v0.1.73（7 个资产，标签源码 42121ed）。恢复 WebViewer、侧边竖排多标签、用户脚本导入和自动更新。601 单元、8 项侧栏/命令面板回归和 macOS 实际包专项通过，覆盖布局持久化、正常退出、重启恢复及脚本权限审阅。Windows x64 安装包已验证构建和版本，实机界面待验收。设计 `docs/design/web-viewer.md`、`docs/design/browser-userscripts.md`。
 - 2026-11-15 已发布桌面 v0.1.71（7资产）与 android-v0.1.71（2原证书非调试APK/code71），标签源码 b2095a6，main 另含后续交付记录。PPT/PPTX 静态查看复用 PDF 分页/搜索/缩放、右侧大纲与等比例缩略图，同用 `pdf:toggle-dark` 并保留旧快捷键和按文件状态。600单元、24相关浏览器、三端类型、Mac/Windows实际Electron33包与生产入口通过。Android构建/lint/包身份通过，真机课件与触摸待验收。设计 `docs/design/presentation-viewer.md`，验收 `tests/reports/presentation-viewer-20261115.md`。
@@ -20,7 +21,7 @@
 - 原生同步地址为 `http://100.106.169.46:18744/webobsidian-sync/v1/`。ROG WebObsidianNativeSync按11月14日任务使用该IP监听，server.json/connection.json已更新且沿用workspaceId；Mac/OMEN已实同步。K70 sync.jsonc已改写并回读，实际同步待应用恢复响应。ROG桌面端无活动Vault，平板离线待改。
 - 日常Android仅用非调试release/tabletRelease，平板保留原 `.debug` 包名和证书。两变体debuggable/JNI/BuildConfig.DEBUG均false，WebView调试关闭。Android使用1024MiB堆且跳过全文JSON缓存。原密钥在OMEN；本轮临时签名已清理。
 - 项目入口/设计/日志已合并OMEN的198条十月与25条十一月记录、MCP验收回执和ROG初始部署记录并推送GitHub。历史实现、版本与验收归 `docs/log/` 和 `tests/reports/`，连续文档当前设计见 `docs/design/virtual-documents.md`。
-- Mac 数据目录为 `~/Library/Application Support/@webobsidian/desktop`，服务日志为 `logs/server.log`。本地桌面打包目录保留 0.1.74 交付物。历史 Release、永久密钥、SDK/依赖缓存与用户数据各在原归属位置。
+- Mac 数据目录为 `~/Library/Application Support/@webobsidian/desktop`，服务日志为 `logs/server.log`。本地桌面打包目录保留 0.1.75 交付物。历史 Release、永久密钥、SDK/依赖缓存与用户数据各在原归属位置。
 
 ## Active Work
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。

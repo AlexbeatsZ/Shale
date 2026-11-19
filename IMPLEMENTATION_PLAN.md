@@ -8,7 +8,7 @@ Cập nhật lần cuối: 2026-11-19 (主页标签原位替换)
 
 ### 主页标签原位替换 (PRD 1.47)
 
-- [~] 修复并验证 Homepage 打开网页、文件、笔记或图谱时接替当前标签。
+- [x] 修复并验证 Homepage 打开网页、文件、笔记或图谱时接替当前标签。本机升级到 0.1.75。
 
 ### 主页视图归属 (PRD 1.46)
 
@@ -699,6 +699,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-19 (PRD 1.47) macOS 原生包验证 Homepage 原位替换、普通标签切换、网页弹窗和重启恢复。本机已升级到 0.1.75。
 
 - 2026-11-19 (PRD 1.46) 验证中央和两侧主页入口、区域内标签、文件与工作区恢复。桌面 v0.1.74 已发布并在本机验证中央顶部标签与右侧网页并存。
 

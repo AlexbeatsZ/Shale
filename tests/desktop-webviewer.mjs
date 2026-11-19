@@ -94,7 +94,8 @@ try {
   await expect(mainAddress).toBeFocused();
   await expect(tabs.getByRole('tab')).toHaveCount(0);
   await open(origin + '/central', main);
-  await expect(mainTabs.getByRole('tab', { name: /Fixture \/central/ })).toBeVisible();
+  const centralTab = mainTabs.getByRole('tab', { name: /Fixture \/central/ });
+  await expect(centralTab).toBeVisible();
   await expect(centralHomepages).toHaveCount(0);
   await expect(mainTabs.getByRole('tab')).toHaveCount(1);
   await evaluateGuest('document.querySelector("[target]").click()', main);
@@ -110,7 +111,7 @@ try {
   const firstHomepage = await centralHomepages.first().getAttribute('data-tab-path');
   const lastHomepage = await centralHomepages.last().getAttribute('data-tab-path');
   await centralHomepages.first().click();
-  await mainTabs.getByRole('tab', { name: /Fixture \/central/ }).click();
+  await mainTabs.getByRole('tab', { name: /Fixture \/central/ }).locator('.title').click();
   await expect(centralHomepages).toHaveCount(2);
   await centralHomepages.first().click();
   await expect(browserButton(page.locator('.workspace'))).toBeVisible();
@@ -147,6 +148,8 @@ try {
   await expect(main.locator('.graph-view')).toBeVisible();
   await expect(centralHomepages).toHaveCount(0);
   await expect(mainTabs.getByRole('tab')).toHaveCount(4);
+  await centralTab.locator('.title').click();
+  await expect(mainAddress).toHaveValue(origin + '/central');
 
   const openSideFile = async (side, area, name) => {
     await page.getByRole('button', { name: `新建${side}标签页` }).click();
@@ -186,9 +189,9 @@ try {
   assert.equal(await evaluateGuest(`fetch(${JSON.stringify(new URL('/healthz', page.url()).href)}, { mode: 'no-cors' }).then(() => true, () => false)`), false);
   await evaluateGuest('document.querySelector("a").click()');
   await expect(address).toHaveValue(origin + '/second');
-  await page.getByRole('button', { name: '后退', exact: true }).click();
+  await right.getByRole('button', { name: '后退', exact: true }).click();
   await expect(address).toHaveValue(origin + '/');
-  await page.getByRole('button', { name: '前进', exact: true }).click();
+  await right.getByRole('button', { name: '前进', exact: true }).click();
   await expect(address).toHaveValue(origin + '/second');
   await evaluateGuest('document.querySelector("[target]").click()');
   await expect(address).toHaveValue(origin + '/popup');
@@ -254,8 +257,14 @@ try {
   await command('打开网页浏览器');
   await expect(address).toBeFocused();
   await expect(address).toHaveValue('');
-  await mainTabs.getByRole('tab', { name: /Fixture \/central/ }).click();
-  await expect(mainAddress).toHaveValue(origin + '/central');
+  try {
+    await centralTab.press('Enter');
+    await expect(centralTab).toHaveAttribute('aria-selected', 'true');
+    await expect(mainAddress).toHaveValue(origin + '/central');
+  } catch (error) {
+    console.error('Central tab state:', await mainTabs.ariaSnapshot());
+    throw error;
+  }
   await tabs.getByRole('tab', { name: '浏览器', exact: true }).press('Delete');
   await expect(address).toHaveValue(origin + '/second');
   await expect.poll(async () => {
