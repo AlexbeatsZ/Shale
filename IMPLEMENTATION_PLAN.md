@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-19 (主页视图归属)
+Cập nhật lần cuối: 2026-11-19 (主页标签原位替换)
+
+### 主页标签原位替换 (PRD 1.47)
+
+- [~] 修复并验证 Homepage 打开网页、文件、笔记或图谱时接替当前标签。
 
 ### 主页视图归属 (PRD 1.46)
 

@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.46 · Cập nhật: 2026-11-19 · Trạng thái: Draft
+> Phiên bản: 1.47 · Cập nhật: 2026-11-19 · Trạng thái: Draft
+> Changelog 1.47 (主页标签原位替换) 从 Homepage 打开网页、文件、笔记或图谱时，目标接替当前 Homepage 的标签位置。切换现有标签保留空页，显式新建标签和网页弹窗仍可新增标签。
 > Changelog 1.46 (主页视图归属) 中央与两侧主页共用启动动作。网页、文件、笔记和图谱在发起的区域打开，标签沿用各区域的布局。固定的侧栏面板仍属于侧栏。
 > Changelog 1.45 (桌面内置网页浏览器与用户脚本) 恢复桌面网页浏览入口、侧栏标签、用户脚本文件/URL 导入和定期更新。新增权限或扩展站点匹配的更新须经审阅。后续重构须保留这些能力。
 > Changelog 1.44 (PowerPoint 阅读) 原生工作区支持 `.ppt` 与 `.pptx` 静态幻灯片查看，复用 PDF 的分页、工具栏、搜索、右侧大纲与缩略图布局。PDF 与 PPT 共用深色背景适配命令，保留原命令 ID 与快捷键配置，按文件保存显示状态。使用本地打包的开源解析器，文件通过原 Vault 身份范围读取。设计见 docs/design/presentation-viewer.md。

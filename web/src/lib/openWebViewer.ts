@@ -1,4 +1,4 @@
-import { useStore } from './store';
+import { isHomepagePath, useStore } from './store';
 import { hasWebViewer } from './platform';
 
 export async function openWebViewer(viewId = useStore.getState().currentViewId(), url = '', popup = false) {
@@ -12,8 +12,10 @@ export async function openWebViewer(viewId = useStore.getState().currentViewId()
   const path = `webviewer://${crypto.randomUUID()}`;
   if (viewId === 'split' && !popup) {
     await state.openToSide(path);
-  } else {
+  } else if (popup || !isHomepagePath(state.activePath)) {
     await state.showTab(path);
+  } else {
+    await state.openFile(path, true, 'main');
   }
   if (url) updateCentralWebViewer(path, url, url);
 }

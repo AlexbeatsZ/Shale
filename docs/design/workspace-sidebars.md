@@ -49,9 +49,10 @@ thresholds, storage and device acceptance entry points are in android-runtime.md
 rightTabs 只保存 `{id,type,state,title,icon,side?}`，不保存正文、DOM、事件或 guest id。
 旧数据缺少 side 时仍归右侧；空标签迁移为 Homepage 标题/图标。中央 Homepage 使用
 `home://<uuid>` 作为既有 tabs 的非文件身份，不进入最近文件，
-不加载 DocumentSession。标签显式关闭前保留；访问其他标签不隐式删除 Homepage。
-侧栏文件选择器沿用已有 picker。笔记、文件、图谱或网页替换该侧的空标签；
-网页弹窗新建来源区域的标签。中央和侧栏用相同的文件内容宿主，复用现有 Markdown、
+不加载 DocumentSession。点击已有标签或显式新建标签时保留其他 Homepage。
+中央和两侧 Homepage 打开笔记、文件、图谱或网页时，内容原位接替当前空标签。
+中央目标已打开时激活现有标签并收起发起操作的空标签，沿用中央标签的路径去重。
+网页弹窗新建来源区域的标签。中央和侧栏用相同的文件选择器及内容宿主，复用现有 Markdown、
 分页文档、媒体和文件夹视图。
 本体尚无数据库产品或创建动作，截图中的“新建数据库”未实现，不提供无效按钮。
 同路径可以有多个稳定 id。恢复时校验形状并在桌面恢复网页视图，保留未知插件

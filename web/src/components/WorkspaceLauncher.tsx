@@ -8,10 +8,7 @@ import Icon from './Icon';
 export default function WorkspaceLauncher({ viewId = 'main' }: { viewId?: string }) {
   const [error, setError] = useState('');
   const sidebarId = viewId.startsWith('sidebar:') ? viewId.slice(8) : undefined;
-  const openGraph = () => {
-    const state = useStore.getState();
-    return viewId === 'main' ? state.showTab(GRAPH_PATH) : state.openFile(GRAPH_PATH, true, viewId);
-  };
+  const openGraph = () => useStore.getState().openFile(GRAPH_PATH, true, viewId);
   const launch = (action: Promise<unknown>) => void action.catch(cause => setError(String(cause)));
   return <div className="workspace-launcher">
     <button className="launch-action" onClick={() => launch(useStore.getState().newNote(undefined, viewId))}><Icon name="square-pen" size={16} /><span>新建笔记</span><kbd>Ctrl + N</kbd></button>

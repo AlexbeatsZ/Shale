@@ -22,7 +22,7 @@ function tabTargets() {
     return { length: tabs.length, index: tabs.indexOf(active!), select: (index: number) => { const tab = tabs.at(index); if (tab) state.selectRightTab(tab.id); } };
   }
   return { length: state.tabs.length, index: state.tabs.findIndex(tab => tab.path === state.currentPath()),
-    select: (index: number) => { const tab = state.tabs.at(index); if (tab) return state.openFile(tab.path, true, id); } };
+    select: (index: number) => { const tab = state.tabs.at(index); if (tab) return state.openFile(tab.path, true, id, { preserveHomepage: true }); } };
 }
 const selectTab = (index: number) => tabTargets().select(index);
 function moveTab(direction: number) { const tabs = tabTargets(); if (tabs.length) return tabs.select((tabs.index + direction + tabs.length) % tabs.length); }

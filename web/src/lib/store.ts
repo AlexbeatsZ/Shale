@@ -228,7 +228,6 @@ interface AppState {
   setTrash: (v: boolean) => void;
   /** Open (true) or close (false) the Graph view tab. */
   setGraph: (v: boolean) => void;
-  openGraph: (recordHistory?: boolean) => Promise<void>;
   graphSettings: GraphSettings;
   setGraphSettings: (patch: Partial<GraphSettings>) => void;
   resetGraphSettings: () => void;
@@ -247,7 +246,7 @@ interface AppState {
   /** Show a toast. ms=0 keeps it until another notify() replaces it. */
   notify: (msg: string, ms?: number) => void;
 
-  openFile: (path: string, recordHistory?: boolean, viewId?: string) => Promise<void>;
+  openFile: (path: string, recordHistory?: boolean, viewId?: string, options?: { preserveHomepage?: boolean }) => Promise<void>;
   openHomepage: (viewId?: string) => Promise<void>;
   openWikilink: (target: string, sourcePath?: string, intent?: LinkIntent) => Promise<void>;
   closeTab: (path: string) => Promise<void>;
@@ -638,7 +637,7 @@ export const useStore = create<AppState>()(
       },
       splitWithHomepage: async (path, direction) => {
         if (path && path !== get().activePath) {
-          await get().openFile(path, true, 'main');
+          await get().openFile(path, true, 'main', { preserveHomepage: true });
           if (get().activePath !== path) return;
         }
         if (direction) set({ splitDirection: direction });
@@ -650,7 +649,7 @@ export const useStore = create<AppState>()(
         if (!s.splitPath && parked && (path === parked.main || path === parked.side)) {
           // Restore the whole group, focused on the member that was selected.
           set({ parkedSplit: null });
-          await get().openFile(parked.main, true, 'main');
+          await get().openFile(parked.main, true, 'main', { preserveHomepage: true });
           if (get().activePath !== parked.main) return;
           await get().openToSide(parked.side, parked.direction);
           if (get().splitPath === parked.side) activateNavigation(path === parked.main ? 'main' : 'split');
@@ -667,7 +666,7 @@ export const useStore = create<AppState>()(
           if (get().splitPath !== null) return;
           set({ parkedSplit: group });
         }
-        await get().openFile(path, true, 'main');
+        await get().openFile(path, true, 'main', { preserveHomepage: true });
       },
       replacePane: async (viewId, path) => {
         const s = get(), old = viewId === 'split' ? s.splitPath : s.activePath, other = viewId === 'split' ? s.activePath : s.splitPath;
@@ -676,12 +675,12 @@ export const useStore = create<AppState>()(
         if (path === other) {
           // Dropping one member onto the other swaps the two panes.
           const main = viewId === 'main' ? other : old, side = viewId === 'main' ? old : other;
-          await get().openFile(main, true, 'main');
+          await get().openFile(main, true, 'main', { preserveHomepage: true });
           if (get().activePath !== main) return;
           await get().openToSide(side);
           if (get().splitPath !== side) return;
         } else {
-          await get().openFile(path, true, viewId);
+          await get().openFile(path, true, viewId, { preserveHomepage: true });
           if ((viewId === 'split' ? get().splitPath : get().activePath) !== path) return;
         }
         // [A,B],C with C dropped on B → [A,C],B: the group keeps its place and B goes where C was.
@@ -819,23 +818,10 @@ export const useStore = create<AppState>()(
       setGraph: (v) => {
         if (v) {
           const state = get(), viewId = state.currentViewId();
-          void (viewId === 'main' ? state.showTab(GRAPH_PATH) : state.openFile(GRAPH_PATH, true, viewId))
+          void (viewId === 'main' && !isHomepagePath(state.activePath) ? state.showTab(GRAPH_PATH) : state.openFile(GRAPH_PATH, true, viewId))
             .catch(error => state.notify(String(error)));
         }
         else get().closeTab(GRAPH_PATH);
-      },
-      openGraph: async (recordHistory = true) => {
-        await documents.saveLeaving(get().activePath);
-        activateNavigation('main');
-        set((s) => ({
-          tabs: s.tabs.some((t) => t.path === GRAPH_PATH)
-            ? s.tabs
-            : [...s.tabs, { path: GRAPH_PATH, title: '关系图谱' }],
-          activePath: GRAPH_PATH,
-          content: '',
-          dirty: false,
-          ...pushHistory(s, GRAPH_PATH, recordHistory),
-        }));
       },
       graphSettings: DEFAULT_GRAPH_SETTINGS,
       setGraphSettings: (patch) =>
@@ -884,7 +870,7 @@ export const useStore = create<AppState>()(
         const path = `home://${crypto.randomUUID()}`, id = viewId ?? get().currentViewId();
         return id.startsWith('sidebar:') || viewId === 'split' ? get().openFile(path, true, id) : get().showTab(path);
       },
-      openFile: async (path, recordHistory = true, viewId = get().currentViewId()) => {
+      openFile: async (path, recordHistory = true, viewId = get().currentViewId(), options) => {
         const origin = get().currentPath(viewId), before = origin ? captureLocation(origin, viewId) : undefined;
         if (viewId !== 'main') {
           if (viewId === 'split') {
@@ -900,13 +886,18 @@ export const useStore = create<AppState>()(
           set(s => ({ recent: isHomepagePath(path) ? s.recent : [path, ...s.recent.filter(p => p !== path)].slice(0, 20), ...pushHistory(s, path, recordHistory, viewId, before) }));
           return;
         }
+        const home = isHomepagePath(path);
+        const homepage = !options?.preserveHomepage && !home && isHomepagePath(origin) ? origin : null;
         const parked = get().parkedSplit;
-        if (parked && !get().splitPath && (path === parked.main || path === parked.side)) return get().showTab(path);
+        if (parked && !get().splitPath && (path === parked.main || path === parked.side)) {
+          await get().showTab(path);
+          if (homepage && get().activePath === parked.main && get().splitPath === parked.side)
+            set(s => ({ tabs: s.tabs.filter(tab => tab.path !== homepage) }));
+          return;
+        }
         cancelNavigation('main', path);
         const generation = ++openGeneration;
-        if (path === GRAPH_PATH) return get().openGraph(recordHistory);
         await documents.saveLeaving(get().activePath);
-        const home = isHomepagePath(path);
         // A folder path (restored tab or folder link) opens a folder content
         // view — never read it as a note nor pollute Recent with it.
         const isFolder = !home && findNode(get().tree, path)?.type === 'folder';
@@ -919,8 +910,13 @@ export const useStore = create<AppState>()(
         activateNavigation('main');
         const title = tabTitle(path);
         set((s) => {
-          const tabs = s.tabs.find((t) => t.path === path) ? s.tabs : [...s.tabs, { path, title }];
-          const recent = isFolder || home || isWebViewerPath(path) ? s.recent : [path, ...s.recent.filter((p) => p !== path)].slice(0, 20);
+          const existing = s.tabs.some(tab => tab.path === path);
+          const replaceAt = homepage && s.activePath === homepage && s.splitPath !== homepage
+            ? s.tabs.findIndex(tab => tab.path === homepage) : -1;
+          const tabs = existing && replaceAt < 0 ? s.tabs : [...s.tabs];
+          if (replaceAt >= 0) tabs.splice(replaceAt, 1, ...(existing ? [] : [{ path, title }]));
+          else if (!existing) tabs.push({ path, title });
+          const recent = isFolder || home || path === GRAPH_PATH || isWebViewerPath(path) ? s.recent : [path, ...s.recent.filter((p) => p !== path)].slice(0, 20);
           return { tabs, activePath: path, content, dirty: documents.get(path)?.snapshot.dirty ?? false, recent, ...pushHistory(s, path, recordHistory) };
         });
       },
