@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-19 已将本机 `/Applications/Shale.app` 从 0.1.72 原位升级到 0.1.73，并正常启动。实际 STEM 工作区首页已确认有「打开网页浏览器」，本地服务健康，签名校验通过。
 - 2026-11-19 已发布桌面 v0.1.73（Latest，7 个资产，标签源码 42121ed）。恢复 WebViewer、侧边竖排多标签、用户脚本导入和自动更新。601 单元、8 项侧栏/命令面板回归和 macOS 实际包专项通过，覆盖布局持久化、正常退出、重启恢复及脚本权限审阅。Windows x64 安装包已验证构建和版本，实机界面待验收。设计 `docs/design/web-viewer.md`、`docs/design/browser-userscripts.md`。
 - 2026-11-15 已发布桌面 v0.1.71（7资产）与 android-v0.1.71（2原证书非调试APK/code71），标签源码 b2095a6，main 另含后续交付记录。PPT/PPTX 静态查看复用 PDF 分页/搜索/缩放、右侧大纲与等比例缩略图，同用 `pdf:toggle-dark` 并保留旧快捷键和按文件状态。600单元、24相关浏览器、三端类型、Mac/Windows实际Electron33包与生产入口通过。Android构建/lint/包身份通过，真机课件与触摸待验收。设计 `docs/design/presentation-viewer.md`，验收 `tests/reports/presentation-viewer-20261115.md`。
 - 2026-11-16 品牌改名：安装后显示名为 **Shale**（Pixel 2026 白底图标），appId `com.xnohat.webobsidian`、Android 包名、数据目录与签名不变。0.1.72 已原位装到 Mac（新 `/Applications/Shale.app`，旧 WebObsidian.app 已移入废纸篓）、OMEN（保持未运行）、ROG（正常关闭后升级并重新启动）、K70（code72，user0，首次安装时间不变）。按用户要求未发 Release、未做界面/同步验收。平板离线，最后记录为0.1.66。
