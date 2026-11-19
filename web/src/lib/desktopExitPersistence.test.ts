@@ -85,6 +85,19 @@ function fixture(platform = 'win32') {
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
 
 describe('desktop close coordinator against the production main implementation', () => {
+  it('still waits for the application to save after a guest frame starts loading', async () => {
+    const host = fixture('darwin');
+    host.window.webContents.emit('did-start-loading');
+    host.window.webContents.emit('did-start-navigation', {}, 'about:blank', false, false);
+    const closing = host.close(true);
+    expect(host.token()).toBeTruthy();
+    expect(host.server.stop).not.toHaveBeenCalled();
+    host.reply({ ok: true });
+    await closing;
+    expect(host.server.stop).toHaveBeenCalledOnce();
+    expect(host.application.quit).toHaveBeenCalledOnce();
+  });
+
   it('closes a page without a mounted renderer immediately', async () => {
     const host = fixture('darwin');
     host.markReady(false);

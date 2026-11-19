@@ -15,6 +15,8 @@
 
 工作区继续以既有 sidebar tab store 持有标签身份与状态。WebViewer 组件负责挂载和销毁访客，网页导航使用访客自己的历史。窗口或标签切换时，Vault 内容仍由原有 DocumentSession 管理。
 
+Electron 的访客挂载会令主 WebContents 发出 `did-start-loading` 和子 frame 的 `did-start-navigation`。桌面关闭协调器只在主 frame 跨文档导航时清除保存握手的就绪标记。退出保存期间网页回调暂停写入标签布局，关闭取消时从访客同步当前位置。
+
 ## 重构验收
 
 保留首页与命令面板入口、侧栏网页浏览、文件/URL 导入、定期检查和权限审阅。移除任何一项须先取得用户明确同意。用 `node tests/desktop-webviewer.mjs <打包应用可执行文件>` 测试原生宿主。测试使用本地 HTTP 夹具、隔离 Vault 与真实调度定时器，验证导航、弹窗、导入、执行、自动更新及扩权候选。

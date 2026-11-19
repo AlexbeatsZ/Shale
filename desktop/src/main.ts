@@ -274,7 +274,9 @@ function createWindow(starting = false): void {
     event.preventDefault();
     void requestWindowClose(window, process.platform !== 'darwin');
   });
-  window.webContents.on('did-start-loading', () => rendererReady.delete(window));
+  window.webContents.on('did-start-navigation', (_event, _url, inPlace, isMainFrame) => {
+    if (isMainFrame && !inPlace) rendererReady.delete(window);
+  });
   window.webContents.on('render-process-gone', () => rendererReady.add(window));
   window.webContents.on('will-prevent-unload', event => {
     if (forcedClosures.has(window)) { event.preventDefault(); return; }

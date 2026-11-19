@@ -76,7 +76,7 @@ test('commands show actual shortcuts, preserve actions and scroll keyboard selec
   await expect(page.getByRole('dialog', { name: '命令面板' })).toBeVisible();
   await page.locator('.palette-modal').screenshot({ path: test.info().outputPath('commands-all-dark.png') });
   await page.locator('.palette-input').fill('解锁');
-  await expect(page.locator('.palette-shortcut')).toHaveText('Ctrl + L');
+  await expect(page.locator('.palette-shortcut')).toHaveText(process.platform === 'darwin' ? 'Control + L' : 'Ctrl + L');
   await page.locator('.palette-modal').screenshot({ path: test.info().outputPath('commands-dark.png') });
   await page.locator('.palette-input').fill('工作区命令');
   for (let i = 0; i < 35; i++) await page.keyboard.press('ArrowDown');
