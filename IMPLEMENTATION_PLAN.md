@@ -8,7 +8,7 @@ Cập nhật lần cuối: 2026-11-19 (桌面内置网页浏览器)
 
 ### 桌面内置网页浏览器 (PRD 1.45)
 
-- [~] 恢复桌面首页、命令面板、工作区网页标签、用户脚本导入与自动更新，验证原生包并发布。
+- [x] 恢复桌面首页、命令面板、侧边竖排网页标签、用户脚本导入与自动更新。macOS 实包验证通过，已发布 macOS arm64 与 Windows x64 的 v0.1.73。
 
 ## PowerPoint viewing (PRD 1.44)
 - [x] Integrate local PPT/PPTX parsing through the shared PDF reader resource contract
@@ -691,6 +691,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-19 (PRD 1.45) 恢复桌面内置网页浏览器及用户脚本导入、定期更新、扩权审阅。侧栏与命令面板回归通过，macOS 实际包验证标签切换、正常退出、重启恢复、脚本注入及自动更新。桌面 v0.1.73 发布。
 - 2026-11-15 (PRD 1.44): PowerPoint 静态阅读已完成并发布 0.1.71，复用 PDF 阅读与侧栏结构、搜索及同一反色命令。600 单元、24 相关浏览器、Mac/Windows 实际原生包、生产入口与 Android 构建通过。OMEN/ROG 独有日志已归并并随项目入口推送 GitHub。
 
 - 2026-11-15 (PRD 1.43) K70 无线调试恢复后仅 user0 原位升级0.1.70/code70，原签名、UID10246、首次安装时间与设置字节保留，非调试身份和原Vault health200通过。Mac/OMEN/ROG已完成70部署，平板仍离线待升级。
