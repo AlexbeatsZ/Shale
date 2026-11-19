@@ -29,13 +29,14 @@ export default function CommandPalette() {
   const open = useStore((s) => s.paletteOpen);
   const mode = useStore((s) => s.paletteMode);
   const setOpen = useStore((s) => s.setPalette);
+  const rightTabId = useStore((s) => s.paletteRightTab);
   const target = useMemo(() => {
     const state = useStore.getState();
-    return { path: state.currentPath(), viewId: state.currentViewId(), view: getActiveEditor() };
-  }, [open]);
+    const viewId = rightTabId ? 'sidebar:' + rightTabId : state.currentViewId();
+    return { path: state.currentPath(viewId), viewId, view: getActiveEditor() };
+  }, [open, rightTabId]);
   const activePath = target.path;
   const openFile = useStore((s) => s.openFile);
-  const rightTabId = useStore((s) => s.paletteRightTab);
   const openToSide = useStore((s) => s.openToSide);
   const setSettings = useStore((s) => s.setSettings);
   const notify = useStore((s) => s.notify);
@@ -112,8 +113,7 @@ export default function CommandPalette() {
               if (!(error instanceof DOMException && error.name === 'AbortError')) notify(String(error));
             });
           } else {
-            if (rightTabId && /\.(md|markdown)$/i.test(entry.path)) useStore.getState().openRightTab('markdown', { file: entry.path }, rightTabId);
-            else void openFile(entry.path, true, target.viewId).then(() => {
+            void openFile(entry.path, true, target.viewId).then(() => {
               const member = virtualMemberFor(entry.path, label);
               if (member) queueVirtualReading(entry.path, target.viewId, { path: member });
             });
@@ -178,14 +178,14 @@ export default function CommandPalette() {
 
   const commandsMode = mode === 'commands' || q.startsWith('>');
   const filters = parseSearchQuery(q);
-  const canCreate = mode === 'files' && !rightTabId && !!q.trim() &&
+  const canCreate = mode === 'files' && !!q.trim() &&
     !filters.include.length && !filters.exclude.length && !filters.fields.length &&
     !fileTitleError(q) && !/[<>:"\\|?*\u0000-\u001f]/.test(q) &&
     !q.split('/').some(part => !part.trim() || part === '.' || part === '..');
   const create = async () => {
     if (!canCreate) return;
     const path = /\.md$/i.test(q.trim()) ? q.trim() : q.trim() + '.md';
-    try { await useStore.getState().createNote(await newFilePath(path, target.path ?? '')); setOpen(false); }
+    try { await useStore.getState().createNote(await newFilePath(path, target.path ?? ''), '', true, target.viewId); setOpen(false); }
     catch (error) { notify(String(error)); }
   };
 
@@ -322,7 +322,7 @@ export default function CommandPalette() {
         <div className="palette-footer">
           {commandsMode ? <><span><kbd>Alt N</kbd>复制名称</span><span><kbd>Alt I</kbd>复制 ID</span><span><kbd>Ctrl O</kbd>快捷键设置</span></>
             : mode === 'files' ? <><span><kbd>↵</kbd>打开文件</span><span><kbd>Alt ↵</kbd>在右侧打开</span>
-              {!rightTabId && <span><kbd>Shift ↵</kbd>创建新文件</span>}<span className="palette-query-help">#标签 · -#排除 · 空格组合</span></>
+              <span><kbd>Shift ↵</kbd>创建新文件</span><span className="palette-query-help">#标签 · -#排除 · 空格组合</span></>
             : <><span><kbd>↑ ↓</kbd>选择</span><span><kbd>↵</kbd>{mode === 'templates' ? '插入模板' : '跳转标题'}</span><span><kbd>Esc</kbd>关闭</span></>}
         </div>
       </div>

@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-19 (桌面内置网页浏览器)
+Cập nhật lần cuối: 2026-11-19 (主页视图归属)
+
+### 主页视图归属 (PRD 1.46)
+
+- [~] 统一中央与侧栏主页的动作和标签归属，验证后发布并升级本机。
 
 ### 桌面内置网页浏览器 (PRD 1.45)
 

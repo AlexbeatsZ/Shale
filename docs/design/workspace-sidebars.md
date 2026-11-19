@@ -12,6 +12,8 @@ thresholds, storage and device acceptance entry points are in android-runtime.md
 
 ## 用户需求与视觉基准
 
+- 2026-11-19 用户确认中央主页的打开和新建能力也应在侧栏主页提供。内容和标签跟随入口：中央用顶部横排标签，左右侧栏用各自竖排标签。文件列表、标签、大纲等固定面板沿用所在侧栏。已存在的中央与侧栏内容可并存。
+
 - 删除原生日记创建动作、命令及入口；已有 Daily 文件继续作为普通笔记，不删除用户内容。
 - 左竖栏顶部为文件、搜索；右竖栏顶部为反向链接、出链、标签、大纲四个固定入口。
 - 中央、左栏和右栏的 + 只创建 Homepage 标签，不创建文件。左右下方是独立笔记、
@@ -41,17 +43,18 @@ thresholds, storage and device acceptance entry points are in android-runtime.md
 | 标题、块、公式定位 | fragmentNavigation | 可指定 EditorView，避免同路径多实例跳错 |
 | 图标路径 | lib/icons.ts | React Icon 与 Obsidian DOM getIcon 共用目录 |
 | 右键、视图、搜索排序菜单行 | ContextMenu.MenuList | 共用图标列、标签列、勾选与键盘操作 |
-| 空工作区与三处 Homepage | WorkspaceLauncher | 共用新建笔记、白板、文件、网页、图谱动作，调用已有命令/选择器 |
+| 空工作区与三处 Homepage | WorkspaceLauncher | 共用新建笔记、打开文件、网页和图谱动作，调用已有命令/选择器并带目标区域 |
 | 左右动态栏的键盘、关闭和菜单 | SidebarTabRail | side 参数只影响位置，复用同一 store 保存/替换/关闭流程 |
 
 rightTabs 只保存 `{id,type,state,title,icon,side?}`，不保存正文、DOM、事件或 guest id。
 旧数据缺少 side 时仍归右侧；空标签迁移为 Homepage 标题/图标。中央 Homepage 使用
-`home://<uuid>` 作为既有 tabs 的非文件身份，URL 映射为 `/home/<uuid>`，不进入最近文件，
+`home://<uuid>` 作为既有 tabs 的非文件身份，不进入最近文件，
 不加载 DocumentSession。标签显式关闭前保留；访问其他标签不隐式删除 Homepage。
-Homepage 的新建笔记、白板和图谱沿用中央工作区动作；侧栏文件选择器沿用已有 picker，
-笔记可替换该侧空标签。白板和媒体继续由中央既有视图承载，不复制 Canvas/media。
+侧栏文件选择器沿用已有 picker。笔记、文件、图谱或网页替换该侧的空标签；
+网页弹窗新建来源区域的标签。中央和侧栏用相同的文件内容宿主，复用现有 Markdown、
+分页文档、媒体和文件夹视图。
 本体尚无数据库产品或创建动作，截图中的“新建数据库”未实现，不提供无效按钮。
-同路径可以有多个稳定 id。恢复时校验形状并丢弃已移除的网页视图，保留未知插件
+同路径可以有多个稳定 id。恢复时校验形状并在桌面恢复网页视图，保留未知插件
 视图 state，等待实际注册后重试。旧 leftPanel=tags/bookmarks 迁移到右侧；左侧回退文件。
 关闭、替换和远端布局移除笔记前共用 saveLeavingSidebarTab；保存失败或保存期间又发生
 修改时保留原标签。每个异步替换/关闭有代次，过期结果不能覆盖较新的选择。

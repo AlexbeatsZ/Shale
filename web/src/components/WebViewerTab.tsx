@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { WebviewTag } from 'electron';
 import { parseWebViewerUrl, webViewerPartition } from '../../../desktop/src/webViewerAddress';
 import { activateNavigation } from '../lib/activeEditor';
-import type { SidebarTab } from '../lib/sidebarTabs';
+import { openWebViewer, updateCentralWebViewer } from '../lib/openWebViewer';
 import { useStore } from '../lib/store';
 import Icon from './Icon';
 
@@ -12,19 +12,27 @@ function addressUrl(input: string) {
   return parseWebViewerUrl(bareHost ? `https://${value}` : value);
 }
 
-export default function WebViewerTab({ tab, active }: { tab: SidebarTab; active: boolean }) {
+export default function WebViewerTab({ id, url, active, sidebar = false }: { id: string; url: string; active: boolean; sidebar?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const guest = useRef<WebviewTag>();
   const loaded = useRef('');
   const opened = useRef(false);
-  const [address, setAddress] = useState<string>(tab.state.url);
+  const [address, setAddress] = useState(url);
   const [error, setError] = useState('');
   const [controls, setControls] = useState({ ready: false, back: false, forward: false });
-  const url = String(tab.state.url);
   if (active) opened.current = true;
   const mountGuest = opened.current && !!url;
-  const select = () => activateNavigation('sidebar:' + tab.id);
+  const viewId = () => sidebar ? 'sidebar:' + id : useStore.getState().splitPath === id ? 'split' : 'main';
+  const select = () => activateNavigation(viewId());
+  const updateTab = (address: string, title: string) => {
+    if (!sidebar) return updateCentralWebViewer(id, address, title);
+    const state = useStore.getState();
+    const current = state.rightTabs.find(item => item.id === id);
+    if (current && (current.state.url !== address || current.title !== title)) {
+      state.updateRightTab(id, { state: { url: address }, title });
+    }
+  };
 
   useEffect(() => {
     if (active && !url) input.current?.focus();
@@ -43,11 +51,7 @@ export default function WebViewerTab({ tab, active }: { tab: SidebarTab; active:
     const persistTab = (address: string, title: string) => {
       // Native close holds the workspace inert while saving its final layout.
       if (document.getElementById('root')?.inert) return;
-      const state = useStore.getState();
-      const current = state.rightTabs.find(item => item.id === tab.id);
-      if (current && (current.state.url !== address || current.title !== title)) {
-        state.updateRightTab(tab.id, { state: { url: address }, title });
-      }
+      updateTab(address, title);
     };
     const syncControls = () => {
       ready = true;
@@ -82,9 +86,7 @@ export default function WebViewerTab({ tab, active }: { tab: SidebarTab; active:
     const unsubscribe = bridge.onOpenTab(target => {
       // Only the tab that owns this guest may open its popup.
       if (!ready || document.getElementById('root')?.inert || target.guestId !== view.getWebContentsId()) return;
-      const state = useStore.getState();
-      const source = state.rightTabs.find(item => item.id === tab.id);
-      if (source) void state.openSidebarTab(source.side ?? 'right', 'webviewer', { url: target.url });
+      void openWebViewer(viewId(), target.url, true).catch(error => useStore.getState().notify(String(error)));
     });
     const restoreAfterClose = () => {
       if (ready) updateAddress(view.getURL());
@@ -100,7 +102,7 @@ export default function WebViewerTab({ tab, active }: { tab: SidebarTab; active:
       guest.current = undefined;
       loaded.current = '';
     };
-  }, [mountGuest, tab.id]);
+  }, [mountGuest, id, sidebar]);
 
   useEffect(() => {
     if (!guest.current || !parseWebViewerUrl(url) || loaded.current === url) return;
@@ -109,7 +111,7 @@ export default function WebViewerTab({ tab, active }: { tab: SidebarTab; active:
     guest.current.src = url;
   }, [mountGuest, url]);
 
-  return <section className="sidebar-view" hidden={!active} data-sidebar-tab={tab.id}
+  return <section className="webviewer-tab" hidden={!active} data-sidebar-tab={sidebar ? id : undefined}
     onPointerDownCapture={select} onFocusCapture={select}>
     <form className="webviewer-toolbar" onSubmit={event => {
       event.preventDefault();
@@ -119,7 +121,7 @@ export default function WebViewerTab({ tab, active }: { tab: SidebarTab; active:
         return;
       }
       if (target.href === url && controls.ready) guest.current?.reload();
-      else useStore.getState().updateRightTab(tab.id, { state: { url: target.href }, title: target.href });
+      else updateTab(target.href, target.href);
     }}>
       <button type="button" className="tool-btn" title="后退" aria-label="后退" disabled={!controls.back} onClick={() => guest.current?.goBack()}><Icon name="arrow-left" size={16} /></button>
       <button type="button" className="tool-btn" title="前进" aria-label="前进" disabled={!controls.forward} onClick={() => guest.current?.goForward()}><Icon name="arrow-right" size={16} /></button>

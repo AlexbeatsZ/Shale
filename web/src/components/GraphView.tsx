@@ -104,7 +104,7 @@ const FADE_DIM = 0.2;
  * panel mirrors Obsidian: Tags / Attachments / Existing-only / Orphans, color
  * Groups, Display sliders and Forces.
  */
-export default function GraphView() {
+export default function GraphView({ navigationId }: { navigationId?: string }) {
   const openFile = useStore((s) => s.openFile);
   const searchFor = useStore((s) => s.searchFor);
   const settings = useStore((s) => s.graphSettings);
@@ -645,6 +645,7 @@ export default function GraphView() {
   // (Reading the WebGL canvas directly would be blank — no preserveDrawingBuffer.)
   useEffect(() => {
     const onShot = async () => {
+      if (navigationId && useStore.getState().currentViewId() !== navigationId) return;
       const p = pixi.current;
       if (!p) return;
       try {
@@ -676,7 +677,7 @@ export default function GraphView() {
     };
     window.addEventListener('wo-graph-screenshot', onShot);
     return () => window.removeEventListener('wo-graph-screenshot', onShot);
-  }, []);
+  }, [navigationId]);
 
   // fetch the raw graph once
   useEffect(() => {
@@ -975,7 +976,7 @@ export default function GraphView() {
     if (d && d.moved < 5) {
       const n = nodeAt(e.clientX, e.clientY);
       if (!n) return;
-      if (n.kind === 'note') openFile(n.id);
+      if (n.kind === 'note') openFile(n.id, true, navigationId);
       else if (n.kind === 'tag') searchFor(`tag:${n.id.slice(4)}`);
     }
   };

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { useStore, GRAPH_PATH, isHomepagePath, type ContextMenuItem } from '../lib/store';
+import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath, type ContextMenuItem, type Tab } from '../lib/store';
 import { api } from '../lib/api';
 import { documents } from '../lib/documents';
 import { printDocument } from '../lib/printDocument';
@@ -17,7 +17,6 @@ import { fileManagerMenuItems } from '../lib/revealInFileManager';
 import { findNode } from '../lib/tree';
 
 type Pane = 'main' | 'split';
-type Tab = { path: string; title: string };
 
 export default function WorkspaceTabs() {
   const tabs = useStore((s) => s.tabs);
@@ -133,7 +132,7 @@ export default function WorkspaceTabs() {
       { id: 'tab:close-others', label: "关闭其他标签页", onClick: closeOthers },
     ];
     let items: ContextMenuItem[];
-    if (isHomepagePath(path)) {
+    if (isHomepagePath(path) || isWebViewerPath(path)) {
       items = [...splitItems, { label: '', separator: true }, ...tabItems];
     } else if (path === GRAPH_PATH) {
       items = [
@@ -289,8 +288,9 @@ export default function WorkspaceTabs() {
             void selectTab(next.path);
           }
         }}
-        title={tab.path}>
+        title={isWebViewerPath(tab.path) ? tab.webUrl || tab.title : tab.path}>
         {(tab.path === GRAPH_PATH || isHomepagePath(tab.path)) && <Icon name={tab.path === GRAPH_PATH ? 'graph' : 'home'} size={13} />}
+        {isWebViewerPath(tab.path) && <Icon name="globe" size={13} />}
         <span className="title">{tab.title.replace(/\.(md|markdown)$/, '')}</span>
         {dirty && view !== 'split' && activePath === tab.path && <span className="dot" aria-label="未保存的更改">●</span>}
         <button type="button" className="close" title="关闭标签页" aria-label={`关闭 ${tab.title}`}

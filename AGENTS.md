@@ -4,7 +4,7 @@
 
 ## Goal
 个人使用的 WebObsidian 原生桌面/Android 应用(fork 自 xnohat/webobsidian,远程 `AlexbeatsZ/webobsidian`)。
-- 桌面端须保留首页及命令面板的「打开网页浏览器」、侧栏网页标签、用户脚本文件/URL 导入及自动检查更新。修改原生宿主、工作区或浏览器边界时运行桌面网页浏览回归。删除或停用任一能力需要用户明确同意。设计见 `docs/design/web-viewer.md` 和 `docs/design/browser-userscripts.md`。
+- 中央与两侧主页提供同样的打开和新建动作。中央使用顶部标签，两侧使用各自竖排标签，侧栏专有固定面板继续归侧栏。桌面端须保留网页浏览、用户脚本文件/URL 导入及自动检查更新。修改宿主或工作区时运行桌面网页浏览回归。删除或停用任一能力需要用户明确同意。设计见 `docs/design/workspace-sidebars.md` 和 `docs/design/web-viewer.md`。
 
 ## Repository Records
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。

@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.45 · Cập nhật: 2026-11-19 · Trạng thái: Draft
+> Phiên bản: 1.46 · Cập nhật: 2026-11-19 · Trạng thái: Draft
+> Changelog 1.46 (主页视图归属) 中央与两侧主页共用启动动作。网页、文件、笔记和图谱在发起的区域打开，标签沿用各区域的布局。固定的侧栏面板仍属于侧栏。
 > Changelog 1.45 (桌面内置网页浏览器与用户脚本) 恢复桌面网页浏览入口、侧栏标签、用户脚本文件/URL 导入和定期更新。新增权限或扩展站点匹配的更新须经审阅。后续重构须保留这些能力。
 > Changelog 1.44 (PowerPoint 阅读) 原生工作区支持 `.ppt` 与 `.pptx` 静态幻灯片查看，复用 PDF 的分页、工具栏、搜索、右侧大纲与缩略图布局。PDF 与 PPT 共用深色背景适配命令，保留原命令 ID 与快捷键配置，按文件保存显示状态。使用本地打包的开源解析器，文件通过原 Vault 身份范围读取。设计见 docs/design/presentation-viewer.md。
 > Changelog 1.43 (嵌入属性、图片编号与阅读缩放) 图片属性采用 `![[file.png|别名#width=320#dark]]`，无参开关与英文键值参数共用原生模型，保留 dark、移除 Wiki 特判。图片默认小字图注“图aa-bb 别名或文件名”，普通图片引用显示最近前置显式实例图号，空别名显示原名。图片右键“添加属性”提供勾选/参数与用户 CSS 自定义属性。按当前背景实时过滤图片/PDF，原生 PDF 与连续文档 PDF 支持 Ctrl+滚轮缩放，Markdown 字号滚轮开关默认关闭。修复异步图片粘贴位置并清理已迁移的 Hider/图片旧规则，保留当前 UI 与用户仍依赖的效果。现有 Wiki SVG 按用户后续要求直接永久应用旧 Wiki 颜色变换，保留笔记引用原文。设计见 docs/design/embed-properties.md。
@@ -475,7 +476,7 @@ cùng một codebase React.
 
 ### FR-13 · 桌面应用(Electron,多平台)
 
-- 首页和命令面板提供「打开网页浏览器」。多个网页在侧边竖排标签栏中独立显示，可从侧边栏切换和关闭。内容区提供 HTTP(S) 地址、前进、后退和刷新。网页访客与本地应用、Vault API 和原生插件隔离。见 [桌面网页浏览器](docs/design/web-viewer.md)。
+- 首页和命令面板提供「打开网页浏览器」。中央入口打开中央网页与顶部标签，两侧入口打开对应侧的网页与竖排标签。内容区提供 HTTP(S) 地址、前进、后退和刷新。网页访客与本地应用、Vault API 和原生插件隔离。见 [桌面网页浏览器](docs/design/web-viewer.md)。
 - 设置提供用户脚本文件与 `.user.js` URL 导入、匹配范围与权限审阅、手动检查和自动检查更新。用户开启全局和逐脚本开关后，桌面按设定间隔检查版本。同权限更新可自动安装，新增权限或扩展匹配范围须经审阅。后续重构须保留本条和网页浏览入口，移除需要用户明确同意。见 [用户脚本设计](docs/design/browser-userscripts.md)。
 - 设计见 [桌面窗口](docs/design/desktop-window.md) 和 [桌面运行时打包](docs/design/desktop-runtime.md)。
 - **架构**:Electron 主进程以 `ELECTRON_RUN_AS_NODE=1` 启动打包好的本地运行时

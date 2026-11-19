@@ -10,9 +10,13 @@ export interface SidebarTab {
   side?: 'left' | 'right';
 }
 
+export const sidebarFileType = (path: string) => /\.(md|markdown)$/i.test(path) ? 'markdown' : 'file';
+
 export function sidebarTab(type: string, state: Record<string, any> = {}, id: string = crypto.randomUUID()): SidebarTab {
   const path = typeof state.file === 'string' ? state.file : '';
   if (type === 'webviewer') return { id, type, state, title: state.url || '浏览器', icon: 'globe' };
+  if (type === 'graph') return { id, type, state, title: '关系图谱', icon: 'graph' };
+  if (type === 'file') return { id, type, state, title: path.split('/').pop() || '文件', icon: 'file' };
   return { id, type, state,
     title: type === 'markdown' ? path.split('/').pop()?.replace(/\.(md|markdown)$/i, '') || '笔记'
       : type === 'bookmarks' ? '书签与最近文件' : type === 'empty' ? 'Homepage' : type,
@@ -25,6 +29,7 @@ export function restoreSidebarTabs(value: unknown, webViewer = false): SidebarTa
     if (!item || typeof item.id !== 'string' || !item.id || seen.has(item.id) || typeof item.type !== 'string'
       || !/^[\w:-]{1,160}$/.test(item.type) || !item.state || typeof item.state !== 'object' || Array.isArray(item.state)) return [];
     if (item.type === 'markdown' && (typeof item.state.file !== 'string' || !/\.(md|markdown)$/i.test(item.state.file))) return [];
+    if (item.type === 'file' && (typeof item.state.file !== 'string' || !item.state.file)) return [];
     if (item.type === 'webviewer' && (!webViewer || (item.state.url !== '' && !parseWebViewerUrl(item.state.url)))) return [];
     seen.add(item.id);
     const tab = sidebarTab(item.type, item.state, item.id);

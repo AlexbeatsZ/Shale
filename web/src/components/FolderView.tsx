@@ -18,7 +18,7 @@ function entryIcon(n: TreeNode): string {
  * restored tab or a folder link). Lists the notes/sub-folders inside instead of opening the
  * folder as an empty note.
  */
-export default function FolderView({ path }: { path: string }) {
+export default function FolderView({ path, navigationId }: { path: string; navigationId?: string }) {
   const tree = useStore((s) => s.tree);
   const openFile = useStore((s) => s.openFile);
   const newNote = useStore((s) => s.newNote);
@@ -37,7 +37,7 @@ export default function FolderView({ path }: { path: string }) {
       <div className="preview-inner folder-view">
         <div className="folder-view-head">
           <h1><Icon name="folder" size={26} /> {node?.name ?? path}</h1>
-          <button className="tool-btn" title="在此文件夹中新建笔记" onClick={() => newNote(path)}>
+          <button className="tool-btn" title="在此文件夹中新建笔记" onClick={() => newNote(path, navigationId)}>
             <Icon name="plus" size={18} />
           </button>
         </div>
@@ -58,7 +58,7 @@ export default function FolderView({ path }: { path: string }) {
                   e.dataTransfer.setData('text/wo-path', c.path);
                   e.dataTransfer.effectAllowed = 'move';
                 }}
-                onClick={() => openFile(c.path)}
+                onClick={() => openFile(c.path, true, navigationId)}
                 title={c.path}
               >
                 {c.type === 'file' && /\.(png|jpe?g|gif|svg|webp)$/i.test(c.ext ?? '') ? (

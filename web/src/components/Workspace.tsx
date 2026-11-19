@@ -1,64 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
-import { useStore, GRAPH_PATH, isHomepagePath } from '../lib/store';
-import { api } from '../lib/api';
+import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath } from '../lib/store';
 import { activateNavigation } from '../lib/activeEditor';
 import { isFolderPath } from '../lib/tree';
-import { VIDEO_EXT_RE, AUDIO_EXT_RE } from '../lib/media';
 import { TAB_DRAG_TYPE, tabDrag } from '../lib/tabDrag';
-import Editor from './Editor';
 import GraphView from './GraphView';
-import FolderView from './FolderView';
 import Icon from './Icon';
 import StatusBar from './StatusBar';
 import WorkspaceLauncher from './WorkspaceLauncher';
-import VirtualDocumentView from './VirtualDocumentView';
-import { findNode } from '../lib/tree';
+import WebViewerTab from './WebViewerTab';
+import WorkspaceFile from './WorkspaceFile';
 import { EditorView } from '@codemirror/view';
 import { insertImageFiles } from '../lib/attachmentImages';
-
-function EditorPane({ path: activePath, navigationId }: { path: string; navigationId: 'main' | 'split' }) {
-  const collection = useStore(state => findNode(state.tree, activePath)?.virtualDocument);
-  if (collection) return <VirtualDocumentView document={collection} viewId={navigationId} />;
-  if (isHomepagePath(activePath)) return <div className="empty-state"><WorkspaceLauncher key={activePath} /></div>;
-  const isImage = activePath ? /\.(png|jpe?g|gif|svg|webp)$/i.test(activePath) : false;
-  const isVideo = activePath ? VIDEO_EXT_RE.test(activePath) : false;
-  const isAudio = activePath ? AUDIO_EXT_RE.test(activePath) : false;
-
-  if (activePath && isImage) {
-    return (
-      <div className="markdown-preview">
-        <div className="preview-inner">
-          <img src={api.rawUrl(activePath)} alt={activePath} />
-        </div>
-      </div>
-    );
-  }
-  if (activePath && (isVideo || isAudio)) {
-    return (
-      <div className="markdown-preview">
-        <div className="preview-inner">
-          {isVideo ? (
-            <video
-              className="media-embed media-fileview"
-              src={api.rawUrl(activePath)}
-              controls
-              preload="metadata"
-            />
-          ) : (
-            <audio
-              className="media-embed media-fileview"
-              src={api.rawUrl(activePath)}
-              controls
-              preload="metadata"
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
-  // Reading mode = the same Live Preview editor in read-only (identical render).
-  return <Editor path={activePath} navigationId={navigationId} />;
-}
 
 function WorkspacePane({ path, navigationId }: { path: string; navigationId: 'main' | 'split' }) {
   const close = useStore((state) => state.closePane);
@@ -67,7 +19,9 @@ function WorkspacePane({ path, navigationId }: { path: string; navigationId: 'ma
     <button className="tool-btn pane-close" onClick={() => void close(navigationId)} title={navigationId === 'main' ? '关闭标签页' : '关闭分屏'}>
       <Icon name="x" size={16} />
     </button>
-    <EditorPane path={path} navigationId={navigationId} />
+    {isHomepagePath(path) ? <div className="empty-state"><WorkspaceLauncher key={path} viewId={navigationId} /></div>
+      : path === GRAPH_PATH ? <GraphView navigationId={navigationId} />
+      : <WorkspaceFile path={path} navigationId={navigationId} />}
   </div>;
 }
 
@@ -77,8 +31,8 @@ export default function Workspace() {
 
   const splitDirection = useStore((s) => s.splitDirection);
   const tree = useStore((s) => s.tree);
+  const tabs = useStore((s) => s.tabs);
   const activeIsHome = isHomepagePath(activePath);
-  const activeIsFolder = !activeIsHome && isFolderPath(tree, activePath) && !findNode(tree, activePath ?? '')?.virtualDocument;
   const workspace = useRef<HTMLDivElement>(null);
   const [drop, setDrop] = useState<{ view: 'main' | 'split' | 'right' | 'down'; left: number; top: number; width: number; height: number } | null>(null);
 
@@ -149,20 +103,16 @@ export default function Workspace() {
             <WorkspaceLauncher key={activePath} />
           </div>
         )}
-        {activePath === GRAPH_PATH && (
-          <div className="pane main-pane" data-view-id="main" onPointerDownCapture={() => activateNavigation('main')} onFocusCapture={() => activateNavigation('main')}>
-            <GraphView />
-          </div>
-        )}
-        {activePath && !activeIsHome && activePath !== GRAPH_PATH && activeIsFolder && (
-          <div className="pane main-pane" data-view-id="main" onPointerDownCapture={() => activateNavigation('main')} onFocusCapture={() => activateNavigation('main')}>
-            <FolderView path={activePath} />
-          </div>
-        )}
-        {activePath && !activeIsHome && activePath !== GRAPH_PATH && !activeIsFolder && (
+        {activePath && !activeIsHome && !isWebViewerPath(activePath) && (
           <WorkspacePane path={activePath} navigationId="main" />
         )}
-        {splitPath && <WorkspacePane path={splitPath} navigationId="split" />}
+        {tabs.filter(tab => isWebViewerPath(tab.path)).map(tab => {
+          const pane = tab.path === activePath ? 'main' : tab.path === splitPath ? 'split' : undefined;
+          return <div key={tab.path} className={`pane webviewer-pane${pane ? ' ' + pane + '-pane' : ''}`} data-view-id={pane} hidden={!pane}>
+            <WebViewerTab id={tab.path} url={tab.webUrl ?? ''} active={!!pane} />
+          </div>;
+        })}
+        {splitPath && !isWebViewerPath(splitPath) && <WorkspacePane path={splitPath} navigationId="split" />}
       </div>
       {drop && <div className="pane-drop-indicator" style={{ left: drop.left, top: drop.top, width: drop.width, height: drop.height }} />}
       <StatusBar />

@@ -8,7 +8,8 @@ import { publishVirtualDocuments } from './virtualDocuments';
 import { isGlobalContentTarget, parseLinkTarget } from '@webobsidian/markdown-core';
 import { resolveContentLink } from './contentReferences';
 import { navigateTo, captureLocation, cancelNavigation, type NavigationLocation, type NavigationRequest, type LinkIntent } from './fragmentNavigation';
-import { sidebarTab, restoreSidebarTabs, type SidebarTab } from './sidebarTabs';
+import { sidebarTab, restoreSidebarTabs, sidebarFileType, type SidebarTab } from './sidebarTabs';
+import { parseWebViewerUrl } from '../../../desktop/src/webViewerAddress';
 import { hasWebViewer } from './platform';
 import { getActiveEditor, activateNavigation, getActiveNavigationId } from './activeEditor';
 import { contextOf } from './renderContext';
@@ -21,7 +22,7 @@ let rightGeneration = 0;
 const linkGenerations = new Map<string, number>();
 
 async function saveLeavingSidebarTab(tab: SidebarTab | undefined): Promise<void> {
-  await documents.saveLeaving(tab?.type === 'markdown' ? tab.state.file : undefined);
+  await documents.saveLeaving(tab && (tab.type === 'markdown' || tab.type === 'file') ? tab.state.file : undefined);
 }
 
 /** Per-tab id so we can ignore the echo of our own server-pushed state change. */
@@ -37,11 +38,14 @@ const TREE_SORTS: TreeSort[] = ['name-asc', 'name-desc', 'mtime-desc', 'mtime-as
 /** Sentinel tab path for the Graph view (it lives in a tab, like Obsidian). */
 export const GRAPH_PATH = 'graph://view';
 export const isHomepagePath = (path: string | null): boolean => /^home:\/\/[\w-]+$/.test(path ?? '');
-const tabTitle = (path: string) => isHomepagePath(path) ? 'Homepage' : path === GRAPH_PATH ? '关系图谱' : path.split('/').pop() ?? path;
+export const isWebViewerPath = (path: string | null): boolean => /^webviewer:\/\/[\w-]+$/.test(path ?? '');
+const tabTitle = (path: string) => isHomepagePath(path) ? 'Homepage' : path === GRAPH_PATH ? '关系图谱'
+  : isWebViewerPath(path) ? '浏览器' : path.split('/').pop() ?? path;
 
 export interface Tab {
   path: string;
   title: string;
+  webUrl?: string;
 }
 
 /** A color group in the graph (nodes matching `query` are tinted `color`). */
@@ -251,9 +255,9 @@ interface AppState {
   removePath: (path: string) => ReturnType<typeof api.remove>;
   setContent: (c: string) => void;
   save: (cause?: 'manual' | 'background') => Promise<void>;
-  createNote: (path: string, body?: string, applyTemplate?: boolean) => Promise<void>;
+  createNote: (path: string, body?: string, applyTemplate?: boolean, viewId?: string) => Promise<void>;
   /** Obsidian-style: create & open a fresh "Untitled" note (no prompt). `dir` = target folder, '' = vault root. */
-  newNote: (dir?: string) => Promise<void>;
+  newNote: (dir?: string, viewId?: string) => Promise<void>;
   /** Obsidian-style: create a fresh "Untitled" folder (no prompt) and start inline-renaming it. */
   newFolder: (dir?: string) => Promise<void>;
   /** Tree path currently being inline-renamed (null = none); FileTree shows an input for it. */
@@ -277,7 +281,7 @@ function remapWorkspacePaths(state: AppState, from: string, to?: string): Partia
     return path === null ? [] : [{ ...tab, path, title: path === tab.path ? tab.title : path.split('/').pop()! }];
   });
   const rightTabs = state.rightTabs.flatMap(tab => {
-    if (tab.type !== 'markdown') return [tab];
+    if (tab.type !== 'markdown' && tab.type !== 'file') return [tab];
     const file = map(tab.state.file);
     return file === null ? [] : [{ ...tab, state: { ...tab.state, file }, title: file.split('/').pop()! }];
   });
@@ -338,18 +342,23 @@ function migrateGraphSettings(gs: unknown): GraphSettings {
 function applyPersisted(s: any, set: (p: any) => void): void {
   rightGenerations.clear();
   const rightTabs = restoreSidebarTabs(s.rightTabs, hasWebViewer());
+  const tabs: Tab[] = Array.isArray(s.tabs) ? s.tabs.filter((tab: Tab) => tab && typeof tab.path === 'string' &&
+    (!isWebViewerPath(tab.path) || hasWebViewer() && (!tab.webUrl || !!parseWebViewerUrl(tab.webUrl)))) : [];
+  const available = (path: unknown): path is string => typeof path === 'string' &&
+    (!isWebViewerPath(path) || tabs.some(tab => tab.path === path));
+  const splitPath = available(s.splitPath) ? s.splitPath : null;
   if (s.leftPanel === 'bookmarks' && !rightTabs.some(tab => tab.type === 'bookmarks')) rightTabs.push(sidebarTab('bookmarks', {}, 'legacy-bookmarks'));
   set({
-    tabs: Array.isArray(s.tabs) ? s.tabs : [],
-    activePath: typeof s.activePath === 'string' ? s.activePath : null,
+    tabs,
+    activePath: available(s.activePath) ? s.activePath : splitPath,
     viewMode: ['live', 'source', 'reading'].includes(s.viewMode) ? s.viewMode : 'live',
     pdfDarkPaths: Array.isArray(s.pdfDarkPaths) ? s.pdfDarkPaths.filter((path: unknown) => typeof path === 'string') : [],
     expanded: Array.isArray(s.expanded) ? s.expanded : [],
     treeSort: TREE_SORTS.includes(s.treeSort) ? s.treeSort : 'name-asc',
     autoReveal: s.autoReveal === true,
-    splitPath: typeof s.splitPath === 'string' ? s.splitPath : null,
+    splitPath: available(s.activePath) ? splitPath : null,
     splitDirection: s.splitDirection === 'down' ? 'down' : 'right',
-    parkedSplit: typeof s.splitPath !== 'string' && typeof s.parkedSplit?.main === 'string' && typeof s.parkedSplit?.side === 'string'
+    parkedSplit: !splitPath && available(s.parkedSplit?.main) && available(s.parkedSplit?.side)
       ? { main: s.parkedSplit.main, side: s.parkedSplit.side, direction: s.parkedSplit.direction === 'down' ? 'down' : 'right' } : null,
     recent: Array.isArray(s.recent) ? s.recent : [],
     bookmarks: Array.isArray(s.bookmarks) ? s.bookmarks : [],
@@ -527,7 +536,9 @@ export const useStore = create<AppState>()(
           if (get().splitPath !== path) return;
         }
         else if (request.disposition === 'tab' || viewId.startsWith('sidebar:')) {
-          const id = await get().openRightTab('markdown', { file: path }, request.disposition === 'tab' ? undefined : viewId.slice(8));
+          const source = get().rightTabs.find(tab => 'sidebar:' + tab.id === viewId);
+          const id = await get().openSidebarTab(source?.side ?? 'right', sidebarFileType(path), { file: path },
+            request.disposition === 'tab' ? undefined : source?.id);
           if (!id) return; viewId = 'sidebar:' + id;
         } else {
           viewId = 'main';
@@ -739,7 +750,7 @@ export const useStore = create<AppState>()(
       openRightTab: (type, state = {}, id) => get().openSidebarTab(get().rightTabs.find(tab => tab.id === id)?.side ?? 'right', type, state, id),
       openSidebarTab: async (side, type, state = {}, id) => {
         const tab = { ...sidebarTab(type, state, id), side };
-        cancelNavigation('sidebar:' + tab.id, type === 'markdown' ? state.file : undefined);
+        cancelNavigation('sidebar:' + tab.id, state.file);
         const generation = ++rightGeneration;
         rightGenerations.set(tab.id, generation);
         const previous = get().rightTabs.find(item => item.id === tab.id);
@@ -806,11 +817,16 @@ export const useStore = create<AppState>()(
       trashOpen: false,
       setTrash: (v) => set({ trashOpen: v }),
       setGraph: (v) => {
-        if (v) get().openGraph();
+        if (v) {
+          const state = get(), viewId = state.currentViewId();
+          void (viewId === 'main' ? state.showTab(GRAPH_PATH) : state.openFile(GRAPH_PATH, true, viewId))
+            .catch(error => state.notify(String(error)));
+        }
         else get().closeTab(GRAPH_PATH);
       },
       openGraph: async (recordHistory = true) => {
         await documents.saveLeaving(get().activePath);
+        activateNavigation('main');
         set((s) => ({
           tabs: s.tabs.some((t) => t.path === GRAPH_PATH)
             ? s.tabs
@@ -876,7 +892,9 @@ export const useStore = create<AppState>()(
             if (get().splitPath !== path) return;
           } else {
             const id = viewId.slice(8), tab = get().rightTabs.find(tab => tab.id === id);
-            if (!tab || !await get().openSidebarTab(tab.side ?? 'right', isHomepagePath(path) ? 'empty' : 'markdown', { file: path }, id)) return;
+            if (!tab) return;
+            const type = isHomepagePath(path) ? 'empty' : path === GRAPH_PATH ? 'graph' : sidebarFileType(path);
+            if (!await get().openSidebarTab(tab.side ?? 'right', type, { file: path }, id)) return;
           }
           activateNavigation(viewId);
           set(s => ({ recent: isHomepagePath(path) ? s.recent : [path, ...s.recent.filter(p => p !== path)].slice(0, 20), ...pushHistory(s, path, recordHistory, viewId, before) }));
@@ -902,7 +920,7 @@ export const useStore = create<AppState>()(
         const title = tabTitle(path);
         set((s) => {
           const tabs = s.tabs.find((t) => t.path === path) ? s.tabs : [...s.tabs, { path, title }];
-          const recent = isFolder || home ? s.recent : [path, ...s.recent.filter((p) => p !== path)].slice(0, 20);
+          const recent = isFolder || home || isWebViewerPath(path) ? s.recent : [path, ...s.recent.filter((p) => p !== path)].slice(0, 20);
           return { tabs, activePath: path, content, dirty: documents.get(path)?.snapshot.dirty ?? false, recent, ...pushHistory(s, path, recordHistory) };
         });
       },
@@ -1002,16 +1020,15 @@ export const useStore = create<AppState>()(
         }
       },
 
-      createNote: async (path, body, applyTemplate = true) => {
-        const viewId = get().currentViewId();
+      createNote: async (path, body, applyTemplate = true, viewId = get().currentViewId()) => {
         const { sharedApp } = await import('./plugins');
         await sharedApp.vault.create(path, body ?? '', applyTemplate);
         await get().openFile(path, true, viewId);
       },
 
-      newNote: async (dir) => {
+      newNote: async (dir, viewId = get().currentViewId()) => {
         // Pick the first free "Untitled" name in the target folder, like Obsidian.
-        const active = get().currentPath() ?? '';
+        const active = get().currentPath(viewId) ?? '';
         const source = findNode(get().tree, active)?.type === 'folder' ? `${active}/_` : active;
         const base = (dir ?? await newFileFolder(source)).replace(/\/+$/, '');
         const folder = base ? findNode(get().tree, base) : get().tree;
@@ -1019,8 +1036,8 @@ export const useStore = create<AppState>()(
         let name = 'Untitled.md';
         for (let i = 1; taken.has(name.toLowerCase()); i++) name = `Untitled ${i}.md`;
         const path = base ? `${base}/${name}` : name;
-        await get().createNote(path, '');
-        if (base) get().revealInTree(path);
+        await get().createNote(path, '', true, viewId);
+        if (base && !viewId.startsWith('sidebar:')) get().revealInTree(path);
       },
 
       renamingPath: null,
@@ -1109,7 +1126,7 @@ export const useStore = create<AppState>()(
         const incoming = restoreSidebarTabs(state.rightTabs, hasWebViewer());
         for (const tab of get().rightTabs) {
           const next = incoming.find(next => next.id === tab.id);
-          if (tab.type !== 'markdown' || next?.type === 'markdown' && next.state.file === tab.state.file) continue;
+          if (!tab.state.file || next?.state.file === tab.state.file) continue;
           await saveLeavingSidebarTab(tab);
         }
         if (generation !== remoteWorkspaceGeneration || workspaceHasUnsavedChanges()) return;
@@ -1143,7 +1160,7 @@ useStore.subscribe((state, prev) => {
 documents.onError = error => useStore.getState().notify(String(error));
 documents.isOpen = path => {
   const state = useStore.getState();
-  return state.tabs.some(tab => tab.path === path) || state.splitPath === path || state.rightTabs.some(tab => tab.type === 'markdown' && tab.state.file === path)
+  return state.tabs.some(tab => tab.path === path) || state.splitPath === path || state.rightTabs.some(tab => tab.state.file === path)
     || [...document.querySelectorAll<HTMLElement>('[data-document-id]')].some(element => element.dataset.documentId === path);
 };
 documents.canRefresh = () => !useStore.getState().vaultSessionStale;

@@ -12,6 +12,7 @@ const vault = path.join(fixture, 'vault'), profile = path.join(fixture, 'profile
 await fs.mkdir(vault);
 await fs.mkdir(profile);
 await fs.writeFile(path.join(vault, 'Note.md'), '# WebViewer fixture');
+await fs.writeFile(path.join(vault, 'Plain.txt'), 'A plain text fixture');
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({
   vaultPath: vault, trustedPlugins: process.env.WEBVIEWER_TEST_TRUSTED === '1',
 }));
@@ -66,19 +67,67 @@ try {
     await page.keyboard.press('Enter');
     await expect(page.locator('.palette-backdrop')).toHaveCount(0);
   };
-  const address = page.getByRole('textbox', { name: '网页地址' });
-  const refresh = page.getByRole('button', { name: '刷新网页' });
+  const main = page.locator('.workspace .main-pane');
+  const left = page.getByRole('complementary', { name: '左侧栏' });
+  const right = page.getByRole('complementary', { name: '右侧栏' });
+  const mainTabs = page.getByRole('tablist', { name: '已打开的文件' });
+  const address = right.getByRole('textbox', { name: '网页地址' });
+  const refresh = right.getByRole('button', { name: '刷新网页' });
   const tabs = page.getByRole('tablist', { name: '右侧标签页' });
-  const open = async url => {
-    await address.fill(url);
-    await address.press('Enter');
-    await expect(refresh).toBeEnabled();
+  const open = async (url, area = right) => {
+    const field = area.getByRole('textbox', { name: '网页地址' });
+    await field.fill(url);
+    await field.press('Enter');
+    await expect(area.getByRole('button', { name: '刷新网页' })).toBeEnabled();
   };
-  const evaluateGuest = async expression => {
-    const id = await page.locator('.sidebar-view:visible webview').evaluate(element => element.getWebContentsId());
+  const evaluateGuest = async (expression, area = right) => {
+    const id = await area.locator('.webviewer-tab:visible webview').evaluate(element => element.getWebContentsId());
     return app.evaluate(({ webContents }, { id, expression }) => webContents.fromId(id).executeJavaScript(expression, true), { id, expression });
   };
-  await page.getByRole('button', { name: '打开网页浏览器', exact: true }).click();
+  const browserButton = area => area.getByRole('button', { name: '打开网页浏览器', exact: true });
+  await browserButton(page.locator('.workspace')).click();
+  const mainAddress = main.getByRole('textbox', { name: '网页地址' });
+  await expect(mainAddress).toBeFocused();
+  await expect(tabs.getByRole('tab')).toHaveCount(0);
+  await open(origin + '/central', main);
+  await expect(mainTabs.getByRole('tab', { name: /Fixture \/central/ })).toBeVisible();
+  await evaluateGuest('document.querySelector("[target]").click()', main);
+  await expect(mainAddress).toHaveValue(origin + '/popup');
+  await expect(mainTabs.getByRole('tab', { name: /Fixture \/popup/ })).toBeVisible();
+  await expect(tabs.getByRole('tab')).toHaveCount(0);
+  await mainTabs.getByRole('button', { name: '关闭 Fixture /popup', exact: true }).click();
+  await expect(mainAddress).toHaveValue(origin + '/central');
+  await page.getByRole('button', { name: '新建中央标签页' }).click();
+  await expect(browserButton(page.locator('.workspace'))).toBeVisible();
+  await command('打开网页浏览器');
+  await expect(mainAddress).toBeFocused();
+  await mainTabs.getByRole('button', { name: '关闭 浏览器', exact: true }).click();
+  await expect(browserButton(page.locator('.workspace'))).toBeVisible();
+
+  const openSideFile = async (side, area, name) => {
+    await page.getByRole('button', { name: `新建${side}标签页` }).click();
+    await area.getByRole('button', { name: /打开文件/ }).click();
+    await page.locator('.palette-input').fill(name);
+    await page.locator('.palette-file-item').filter({ hasText: name }).first().click();
+  };
+  await openSideFile('左侧', left, 'Note');
+  await expect(left.getByRole('tab', { name: 'Note', exact: true })).toBeVisible();
+  await expect(left.locator('.cm-content')).toContainText('WebViewer fixture');
+  await openSideFile('右侧', right, 'Plain');
+  await expect(tabs.getByRole('tab', { name: 'Plain.txt', exact: true })).toBeVisible();
+  await expect(right.locator('.cm-content')).toContainText('A plain text fixture');
+  await tabs.getByRole('tab', { name: 'Plain.txt', exact: true }).press('Delete');
+  await page.getByRole('button', { name: '新建右侧标签页' }).click();
+  await right.getByRole('button', { name: '打开关系图谱' }).click();
+  await expect(right.locator('.graph-view')).toBeVisible();
+  await tabs.getByRole('tab', { name: '关系图谱' }).press('Delete');
+  await page.getByRole('button', { name: '新建左侧标签页' }).click();
+  await browserButton(left).click();
+  await open(origin + '/left', left);
+  await expect(left.getByRole('tab', { name: 'Fixture /left', exact: true })).toBeVisible();
+  await left.getByRole('tab', { name: 'Fixture /left', exact: true }).press('Delete');
+  await page.getByRole('button', { name: '新建右侧标签页' }).click();
+  await browserButton(right).click();
   await expect(address).toBeFocused();
   await address.fill('file:///invalid');
   await address.press('Enter');
@@ -101,7 +150,7 @@ try {
   await expect(popup).toHaveAttribute('aria-selected', 'true');
   await expect(tabs.getByRole('tab')).toHaveCount(2);
   await expect(page.locator('.right-sidebar .sidebar-tab-header')).toHaveCount(0);
-  await expect(page.locator('webview')).toHaveCount(2);
+  await expect(right.locator('webview')).toHaveCount(2);
   await expect(refresh).toBeEnabled();
   await second.click();
   await expect(address).toHaveValue(origin + '/second');
@@ -109,7 +158,7 @@ try {
   await expect(address).toHaveValue(origin + '/popup');
   await popup.press('Delete');
   await expect(address).toHaveValue(origin + '/second');
-  await expect(page.locator('webview')).toHaveCount(1);
+  await expect(right.locator('webview')).toHaveCount(1);
 
   await command('内置浏览器：管理用户脚本');
   const settings = page.getByRole('region', { name: '内置浏览器用户脚本' });
@@ -154,22 +203,27 @@ try {
   await page.getByRole('button', { name: '关闭设置' }).click();
   await refresh.click();
   await expect.poll(() => evaluateGuest('document.body?.dataset.fixtureScript')).toBe('2.0.0');
+  await address.focus();
   await command('打开网页浏览器');
   await expect(address).toBeFocused();
   await expect(address).toHaveValue('');
+  await mainTabs.getByRole('tab', { name: /Fixture \/central/ }).click();
+  await expect(mainAddress).toHaveValue(origin + '/central');
   await tabs.getByRole('tab', { name: '浏览器', exact: true }).press('Delete');
   await expect(address).toHaveValue(origin + '/second');
   await expect.poll(async () => {
     const state = await (await page.request.get(new URL('/api/uistate/', page.url()).href)).json();
-    return state.rightTabs?.map(tab => tab.state.url);
-  }).toEqual([origin + '/second']);
+    return { center: state.tabs?.find(tab => tab.path === state.activePath)?.webUrl,
+      right: state.rightTabs?.find(tab => tab.id === state.rightActiveId)?.state.url };
+  }).toEqual({ center: origin + '/central', right: origin + '/second' });
   await expect(page.getByText(/工作区保存失败/)).toHaveCount(0);
   await quit();
 
   app = await launch();
   const resumed = await app.firstWindow();
-  await expect(resumed.getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/second', { timeout: 30000 });
-  await expect(resumed.getByRole('button', { name: '刷新网页' })).toBeEnabled();
+  await expect(resumed.locator('.main-pane').getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/central', { timeout: 30000 });
+  await expect(resumed.locator('.dock-right').getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/second');
+  await expect(resumed.getByRole('button', { name: '刷新网页' })).toHaveCount(2);
   await quit();
   console.log('Desktop WebViewer: launcher, side tabs, guest isolation, navigation, imports, automatic update, permission review, layout persistence and normal quit passed');
 } finally {
