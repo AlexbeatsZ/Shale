@@ -1,4 +1,5 @@
 import type { McpConnectionInput, McpLauncherState } from './mcpLauncher';
+import type { UserscriptBridge } from '../../web/src/lib/userscripts/types';
 
 export const desktopCommands = ['new', 'files', 'save', 'settings', 'vault-switch'] as const;
 export type DesktopCommand = typeof desktopCommands[number];
@@ -9,6 +10,10 @@ export interface DesktopBridge {
   version: string;
   nativePlugins: boolean;
   vaultPath?: string;
+  userscripts?: UserscriptBridge;
+  webViewer?: {
+    onOpenTab(listener: (target: { guestId: number; url: string }) => void): () => void;
+  };
   mcp: {
     inspect(): Promise<McpLauncherState>;
     configure(input: McpConnectionInput): Promise<McpLauncherState>;

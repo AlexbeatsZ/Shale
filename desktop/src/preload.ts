@@ -10,6 +10,21 @@ const desktopApi: DesktopBridge = {
   platform: process.platform,
   version: process.argv.find(arg => arg.startsWith('--webobsidian-version='))?.split('=')[1] ?? '',
   nativePlugins: !!nativeArg,
+  webViewer: {
+    onOpenTab: listener => {
+      const handler = (_event: unknown, target: { guestId: number; url: string }) => listener(target);
+      ipcRenderer.on('webviewer:open-tab', handler);
+      return () => ipcRenderer.removeListener('webviewer:open-tab', handler);
+    },
+  },
+  userscripts: {
+    request: (action, payload) => ipcRenderer.invoke('userscripts:manage', action, payload ?? {}),
+    subscribe: listener => {
+      const handler = () => listener();
+      ipcRenderer.on('userscripts:changed', handler);
+      return () => ipcRenderer.removeListener('userscripts:changed', handler);
+    },
+  },
   mcp: {
     inspect: () => ipcRenderer.invoke('desktop:mcp-inspect'),
     configure: (input: McpConnectionInput) => ipcRenderer.invoke('desktop:mcp-configure', input),

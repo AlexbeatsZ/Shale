@@ -8,6 +8,7 @@ import Editor from './Editor';
 import Icon from './Icon';
 import BookmarksPanel from './BookmarksPanel';
 import WorkspaceLauncher from './WorkspaceLauncher';
+import WebViewerTab from './WebViewerTab';
 
 const SidebarNote = memo(function SidebarNote({ tab, active }: { tab: SidebarTab; active: boolean }) {
   const opened = useRef(false);
@@ -22,7 +23,7 @@ const SidebarNote = memo(function SidebarNote({ tab, active }: { tab: SidebarTab
   </div>;
 });
 
-/** DOM-owned plugin/guest views survive tab switches; close alone disposes them. */
+/** DOM-owned plugin views survive tab switches; close alone disposes them. */
 const SidebarView = memo(function SidebarView({ tab, active }: { tab: SidebarTab; active: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const leaf = useRef<ReturnType<typeof sharedApp.workspace.rightLeaf>>();
@@ -54,11 +55,12 @@ export default function SidebarTabPanels({ side, open }: { side: 'left' | 'right
   const tabs = allTabs.filter(tab => (tab.side ?? 'right') === side);
   const tab = tabs.find(tab => tab.id === activeId);
   return <>
-    {tab && <div className="sidebar-tab-header"><Icon name={tab.icon} size={16} /><span>{tab.title}</span>
+    {tab && tab.type !== 'webviewer' && <div className="sidebar-tab-header"><Icon name={tab.icon} size={16} /><span>{tab.title}</span>
       <button className="tool-btn" title="关闭标签页" aria-label={side === 'left' ? '关闭左侧标签页' : '关闭右侧标签页'} onClick={() => void useStore.getState().closeRightTab(tab.id)}><Icon name="x" size={16} /></button></div>}
     {open && tab?.type === 'empty' && <WorkspaceLauncher key={tab.id} sidebarId={tab.id} />}
     {tabs.filter(tab => tab.type === 'markdown').map(tab => <SidebarNote key={tab.id} tab={tab} active={open && tab.id === activeId} />)}
     {open && tab?.type === 'bookmarks' && <div className="sidebar-body"><BookmarksPanel /></div>}
-    {tabs.filter(tab => !['empty', 'markdown', 'bookmarks'].includes(tab.type)).map(tab => <SidebarView key={tab.id + tab.type} tab={tab} active={open && tab.id === activeId} />)}
+    {tabs.filter(tab => tab.type === 'webviewer').map(tab => <WebViewerTab key={tab.id} tab={tab} active={open && tab.id === activeId} />)}
+    {tabs.filter(tab => !['empty', 'markdown', 'bookmarks', 'webviewer'].includes(tab.type)).map(tab => <SidebarView key={tab.id + tab.type} tab={tab} active={open && tab.id === activeId} />)}
   </>;
 }

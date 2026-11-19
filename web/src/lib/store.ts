@@ -9,6 +9,7 @@ import { isGlobalContentTarget, parseLinkTarget } from '@webobsidian/markdown-co
 import { resolveContentLink } from './contentReferences';
 import { navigateTo, captureLocation, cancelNavigation, type NavigationLocation, type NavigationRequest, type LinkIntent } from './fragmentNavigation';
 import { sidebarTab, restoreSidebarTabs, type SidebarTab } from './sidebarTabs';
+import { hasWebViewer } from './platform';
 import { getActiveEditor, activateNavigation, getActiveNavigationId } from './activeEditor';
 import { contextOf } from './renderContext';
 import type { MenuContext } from './configuredMenus/types';
@@ -336,7 +337,7 @@ function migrateGraphSettings(gs: unknown): GraphSettings {
 
 function applyPersisted(s: any, set: (p: any) => void): void {
   rightGenerations.clear();
-  const rightTabs = restoreSidebarTabs(s.rightTabs);
+  const rightTabs = restoreSidebarTabs(s.rightTabs, hasWebViewer());
   if (s.leftPanel === 'bookmarks' && !rightTabs.some(tab => tab.type === 'bookmarks')) rightTabs.push(sidebarTab('bookmarks', {}, 'legacy-bookmarks'));
   set({
     tabs: Array.isArray(s.tabs) ? s.tabs : [],
@@ -1105,7 +1106,7 @@ export const useStore = create<AppState>()(
         const prevSplit = get().splitPath;
         await documents.saveLeaving(get().activePath);
         await documents.saveLeaving(prevSplit);
-        const incoming = restoreSidebarTabs(state.rightTabs);
+        const incoming = restoreSidebarTabs(state.rightTabs, hasWebViewer());
         for (const tab of get().rightTabs) {
           const next = incoming.find(next => next.id === tab.id);
           if (tab.type !== 'markdown' || next?.type === 'markdown' && next.state.file === tab.state.file) continue;

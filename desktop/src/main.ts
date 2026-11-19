@@ -1,4 +1,6 @@
 import { app, BrowserWindow, Menu, dialog, ipcMain, shell, safeStorage, clipboard, type IpcMainEvent, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron';
+import { configureWebViewer } from './webViewer';
+import { UserscriptService } from './userscripts/service';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -34,6 +36,7 @@ let serverPort = 0;
 let mainWindow: BrowserWindow | null = null;
 let desktopConfig: DesktopConfig | undefined;
 let mcpLauncher: McpLauncher | undefined;
+let userscripts: UserscriptService | undefined;
 let initialVaultChoice: string | undefined;
 let finishingQuit = false;
 let quitRequest: Promise<void> | undefined;
@@ -73,7 +76,7 @@ function requestWindowClose(window: BrowserWindow, quit: boolean): Promise<void>
     try {
       await prepareWindowClose(window);
       if (quitRequested) {
-        await mcpLauncher?.stop();
+        await Promise.all([mcpLauncher?.stop(), userscripts?.stop()]);
         await serverProcess?.stop();
         finishingQuit = true;
         app.quit();
@@ -229,10 +232,12 @@ function createWindow(starting = false): void {
       nodeIntegration: !!desktopConfig?.trustedPlugins,
       nodeIntegrationInSubFrames: false,
       sandbox: !desktopConfig?.trustedPlugins,
+      webviewTag: true,
       additionalArguments: [`--webobsidian-version=${app.getVersion()}`, ...(desktopConfig?.trustedPlugins ? [`--webobsidian-native-vault=${encodeURIComponent(desktopConfig.vaultPath ?? '')}`] : [])],
     },
   });
   mainWindow.webContents.setUserAgent(`${mainWindow.webContents.getUserAgent()} WebObsidianDesktop`);
+  configureWebViewer(mainWindow.webContents, () => serverPort, guest => userscripts?.attach(guest));
 
   // Retain native actions/accelerators behind F10, without a visible menu row.
   if (process.platform !== 'darwin') mainWindow.setMenuBarVisibility(false);
@@ -500,6 +505,9 @@ if (!app.requestSingleInstanceLock()) {
       await startServer(cfg);
       buildMenu();
       registerDesktopRequests();
+      userscripts = new UserscriptService({ dataDir: DATA_DIR(), fallbackVault: cfg.vaultPath,
+        window: () => mainWindow, hostAllowed: event => !!desktopWindow(event) });
+      await userscripts.start();
       if (mainWindow && !mainWindow.isDestroyed()) await mainWindow.loadURL(baseUrl(serverPort));
     } catch (err) {
       await serverProcess?.stop();
@@ -518,9 +526,14 @@ if (!app.requestSingleInstanceLock()) {
       void requestWindowClose(mainWindow, true);
       return;
     }
-    if (!finishingQuit && (mcpLauncher || serverProcess)) {
+    if (!finishingQuit && (mcpLauncher || serverProcess || userscripts)) {
       event.preventDefault();
-      if (!quitRequest) quitRequest = Promise.resolve().then(async () => { await mcpLauncher?.stop(); await serverProcess?.stop(); finishingQuit = true; app.quit(); })
+      if (!quitRequest) quitRequest = Promise.resolve().then(async () => {
+        await Promise.all([mcpLauncher?.stop(), userscripts?.stop()]);
+        await serverProcess?.stop();
+        finishingQuit = true;
+        app.quit();
+      })
         .catch(error => dialog.showErrorBox('无法退出 Shale', String(error))).finally(() => { quitRequest = undefined; });
       return;
     }

@@ -133,12 +133,11 @@ Markdown views/sidebar hosts retain stable session/tab identities. Canvas drafts
 block path changes and defer external refresh. See architecture-optimization.md
 for exact rules and deleted branches. Source/diff only; no runtime checks.
 
-## 原生应用范围（2026-11-01）
+## 原生应用范围
 
-用户已取消内置网页浏览器、网页脚本和浏览器产品。WebViewer 的 guest/预加载/IPC/
-弹窗路由、工作区专用挂载分支及入口均删除；恢复布局时丢弃旧 WebViewer 标签。
-笔记与插件视图继续复用 SidebarDock、WorkspaceLeaf 和 DocumentSession 的生命周期。
-不改原有插件文件、网页脚本存储或浏览会话数据。见 native-only.md。
+桌面 WebViewer 于 2026-11-19 恢复，复用左右侧栏的标签身份、持久化及切换/关闭操作。
+网页使用专用访客组件，详见 [桌面网页浏览器](web-viewer.md)。笔记与插件视图继续复用
+SidebarDock、WorkspaceLeaf 和 DocumentSession 的生命周期。
 
 ## 2026-10-22 修改意见交付边界
 

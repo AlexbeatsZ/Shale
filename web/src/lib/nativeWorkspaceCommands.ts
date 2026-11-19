@@ -8,6 +8,10 @@ import { getPdfSession } from './pdf/react';
 import { pdfFilterCommand } from './pdf/commands';
 import { contentReferenceCommands } from './contentReferenceCommands';
 import { addCurrentMcpContext } from './review/client';
+import { openWebViewer } from './openWebViewer';
+import { hasWebViewer } from './platform';
+import { userscriptBridge } from './userscripts/client';
+import { userscriptCommands } from './userscripts/commands';
 
 const activePath = () => useStore.getState().currentPath();
 function tabTargets() {
@@ -38,6 +42,8 @@ export const nativeWorkspaceCommands: NativeCommand[] = [
     window.dispatchEvent(new Event('vault-settings-open'));
   } },
   { id: 'new-tab', title: '新建标签页', hotkeys: [{ modifiers: ['Ctrl', 'Shift'], key: 'N' }], run: () => useStore.getState().openHomepage() },
+  ...(hasWebViewer() ? [{ id: 'webviewer:open', title: '打开网页浏览器', run: () => openWebViewer() }] : []),
+  ...(userscriptBridge() ? userscriptCommands : []),
   { id: 'workspace:close', title: '关闭当前标签页', hotkeys: [{ modifiers: ['Ctrl'], key: 'W' }], run: async () => {
     const { sharedApp } = await import('./plugins');
     const leaf = sharedApp.workspace.activeLeaf, state = useStore.getState();

@@ -1,9 +1,12 @@
 # CLAUDE.md — Hướng dẫn làm việc cho Claude Code trên dự án WebObsidian
 
 ## Bối cảnh
-WebObsidian is a native desktop/Android application. The browser product, Web
-deployment, embedded webpage browser and userscripts were retired on 2026-11-01.
-The `web/` directory is an internal native renderer; do not add browser adapters.
+WebObsidian is a native desktop/Android application. The `web/` directory is
+its internal native renderer. The browser product and Web deployment were
+retired on 2026-11-01. The desktop application provides an embedded WebViewer
+with userscript file/URL import and scheduled update checks. Preserve these
+features through refactors and require an explicit owner decision for removal.
+See [WebViewer](docs/design/web-viewer.md) and [userscripts](docs/design/browser-userscripts.md).
 Thiết kế chính thức nằm ở
 [PRD.md](PRD.md). Tiến độ phát triển được track ở [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 

@@ -63,7 +63,7 @@ function fixture(platform = 'win32') {
   const electron = { app: application, BrowserWindow: FakeWindow, ipcMain: ipc, dialog: { showErrorBox, showMessageBox }, shell: { openExternal } };
   runInNewContext(compiled + '\nexports.fixture = { createWindow, requestWindowClose, initialize: (launcher, server) => { serverPort = 8787; serverProcess = server; registerDesktopRequests(); mcpLauncher = launcher; } };', {
     exports: moduleExports,
-    require: (id: string) => id === 'electron' ? electron : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' ? {} : nativeRequire(id),
+    require: (id: string) => id === 'electron' ? electron : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
     process: { platform, arch: 'x64', execPath: 'WebObsidian' },
     __dirname: fileURLToPath(new URL('../../../desktop/src', import.meta.url)),
     URL, Buffer, setTimeout, clearTimeout, console,
@@ -154,7 +154,7 @@ describe('desktop close coordinator against the production main implementation',
     expect(host.window.destroyed).toBe(false);
     expect(host.application.quit).not.toHaveBeenCalled();
     expect(host.launcher.stop).not.toHaveBeenCalled();
-    expect(host.showErrorBox).toHaveBeenCalledWith('无法关闭 WebObsidian', expect.stringContaining('disk full'));
+    expect(host.showErrorBox).toHaveBeenCalledWith('无法关闭 Shale', expect.stringContaining('disk full'));
     const retry = host.close(true);
     expect(host.token()).not.toBe(oldToken);
     host.reply({ ok: true }, oldToken);

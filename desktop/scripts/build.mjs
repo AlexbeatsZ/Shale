@@ -1,5 +1,5 @@
 // Build the desktop app artifacts that electron-builder packages:
-//   1. dist/main.js + dist/preload.js  — the Electron main & preload (esbuild bundles)
+//   1. dist/                           — Electron main and separate app/guest preloads
 //   2. .gen/server/dist/index.mjs      — the whole Express server as ONE bundled ESM file
 //   3. .gen/server/public/             — the built web SPA (copied from server/public)
 //
@@ -30,7 +30,7 @@ if (!existsSync(serverDistEntry) || !existsSync(serverPublic)) {
 // 1) Electron main + preload -> dist/  (electron + node builtins stay external)
 rmSync(path.join(desktopDir, 'dist'), { recursive: true, force: true });
 await build({
-  entryPoints: [path.join(desktopDir, 'src', 'main.ts'), path.join(desktopDir, 'src', 'preload.ts')],
+  entryPoints: ['main.ts', 'preload.ts', 'webViewerPreload.ts'].map(name => path.join(desktopDir, 'src', name)),
   bundle: true,
   platform: 'node',
   format: 'cjs',

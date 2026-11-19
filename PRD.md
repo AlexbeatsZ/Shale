@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.44 · Cập nhật: 2026-11-15 · Trạng thái: Draft
+> Phiên bản: 1.45 · Cập nhật: 2026-11-19 · Trạng thái: Draft
+> Changelog 1.45 (桌面内置网页浏览器与用户脚本) 恢复桌面网页浏览入口、侧栏标签、用户脚本文件/URL 导入和定期更新。新增权限或扩展站点匹配的更新须经审阅。后续重构须保留这些能力。
 > Changelog 1.44 (PowerPoint 阅读) 原生工作区支持 `.ppt` 与 `.pptx` 静态幻灯片查看，复用 PDF 的分页、工具栏、搜索、右侧大纲与缩略图布局。PDF 与 PPT 共用深色背景适配命令，保留原命令 ID 与快捷键配置，按文件保存显示状态。使用本地打包的开源解析器，文件通过原 Vault 身份范围读取。设计见 docs/design/presentation-viewer.md。
 > Changelog 1.43 (嵌入属性、图片编号与阅读缩放) 图片属性采用 `![[file.png|别名#width=320#dark]]`，无参开关与英文键值参数共用原生模型，保留 dark、移除 Wiki 特判。图片默认小字图注“图aa-bb 别名或文件名”，普通图片引用显示最近前置显式实例图号，空别名显示原名。图片右键“添加属性”提供勾选/参数与用户 CSS 自定义属性。按当前背景实时过滤图片/PDF，原生 PDF 与连续文档 PDF 支持 Ctrl+滚轮缩放，Markdown 字号滚轮开关默认关闭。修复异步图片粘贴位置并清理已迁移的 Hider/图片旧规则，保留当前 UI 与用户仍依赖的效果。现有 Wiki SVG 按用户后续要求直接永久应用旧 Wiki 颜色变换，保留笔记引用原文。设计见 docs/design/embed-properties.md。
 > Changelog 1.42 (隔离 JavaScript 图表与官方控件) `js-widget` / `javascript-widget` 复用 JavaScript 高亮，编辑和源码展开保留代码块背景。笔记脚本仅在独立 opaque-origin iframe 内执行，禁止访问应用 DOM、Vault 写入、原生桥与网络请求。保留绘图、DOM 交互、生命周期及只读内置组件桥。接入 OpenAI Apps SDK UI 的滑块、按钮、开关、分段选择与配套深浅色图表主题。设计见 docs/design/native-javascript.md。
@@ -230,7 +231,7 @@ Markdown、附件和 Canvas 文件。上游的自托管网页版、登录、公�
 - 支持加载用户实际使用的 Obsidian 社区插件(已安装的 `.obsidian/plugins/*`)。
 
 ### 1.2 不在范围内
-- 浏览器版、自托管网页部署、Docker 镜像、公开分享链接、笔记 URL 深链、内置网页浏览器和用户脚本
+- 浏览器版、自托管网页部署、Docker 镜像、公开分享链接和笔记 URL 深链
   (2026-11-01 退役,不再添加浏览器适配)。
 - 账号、密码、会话、API Key 和对外开放的 REST API(2026-10-23 退役)。
 - 多用户实时协作编辑(CRDT);Obsidian Sync/Publish 官方服务。
@@ -443,7 +444,7 @@ webobsidian/
 ### FR-10 · 深链 URL 与公开分享(已退役)
 - 2026-10-23 删除公开分享;2026-11-01 删除笔记 URL(`/note/...`)、地址/历史同步、"复制应用链接"
   和"在浏览器窗口打开"等功能。见 [原生应用边界](docs/design/native-only.md)。
-- 笔记内容中的外部超链接仍交给操作系统打开;不得重新引入浏览器入口或分享服务。
+- 笔记内容中的外部超链接交给操作系统打开。
 
 ---
 
@@ -473,6 +474,9 @@ cùng một codebase React.
   附件清理继续解析其中的文件引用,避免误删仍被旧白板引用的附件。
 
 ### FR-13 · 桌面应用(Electron,多平台)
+
+- 首页和命令面板提供「打开网页浏览器」。多个网页在侧边竖排标签栏中独立显示，可从侧边栏切换和关闭。内容区提供 HTTP(S) 地址、前进、后退和刷新。网页访客与本地应用、Vault API 和原生插件隔离。见 [桌面网页浏览器](docs/design/web-viewer.md)。
+- 设置提供用户脚本文件与 `.user.js` URL 导入、匹配范围与权限审阅、手动检查和自动检查更新。用户开启全局和逐脚本开关后，桌面按设定间隔检查版本。同权限更新可自动安装，新增权限或扩展匹配范围须经审阅。后续重构须保留本条和网页浏览入口，移除需要用户明确同意。见 [用户脚本设计](docs/design/browser-userscripts.md)。
 - 设计见 [桌面窗口](docs/design/desktop-window.md) 和 [桌面运行时打包](docs/design/desktop-runtime.md)。
 - **架构**:Electron 主进程以 `ELECTRON_RUN_AS_NODE=1` 启动打包好的本地运行时
   (`resources/server/dist/index.mjs`,esbuild 单文件,不带 `node_modules`),绑定 `127.0.0.1` 随机端口,

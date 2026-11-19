@@ -34,7 +34,7 @@ obsidian-typings 只作内部接口资料，不把类型声明当作运行时实
 | local-latex-renderer | 0.8.1 | 0.8.1 | 原包加载、设置页、共享 MathJax 预导言入口 |
 | interactive-js | 0.1.0 | 0.1.0 | 原包加载、显式 opt-in 代码块执行、普通 JS 保持惰性 |
 | reading-live-parity | 未启用 | 0.1.7 | 原包加载、Markdown 处理器注册 |
-| webviewer-userscripts | 0.1.0 | removed | 2026-11-01 用户要求移除；不加载、不适配，原文件保留 |
+| webviewer-userscripts | 0.1.0 | native replacement | 桌面内置用户脚本管理读取旧配置，原插件文件保留 |
 | obsidian-context-mcp | 未启用 | 0.1.0 | 原生隔离宿主加载、独立端点的上下文 RPC 及卸载；浏览器 unsupported |
 | obsidian-footnotes | 启用列表残留 | 启用列表残留 | 两库均缺少安装目录，无法测试原插件 |
 
@@ -79,7 +79,7 @@ readonly 视图可处理呈现 DOM。以文档和 viewport 标识缓存处理批
 
 ## 原生桌面与 Android
 
-仅支持原生应用，不维护浏览器产品、WebViewer 或网页脚本适配。插件文件/命令/
+产品支持桌面和 Android 原生应用。插件文件/命令/
 编辑器/渲染生命周期继续调用原生本体能力。Templater 的模板解析和公开文件/交互
 入口保留；本机系统命令仍取决于桌面信任模式，不伪装成功。
 
@@ -87,8 +87,8 @@ readonly 视图可处理呈现 DOM。以文档和 viewport 标识缓存处理批
 本地宿主允许插件通过 Node `createRequire` 加载内置模块，接入实际 Vault 路径。
 禁用后在下次启动恢复隔离设置；菜单动作不自动重启或丢弃会话。
 
-普通笔记外部链接交给操作系统。内置网页浏览器及其命令、webview guest、预加载、
-IPC、脚本管理/运行/更新均删除。桌面 requestUrl 继续经已有受限 IPC 使用 Electron
+普通笔记外部链接交给操作系统。桌面 WebViewer 与用户脚本由独立访客和专用桥提供，
+见 [桌面网页浏览器](web-viewer.md)。桌面 requestUrl 继续经已有受限 IPC 使用 Electron
 net；Android 使用原有本地服务请求入口。原生界面与插件复用同一文件/命令/文档核心。
 
 用户 JS/ES module 片段仍使用原生应用内部渲染能力。打印上下文关闭插件执行；

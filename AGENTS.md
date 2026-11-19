@@ -4,6 +4,7 @@
 
 ## Goal
 个人使用的 WebObsidian 原生桌面/Android 应用(fork 自 xnohat/webobsidian,远程 `AlexbeatsZ/webobsidian`)。
+- 桌面端须保留首页及命令面板的「打开网页浏览器」、侧栏网页标签、用户脚本文件/URL 导入及自动检查更新。修改原生宿主、工作区或浏览器边界时运行桌面网页浏览回归。删除或停用任一能力需要用户明确同意。设计见 `docs/design/web-viewer.md` 和 `docs/design/browser-userscripts.md`。
 
 ## Repository Records
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
@@ -29,6 +30,7 @@
 - `gh release` 显式传 `--repo AlexbeatsZ/webobsidian`（本机默认上游），`--target`使用完整源码SHA。API创建tag不会触发推送式CI。
 - PPT/PPTX 与 PDF 共用阅读回归为 `node tests/desktop-presentations.mjs <原生可执行文件>`，使用一次性 Vault/profile。相关浏览器为 presentation、pdf-identity、pdf-toolbar、pdf-virtual-zoom。
 - 依赖与构建:`npm ci && npm run build`。
+- 桌面网页浏览与用户脚本回归：`node tests/desktop-webviewer.mjs <打包应用可执行文件>`。使用隔离 Vault/profile 与本地 HTTP 夹具，自动更新验证需等一次调度。
 - JS图表回归运行`node tests/desktop-javascript-widgets.mjs <打包应用可执行文件>`，使用临时Vault/profile；图表验收完成后直接退出临时进程。专项浏览器为javascript-widgets、async-processor-transition、host、source-syntax、render-script-lifetime五个规格。构建core与浏览器运行串行。
 - Mac 本机包(只打当前架构,不发布):
   `cd desktop && node scripts/build.mjs && CSC_IDENTITY_AUTO_DISCOVERY=false npx electron-builder --mac dir --arm64 --publish never`
@@ -60,6 +62,7 @@
 - 改名 Shale 后 Windows NSIS(同 appId)会沿用旧安装目录 `%LOCALAPPDATA%\Programs\WebObsidian`,其中可执行文件变为 `Shale.exe`,不会出现 `Programs\Shale`。数据目录取自 package `name`(Mac `~/Library/Application Support/@webobsidian/desktop`),改 productName 不影响。
 
 ## Docs Index
+- 桌面网页浏览与用户脚本 → `docs/design/web-viewer.md`、`docs/design/browser-userscripts.md`。
 - PowerPoint与共用分页阅读 → `docs/design/presentation-viewer.md`、`document-navigation.md`、`document-media-theme.md`。
 - `docs/design/`:模块设计文档。Callout 颜色/图标 → `callout-styles.md`;Callout 布局 → `callout-lists.md`;源码展开语法灰色 → `source-reveal.md`;`\\( \\)`/`\\[ \\]` 公式 → `native-math.md`;内容引用与嵌入控件 → `content-references.md`;公式编号、嵌入实例与引用编号解析 → `native-equations.md`。
 - `docs/log/`:按月工作记录。

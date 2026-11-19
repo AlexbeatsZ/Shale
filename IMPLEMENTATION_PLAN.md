@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-15 (PowerPoint viewing)
+Cập nhật lần cuối: 2026-11-19 (桌面内置网页浏览器)
+
+### 桌面内置网页浏览器 (PRD 1.45)
+
+- [~] 恢复桌面首页、命令面板、工作区网页标签、用户脚本导入与自动更新，验证原生包并发布。
 
 ## PowerPoint viewing (PRD 1.44)
 - [x] Integrate local PPT/PPTX parsing through the shared PDF reader resource contract

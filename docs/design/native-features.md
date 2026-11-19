@@ -1,9 +1,7 @@
 # Native menus, attachment cleanup and tags
 
-The owner removed embedded webpage browsing and userscripts on 2026-11-01.
-Their former implementation, startup/IPC/commands/settings and design document
-are deleted. They must not be reintroduced as compatibility adapters. See
-[native application boundary](native-only.md).
+Desktop webpage browsing and userscripts have dedicated owners described in
+[WebViewer](web-viewer.md) and [userscripts](browser-userscripts.md).
 
 ## Shared owners
 

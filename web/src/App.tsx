@@ -150,6 +150,7 @@ export default function App() {
           stopMenus();
           stopMenus = initializeNativeMenus();
           window.dispatchEvent(new Event('vault-changed'));
+          void window.webobsidianDesktop?.userscripts?.request('list').catch(console.error);
           void readNativeFeatures().then(value => { attachmentDialogHost.initialOptions = value.attachments; }).catch(console.error);
           loadTree();
           notifyIndexChanged();

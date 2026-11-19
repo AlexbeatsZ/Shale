@@ -2,6 +2,9 @@
 export function isAndroid(): boolean {
   return typeof navigator !== 'undefined' && /\bWebObsidianAndroid\b/.test(navigator.userAgent);
 }
+export function hasWebViewer(): boolean {
+  return !!globalThis.window?.webobsidianDesktop?.webViewer;
+}
 export function isMacOS(): boolean {
   return typeof window !== 'undefined' && window.webobsidianDesktop
     ? window.webobsidianDesktop.platform === 'darwin'

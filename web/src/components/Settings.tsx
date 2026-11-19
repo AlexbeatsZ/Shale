@@ -20,6 +20,8 @@ import AutomationSettings from './AutomationSettings';
 import HotkeySettings from './HotkeySettings';
 import DebugSettings from './DebugSettings';
 import McpSettings from './McpSettings';
+import { UserscriptSettings } from './UserscriptSettings';
+import { userscriptBridge } from '../lib/userscripts/client';
 import ConfigurationFile from './ConfigurationFile';
 import { readCssSnippets, setCssSnippetEnabled, type CssSnippets } from '../lib/cssSnippets';
 import { readNativeFeatures, saveNativeFeatures, type NativeFeaturePreferences } from '../lib/nativeFeatures';
@@ -32,7 +34,7 @@ import { documentAppearance, UiSettingsSchema, type UiSettings } from '../../../
 import { FilePlacementSchema, type FilePlacement } from '../../../server/src/contracts/filePlacement';
 
 type Section =
-  'search' | 'hotkeys' | 'mcp' | 'automation' | 'writing' | 'formatting' | 'menus' | 'tags' | 'vault' | 'sync' | 'git' | 'plugins' | 'appearance' | 'interface' | 'editor' | 'about' | 'debug';
+  'search' | 'hotkeys' | 'mcp' | 'automation' | 'writing' | 'formatting' | 'userscripts' | 'menus' | 'tags' | 'vault' | 'sync' | 'git' | 'plugins' | 'appearance' | 'interface' | 'editor' | 'about' | 'debug';
 
 export default function Settings() {
   const open = useStore((s) => s.settingsOpen);
@@ -64,12 +66,19 @@ export default function Settings() {
   }, [open]);
   useEffect(() => {
     const menus = () => { setPluginTab(null); setSection('menus'); };
+    const scripts = () => { setPluginTab(null); setSection('userscripts'); };
     const automation = () => { setPluginTab(null); setSection('automation'); };
     const vault = () => { setPluginTab(null); setSection('vault'); };
     window.addEventListener('menus:open-settings', menus);
+    window.addEventListener('userscripts:open-settings', scripts);
     window.addEventListener('automation:open-settings', automation);
     window.addEventListener('vault-settings-open', vault);
-    return () => { window.removeEventListener('menus:open-settings', menus); window.removeEventListener('automation:open-settings', automation); window.removeEventListener('vault-settings-open', vault); };
+    return () => {
+      window.removeEventListener('menus:open-settings', menus);
+      window.removeEventListener('userscripts:open-settings', scripts);
+      window.removeEventListener('automation:open-settings', automation);
+      window.removeEventListener('vault-settings-open', vault);
+    };
   }, []);
   useSyncExternalStore(subscribePlugins, pluginRevision);
   useEffect(() => {
@@ -122,7 +131,7 @@ export default function Settings() {
           <div className="settings-nav">
             <label className="settings-search"><Icon name="search" size={15} /><input aria-label="搜索设置" placeholder="搜索设置…" value={navQuery} onChange={event => setNavQuery(event.target.value)} /></label>
             {NAV_GROUPS.map(group => {
-              const entries = group.sections.filter(s => labels[s].toLowerCase().includes(navQuery.toLowerCase()));
+              const entries = group.sections.filter(s => (s !== 'userscripts' || userscriptBridge()) && labels[s].toLowerCase().includes(navQuery.toLowerCase()));
               return entries.length ? <div className="settings-nav-group" key={group.title}>
                 <div className="settings-nav-label">{group.title}</div>
                 {entries.map((s) => (
@@ -151,6 +160,7 @@ export default function Settings() {
             {section === 'automation' && <AutomationSettings />}
             {section === 'writing' && <WritingSettings />}
             {section === 'formatting' && <WritingSettings formatting />}
+            {section === 'userscripts' && <UserscriptSettings />}
             {section === 'menus' && <ConfiguredMenuSettings />}
             {section === 'tags' && (features ? <TagSettings value={features.tags} vault={features.vault} onChange={async patch => {
               setFeatures(await saveNativeFeatures({ vault: features.vault, tags: patch }));
@@ -208,6 +218,7 @@ function PluginSettingsTab({ id }: { id: string }) {
 
 const labels: Record<Section, string> = {
   automation: '用户指令与模板',
+  userscripts: '内置浏览器脚本',
   menus: '右键菜单',
   tags: '标签',
   writing: '公式与片段',
@@ -226,12 +237,12 @@ const labels: Record<Section, string> = {
   mcp: 'MCP',
 };
 const sectionIcons: Record<Section, string> = {
-  search: 'search', hotkeys: 'key', automation: 'command', writing: 'brackets', formatting: 'align-left', menus: 'list',
+  search: 'search', hotkeys: 'key', automation: 'command', writing: 'brackets', formatting: 'align-left', menus: 'list', userscripts: 'globe',
   tags: 'hash', vault: 'folder', sync: 'refresh-cw', git: 'git-branch', plugins: 'puzzle', appearance: 'palette', interface: 'layout-dashboard', editor: 'square-pen', about: 'info', debug: 'code', mcp: 'cpu',
 };
 const NAV_GROUPS: { title: string; sections: Section[] }[] = [
   { title: '选项', sections: ['about', 'appearance', 'interface', 'editor', 'vault', 'hotkeys', 'plugins', 'debug'] },
-  { title: '核心功能', sections: ['search', 'writing', 'formatting', 'tags', 'automation', 'menus', 'sync', 'git', 'mcp'] },
+  { title: '核心功能', sections: ['search', 'writing', 'formatting', 'tags', 'automation', 'userscripts', 'menus', 'sync', 'git', 'mcp'] },
 ];
 
 function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
