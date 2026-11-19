@@ -85,6 +85,13 @@ the journal but does not replay it. Recovery errors remain visible without preve
 the application from opening. This is per-file crash recovery,
 not an all-files filesystem transaction or simultaneous handwriting merge.
 
+On Android, the sole embedded runtime owns its private sync-state directory.
+A process-local lock keyed by that directory serializes recovery, sync and
+conflict resolution across engine instances. Android may terminate the process
+without cleanup or reassign its PID to another app, so legacy PID lock files
+are ignored in the embedded runtime. Desktop and standalone hosts continue to
+coordinate through the disk lock.
+
 Conflicts never choose newest timestamp or insert markers into working notes. Retain
 both exact binary/text versions plus deletion metadata in local recovery storage. When
 Git backup is enabled, additionally record local/remote snapshots on separate branches

@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-19 小米平板 6 Pro 的正式包 `io.github.alexbeatsz.webobsidian` 原位升级 0.1.72→0.1.73。Android 17 实机深色主题上下白边消失，状态栏及手势栏保留，本地服务就绪。旧锁 PID 已被其他 UID 复用，旧锁和退出 Syncthing 后遗留的空 `.stfolder` 已改名留档。STEM 已连 ROG，首轮 19 项冲突（5 JS、14 SVG）两版已存，远端 19 项与 Mac 当前文件一致，仍等待选择版本。
 - 2026-11-19 桌面 0.1.75 修复 Homepage 打开内容时遗留空标签的问题。本机 `/Applications/Shale.app` 已原位升级，签名、启动和本地服务通过。隔离实包回归覆盖原位替换、浏览器脚本自动更新和布局重启恢复；Windows x64 安装器构建和版本检查通过，实机界面待验收。
 - 2026-11-19 已发布桌面 v0.1.74（7 个资产，标签源码 6bf3d1a）。本机 `/Applications/Shale.app` 已原位升级。实际工作区验证中央主页打开顶部浏览器标签，既有右侧网页标签保留；本地服务和签名通过。隔离实包回归覆盖左右侧栏入口、侧栏文件/图谱、布局重启恢复和脚本更新。Windows x64 安装器构建和版本检查通过，实机界面待验收。
 - 2026-11-19 已将本机 `/Applications/Shale.app` 从 0.1.72 原位升级到 0.1.73，并正常启动。实际 STEM 工作区首页已确认有「打开网页浏览器」，本地服务健康，签名校验通过。
@@ -18,14 +19,14 @@
 - 2026-11-16 品牌改名：安装后显示名为 **Shale**（Pixel 2026 白底图标），appId `com.xnohat.webobsidian`、Android 包名、数据目录与签名不变。0.1.72 已原位装到 Mac（新 `/Applications/Shale.app`，旧 WebObsidian.app 已移入废纸篓）、OMEN（保持未运行）、ROG（正常关闭后升级并重新启动）、K70（code72，user0，首次安装时间不变）。按用户要求未发 Release、未做界面/同步验收。平板离线，最后记录为0.1.66。
 - 0.1.70 的统一图片属性/图号引用/菜单、按背景适配滤镜、PDF和连续文档Ctrl+滚轮、默认关闭MD字号滚轮已交付。实际STEM Theme/Hider已清理，14张Wiki SVG按用户要求永久改色，exTable已补来源透传。设计 `docs/design/embed-properties.md`。
 - JavaScript图表在opaque-origin iframe运行，应用DOM/Node/原生桥/应用API保持隔离，内置只读组件与OpenAI控件已接通。CPU/内存耗尽仍可能影响渲染进程，iframe没有运算配额。设计 `docs/design/native-javascript.md`。
-- 原生同步地址为 `http://100.106.169.46:18744/webobsidian-sync/v1/`。ROG WebObsidianNativeSync按11月14日任务使用该IP监听，server.json/connection.json已更新且沿用workspaceId；Mac/OMEN已实同步。K70 sync.jsonc已改写并回读，实际同步待应用恢复响应。ROG桌面端无活动Vault，平板离线待改。
-- 日常Android仅用非调试release/tabletRelease，平板保留原 `.debug` 包名和证书。两变体debuggable/JNI/BuildConfig.DEBUG均false，WebView调试关闭。Android使用1024MiB堆且跳过全文JSON缓存。原密钥在OMEN；本轮临时签名已清理。
+- 原生同步地址为 `http://100.106.169.46:18744/webobsidian-sync/v1/`。ROG WebObsidianNativeSync按11月14日任务使用该IP监听，server.json/connection.json已更新且沿用workspaceId；Mac/OMEN已实同步。K70 sync.jsonc已改写并回读，实际同步待应用恢复响应。ROG桌面端无活动Vault。
+- 日常 Android 仅用非调试 release/tabletRelease。按实机包名和证书原位更新，旧 `.debug` 安装使用 tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭。Android 使用 1024MiB 堆且跳过全文 JSON 缓存。原密钥在 OMEN。
 - 项目入口/设计/日志已合并OMEN的198条十月与25条十一月记录、MCP验收回执和ROG初始部署记录并推送GitHub。历史实现、版本与验收归 `docs/log/` 和 `tests/reports/`，连续文档当前设计见 `docs/design/virtual-documents.md`。
 - Mac 数据目录为 `~/Library/Application Support/@webobsidian/desktop`，服务日志为 `logs/server.log`。本地桌面打包目录保留 0.1.75 交付物。历史 Release、永久密钥、SDK/依赖缓存与用户数据各在原归属位置。
 
 ## Active Work
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
-- 平板恢复连接后继续原有升级和同步配置任务。
+- 小米平板 6 Pro 的 STEM 仍有 19 项文件版本冲突，等待用户选择。原同步配置及冲突两版已保留。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。
 

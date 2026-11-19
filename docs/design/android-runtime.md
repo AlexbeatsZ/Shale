@@ -104,6 +104,11 @@ padding WebView did not shrink its actual CSS viewport and status-bar text
 overlapped tab/settings controls on Android15. No CSS offset pipeline is added.
 This follows [Android's parent-layout Insets guidance](https://developer.android.com/develop/ui/views/layout/webapps/understand-window-insets).
 
+The renderer sends theme changes through the existing local-origin host port.
+The native FrameLayout uses the corresponding light or dark base background
+under the transparent system bars and sets contrasting system icons. Insets
+continue to protect the workspace controls in both themes.
+
 ## Build and delivery
 
 Launcher icons use the supplied macOS rounded purple tile. The five legacy
@@ -132,14 +137,15 @@ cd android
 
 Release key/properties remain in ignored `android/.signing` and must be retained
 for future updates. `io.github.alexbeatsz.webobsidian` is the signed personal
-release; `.debug` is a distinct application identity and data directory for
-acceptance. Neither build command installs, starts, uninstalls or clears an app.
+release; `.debug` is a distinct application identity and data directory for older
+installations. Neither build command installs, starts, uninstalls or clears an app.
 Android version.properties owns Android0.1.67/versionCode67 independently. This
 Android delivery bundles the current shared renderer and server from desktop
-0.1.67, including continuous documents and the Android heap/cache correction above. The existing tablet uses
-the `.debug` identity and its original Windows
-debug signing key; preserve that identity and signer for in-place updates.
-The Redmi K70 uses the release application identity and its existing release key.
+0.1.67, including continuous documents and the Android heap/cache correction above.
+Older tablet installs using the `.debug` identity require their original Windows
+debug signing key. The Xiaomi Pad 6 Pro checked on 2026-11-19 uses the release
+identity and signer, as does the Redmi K70. Verify the installed identity and
+signer before each in-place update.
 Deploy each device with its current identity; never uninstall or clear app data
 to work around a signing mismatch. Keep only the latest local APK for each
 required identity after successful upgrades.

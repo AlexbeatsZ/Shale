@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-19 (主页标签原位替换)
+Cập nhật lần cuối: 2026-11-19 (Android 系统栏与同步恢复)
+
+### Android 系统栏与同步恢复
+
+- [x] 统一系统栏与应用主题，修复 Android 异常退出后的失效同步锁，并在平板验证重启后的冲突恢复。
+- [ ] 选择小米平板 6 Pro 首轮连接的 19 项冲突版本。
 
 ### 主页标签原位替换 (PRD 1.47)
 
@@ -35,7 +40,7 @@ Cập nhật lần cuối: 2026-11-19 (主页标签原位替换)
 - [x] Build and publish the new native version
 - [x] Upgrade reachable Mac, OMEN and ROG to 0.1.70 with existing configuration preserved
 - [x] Upgrade Redmi K70 to 0.1.70/code70 after wireless debugging reconnects, preserving identity and settings
-- [ ] Upgrade Xiaomi Pad 6 Pro when it becomes reachable
+- [x] Upgrade Xiaomi Pad 6 Pro after reconnection. Installed Android 0.1.73 on 2026-11-19.
 
 ## Isolated JavaScript charts and OpenAI controls (PRD 1.42)
 - [x] Restore JavaScript highlighting and fenced backgrounds in widget source editing
@@ -699,6 +704,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-19 (Android 0.1.73) 小米平板 6 Pro 验证系统栏使用深色主题，已连 ROG 且重启后保留 19 项文件冲突。两份原签名 APK 构建和验签通过。
 
 - 2026-11-19 (PRD 1.47) macOS 原生包验证 Homepage 原位替换、普通标签切换、网页弹窗和重启恢复。本机已升级到 0.1.75。
 

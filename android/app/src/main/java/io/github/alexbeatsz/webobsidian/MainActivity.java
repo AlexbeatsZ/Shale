@@ -2,6 +2,7 @@ package io.github.alexbeatsz.webobsidian;
 
 import android.app.*;
 import android.content.*;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.*;
 import android.provider.Settings;
@@ -37,9 +38,14 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setDecorFitsSystemWindows(false);
+        Window window = getWindow();
+        window.setDecorFitsSystemWindows(false);
+        window.setStatusBarColor(Color.TRANSPARENT);
+        window.setNavigationBarColor(Color.TRANSPARENT);
+        window.setStatusBarContrastEnforced(false);
+        window.setNavigationBarContrastEnforced(false);
         content = new FrameLayout(this);
-        content.setBackgroundColor(android.graphics.Color.WHITE);
+        setChrome(false);
         content.setOnApplyWindowInsetsListener((view, insets) -> {
             int types = WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout() | WindowInsets.Type.ime();
             android.graphics.Insets bars = insets.getInsets(types);
@@ -73,6 +79,15 @@ public final class MainActivity extends Activity {
         }
         if (RuntimeHost.isStarted() || getPreferences(MODE_PRIVATE).getBoolean("vaultChosen", false)) startWorkspace(null);
         else showVaultChoice(null);
+    }
+
+    void setChrome(boolean dark) {
+        content.setBackgroundColor(dark ? 0xff1e1e1e : Color.WHITE);
+        WindowInsetsController controller = content.getWindowInsetsController();
+        if (controller == null) return;
+        int appearance = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+            | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+        controller.setSystemBarsAppearance(dark ? 0 : appearance, appearance);
     }
 
     private void startWorkspace(String initialVault) {

@@ -47,7 +47,18 @@ export async function stageLocalFile(filename: string, directory: string, expect
   return hash;
 }
 
+const embeddedSyncLocks = new Set<string>();
+
 export async function withSyncLock<T>(directory: string, work: () => Promise<T>): Promise<T> {
+  if (process.env.WEBOBSIDIAN_EMBEDDED === '1') {
+    // Android runs one embedded Node process per app-private data directory.
+    // A PID file can survive the process and refer to an unrelated Android UID.
+    const key = path.resolve(directory);
+    if (embeddedSyncLocks.has(key)) throw new Error('另一个同步任务正在处理此 Vault');
+    embeddedSyncLocks.add(key);
+    try { return await work(); }
+    finally { embeddedSyncLocks.delete(key); }
+  }
   await fs.mkdir(directory, { recursive: true });
   const filename = path.join(directory, 'client.lock');
   let handle;

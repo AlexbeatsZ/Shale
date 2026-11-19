@@ -15,11 +15,11 @@ import org.json.JSONObject;
 
 /** A MessagePort is transferred only to the top-level local application origin. */
 final class NativeBridge {
-    private final Activity activity;
+    private final MainActivity activity;
     private WebMessagePort port;
     private byte[] exportBytes;
     private int exportId;
-    NativeBridge(Activity activity) { this.activity = activity; }
+    NativeBridge(MainActivity activity) { this.activity = activity; }
 
     void connect(WebView view, String origin) {
         close();
@@ -32,7 +32,10 @@ final class NativeBridge {
                     JSONObject request = new JSONObject(message.getData());
                     id = request.getInt("id");
                     String action = request.getString("action");
-                    if (action.equals("clipboard-read")) {
+                    if (action.equals("set-chrome")) {
+                        activity.setChrome(request.getJSONObject("input").getBoolean("dark"));
+                        reply(source, id, true, null);
+                    } else if (action.equals("clipboard-read")) {
                         if (!activity.hasWindowFocus()) throw new Exception("请在应用前台执行粘贴");
                         ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
                         ClipData clip = clipboard.getPrimaryClip();

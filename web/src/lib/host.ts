@@ -31,7 +31,10 @@ export const host = {
   onBeforeClose(listener: () => Promise<void>): (() => void) | undefined {
     return window.webobsidianDesktop?.onBeforeClose(listener);
   },
-  setChrome(dark: boolean, workspace: boolean): void { window.webobsidianDesktop?.setChrome?.(dark, workspace); },
+  setChrome(dark: boolean, workspace: boolean): void {
+    window.webobsidianDesktop?.setChrome?.(dark, workspace);
+    if (workspace && isAndroid()) void androidRequest('set-chrome', { dark }).catch(() => {});
+  },
   async readClipboardText(): Promise<string> {
     return isAndroid() ? String(await androidRequest('clipboard-read')) : navigator.clipboard.readText();
   },
