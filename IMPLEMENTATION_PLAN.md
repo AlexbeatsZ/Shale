@@ -4,11 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-19 (侧栏浏览器聚焦)
+Cập nhật lần cuối: 2026-11-19 (侧栏浏览器聚焦与 0.1.76 交付)
 
 ### 侧栏浏览器聚焦
 
-- [~] 展开空白浏览器所在侧栏时保留地址栏自动聚焦与滑入过渡，工作区保持原位。验证 macOS 普通窗口和原生全屏。
+- [x] 展开空白浏览器所在侧栏时保留地址栏自动聚焦与滑入过渡，工作区保持原位。macOS 普通窗口和原生全屏实包回归通过，桌面 v0.1.76 已发布并升级本机。
 
 ### Android 系统栏与同步恢复
 
@@ -708,6 +708,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-19 (桌面 0.1.76) 逐帧确认普通窗口和原生全屏的工作区无横移，保留地址栏自动聚焦。Mac 原位升级并通过启动和健康检查。
 
 - 2026-11-19 (Android 0.1.73) 小米平板 6 Pro 验证系统栏使用深色主题，已连 ROG 且重启后保留 19 项文件冲突。两份原签名 APK 构建和验签通过。
 
