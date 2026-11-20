@@ -35,7 +35,8 @@ export default function WebViewerTab({ id, url, active, sidebar = false }: { id:
   };
 
   useEffect(() => {
-    if (active && !url) input.current?.focus();
+    // A sliding sidebar can still be outside the viewport when the tab becomes active.
+    if (active && !url) input.current?.focus({ preventScroll: true });
   }, [active, url]);
 
   useEffect(() => {

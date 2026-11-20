@@ -179,6 +179,45 @@ try {
   await browserButton(right).click();
   await expect(address).toBeFocused();
   await expect(tabs.getByRole('tab', { name: 'Homepage', exact: true })).toHaveCount(0);
+  const rightToggle = page.getByRole('button', { name: '折叠/展开右侧边栏' });
+  const checkSidebarExpansion = async () => {
+    await rightToggle.click();
+    await expect(page.locator('.dock-right')).toHaveCSS('visibility', 'hidden');
+    const movement = await rightToggle.evaluate(button => new Promise(resolve => {
+      const workspace = document.querySelector('.workspace');
+      const startLeft = workspace.getBoundingClientRect().left;
+      const startScroll = window.scrollX;
+      const startTime = performance.now();
+      let maxMovement = 0;
+      // The scroll can return to zero by the end of the transition.
+      function sample(now) {
+        maxMovement = Math.max(maxMovement, Math.abs(window.scrollX - startScroll),
+          Math.abs(workspace.getBoundingClientRect().left - startLeft));
+        if (now - startTime < 200) requestAnimationFrame(sample);
+        else resolve(maxMovement);
+      }
+      button.click();
+      requestAnimationFrame(sample);
+    }));
+    assert.equal(movement, 0, 'Opening an empty side browser should not scroll the workspace');
+    await expect(address).toBeFocused();
+  };
+  await checkSidebarExpansion();
+  if (process.platform === 'darwin') {
+    const setFullScreen = async fullscreen => {
+      await app.evaluate(async ({ BrowserWindow }, enabled) => {
+        const window = BrowserWindow.getAllWindows()[0];
+        await new Promise(resolve => {
+          window.once(enabled ? 'enter-full-screen' : 'leave-full-screen', resolve);
+          window.setFullScreen(enabled);
+        });
+      }, fullscreen);
+      await page.waitForFunction(enabled => document.documentElement.hasAttribute('data-desktop-fullscreen') === enabled, fullscreen);
+    };
+    await setFullScreen(true);
+    await checkSidebarExpansion();
+    await setFullScreen(false);
+  }
   await address.fill('file:///invalid');
   await address.press('Enter');
   await expect(page.getByRole('alert')).toHaveText('请输入有效的 HTTP(S) 网页地址');
@@ -281,7 +320,7 @@ try {
   await expect(resumed.locator('.dock-right').getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/second');
   await expect(resumed.getByRole('button', { name: '刷新网页' })).toHaveCount(2);
   await quit();
-  console.log('Desktop WebViewer: launcher, side tabs, guest isolation, navigation, imports, automatic update, permission review, layout persistence and normal quit passed');
+  console.log('Desktop WebViewer: launcher, side tabs, stable sidebar expansion, guest isolation, navigation, imports, automatic update, permission review, layout persistence and normal quit passed');
 } finally {
   const process = app?.process();
   if (process && process.exitCode === null && process.signalCode === null) {

@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-19 (Android 系统栏与同步恢复)
+Cập nhật lần cuối: 2026-11-19 (侧栏浏览器聚焦)
+
+### 侧栏浏览器聚焦
+
+- [~] 展开空白浏览器所在侧栏时保留地址栏自动聚焦与滑入过渡，工作区保持原位。验证 macOS 普通窗口和原生全屏。
 
 ### Android 系统栏与同步恢复
 
