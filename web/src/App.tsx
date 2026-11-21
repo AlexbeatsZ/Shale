@@ -34,6 +34,7 @@ import { initializePropertyTypes } from './lib/propertyTypes';
 import { configureDebug, debugEnabled, recordDebug } from './lib/debug';
 import { defaultUiSettings, type UiSettings } from '../../server/src/contracts/uiSettings';
 import { configureMarkdownWheelZoom, type DocumentFontPreview } from './lib/markdownWheelZoom';
+import { installTypingPointerGuard } from './lib/typingPointerGuard';
 
 export default function App() {
   const loadTree = useStore((s) => s.loadTree);
@@ -73,6 +74,9 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => { configureDebug(ui.debugRecording, ui.debugSource); }, [ui.debugRecording, ui.debugSource]);
+
+  useEffect(() => ui.typingPointerGuard ? installTypingPointerGuard(window, ui.typingPointerGuardMs) : undefined,
+    [ui.typingPointerGuard, ui.typingPointerGuardMs]);
 
   useLayoutEffect(() => {
     const body = document.body;

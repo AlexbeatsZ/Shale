@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-21 main 新增「设置 › 界面 › 打字时忽略触控板点击」（默认关闭，100–3000 ms，默认 1000 ms）。源码与回归已通过，尚未包含在任何发布包或本机安装中。
 - 2026-11-19 桌面 v0.1.76 已发布（macOS arm64、Windows x64 共 7 个资产）。空白网页地址栏在侧栏滑入时仍自动聚焦，窗口模式和原生全屏的工作区横向位移均为 0。Mac 的 `/Applications/Shale.app` 已原位升级，签名与本地服务通过，保留原右栏浏览器选中状态。Windows 安装器构建及版本检查通过。
 - 2026-11-19 小米平板 6 Pro 的正式包 `io.github.alexbeatsz.webobsidian` 原位升级 0.1.72→0.1.73。Android 17 实机深色主题上下白边消失，状态栏及手势栏保留，本地服务就绪。旧锁 PID 已被其他 UID 复用，旧锁和退出 Syncthing 后遗留的空 `.stfolder` 已改名留档。STEM 已连 ROG，首轮 19 项冲突（5 JS、14 SVG）两版已存，远端 19 项与 Mac 当前文件一致，仍等待选择版本。
 - 2026-11-19 桌面 0.1.75 修复 Homepage 打开内容时遗留空标签的问题。本机 `/Applications/Shale.app` 已原位升级，签名、启动和本地服务通过。隔离实包回归覆盖原位替换、浏览器脚本自动更新和布局重启恢复；Windows x64 安装器构建和版本检查通过，实机界面待验收。
@@ -68,6 +69,7 @@
 - 改名 Shale 后 Windows NSIS(同 appId)会沿用旧安装目录 `%LOCALAPPDATA%\Programs\WebObsidian`,其中可执行文件变为 `Shale.exe`,不会出现 `Programs\Shale`。数据目录取自 package `name`(Mac `~/Library/Application Support/@webobsidian/desktop`),改 productName 不影响。
 
 ## Docs Index
+- 打字时忽略触控板点击 → `docs/design/typing-pointer-guard.md`。
 - 桌面网页浏览与用户脚本 → `docs/design/web-viewer.md`、`docs/design/browser-userscripts.md`。
 - PowerPoint与共用分页阅读 → `docs/design/presentation-viewer.md`、`document-navigation.md`、`document-media-theme.md`。
 - `docs/design/`:模块设计文档。Callout 颜色/图标 → `callout-styles.md`;Callout 布局 → `callout-lists.md`;源码展开语法灰色 → `source-reveal.md`;`\\( \\)`/`\\[ \\]` 公式 → `native-math.md`;内容引用与嵌入控件 → `content-references.md`;公式编号、嵌入实例与引用编号解析 → `native-equations.md`。

@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-21 (空括号对删除)
+Cập nhật lần cuối: 2026-11-21 (空括号对删除、打字时忽略触控板点击)
+
+### 打字时忽略触控板点击 (PRD 1.48)
+
+- [x] 设置 › 界面提供开关与忽略时长，键盘输入后的时长内忽略触控板/鼠标点击。单元、Chromium 光标/焦点与设置持久化回归通过；尚未进入发布包。
 
 ### 空括号对删除
 
@@ -712,6 +716,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-21 (PRD 1.48) 新增打字时忽略触控板点击，默认关闭、1000 ms。606 项单元、Chromium 专项与外观/界面设置回归通过，未打包发布。
 
 - 2026-11-21 验证空括号对在一次按键中删除和撤销，外侧光标、选区及含内容的括号使用普通删除。13 项键盘及引用/列表浏览器回归、602 项单元和生产构建通过。
 

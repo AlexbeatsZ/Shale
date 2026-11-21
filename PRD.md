@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.47 · Cập nhật: 2026-11-19 · Trạng thái: Draft
+> Phiên bản: 1.48 · Cập nhật: 2026-11-21 · Trạng thái: Draft
+> Changelog 1.48 (打字时忽略触控板点击) 设置 › 界面可开启“打字时忽略触控板点击”，并设置 100–3000 ms 的忽略时长（默认关闭、1000 ms）。键盘输入后的这段时间内，应用窗口忽略触控板/鼠标的按下与点击，避免手掌误触移动光标或切换焦点。带修饰键的点击、触摸屏、笔和滚动不受影响。设计见 docs/design/typing-pointer-guard.md。
 > Changelog 1.47 (主页标签原位替换) 从 Homepage 打开网页、文件、笔记或图谱时，目标接替当前 Homepage 的标签位置。切换现有标签保留空页，显式新建标签和网页弹窗仍可新增标签。
 > Changelog 1.46 (主页视图归属) 中央与两侧主页共用启动动作。网页、文件、笔记和图谱在发起的区域打开，标签沿用各区域的布局。固定的侧栏面板仍属于侧栏。
 > Changelog 1.45 (桌面内置网页浏览器与用户脚本) 恢复桌面网页浏览入口、侧栏标签、用户脚本文件/URL 导入和定期更新。新增权限或扩展站点匹配的更新须经审阅。后续重构须保留这些能力。
@@ -529,6 +530,7 @@ cùng một codebase React.
 - 公式、表格、代码块、Callout、HTML 块悬停时右上角显示 剪贴板(复制 `![[^id]]`)和 link(复制 `[[^id]]`)按钮,
   需要时自动创建稳定身份(见 [稳定内容引用](docs/design/content-references.md))。
 - 整篇文档只读打印/导出 PDF(通过本地 iframe 打印)。
+- 打字时忽略触控板点击（默认关闭）：键盘输入后的设定时长内忽略触控板/鼠标点击，时长可在设置 › 界面调整。见 [打字防误触](docs/design/typing-pointer-guard.md)。
 
 ---
 

@@ -183,6 +183,33 @@ test('Ctrl wheel font sizing defaults off and becomes a persisted Appearance opt
   await page.waitForLoadState('networkidle');
 });
 
+test('typing touchpad guard is an Interface option that persists and ignores clicks right after typing', async ({ page, backend }) => {
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: '界面', exact: true }).click();
+  const option = page.getByRole('checkbox', { name: '打字时忽略触控板点击', exact: true });
+  const delay = page.getByRole('spinbutton', { name: '忽略时长（毫秒）', exact: true });
+  await expect(option).not.toBeChecked(); await expect(delay).toBeDisabled(); await expect(delay).toHaveValue('1000');
+  await option.check(); await delay.fill('50');
+  await expect(page.locator('.settings-content [role="alert"]')).toHaveText('请输入 100–3000 之间的整数。');
+  await delay.fill('600');
+  await expect.poll(async () => JSON.parse(await fs.readFile(path.join(backend.data, 'settings.json'), 'utf8')).ui)
+    .toMatchObject({ typingPointerGuard: true, typingPointerGuardMs: 600 });
+  await expect(page.locator('.settings-content [role="alert"]')).toHaveCount(0);
+  await page.getByRole('button', { name: '关闭设置' }).click();
+
+  const body = page.locator('.main-pane .cm-content');
+  const heading = page.locator('.main-pane .cm-line', { hasText: '正文标题' });
+  await body.click(); await page.keyboard.press('Control+End');
+  await page.keyboard.type('!');
+  await heading.click();
+  await expect(body).toBeFocused();
+  await expect(page.locator('.main-pane .cm-line').last()).toContainText('end!');
+  expect(await body.evaluate(() => getSelection()?.anchorNode?.textContent)).toContain('end!');
+  await page.waitForTimeout(650);
+  await heading.click();
+  await expect.poll(() => body.evaluate(() => getSelection()?.anchorNode?.textContent)).toContain('正文标题');
+});
+
 test('appearance persists to the real settings file, survives reload and resets through the UI', async ({ page, backend }, info) => {
   await openAppearance(page);
   await change(page, 'size', '26'); await change(page, 'width', '1024');

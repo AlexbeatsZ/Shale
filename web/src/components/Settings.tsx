@@ -30,7 +30,7 @@ import { documents } from '../lib/documents';
 import { workspaceMaintenanceBlockers } from '../lib/vaultMaintenance';
 import { SettingRow as Row, SettingGroup } from './SettingRow';
 import { useDialogEscape } from '../lib/useDialogEscape';
-import { documentAppearance, UiSettingsSchema, type UiSettings } from '../../../server/src/contracts/uiSettings';
+import { documentAppearance, typingPointerGuardDelay, UiSettingsSchema, type UiSettings } from '../../../server/src/contracts/uiSettings';
 import { FilePlacementSchema, type FilePlacement } from '../../../server/src/contracts/filePlacement';
 
 type Section =
@@ -175,7 +175,7 @@ export default function Settings() {
             )}
             {section === 'plugins' && <Plugins />}
             {settings && section === 'appearance' && <Appearance s={settings} />}
-            {section === 'interface' && <InterfaceSettings />}
+            {section === 'interface' && <InterfaceSettings s={settings} />}
             {section === 'editor' && <EditorSettings />}
             {section === 'about' && <About />}
             {section === 'debug' && <DebugSettings />}
@@ -691,7 +691,7 @@ function Appearance({ s }: { s: any }) {
   );
 }
 
-function InterfaceSettings() {
+function InterfaceSettings({ s }: { s: any }) {
   const leftOpen = useStore(state => state.leftOpen), rightOpen = useStore(state => state.rightOpen);
   const autoReveal = useStore(state => state.autoReveal);
   return <div>
@@ -701,7 +701,55 @@ function InterfaceSettings() {
       <Row name="显示右侧栏"><input type="checkbox" checked={rightOpen} onChange={() => useStore.getState().toggleRight()} /></Row>
       <Row name="自动定位当前文件" desc="在文件列表中展开并显示当前笔记。"><input type="checkbox" checked={autoReveal} onChange={() => useStore.getState().toggleAutoReveal()} /></Row>
     </SettingGroup>
+    {s ? <TypingPointerGuardSettings ui={s.ui} /> : <p role="status">正在读取设置…</p>}
   </div>;
+}
+
+function TypingPointerGuardSettings({ ui }: { ui: Partial<UiSettings> }) {
+  const limits = typingPointerGuardDelay;
+  const persistedEnabled = ui.typingPointerGuard ?? false, persistedDelay = ui.typingPointerGuardMs ?? limits.default;
+  const [enabled, setEnabled] = useState(persistedEnabled);
+  const [delay, setDelay] = useState(String(persistedDelay));
+  const [error, setError] = useState(''), [saving, setSaving] = useState(false);
+  const generation = useRef(0);
+  useEffect(() => {
+    if (saving || error) return;
+    setEnabled(persistedEnabled); setDelay(String(persistedDelay));
+  }, [persistedEnabled, persistedDelay, saving, error]);
+  const save = async (patch: Pick<Partial<UiSettings>, 'typingPointerGuard' | 'typingPointerGuardMs'>) => {
+    const current = ++generation.current;
+    setError(''); setSaving(true);
+    try { await api.putSettings({ ui: patch }); }
+    catch (cause) {
+      if (current === generation.current) {
+        setEnabled(persistedEnabled); setDelay(String(persistedDelay));
+        setError(`保存失败：${String(cause)}`);
+      }
+    } finally { if (current === generation.current) setSaving(false); }
+  };
+  const changeDelay = (value: string) => {
+    setDelay(value);
+    const result = value.trim() ? UiSettingsSchema.shape.typingPointerGuardMs.safeParse(Number(value)) : undefined;
+    if (!result?.success) {
+      ++generation.current; setSaving(false);
+      setError(`请输入 ${limits.min}–${limits.max} 之间的整数。`);
+      return;
+    }
+    void save({ typingPointerGuardMs: result.data });
+  };
+  return <>
+    <SettingGroup title="触控板防误触">
+      <Row name="打字时忽略触控板点击" desc="按键后的一段时间内，忽略触控板或鼠标的按下与点击，避免手掌误触移动光标或切走焦点。按住 Shift、Ctrl、Option/Alt 或 ⌘ 的点击，触摸屏、笔、指针移动和滚动不受影响。">
+        <input type="checkbox" checked={enabled}
+          onChange={event => { setEnabled(event.target.checked); void save({ typingPointerGuard: event.target.checked }); }} />
+      </Row>
+      <Row name="忽略时长（毫秒）" desc={`最后一次按键后开始计时，${limits.min}–${limits.max} ms，默认 ${limits.default} ms。`}>
+        <input className="text-input" type="number" min={limits.min} max={limits.max} step={100} disabled={!enabled}
+          value={delay} onChange={event => changeDelay(event.target.value)} />
+      </Row>
+    </SettingGroup>
+    {error && <p role="alert">{error}</p>}
+  </>;
 }
 
 function EditorSettings() {
