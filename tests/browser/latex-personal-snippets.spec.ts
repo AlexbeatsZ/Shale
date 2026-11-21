@@ -1,12 +1,10 @@
 import { test, expect } from './test';
 import type { Page } from '@playwright/test';
 
-// Rules mirror the STEM personal snippet file: selection (visual) rules, the
-// frac auto-expansion with tabstops, and the `@ n m ` equation-number pair.
+// Rules mirror the STEM personal snippet file: selection (visual) rules and the
+// frac auto-expansion with tabstops.
 const SNIPPETS = String.raw`[
 {trigger: "mk", replacement: "\\($0\\)", options: "tA"},
-{trigger: /@ (\d+) (\d+) /, replacement: "\\(\\text{([[0]]-[[1]])}\\)式$0", options: "tA"},
-{trigger: /@ (\d+) (\d+) /, replacement: "\\tag{[[0]]-[[1]]}", options: "mA"},
 {trigger: /(?<![A-Za-z\\])\\?frac/, replacement: "\\frac{$0}{$1}$2", options: "mA"},
 {trigger: "(", replacement: "(\${VISUAL})", options: "mA"},
 {trigger: "u", replacement: "\\underbrace{ \${VISUAL} }_{ $0 }", options: "mA"},
@@ -78,14 +76,4 @@ test('a typed backslash does not duplicate in \\frac and words ending in frac ar
   await page.evaluate(() => window.renderHarness.cursor(0, 3));
   await page.keyboard.type('xfrac');
   await expect.poll(() => source(page)).toBe('$$\nxfrac\n$$');
-});
-
-test('@ n m expands to a text label outside math and \\tag inside math', async ({ page }) => {
-  await editor(page, '');
-  await page.keyboard.type('@ 1 2 ');
-  await expect.poll(() => source(page)).toBe('\\(\\text{(1-2)}\\)式');
-  await editor(page, '$$\nx\n$$');
-  await page.evaluate(() => { window.renderHarness.cursor(0, 4); window.renderHarness.focus(0); });
-  await page.keyboard.type(' @ 3 4 ');
-  await expect.poll(() => source(page)).toBe('$$\nx \\tag{3-4}\n$$');
 });

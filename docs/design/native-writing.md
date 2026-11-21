@@ -356,6 +356,11 @@ configured snippets and use the shared formula bounds from the first keypress.
 Use `replacement: "\\($0\\)"` and `replacement: "\\[\n$0\n\\]"` in JavaScript
 snippet files. Both delimiter families are valid input and survive default formatting.
 
+Intentionally removed personal rules (do not restore as "missing"): the
+`$?$0$` form of `mk` with its two `$?` cleanup regexes (0.1.79, replaced by
+`\\(…\\)`), and the `@ n m ` equation-number pair (`\\text{(n-m)}式` / `\\tag{n-m}`,
+2026-11-21) because formulas are now numbered through `^eq` anchors and `eqref`.
+
 The core and the CodeMirror language share the grammar extension that disables
 Setext headings. `---` retains thematic break, table delimiter and YAML roles.
 `===` under prose stays text. Outlines, fragments, folding, heading commands and
