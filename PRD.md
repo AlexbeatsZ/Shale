@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.48 · Cập nhật: 2026-11-21 · Trạng thái: Draft
+> Phiên bản: 1.49 · Cập nhật: 2026-11-21 · Trạng thái: Draft
+> Changelog 1.49 (LaTeX 括号按深度着色) 公式源码中，正确配对的括号按嵌套深度依次使用金、紫、蓝、绿、橙、青，第七层从金色重新开始。未闭合、多余或类型不匹配的括号标红并显示波浪下划线。沿用原有括号着色开关。设计见 docs/design/native-writing.md。
 > Changelog 1.48 (打字时忽略触控板点击) 设置 › 界面可开启“打字时忽略触控板点击”，并设置 100–3000 ms 的忽略时长（默认关闭、1000 ms）。键盘输入后的这段时间内，应用窗口忽略触控板/鼠标的按下与点击，避免手掌误触移动光标或切换焦点。带修饰键的点击、触摸屏、笔和滚动不受影响。设计见 docs/design/typing-pointer-guard.md。
 > Changelog 1.47 (主页标签原位替换) 从 Homepage 打开网页、文件、笔记或图谱时，目标接替当前 Homepage 的标签位置。切换现有标签保留空页，显式新建标签和网页弹窗仍可新增标签。
 > Changelog 1.46 (主页视图归属) 中央与两侧主页共用启动动作。网页、文件、笔记和图谱在发起的区域打开，标签沿用各区域的布局。固定的侧栏面板仍属于侧栏。

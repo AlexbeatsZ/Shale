@@ -161,6 +161,17 @@ bracket highlights and the preview cursor through the existing LaTeX settings.
 `mathPreviewLivePreviewDisplay` now controls the document preview, with a true
 default; an explicitly stored false remains respected.
 
+### LaTeX 括号着色
+
+“括号着色”开启时，仅在公式源码可见处标记括号。最外层为金色，后续依次为紫、蓝、
+绿、橙、青，第七层回到金色。同对括号的两端同色，兄弟配对使用相同深度的颜色。
+未闭合、多余或类型不匹配的括号标红并加波浪下划线，不占颜色层级。
+
+复用公式局部 TeX 树。裸花括号限定 TeX 分组，普通括号在所属分组内配对。
+`\left`、`\right` 按显式定界符匹配，点号可作为任一侧的不可见定界符。
+配对结果也供光标高亮和自动放大使用。评论及文本参数里的普通标点不会参与数学括号配对。
+括号标记只装饰源码，预览、阅读和导出继续由 MathJax 处理。
+
 ### Formula measurement and width feedback (2026-10-23)
 
 `WidgetType.toDOM` runs before CodeMirror inserts the widget, so nothing there may

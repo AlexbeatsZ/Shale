@@ -1,7 +1,6 @@
 // @ts-nocheck -- adapted upstream rule implementation; native boundaries are type checked.
 import { Text } from "@codemirror/state";
 import type { SyntaxNode, TreeCursor } from "@lezer/common";
-import type { PairedBrackets } from "../editor_extensions/highlight_brackets";
 
 export interface Token {
 	readonly start: number;
@@ -99,22 +98,6 @@ const readSingleCharacterToken = (latexString: string, start: number): { token: 
 
 	return { token, nextIndex: end };
 };
-
-export function findIndexReverse<T>(array: T[], predicate: (value: T, index: number, array: T[]) => boolean): number | null {
-	for (let i = array.length - 1; i >= 0; i--) {
-		if (predicate(array[i]!, i, array)) {
-			return i;
-		}
-	}
-	return null;
-}
-export function* walkPairedBrackets(tokens: PairedBrackets[], depth: number = 0): Generator<{ region: PairedBrackets; depth: number; }> {
-	for (const token of tokens) {
-		yield { region: token, depth };
-		const newDepth = token.kind === "bracket" ? depth + 1 : depth;
-		yield* walkPairedBrackets(token.children, newDepth);
-	}
-}
 
 function NodeEquals(node1: SyntaxNode, node2: SyntaxNode): boolean {
 	return node1.from === node2.from && node1.to === node2.to && node1.name === node2.name;

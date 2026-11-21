@@ -5,9 +5,8 @@ import { expandSnippets } from "../snippets/snippet_management";
 import { getLatexSuiteConfig } from "../snippets/codemirror/config";
 import { isContains } from "../utils/type_utils";
 import { emptyInsertOptions, TextNode } from "../snippets/luasnip_api/node";
-import { pairBrackets, traverseTree } from "../editor_extensions/highlight_brackets";
+import { findFormulaBrackets } from "../utils/bracketPairs";
 import { EquationText } from "../utils/tokenizer";
-import { walkPairedBrackets } from "../utils/tokenizer";
 import type { SyntaxNode } from "@lezer/common";
 import { getMathBoundsPlugin } from "../editor_context/mathbounds";
 import { latex } from "../parser/latex-terms";
@@ -55,9 +54,8 @@ export const autoEnlargeBrackets = (view: EditorView) => {
 	const right = "\\right"
 
 	const doc = new EquationText(covered_overlay.text, covered_overlay.overlay.from, covered_overlay.overlay.to)
-	const tokens = pairBrackets(traverseTree(covered_overlay.bound.tree, doc))
-	for (const {region: bracket} of walkPairedBrackets(tokens)) {
-		if (bracket.kind !== "bracket") {
+	for (const bracket of findFormulaBrackets(covered_overlay.bound.tree, doc)) {
+		if (bracket.kind !== "pair") {
 			continue
 		}
 		const openBracket = doc.slice(bracket.open.from, bracket.open.to)

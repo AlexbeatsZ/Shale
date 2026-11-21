@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-21 (空括号对删除、打字时忽略触控板点击)
+Cập nhật lần cuối: 2026-11-21 (LaTeX 括号按深度着色)
+
+### LaTeX 括号着色 (PRD 1.49)
+
+- [x] 按正确配对的嵌套深度循环六色，标记未配对和类型不匹配的括号。浏览器验证深浅主题、修正后的即时更新和实时预览的源码切换。
 
 ### 打字时忽略触控板点击 (PRD 1.48)
 
@@ -716,6 +720,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-21 (PRD 1.49) 公式源码括号按正确配对的嵌套深度循环六色，错误标红并加波浪下划线。
 
 - 2026-11-21 (PRD 1.48) 新增打字时忽略触控板点击，默认关闭、1000 ms。606 项单元、Chromium 专项与外观/界面设置回归通过，未打包发布。
 
