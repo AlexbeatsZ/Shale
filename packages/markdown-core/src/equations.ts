@@ -105,7 +105,7 @@ function compute(model: MarkdownModel, embedded?: EmbeddedFormulas): Analysis {
     }
   };
   for (const region of mathRegions(model)) {
-    if (!region.closed || !region.display || region.kind !== 'dollar') continue;
+    if (!region.closed || !region.display || region.kind !== 'dollar' || (region.delimiter && !region.tex.trim())) continue;
     embedsBefore(region.from);
     const inTable = enter(region.from, region.to);
     const exempt = /\{\{\}\}\s*$|\\(?:notag|nonumber)\b/.test(region.tex);

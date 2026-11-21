@@ -13,18 +13,20 @@ describe('native formatting compatibility', () => {
     expect(ignoresFormatting('09插件/rules.md', settings)).toBe(true);
     expect(ignoresFormatting('notes/example.md', settings)).toBe(false);
   });
-  it('converts AI-style TeX delimiters to dollar math by default', () => {
+  it('preserves TeX delimiters by default and converts with the explicit rule enabled', () => {
     const settings = compileFormattingSettings(native);
-    expect(settings.ruleConfigs['convert-tex-math-delimiters'].enabled).toBe(true);
+    expect(settings.ruleConfigs['convert-tex-math-delimiters'].enabled).toBe(false);
     const source = '# Example\n\n设 \\( \\alpha > 0 \\) 则\n\n\\[\nE = mc^2\n\\]\n\n引用 \\[吕九\\] 与 `\\(x\\)`\n';
-    const formatted = formatText(source, 'notes/example.md', {}, settings, now);
+    const preserved = formatText(source, 'notes/example.md', {}, settings, now);
+    expect(preserved).toContain('\\( \\alpha > 0 \\)');
+    expect(preserved).toContain('\\[\nE = mc^2\n\\]');
+    const enabled = compileFormattingSettings({ ...native, ruleConfigs: { ...native.ruleConfigs, 'convert-tex-math-delimiters': { enabled: true } } });
+    const formatted = formatText(source, 'notes/example.md', {}, enabled, now);
     expect(formatted).toContain('$\\alpha > 0$');
     expect(formatted).toContain('$$\nE = mc^2\n$$');
     expect(formatted).toContain('\\[吕九\\]');
     expect(formatted).toContain('`\\(x\\)`');
-    expect(formatText(formatted, 'notes/example.md', {}, settings, now)).toBe(formatted);
-    const off = compileFormattingSettings({ ...native, ruleConfigs: { ...native.ruleConfigs, 'convert-tex-math-delimiters': { enabled: false } } });
-    expect(formatText(source, 'notes/example.md', {}, off, now)).toContain('\\( \\alpha > 0 \\)');
+    expect(formatText(formatted, 'notes/example.md', {}, enabled, now)).toBe(formatted);
   });
   it('is stable at a fixed time and preserves legal mhchem math', () => {
     const settings = compileFormattingSettings(native);

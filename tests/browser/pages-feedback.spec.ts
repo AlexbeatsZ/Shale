@@ -75,6 +75,54 @@ test('dm display snippets highlight while typing without Enter or leaving the fo
   expect(await page.evaluate(() => window.renderHarness.source(0))).toBe('$$x+1$$\n\nFollowing text $y$');
 });
 
+for (const { trigger, opener, closer, keys, tex } of [
+  { trigger: 'mk', opener: '\\(', closer: '\\)', keys: '(x', tex: '(x)' },
+  { trigger: 'mk', opener: '\\(', closer: '\\)', keys: '1+x', tex: '1+x' },
+  { trigger: 'dm', opener: '\\[\n', closer: '\n\\]', keys: '(x', tex: '(x)' },
+]) {
+  test(`TeX delimiter snippet ${trigger} accepts ${keys} from its first keystroke`, async ({ page }) => {
+    const snippets = JSON.stringify([
+      { trigger, replacement: `${opener}$0${closer}`, options: 'tA' },
+      { trigger: '(', replacement: '($0)$1', options: 'mA' },
+    ]);
+    await page.route('**/api/writing', route => route.fulfill({ json: {
+      version: 1, migration: 'fixture',
+      latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
+        snippets, snippetVariables: '{}' },
+      linter: {}, hotkeys: {},
+    } }));
+    const suffix = '\n\nExisting $y$\n\n$$z$$\n\nTail';
+    await page.goto('/__render-test');
+    await page.waitForFunction(() => Boolean(window.renderHarness));
+    await page.evaluate(async suffix => {
+      const { ensureWriting } = await import('/src/lib/writing/config.ts');
+      await ensureWriting();
+      window.renderHarness.reset(suffix);
+    }, suffix);
+    await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe(suffix);
+    await page.evaluate(async () => {
+      window.renderHarness.cursor(0, 0); window.renderHarness.focus(0);
+      const { getActiveEditor } = await import('/src/lib/activeEditor.ts');
+      const { StateEffect } = await import('/node_modules/.vite/deps/@codemirror_state.js');
+      const { nativeWritingExtensions } = await import('/src/lib/writing/extensions.ts');
+      getActiveEditor()!.dispatch({ effects: StateEffect.appendConfig.of(nativeWritingExtensions()) });
+    });
+    const source = () => page.evaluate(() => window.renderHarness.source(0));
+    await page.keyboard.type(trigger);
+    await expect.poll(source).toBe(opener + closer + suffix);
+    const delimiters = page.locator('[data-slot="0"] .cm-tex-delimiter');
+    await expect.poll(async () => (await delimiters.allTextContents()).join('')).toBe(opener.trim() + closer.trim());
+    await page.keyboard.type(keys);
+    await expect.poll(source).toBe(opener + tex + closer + suffix);
+    await page.evaluate(() => window.renderHarness.cursor(0, window.renderHarness.source(0).length));
+    for (const slot of [0, 1]) {
+      const host = page.locator(`[data-slot="${slot}"]`);
+      await expect(host.locator('.math-inline [data-mathjax-version]')).toHaveCount(trigger === 'mk' ? 2 : 1);
+      await expect(host.locator('.math-block [data-mathjax-version]')).toHaveCount(trigger === 'dm' ? 2 : 1);
+    }
+  });
+}
+
 test('quoted display preview excludes quote source and retains the single containing quote rule', async ({ page }) => {
   await page.goto('/__render-test');
   await page.waitForFunction(() => Boolean(window.renderHarness));

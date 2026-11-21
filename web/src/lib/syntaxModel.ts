@@ -79,13 +79,14 @@ function blocks(model: MarkdownModel, doc: Text): Blocks {
     }
     const inlineMathByLine = new Map<number, MathRegion[]>();
     const mathRanges = mathRegions(model);
-    for (const formula of mathRanges) {
+    const renderableMath = mathRanges.filter(formula => !formula.delimiter || formula.tex.trim());
+    for (const formula of renderableMath) {
       if (!formula.closed || formula.block || formula.kind !== 'dollar' || formula.tex.includes('\n')) continue;
       const number = doc.lineAt(formula.from).number;
       const list = inlineMathByLine.get(number) ?? [];
       list.push(formula); inlineMathByLine.set(number, list);
     }
-    const displayMath = mathRanges.filter(formula => formula.closed && formula.kind === 'dollar' &&
+    const displayMath = renderableMath.filter(formula => formula.closed && formula.kind === 'dollar' &&
       (formula.block || formula.tex.includes('\n')));
     const math = displayMath.map(formula => ({ from: formula.from, to: formula.to, tex: formula.tex.trim() }));
     const containers = blockContainers(model), callouts = containers.filter(block => block.kind === 'callout');

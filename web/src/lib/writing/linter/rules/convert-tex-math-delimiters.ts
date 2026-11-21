@@ -1,5 +1,5 @@
 // @ts-nocheck -- native rule written in the upstream rule-builder shape.
-import {Options, RuleType, rulesDict} from '../rules';
+import {Options, RuleType} from '../rules';
 import RuleBuilder, {ExampleBuilder, OptionBuilderBase} from './rule-builder';
 import dedent from 'ts-dedent';
 import {analyzeMarkdown, mathRegions} from '@webobsidian/markdown-core';
@@ -8,11 +8,11 @@ class ConvertTexMathDelimitersOptions implements Options {}
 
 /**
  * `\( … \)` → `$…$` and `\[ … \]` → `$$ … $$`. Regions come from the shared
- * formula model, so code, link destinations and escaped literal brackets
- * (`\[1\]`) are never touched. Enabled by default (native addition).
+ * formula model, preserving code, link destinations and escaped bracket
+ * citations in prose. Conversion is opt-in.
  */
 export function convertTexMathDelimiters(text: string): string {
-  const regions = mathRegions(analyzeMarkdown(text)).filter((region) => region.delimiter);
+  const regions = mathRegions(analyzeMarkdown(text)).filter((region) => region.delimiter && region.tex.trim());
   let out = '', last = 0;
   for (const region of regions) {
     const display = region.delimiter === 'bracket';
@@ -28,7 +28,6 @@ export function convertTexMathDelimiters(text: string): string {
   }
   return out + text.slice(last);
 }
-
 @RuleBuilder.register
 export default class ConvertTexMathDelimiters extends RuleBuilder<ConvertTexMathDelimitersOptions> {
   constructor() {
@@ -68,6 +67,3 @@ export default class ConvertTexMathDelimiters extends RuleBuilder<ConvertTexMath
     return [];
   }
 }
-
-// Unlike upstream rules this one is on unless the user turns it off.
-rulesDict['convert-tex-math-delimiters'].options[0].defaultValue = true;

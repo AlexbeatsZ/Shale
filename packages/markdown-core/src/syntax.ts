@@ -4,7 +4,8 @@ import { bodyHeadingSyntax } from './bodyHeadings.js';
 import { blockEffectSyntax } from './blockEffectSyntax.js';
 import { footnoteSyntax } from './footnoteSyntax.js';
 
-export const markdownParser = parser.configure([GFM, bodyHeadingSyntax, blockEffectSyntax, footnoteSyntax]);
+export const nativeMarkdownSyntax = [{ remove: ['SetextHeading'] }, bodyHeadingSyntax, blockEffectSyntax, footnoteSyntax];
+export const markdownParser = parser.configure([GFM, nativeMarkdownSyntax]);
 export interface SourceSpan { from: number; to: number }
 export interface SyntaxRange extends SourceSpan { name: string; parent: number | null }
 export interface HtmlToken extends SourceSpan { raw: string; tag: string; closing: boolean }

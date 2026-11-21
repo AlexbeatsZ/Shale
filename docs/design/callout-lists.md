@@ -127,9 +127,10 @@ The existing syntax traversal handles HorizontalRule with the existing HrWidget
 for top-level, quoted, Callout and nested quoted rules. Only the grammar's rule
 span is replaced; `>` prefixes continue through the same native prefix path.
 The old pre-prefix full-raw-line regex was removed because `> ---` never matched it.
-Syntax ownership also distinguishes actual thematic breaks from setext heading
-underlines and literal code/math. Existing caret-on-line reveal, readonly rendering
-and explicit source-entry policy remain; no Enter special case, parser or cache.
+Syntax ownership distinguishes thematic breaks from literal code/math. With Setext
+headings disabled on 2026-11-21, `---` immediately below prose also renders as a
+thematic break. Caret-on-line reveal, readonly rendering and explicit source entry
+use the same source ranges.
 The original follow-up was source-only. The later authorized small-page test
 checks a quoted table and root/Callout/nested rules against Setext/code exclusions;
 the screenshot's original note remains untouched and no native package is implied.

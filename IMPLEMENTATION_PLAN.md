@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-21 (LaTeX 括号按深度着色)
+Cập nhật lần cuối: 2026-11-21 (TeX 公式补全与井号标题)
 
 ### LaTeX 括号着色 (PRD 1.49)
 
@@ -214,6 +214,7 @@ Cập nhật lần cuối: 2026-11-21 (LaTeX 括号按深度着色)
 
 ## Native writing (PRD 1.13)
 
+- [x] 公式片段可从空 TeX 定界符内补全，保留美元公式；标题只识别井号写法 (PRD 1.50)。
 - [x] Joint native LaTeX Suite 1.14.0 / Linter 1.31.2 migration with original licenses.
 - [x] Shared formula regions, formula-local TeX trees, table/YAML reuse and source patches.
 - [x] Native snippet/input/presentation extensions and one session history/save owner.
@@ -720,6 +721,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-21 (PRD 1.50) TeX 定界符支持从空模板触发公式片段，默认格式化保留两种写法。标题只用井号。607 项单元和 56 项浏览器回归通过。
 
 - 2026-11-21 (PRD 1.49) 公式源码括号按正确配对的嵌套深度循环六色，错误标红并加波浪下划线。
 

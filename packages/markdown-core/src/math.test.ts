@@ -125,7 +125,12 @@ describe('TeX-style delimiters pasted from AI output', () => {
     expect(regions('a \\(\\beta + 1\\) b')).toEqual([{ tex: '\\beta + 1', display: false, block: false, delimiter: 'paren', open: '\\(' }]);
     expect(regions('text\n\\[\nE = mc^2\n\\]\nafter')).toEqual([{ tex: '\nE = mc^2\n', display: true, block: true, delimiter: 'bracket', open: '\\[' }]);
     expect(regions('> \\[\n> x\n> \\]')[0]).toMatchObject({ block: true, delimiter: 'bracket', tex: '\nx\n' });
+    expect(regions('\\[x\\]')[0]).toMatchObject({ display: true, delimiter: 'bracket', tex: 'x' });
     expect(regions('see \\[a^2 + b^2\\] here')).toEqual([{ tex: 'a^2 + b^2', display: true, block: false, delimiter: 'bracket', open: '\\[' }]);
+  });
+  it('recognizes empty TeX input regions in prose and quoted display blocks', () => {
+    expect(regions('before \\(\\) after')).toEqual([{ tex: '', display: false, block: false, delimiter: 'paren', open: '\\(' }]);
+    expect(regions('> \\[\n> \n> \\]')).toEqual([{ tex: '\n\n', display: true, block: true, delimiter: 'bracket', open: '\\[' }]);
   });
   it('keeps escaped literal brackets, link destinations, code and unclosed openers as text', () => {
     expect(regions('引用 \\[吕九\\] 与 \\[1\\]')).toEqual([]);

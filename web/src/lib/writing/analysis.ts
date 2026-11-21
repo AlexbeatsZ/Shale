@@ -73,7 +73,7 @@ export function markdownAst(text: string): Node {
   };
   for (let index = 0; index < model.nodes.length; index++) {
     const n = model.nodes[index];
-    const type = /^(ATX|Setext)Heading[1-6]$/.test(n.name) ? 'heading' : names[n.name];
+    const type = /^ATXHeading[1-6]$/.test(n.name) ? 'heading' : names[n.name];
     if (
       !type ||
       (model.frontmatter && n.from < model.frontmatter.to) ||

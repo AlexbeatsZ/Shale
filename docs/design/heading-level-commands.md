@@ -14,7 +14,7 @@ exclusive selection end are not changed. Secondary selections map through the
 same transaction but do not expand the primary operation's scope.
 
 Reuse the view's full `syntaxModel`, core metadata exclusions and formula ranges.
-Code, YAML, comments, HTML and formulas are protected. Setext headings and the
+Code, YAML, comments, HTML and formulas are protected. Underlined prose and the
 independent seven-hash BodyHeading syntax do not participate. Valid ordinary
 headings inside quote/list containers retain their existing container prefixes.
 Tab-delimited ATX headings are recognized by the same shared grammar extension

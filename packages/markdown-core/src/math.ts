@@ -204,8 +204,8 @@ export function mathRegions(model: MarkdownModel, languages: readonly string[] =
   let blocked = 0, closedAt = -1;
   /**
    * `\( … \)` (inline) and `\[ … \]` (display), as pasted from AI output. Only a
-   * closed pair is math. `\[x\]` is also Markdown's escaped literal bracket, so a
-   * one-line bracket pair needs TeX-looking content; standalone lines always count.
+   * closed pair is math. Brackets embedded in prose still need TeX-looking
+   * content so existing escaped citations continue to display as text.
    */
   // Link destinations escape parentheses (`[a](file\(x\).md)`): never TeX delimiters.
   const urls = model.nodes.filter((node) => node.name === 'URL' || node.name === 'LinkLabel');
@@ -215,18 +215,23 @@ export function mathRegions(model: MarkdownModel, languages: readonly string[] =
     const bodyFrom = from + 2;
     let end = bodyFrom;
     for (; end < text.length; end++) {
-      if (text[end] === '\n' && (!display || /^\n(?: {0,3}> ?)*[ \t]*(?:\n|$)/.test(text.slice(end)))) return;
+      if (text[end] === '\n') {
+        if (!display) return;
+        const blankLine = text.slice(end).match(/^\n(?: {0,3}> ?)*[ \t]*\n/);
+        // The display snippet has one empty input line before its closing marker.
+        if (blankLine && (!/^[ \t]*$/.test(text.slice(bodyFrom, end)) ||
+          !/^(?: {0,3}> ?)*[ \t]*\\\]/.test(text.slice(end + blankLine[0].length)))) return;
+      }
       if (text.startsWith(closer, end) && !isEscaped(text, end)) break;
     }
     if (end >= text.length) return;
     const body = text.slice(bodyFrom, end);
-    if (!body.trim()) return;
     const to = end + 2, lineFrom = text.lastIndexOf('\n', from - 1) + 1;
     const lineEnd = text.indexOf('\n', to);
-    const standalone = display && /^(?: {0,3}> ?)*\s*$/.test(text.slice(lineFrom, from)) &&
-      /^[ \t]*\n/.test(text.slice(bodyFrom)) && body.includes('\n') &&
+    const ownLine = display && /^(?: {0,3}> ?)*[ \t]*$/.test(text.slice(lineFrom, from)) &&
       /^[ \t]*(?:\^[\p{L}\p{N}-]+[ \t]*)?$/u.test(text.slice(to, lineEnd < 0 ? text.length : lineEnd));
-    if (display && !standalone && !/[\\^_{}=]/.test(body)) return;
+    const standalone = ownLine && /^[ \t]*\n/.test(body);
+    if (display && !ownLine && !/[\n\\^_{}=]/.test(body)) return;
     add(standalone ? lineFrom : from, to, bodyFrom, end, display, true, 'dollar', standalone, from, display ? 'bracket' : 'paren');
     closedAt = to;
     return to;

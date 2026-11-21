@@ -347,3 +347,16 @@ Old personal/plugin/app files are never moved, deleted, overwritten or converted
 Any future import must be explicit; the old mandatory importer is deleted rather
 than retained as a dormant fallback. This follow-up is source/Git/document review
 only, with no tests/types/build/probe/app/server/browser/UI acceptance or new package.
+
+## TeX completion and headings (2026-11-21)
+
+The STEM snippet file expands `mk` to `\($0\)` and `dm` to a three-line
+`\[` / `$0` / `\]` block. `$0` is the caret position. These are ordinary
+configured snippets and use the shared formula bounds from the first keypress.
+Use `replacement: "\\($0\\)"` and `replacement: "\\[\n$0\n\\]"` in JavaScript
+snippet files. Both delimiter families are valid input and survive default formatting.
+
+The core and the CodeMirror language share the grammar extension that disables
+Setext headings. `---` retains thematic break, table delimiter and YAML roles.
+`===` under prose stays text. Outlines, fragments, folding, heading commands and
+the formatter follow the same core heading syntax as live and reading views.

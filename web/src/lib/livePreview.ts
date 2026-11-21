@@ -894,6 +894,7 @@ function buildMathBlocks(state: EditorState): DecorationSet {
   const decorations: Range<Decoration>[] = [];
   if (state.field(livePreviewState, false)) for (const region of state.field(blockModel).mathRanges) {
     if (region.closed && region.kind === 'dollar' && (region.block || region.tex.includes('\n')) &&
+      (!region.delimiter || region.tex.trim()) &&
       !blockEffectOwns(state, region) && !mathSourceVisible(state, region))
       decorations.push(sourceBlockReplacement(state, region, numberedMath(state, region.tex, true, region)));
   }

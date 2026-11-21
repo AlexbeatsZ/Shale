@@ -113,12 +113,15 @@ it('rejects invalid creation selections and conflicting IDs', () => {
   expect(() => createContentTarget(model, { from: 0, to: 0 }, 'heading', 'code-wrong')).toThrow();
 });
 
-it('creates inline end IDs on ATX closing markers and Setext headings', () => {
-  for (const source of ['# Heading ###', 'Heading\n=======']) {
-    const model = analyzeMarkdown(source), created = createContentTarget(model, { from: 0, to: source.length }, 'heading', 'heading-one');
-    const change = created.changes[0];
-    const updated = analyzeMarkdown(source.slice(0, change.from) + change.insert + source.slice(change.to));
-    expect(contentTargets(updated).targets[0].label).toBe('Heading');
+it('creates heading IDs on ATX closing markers and treats underlined text as prose', () => {
+  const source = '# Heading ###';
+  const model = analyzeMarkdown(source), created = createContentTarget(model, { from: 0, to: source.length }, 'heading', 'heading-one');
+  const change = created.changes[0];
+  const updated = analyzeMarkdown(source.slice(0, change.from) + change.insert + source.slice(change.to));
+  expect(contentTargets(updated).targets[0].label).toBe('Heading');
+  for (const underline of ['---', '===']) {
+    const text = `Not a heading\n${underline}`;
+    expect(() => createContentTarget(analyzeMarkdown(text), { from: 0, to: text.length }, 'heading', 'heading-one')).toThrow();
   }
 });
 
@@ -245,7 +248,7 @@ it('does not capture prose preceding an existing display equation anchor', () =>
 });
 
 it('preserves legacy heading links and outline labels when adding stable identity', () => {
-  for (const source of ['# Title', '# Title ###', 'Title\n=====','####### Title']) {
+  for (const source of ['# Title', '# Title ###', '####### Title']) {
     const { model } = applyCreation(source, { from: 0, to: source.length }, 'heading', 'heading-stable');
     expect(extractMetadata(model).headings[0].text).toBe('Title');
     expect(contentTargets(model).targets[0].label).toBe('Title');

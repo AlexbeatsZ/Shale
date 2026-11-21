@@ -189,13 +189,16 @@ test('quote origin: typing Enter after an empty Tip header renders the default t
   }
 });
 
-test('quote origin: table, quoted rules and nested rules render without reinterpreting setext or code', async ({ page }, info) => {
-  const source = '> [!info]+ 原子单位\n>\n> | 物理量 | 单位 |\n> | --- | --- |\n> | 长度 | a0 |\n>\n> ---\n>\n> 原子单位下\n> > [!tip]+ 内层\n> > ***\n> > 正文\n\n---\n\nSetext\n---\n\n```markdown\n> ---\n```\n\nTail';
+test('quote origin: dash rules, hash headings, tables and code keep their own syntax', async ({ page }, info) => {
+  const source = '---\nstatus: example\n---\n\n# Heading\n\n> [!info]+ 原子单位\n>\n> | 物理量 | 单位 |\n> | --- | --- |\n> | 长度 | a0 |\n>\n> ---\n>\n> 原子单位下\n> > [!tip]+ 内层\n> > ***\n> > 正文\n\n---\n\nPlain text\n---\n\nAlso plain\n===\n\n```markdown\n> ---\n```\n\nTail';
   await reset(page, source);
   for (const slot of [0, 1]) {
     const host = page.locator(`[data-slot="${slot}"]`);
     await expect(host.locator('.cm-table')).toHaveCount(1);
-    await expect(host.locator('.cm-hr-widget hr')).toHaveCount(3);
+    await expect(host.locator('.prop-key')).toHaveText('status');
+    await expect(host.locator('.HyperMD-header')).toHaveCount(1);
+    await expect(host.locator('.HyperMD-header')).toContainText('Heading');
+    await expect(host.locator('.cm-hr-widget hr')).toHaveCount(4);
     await expect(host.locator('.md-callout[data-callout="info"] .cm-hr-widget hr')).toHaveCount(2);
     await expect(host.locator('.md-callout[data-callout="tip"] .cm-hr-widget hr')).toHaveCount(1);
     await expect(host.locator('.md-code')).toContainText('> ---');

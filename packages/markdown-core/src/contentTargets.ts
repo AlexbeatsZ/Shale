@@ -56,7 +56,7 @@ export function contentTargets(model: MarkdownModel): ContentTargets {
   for (const heading of meta.headings) {
     const anchor = typed.find(candidate => candidate.id.startsWith('heading-') && candidate.from >= heading.from && candidate.to <= heading.to);
     if (!anchor || !validContentTargetId(anchor.id) || !/^(?:[\t ]*(?:#+[\t ]*)?|[\t ]*\n[\t ]*[=-]+[\t ]*)$/.test(text.slice(anchor.to, heading.to))) continue;
-    const owner = nodes.find(node => node.from === heading.from && node.to === heading.to && /^(?:ATXHeading[1-6]|SetextHeading[1-6]|BodyHeading)$/.test(node.name));
+    const owner = nodes.find(node => node.from === heading.from && node.to === heading.to && /^(?:ATXHeading[1-6]|BodyHeading)$/.test(node.name));
     const containerEnd = owner?.parent === null || owner?.parent === undefined ? text.length : nodes[owner.parent].to;
     const next = meta.headings.find(candidate => candidate.from > heading.from && candidate.level <= heading.level &&
       nodes.some(node => node.from === candidate.from && node.to === candidate.to && node.parent === owner?.parent));
@@ -199,7 +199,7 @@ export function createContentTarget(model: MarkdownModel, selection: SourceSpan,
       throw new Error('Select complete blocks for a range');
     const sourcePrefix = sourceLinePrefix(text.slice(lineFrom, text.indexOf('\n', lineFrom) < 0 ? text.length : text.indexOf('\n', lineFrom)));
     const candidates = model.nodes.filter(node => (node.from === selection.from || node.from === selection.from + sourcePrefix.length) &&
-      /^(?:Paragraph|ATXHeading\d|SetextHeading\d|FencedCode|Blockquote|BulletList|OrderedList|Table|HorizontalRule|BodyHeading)$/.test(node.name));
+      /^(?:Paragraph|ATXHeading\d|FencedCode|Blockquote|BulletList|OrderedList|Table|HorizontalRule|BodyHeading)$/.test(node.name));
     const first = candidates.find(node => model.nodes.some(last => last.to === selection.to && last.parent === node.parent));
     if (!first) throw new Error('Range must start and end on complete blocks in the same container');
     const prefix = text.slice(lineFrom, first.from);

@@ -87,7 +87,7 @@ export function extractMetadata(source: string | MarkdownModel): Metadata {
   }
   const headings: Heading[] = [];
   for (const node of model.nodes) {
-    const match = node.name.match(/^(?:ATX|Setext)Heading([1-6])$/);
+    const match = node.name.match(/^ATXHeading([1-6])$/);
     const body = node.name === BODY_HEADING_NODE;
     if ((!match && !body) || intersects(node.from, node.to)) continue;
     const raw = text.slice(node.from, node.to);

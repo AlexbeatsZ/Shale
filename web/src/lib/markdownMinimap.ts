@@ -16,7 +16,7 @@ export function minimapSourceWidth(columnWidth: number, renderedWidth = 0): Mini
 export function minimapRows(model: MarkdownModel, doc: Text, height: number): MinimapRow[] {
   const count = Math.min(doc.lines, Math.max(1, Math.floor(Math.min(MINIMAP_MAX_HEIGHT, height) / 3)));
   const structures = model.nodes.flatMap(node => {
-    const kind = /^(?:ATXHeading|SetextHeading|BodyHeading)/.test(node.name) ? 'heading'
+    const kind = /^(?:ATXHeading|BodyHeading)/.test(node.name) ? 'heading'
       : ['FencedCode', 'CodeBlock'].includes(node.name) ? 'code'
       : node.name === 'Image' ? 'image' : node.name === 'Table' ? 'table' : undefined;
     return kind ? [{ ...node, kind: kind as MinimapRow['kind'] }] : [];

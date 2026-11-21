@@ -25,7 +25,7 @@ import { search, searchKeymap } from '@codemirror/search';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { json } from '@codemirror/lang-json';
 import { indentUnit, syntaxHighlighting } from '@codemirror/language';
-import { analyzeMarkdown, bodyHeadingSyntax, changesBetween, type DocumentSession, type DocumentSnapshot, type SourceChange, type MarkdownModel, type EditHistoryState } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, nativeMarkdownSyntax, changesBetween, type DocumentSession, type DocumentSnapshot, type SourceChange, type MarkdownModel, type EditHistoryState } from '@webobsidian/markdown-core';
 import { codeLanguage, obsidianHighlightStyle } from '../lib/highlight';
 import { obsidianKeymap, markdownListKeymap, toggleInline, toggleLineStyle, toggleChecklist, surroundSelection } from '../lib/editorCommands';
 import { suggesterPlugin } from '../lib/suggest';
@@ -37,7 +37,6 @@ import { listLayout, prefixWidths } from '../lib/listLayout';
 import { listFolding } from '../lib/listFolding';
 import { blockLayout } from '../lib/blockLayout';
 import { blockEffects } from '../lib/blocks/view';
-import { blockEffectSyntax, footnoteSyntax } from '@webobsidian/markdown-core';
 import { renderContext, type FragmentOptions, type RenderContext } from '../lib/renderContext';
 import { menuModifiers } from '../lib/configuredMenus/transform';
 import { attachMenuContext } from '../lib/configuredMenus/transform';
@@ -319,7 +318,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
         ])),
         search({ top: true }),
         keymap.of([...physicalKeymap([...defaultKeymap, ...searchKeymap]), ...defaultKeymap, ...searchKeymap, ...markdownListKeymap, indentWithTab]),
-        /\.jsonc?$/i.test(p.snapshot.id) ? json() : markdown({ base: markdownLanguage, codeLanguages: codeLanguage, extensions: [bodyHeadingSyntax, blockEffectSyntax, footnoteSyntax] }),
+        /\.jsonc?$/i.test(p.snapshot.id) ? json() : markdown({ base: markdownLanguage, codeLanguages: codeLanguage, extensions: nativeMarkdownSyntax }),
         suggesterPlugin,
         mathEditingExtensions,
         ...(p.context.allowPlugins ? [nativeWritingExtensions()] : []),

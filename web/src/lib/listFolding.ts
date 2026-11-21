@@ -62,7 +62,7 @@ function build(view: EditorView): DecorationSet {
       // is deliberately excluded; no second section parser or fold state.
       let heading = 0, headingFrom = line.from;
       for (let node = view.state.field(syntaxModel).tree.resolveInner(line.to, -1); node && node.from >= line.from; node = node.parent!) {
-        const match = /^(?:ATX|Setext)Heading([1-6])$/.exec(node.name);
+        const match = /^ATXHeading([1-6])$/.exec(node.name);
         if (match) { heading = Number(match[1]); headingFrom = node.from; break; }
       }
       if (!live && !heading) continue;
