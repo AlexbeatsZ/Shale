@@ -337,6 +337,7 @@ webobsidian/
 
 ### FR-2 · Editor & rendering
 - CodeMirror 6: syntax highlight Markdown, keybindings cơ bản.
+- 光标在空的 `{}`、`()`、`[]` 正中时，按 Backspace 或 Delete 一次删除整对。括号边界及选区沿用普通删除。
 - Live preview / Reading view chuyển đổi.
 - Wikilinks `[[note]]`, embeds `![[file]]`, tags `#tag`, callouts, tasks `- [ ]`.
 - **Callout 自定义**:新类型只需一条 CSS 规则 `.callout[data-callout="x"] { --callout-color: r, g, b; --callout-icon: lucide-name; }`,

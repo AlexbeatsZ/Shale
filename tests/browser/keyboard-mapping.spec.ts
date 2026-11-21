@@ -28,6 +28,51 @@ test('literal Control moves through the document, selects all and uses shared un
   await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe('replacement');
 });
 
+for (const [mode, key] of [['live', 'Backspace'], ['source', 'Delete']] as const) {
+  test(`${key} removes an empty bracket pair in ${mode} mode in one undoable edit`, async ({ page }) => {
+    const source = 'a{}b a()b a[]b';
+    await page.evaluate(source => window.renderHarness.reset(source), source);
+    await expect(page.locator('[data-slot="0"] .cm-content')).toContainText(source);
+    await page.evaluate(mode => window.renderHarness.mode(0, mode), mode);
+
+    for (const pair of ['{}', '()', '[]']) {
+      const start = source.indexOf(pair);
+      await page.evaluate(position => {
+        window.renderHarness.cursor(0, position);
+        window.renderHarness.focus(0);
+      }, start + 1);
+      await page.keyboard.press(key);
+      expect(await page.evaluate(() => window.renderHarness.source(0))).toBe(source.replace(pair, ''));
+      expect(await page.evaluate(() => window.renderHarness.location(0)?.anchor)).toBe(start);
+      await page.keyboard.press('Control+z');
+      expect(await page.evaluate(() => window.renderHarness.source(0))).toBe(source);
+    }
+  });
+}
+
+test('Backspace keeps normal deletion at bracket edges, with selections or with content inside', async ({ page }) => {
+  const source = 'a{}b a( )b a[x]b a{]b';
+  await page.evaluate(source => window.renderHarness.reset(source), source);
+  await expect(page.locator('[data-slot="0"] .cm-content')).toContainText(source);
+  const cases = [
+    { anchor: 3, head: 3, replacement: '{', original: '{}' },
+    { anchor: 1, head: 2, replacement: '}', original: '{}' },
+    { anchor: source.indexOf('( )') + 2, head: source.indexOf('( )') + 2, replacement: '()', original: '( )' },
+    { anchor: source.indexOf('[x]') + 2, head: source.indexOf('[x]') + 2, replacement: '[]', original: '[x]' },
+    { anchor: source.indexOf('{]') + 1, head: source.indexOf('{]') + 1, replacement: ']', original: '{]' },
+  ];
+  for (const { anchor, head, replacement, original } of cases) {
+    await page.evaluate(({ anchor, head }) => {
+      window.renderHarness.cursor(0, anchor, head);
+      window.renderHarness.focus(0);
+    }, { anchor, head });
+    await page.keyboard.press('Backspace');
+    expect(await page.evaluate(() => window.renderHarness.source(0))).toBe(source.replace(original, replacement));
+    await page.keyboard.press('Control+z');
+    expect(await page.evaluate(() => window.renderHarness.source(0))).toBe(source);
+  }
+});
+
 test('Control clipboard shortcuts use the source policy and preserve readonly notes', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   const source = 'first line\n\nlast line';

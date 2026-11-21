@@ -76,6 +76,23 @@ function continueMarkdown(view: EditorView): boolean {
   return true;
 }
 
+const emptyBracketPairs = new Set(['{}', '()', '[]']);
+
+function deleteEmptyBracketPairs(view: EditorView, userEvent: 'delete.backward' | 'delete.forward'): boolean {
+  const { state } = view;
+  if (state.readOnly || view.composing) return false;
+  if (state.selection.ranges.some(({ empty, head }) =>
+    !empty || head === 0 || head === state.doc.length || !emptyBracketPairs.has(state.sliceDoc(head - 1, head + 1))
+  )) return false;
+
+  const change = state.changeByRange(({ head }) => ({
+    changes: { from: head - 1, to: head + 1 },
+    range: EditorSelection.cursor(head - 1),
+  }));
+  view.dispatch(change, { scrollIntoView: true, userEvent });
+  return true;
+}
+
 /** Removing an empty list marker must not rewrite the user's indentation. */
 function deleteMarkdownMarkup(view: EditorView): boolean {
   const { state } = view;
@@ -247,7 +264,8 @@ export function obsidianKeymap(_h: ObsidianKeymapHandlers): KeyBinding[] {
   return [
     // Native marker continuation plus exact indentation for unmarked list text.
     { key: 'Enter', run: continueMarkdown },
-    { key: 'Backspace', run: deleteMarkdownMarkup },
+    { key: 'Backspace', run: view => deleteEmptyBracketPairs(view, 'delete.backward') || deleteMarkdownMarkup(view) },
+    { key: 'Delete', run: view => deleteEmptyBracketPairs(view, 'delete.forward') },
   ];
 }
 
