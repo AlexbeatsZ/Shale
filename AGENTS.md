@@ -10,9 +10,9 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-21 Shale 0.1.79 已发布（桌面 7 个资产、Android 2 个非调试 APK）。Mac 的 STEM 片段文件已更新，`mk` 插入 `\(\)`，`dm` 插入三行 `\[ … \]`。隔离 macOS 实包已用同一片段和格式化配置验证输入、保存及混合公式。应用只识别井号系列标题。Mac 日用安装仍为 0.1.76，其余设备的交互和配置同步待实测。设计 `docs/design/native-math.md`、`docs/design/native-writing.md`。
 - 2026-11-21 Shale 0.1.78 桌面与 Android 已发布。LaTeX 公式源码括号按正确配对的嵌套深度循环六色，错误标红并加波浪下划线。macOS 实包已验收，Windows 和 Android 安装包已验证构建与身份。
 - 2026-11-21 已发布空括号对一次删除修复，桌面 v0.1.77（macOS arm64、Windows x64）和 Android android-v0.1.77（手机及旧平板签名 APK）。macOS 隔离实包验证两种删除键、外侧光标、单括号选区和单步撤销。该交付未安排设备原位安装。
-- 2026-11-21 源码 0.1.79 支持从空 `\(\)` / `\[\]` 内触发数学片段，美元公式继续渲染，格式化默认保留原定界符。应用只识别井号系列标题，`---` 仍是正文分隔线、YAML 或表格语法。设计 `docs/design/native-math.md`、`docs/design/native-writing.md`。
 - 2026-11-21 main 新增「设置 › 界面 › 打字时忽略触控板点击」（默认关闭，100–3000 ms，默认 1000 ms）。源码与回归已通过，随 0.1.78 发行包提供。
 - 2026-11-19 桌面 v0.1.76 已发布（macOS arm64、Windows x64 共 7 个资产）。空白网页地址栏在侧栏滑入时仍自动聚焦，窗口模式和原生全屏的工作区横向位移均为 0。Mac 的 `/Applications/Shale.app` 已原位升级，签名与本地服务通过，保留原右栏浏览器选中状态。Windows 安装器构建及版本检查通过。
 - 2026-11-19 小米平板 6 Pro 的正式包 `io.github.alexbeatsz.webobsidian` 原位升级 0.1.72→0.1.73。Android 17 实机深色主题上下白边消失，状态栏及手势栏保留，本地服务就绪。旧锁 PID 已被其他 UID 复用，旧锁和退出 Syncthing 后遗留的空 `.stfolder` 已改名留档。STEM 已连 ROG，首轮 19 项冲突（5 JS、14 SVG）两版已存，远端 19 项与 Mac 当前文件一致，仍等待选择版本。

@@ -722,7 +722,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 
 ### Nhật ký tiến độ
 
-- 2026-11-21 (PRD 1.50) TeX 定界符支持从空模板触发公式片段，默认格式化保留两种写法。标题只用井号。607 项单元和 56 项浏览器回归通过。
+- 2026-11-21 (PRD 1.50) TeX 定界符支持从空模板触发公式片段，默认格式化保留两种写法。标题只用井号。607 项单元、56 项浏览器回归和带 STEM 片段的 macOS 隔离实包通过，桌面及 Android 0.1.79 已发布。
 
 - 2026-11-21 (PRD 1.49) 公式源码括号按正确配对的嵌套深度循环六色，错误标红并加波浪下划线。
 
