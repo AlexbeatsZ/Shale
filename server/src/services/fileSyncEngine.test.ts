@@ -101,6 +101,66 @@ describe('native file synchronization', () => {
     expect(await fs.readFile(path.join(second.root, 'image.png'))).toEqual(Buffer.from([3]));
   });
 
+  it('fast-forwards a first connection whose stale files the server already knows, and still stops on unknown work', async () => {
+    const first = await client('first');
+    await first.write('theme.svg', '<svg>old</svg>'); await first.write('gone.js', 'old()'); await first.write('kept.md', 'base\n');
+    await first.engine.run();
+    await first.write('theme.svg', '<svg>new</svg>'); await fs.rm(path.join(first.root, 'gone.js')); first.engine.noteChanged('gone.js');
+    expect((await first.engine.run()).phase).toBe('idle');
+    // A device restored from an older copy (no checkpoint) holding only previously synchronized bytes.
+    const tablet = await client('tablet');
+    await tablet.write('theme.svg', '<svg>old</svg>'); await tablet.write('gone.js', 'old()'); await tablet.write('kept.md', 'base\n');
+    const status = await tablet.engine.run();
+    expect(status.phase).toBe('idle');
+    expect(status.message).toContain('自动处理 2 个文件');
+    expect(await fs.readFile(path.join(tablet.root, 'theme.svg'), 'utf8')).toBe('<svg>new</svg>');
+    await expect(fs.access(path.join(tablet.root, 'gone.js'))).rejects.toThrow();
+    expect(status.recentResolutions.map(item => [item.path, item.kind]).sort()).toEqual([['gone.js', 'deleted'], ['theme.svg', 'fast-forward']]);
+    const recovery = path.join(tablet.state, 'recovery', new Date().toISOString().slice(0, 10));
+    expect(await fs.readFile(path.join(recovery, 'theme.svg'), 'utf8')).toBe('<svg>old</svg>');
+    // Unknown local bytes without a base remain a manual decision.
+    const fresh = await client('fresh');
+    await fresh.write('theme.svg', '<svg>never synchronized</svg>');
+    const conflict = await fresh.engine.run();
+    expect(conflict.phase).toBe('conflict'); expect(conflict.conflictCount).toBe(1);
+    const details = await fresh.engine.conflictDetails();
+    expect(details!.files[0]).toMatchObject({ path: 'theme.svg', action: 'modify', hasBase: false, text: true });
+    expect(details!.files[0].diff).toEqual([{ type: 'del', lines: ['<svg>never synchronized</svg>'] }, { type: 'add', lines: ['<svg>new</svg>'] }]);
+  });
+
+  it('merges edits to different paragraphs and keeps overlapping edits as a reviewable conflict', async () => {
+    const first = await client('first'); const second = await client('second');
+    const original = '# 标题\r\n\r\n第一段\r\n\r\n第二段\r\n\r\n第三段\r\n';
+    await first.write('note.md', original); await first.engine.run(); await second.engine.run();
+    await first.write('note.md', original.replace('第一段', '第一段（电脑）')); expect((await first.engine.run()).phase).toBe('idle');
+    await second.write('note.md', original.replace('第三段', '第三段（平板）'));
+    const merged = await second.engine.run();
+    expect(merged.phase).toBe('idle'); expect(merged.message).toContain('合并 1');
+    const expected = '# 标题\r\n\r\n第一段（电脑）\r\n\r\n第二段\r\n\r\n第三段（平板）\r\n';
+    expect(await fs.readFile(path.join(second.root, 'note.md'), 'utf8')).toBe(expected);
+    expect((await first.engine.run()).phase).toBe('idle');
+    expect(await fs.readFile(path.join(first.root, 'note.md'), 'utf8')).toBe(expected);
+
+    await first.write('note.md', expected.replace('第二段', '第二段 A')); await first.write('other.md', '远端');
+    await first.engine.run();
+    await second.write('note.md', expected.replace('第二段', '第二段 B')); await second.write('other.md', '本机');
+    const conflict = await second.engine.run();
+    expect(conflict.phase).toBe('conflict'); expect(conflict.conflictCount).toBe(2);
+    const details = await second.engine.conflictDetails();
+    const note = details!.files.find(file => file.path === 'note.md')!;
+    expect(note).toMatchObject({ action: 'modify', hasBase: true, localChanged: true, remoteChanged: true, text: true });
+    expect(note.diff!.filter(block => block.type !== 'same')).toEqual([{ type: 'del', lines: ['第二段 B'] }, { type: 'add', lines: ['第二段 A'] }]);
+    await expect(second.engine.resolveConflict({ 'missing.md': 'remote' })).rejects.toThrow('请选择');
+    const partial = await second.engine.resolveConflict({ 'note.md': 'remote' });
+    expect(partial.phase).toBe('conflict'); expect(partial.conflictCount).toBe(1);
+    expect((await second.engine.conflictDetails())!.files.map(file => file.path)).toEqual(['other.md']);
+    expect((await second.engine.resolveConflict({ 'other.md': 'local' })).phase).toBe('idle');
+    expect(await fs.readFile(path.join(second.root, 'note.md'), 'utf8')).toBe(expected.replace('第二段', '第二段 A'));
+    expect(await fs.readFile(path.join(second.root, 'other.md'), 'utf8')).toBe('本机');
+    await first.engine.run();
+    expect(await fs.readFile(path.join(first.root, 'other.md'), 'utf8')).toBe('本机');
+  });
+
   it('retries the same durable operation after losing a successful commit response', async () => {
     const first = await client('first'); await first.write('note.md', 'retained');
     const original = globalThis.fetch; let lost = false; const operations: string[] = [];

@@ -9,6 +9,7 @@ import PluginElements from './PluginElements';
 import ViewModeMenu from './ViewModeMenu';
 import VirtualGroupMenu from './VirtualGroupMenu';
 import { pluginStatusItems } from '../lib/plugins';
+import NativeSyncButton from './NativeSyncButton';
 
 // CJK characters count individually, as Obsidian does; other scripts count by whitespace runs.
 const CJK = /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af]/gu;
@@ -74,6 +75,7 @@ export default function StatusBar() {
       {dirty && <span>保存中…</span>}
       {isText && <span>{words} 词</span>}
       {isText && <span>{content.length} 字符</span>}
+      <NativeSyncButton />
       <button type="button" className="clickable" title="Git 同步" disabled={syncing} onClick={sync}>
         <Icon name="refresh-cw" size={13} className={syncing ? 'icon-spin' : undefined} />
         {gitLabel}

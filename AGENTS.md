@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-22 原生同步：首连时本机已同步过的旧文件自动追上服务器，文本两边改不同段落自动合并（共用 MCP 的 `mergeReview`）。剩余冲突在文件树（冲突分组+A/M/D）、状态栏一键同步与编辑器内 MCP 同款逐块审阅中处理。源码已提交，未构建发布、未部署。设计 `docs/design/file-sync.md`。
 - 2026-11-22 `android-v0.1.81` 预发布修复 Android 共享存储拒绝硬链接导致同步卡住。小米平板 6 Pro 正式包已原位升级到 0.1.81，STEM 首轮同步成功（revision 392，无冲突）。桌面 0.1.80 两份草稿（目标 67f7f43）仍未发布，未改动。
 - 2026-11-21 Shale 0.1.79 已发布（桌面 7 个资产、Android 2 个非调试 APK）。Mac 的 STEM 片段文件已更新，`mk` 插入 `\(\)`，`dm` 插入三行 `\[ … \]`。隔离 macOS 实包已用同一片段和格式化配置验证输入、保存及混合公式。应用只识别井号系列标题。Mac 日用安装仍为 0.1.76，其余设备的交互和配置同步待实测。设计 `docs/design/native-math.md`、`docs/design/native-writing.md`。
 - 2026-11-21 Shale 0.1.78 桌面与 Android 已发布。LaTeX 公式源码括号按正确配对的嵌套深度循环六色，错误标红并加波浪下划线。macOS 实包已验收，Windows 和 Android 安装包已验证构建与身份。
@@ -74,6 +75,7 @@
 - Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。
 
 ## Docs Index
+- 原生同步、自动合并与冲突审阅 → `docs/design/file-sync.md`；MCP 审阅 → `docs/design/native-mcp.md`。
 - 打字时忽略触控板点击 → `docs/design/typing-pointer-guard.md`。
 - 桌面网页浏览与用户脚本 → `docs/design/web-viewer.md`、`docs/design/browser-userscripts.md`。
 - PowerPoint与共用分页阅读 → `docs/design/presentation-viewer.md`、`document-navigation.md`、`document-media-theme.md`。

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, type TreeSort, type ContextMenuItem } from '../lib/store';
 import { extendFileMenu } from '../lib/obsidian/menus';
 import { api, type TreeNode } from '../lib/api';
@@ -8,6 +8,8 @@ import { menuModifiers } from '../lib/configuredMenus/transform';
 import Icon from './Icon';
 import { fileManagerMenuItems } from '../lib/revealInFileManager';
 import SelectionBar from './SelectionBar';
+import { useSyncConflict, useSyncConflicts, withIncomingConflicts } from '../lib/syncConflicts';
+import SyncChanges from './SyncChanges';
 
 /** Inline rename box shown in place of a tree row's name (Obsidian-style). */
 function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
@@ -172,6 +174,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
   const isSelected = useStore((s) => s.selected.includes(node.path));
   const setSelected = useStore((s) => s.setSelected);
   const setSelectAnchor = useStore((s) => s.setSelectAnchor);
+  const conflict = useSyncConflict(node.path);
 
   const isFolder = node.type === 'folder';
   const editing = renamingPath === node.path;
@@ -394,7 +397,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
   return (
     <div className="tree-item">
       <div
-        className={`tree-row ${activePath === node.path ? 'active' : ''} ${isSelected ? 'selected' : ''} ${dropping ? 'drop-target' : ''}`}
+        className={`tree-row ${activePath === node.path ? 'active' : ''} ${isSelected ? 'selected' : ''} ${dropping ? 'drop-target' : ''}${conflict ? ` sync-conflict is-${conflict.action}` : ''}`}
         style={isCut ? { opacity: 0.5 } : undefined}
         data-path={node.path}
         draggable
@@ -418,6 +421,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
           <span className="name">{node.virtualDocument?.title ?? node.name.replace(/\.(md|markdown)$/, '')}</span>
         )}
         {bookmarks.includes(node.path) && <Icon name="bookmark" size={12} className="bm-star" />}
+        {conflict && <span className="sync-conflict-letter" title="同步冲突">{conflict.action === 'add' ? 'A' : conflict.action === 'delete' ? 'D' : 'M'}</span>}
       </div>
     </div>
   );
@@ -465,7 +469,9 @@ function sortTree(node: TreeNode, order: TreeSort): TreeNode {
 export default function FileTree() {
   const rawTree = useStore((s) => s.tree);
   const treeSort = useStore((s) => s.treeSort);
-  const tree = rawTree ? sortTree(rawTree, treeSort) : rawTree;
+  const syncConflicts = useSyncConflicts();
+  const tree = useMemo(() => rawTree ? sortTree(withIncomingConflicts(rawTree, syncConflicts), treeSort) : rawTree,
+    [rawTree, syncConflicts, treeSort]);
   const loadTree = useStore((s) => s.loadTree);
   const notify = useStore((s) => s.notify);
   const clipboard = useStore((s) => s.clipboard);
@@ -586,6 +592,7 @@ export default function FileTree() {
         <button type="button" onClick={() => openTagOperation({ scope: { kind: 'files', paths: selectedFiles(selected) }, title: '修改所选文件的标签' })}><Icon name="hash" size={13} />标签</button>
         <button type="button" className="mod-warning" onClick={() => { void deleteSelected(selected); }}><Icon name="trash" size={13} />删除</button>
       </SelectionBar>}
+      <SyncChanges />
       {tree.children.map((c) => (
         <Node key={c.path} node={c} depth={0} />
       ))}

@@ -7,7 +7,8 @@ import { bindPluginEditor } from '../lib/plugins';
 import { manualSave, bindTimestampUpdates } from '../lib/writing/format';
 import MarkdownView from './MarkdownView';
 import { analyzeMarkdown, fragmentRange, equationContext } from '@webobsidian/markdown-core';
-import { nativeReviewExtension } from '../lib/review/view';
+import { nativeReviewExtension, reviewExtension } from '../lib/review/view';
+import { syncReviewSource } from '../lib/review/sync';
 import { propertyTypesSnapshot, subscribePropertyTypes } from '../lib/propertyTypes';
 import type { LinkIntent } from '../lib/fragmentNavigation';
 import { TEXT_EXT_RE } from '../lib/media';
@@ -43,7 +44,8 @@ export default function Editor({ path: suppliedPath, reading = false, embedded =
   const propertyTypes = useSyncExternalStore(subscribePropertyTypes, propertyTypesSnapshot);
   const textPath = path && TEXT_EXT_RE.test(path) ? path : null;
   const { session, snapshot, error } = useDocumentSession(textPath);
-  const reviewExtensions = useMemo(() => path && !embedded && !fragment ? nativeReviewExtension(path) : [], [path, embedded, fragment]);
+  const reviewExtensions = useMemo(() => path && !embedded && !fragment
+    ? [nativeReviewExtension(path), reviewExtension(path, syncReviewSource)] : [], [path, embedded, fragment]);
   useEffect(() => session && !reading ? bindTimestampUpdates(session, notify) : undefined, [session, reading, notify]);
   const [editorView, setEditorView] = useState<import('@codemirror/view').EditorView | null>(null);
   useEffect(() => {

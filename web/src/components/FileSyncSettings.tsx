@@ -5,6 +5,7 @@ import type { FileSyncPreferences, FileSyncStatus } from '../../../server/src/co
 import { defaultPort } from '../../../sync-server/protocol.mjs';
 
 type Connection = { preferences: FileSyncPreferences; status: FileSyncStatus };
+const resolutionLabels = { 'fast-forward': '更新为服务器版本', deleted: '按服务器删除', merged: '自动合并' } as const;
 const phases: Record<FileSyncStatus['phase'], string> = {
   disabled: '未启用', idle: '就绪', syncing: '同步中', error: '连接失败', conflict: '等待处理冲突', recovery: '等待恢复',
 };
@@ -22,7 +23,7 @@ export default function FileSyncSettings() {
     return () => { active = false; };
   }, []);
   const update = (patch: Partial<FileSyncPreferences>) => setConnection(value => value && ({ ...value, preferences: { ...value.preferences, ...patch } }));
-  const action = async (kind: 'save' | 'run' | 'refresh' | 'local' | 'remote' | 'recheck') => {
+  const action = async (kind: 'save' | 'run' | 'refresh' | 'recheck') => {
     if (!connection) return;
     setBusy(true); setError('');
     try {
@@ -65,10 +66,12 @@ export default function FileSyncSettings() {
           {!!status?.conflictBranches.length && <SettingRow name="冲突分支"><span>{status.conflictBranches.join('\n')}</span></SettingRow>}
         </SettingGroup>
         {status?.phase === 'conflict' && <div className="setting-actions">
-          <button className="btn secondary" onClick={() => void action('local')}>采用本机版本</button>
-          <button className="btn secondary" onClick={() => void action('remote')}>采用远端版本</button>
           <button className="btn secondary" onClick={() => void action('recheck')}>重新比较</button>
         </div>}
+        {!!status?.recentResolutions.length && <SettingGroup title="最近自动处理">
+          {status.recentResolutions.map(item => <SettingRow key={`${item.at}-${item.path}`} name={item.path}
+            desc={new Date(item.at).toLocaleString()}><span>{resolutionLabels[item.kind]}</span></SettingRow>)}
+        </SettingGroup>}
       </fieldset>
     </>}
   </div>;

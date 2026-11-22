@@ -4,7 +4,8 @@ test.beforeEach(async ({ page }) => {
   const connection = {
     preferences: { enabled: false, endpoints: ['http://192.168.1.10:18744/webobsidian-sync/v1/', 'https://example.com/webobsidian-sync/v1/'], token: '••••••••', intervalSec: 15 },
     status: { enabled: false, endpoints: [], hasToken: true, activeEndpoint: null as string | null, phase: 'disabled', message: '', lastSuccess: null,
-      conflictDirectory: null as string | null, conflictBranches: [] as string[] },
+      conflictDirectory: null as string | null, conflictBranches: [] as string[], conflictCount: 0,
+      recentResolutions: [] as { at: string; path: string; kind: string }[] },
   };
   const requests: { path: string; body: any }[] = [];
   await page.route('**/api/file-sync**', async route => {
@@ -14,10 +15,13 @@ test.beforeEach(async ({ page }) => {
       if (request.method() === 'PUT') {
         Object.assign(connection.preferences, body); connection.status.enabled = body.enabled; connection.status.phase = body.enabled ? 'idle' : 'disabled';
       } else if (path.endsWith('/run')) {
-        connection.status.phase = 'conflict'; connection.status.message = '发现 1 个冲突，已保留本机与远端两版';
+        connection.status.phase = 'conflict'; connection.status.message = '发现 2 个冲突，已保留本机与远端两版'; connection.status.conflictCount = 2;
         connection.status.activeEndpoint = connection.preferences.endpoints[1]; connection.status.conflictDirectory = 'C:/fixture/recovery/local-remote';
         connection.status.conflictBranches = ['webobsidian-conflicts/fixture/local', 'webobsidian-conflicts/fixture/remote'];
-      } else { connection.status.phase = 'idle'; connection.status.message = '同步完成'; connection.status.conflictDirectory = null; }
+      } else {
+        connection.status.phase = 'idle'; connection.status.message = '同步完成'; connection.status.conflictDirectory = null;
+        connection.status.recentResolutions = [{ at: '2026-11-21T10:00:00.000Z', path: '课程/笔记.md', kind: 'merged' }];
+      }
     }
     await route.fulfill({ json: connection });
   });
@@ -55,9 +59,10 @@ test('shows retained conflict versions and sends an explicit resolution without 
   await expect(page.getByRole('status')).toContainText('已保留本机与远端两版');
   await expect(page.getByText('C:/fixture/recovery/local-remote', { exact: true })).toBeVisible();
   await expect(page.getByText('https://example.com/webobsidian-sync/v1/', { exact: true })).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath('file-sync-conflict.png') });
-  await page.getByRole('button', { name: '采用远端版本' }).click(); await expect(page.getByRole('status')).toContainText('同步完成');
+  await page.screenshot({ path: test.info().outputPath('file-sync-conflict.png'), fullPage: true });
+  await page.getByRole('button', { name: '重新比较' }).click();
+  await expect(page.getByRole('status')).toContainText('同步完成');
   const requests = await page.evaluate(() => (window as any).fileSyncRequests());
   expect(requests.map((request: any) => request.path)).toEqual(['/api/file-sync', '/api/file-sync/run', '/api/file-sync/resolve']);
-  expect(requests[2].body).toEqual({ choice: 'remote' });
+  expect(requests[2].body).toEqual({ choice: 'recheck' });
 });

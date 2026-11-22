@@ -86,6 +86,8 @@ operations requiring a trustworthy editor snapshot.
    The toolbar is itself a native CM block in the existing centered document
    column, so it shares the document width/scroll and does not begin behind the
    floating sidebars. All review buttons reuse the application btn styles/tokens.
+   The same presentation (`reviewExtension` with a `ReviewSource`) also shows native sync
+   text conflicts; see file-sync.md.
 3. Candidates mount the existing Markdown renderer with nonExecutingContext,
    scripts/plugins/HTML execution disabled recursively, and block effects disabled.
    Candidate bytes never enter the actual document before acceptance.

@@ -3,6 +3,7 @@ import { desktopCommands } from '../../desktop/src/bridge';
 import { ensureWriting, writingFileChanged, watchExternalWritingSources } from './lib/writing/config';
 import { bindWritingNavigation } from './lib/writing/commands';
 import { refreshSearch, searchSettings } from './lib/search';
+import { clearSyncConflicts, refreshSyncConflicts } from './lib/syncConflicts';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { api, invalidateVaultRequests } from './lib/api';
 import { useStore, flushWorkspaceState, saveWorkspaceBeforeExit, workspaceHasUnsavedChanges } from './lib/store';
@@ -127,6 +128,7 @@ export default function App() {
     const stopPropertyTypes = initializePropertyTypes(error => useStore.getState().notify(String(error)));
     let treeTimer: number | undefined;
     let indexTimer: number | undefined;
+    let syncSeen: { conflict: string; resolution: string } | undefined;
     ws.onmessage = async (ev) => {
       try {
         const msg = JSON.parse(ev.data);
@@ -173,6 +175,17 @@ export default function App() {
           indexTimer = window.setTimeout(notifyIndexChanged, 800);
         } else if (msg.type === 'index-error') {
           useStore.getState().notify(`文件索引失败：${msg.path}；已保存内容保留。${msg.error}`, 0);
+        } else if (msg.type === 'file-sync') {
+          window.dispatchEvent(new CustomEvent('file-sync-status', { detail: msg }));
+          // Surface conflicts and automatic merges instead of leaving them inside the settings page.
+          const conflict = msg.phase === 'conflict' ? `${msg.conflictDirectory ?? ''}:${msg.conflictCount}` : '';
+          const resolution = msg.recentResolutions?.[0]?.at ?? '';
+          if (conflict !== (syncSeen?.conflict ?? '')) void (conflict ? refreshSyncConflicts() : (clearSyncConflicts(), Promise.resolve()));
+          if (conflict && conflict.split(':')[0] !== syncSeen?.conflict.split(':')[0])
+            useStore.getState().notify(`同步冲突 ${msg.conflictCount} 个，已在文件列表标出`, 8000);
+          else if (syncSeen && msg.phase === 'idle' && resolution && resolution !== syncSeen.resolution)
+            useStore.getState().notify(msg.message, 6000);
+          syncSeen = { conflict, resolution };
         } else if (msg.type === 'uistate') {
           // another tab/device changed the workspace → sync live
           useStore.getState().applyRemoteState(msg.state, msg.originId);

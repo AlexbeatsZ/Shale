@@ -107,6 +107,28 @@ rejects the update, the successful device backup remains available; never pull, 
 force-push or overwrite the other device's repository history to make this succeed.
 Manual pull/clone is blocked while native synchronization owns file transport.
 
+## Automatic resolution and conflict review (2026-11-22)
+
+A two-sided difference is resolved without asking only when no edit can be lost, and the local
+version is first copied to `<state>/recovery/<date>/<path>` and logged in `resolutions.json`:
+- No acknowledged base for the path (first connection, a copy restored from Syncthing) and the
+  local bytes already exist as a server blob: they are a previously synchronized, older version,
+  so the device fast-forwards (or accepts the server's tombstone). This was the cause of the
+  tablet's 19 first-connection conflicts on 2026-11-19. Unknown local bytes still conflict.
+- Both sides edited a text file (`syncMerge.textExtension`, UTF-8, ≤ 8 MiB) and the line-hunk
+  three-way merge `mergeReview` from `markdown-core/review.ts` (the same core MCP review recovery
+  uses) finds no touching hunks. The merge result is published locally on top of the remote base
+  (incoming `content`), and the follow-up pass uploads it.
+
+Remaining conflicts are reviewed where the files are, VS Code style, not in settings:
+the file tree shows a 同步冲突 group plus A/M/D decorations (server-only files appear as virtual
+rows), the status bar has one-click sync with the conflict count, and an open text conflict uses
+the MCP review presentation (`lib/review/view.ts` `reviewExtension` with `lib/review/sync.ts` as
+source): local lines red, server hunks green with per-hunk accept/reject. When no hunk is pending
+the note is saved and the path resolves as `local` (unchanged) or `merged` (current file kept on
+the remote base, uploaded next pass). Added/deleted/binary files use the file-level panel.
+Resolution may cover a subset of paths; the rest stay in the same conflict.
+
 ## Server-side Git backup (sync-server)
 
 Direction (user, 2026-11-02): the always-on sync server is the single Git backup writer;
