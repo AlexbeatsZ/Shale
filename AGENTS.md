@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-22 `android-v0.1.81` 预发布修复 Android 共享存储拒绝硬链接导致同步卡住。小米平板 6 Pro 正式包已原位升级到 0.1.81，STEM 首轮同步成功（revision 392，无冲突）。桌面 0.1.80 两份草稿（目标 67f7f43）仍未发布，未改动。
 - 2026-11-21 Shale 0.1.79 已发布（桌面 7 个资产、Android 2 个非调试 APK）。Mac 的 STEM 片段文件已更新，`mk` 插入 `\(\)`，`dm` 插入三行 `\[ … \]`。隔离 macOS 实包已用同一片段和格式化配置验证输入、保存及混合公式。应用只识别井号系列标题。Mac 日用安装仍为 0.1.76，其余设备的交互和配置同步待实测。设计 `docs/design/native-math.md`、`docs/design/native-writing.md`。
 - 2026-11-21 Shale 0.1.78 桌面与 Android 已发布。LaTeX 公式源码括号按正确配对的嵌套深度循环六色，错误标红并加波浪下划线。macOS 实包已验收，Windows 和 Android 安装包已验证构建与身份。
 - 2026-11-21 已发布空括号对一次删除修复，桌面 v0.1.77（macOS arm64、Windows x64）和 Android android-v0.1.77（手机及旧平板签名 APK）。macOS 隔离实包验证两种删除键、外侧光标、单括号选区和单步撤销。该交付未安排设备原位安装。
@@ -31,7 +32,6 @@
 
 ## Active Work
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
-- 小米平板 6 Pro 已按用户选择采用服务器版本解决 19 项冲突；随后因共享存储拒绝硬链接卡在 369 个新文件，0.1.81 修复，待确认平板 lastSuccess。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。
 
