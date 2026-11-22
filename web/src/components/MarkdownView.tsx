@@ -19,6 +19,7 @@ import { mathEditingExtensions } from '../lib/writing/latex/editor_extensions/ma
 import { captureWritingState, restoreWritingState, snippetChangeEffects, writingOperation, snippetGroup, type WritingViewState } from '../lib/writing/editing';
 import { formatPaste } from '../lib/writing/format';
 import { contentClipboard } from '../lib/contentClipboard';
+import { adoptTouchSelection, softKeyboardScroll } from '../lib/touchEditing';
 import { documents } from '../lib/documents';
 import { defaultKeymap, indentWithTab } from '@codemirror/commands';
 import { search, searchKeymap } from '@codemirror/search';
@@ -132,24 +133,28 @@ export default function MarkdownView(props: MarkdownViewProps) {
     v.dispatch({ changes, ...restored,
       effects: [...(model?.text === next.text ? [adoptSyntaxModel.of(model)] : []),...(restored?.effects??snippetChangeEffects(v.state,changes))], annotations: externalUpdate.of(true) });
   };
+  // A touch long-press on an unfocused editor opens the menu without the soft
+  // keyboard; menu actions then keep it closed instead of focusing the editor.
+  const touchPress = useRef<{ focused: boolean } | null>(null);
+  const menuFocus = useRef(true);
   const insert = (text: string, caretOffset = text.length) => {
     const v = view.current;
     if (!v) return;
     const { from, to } = v.state.selection.main;
-    v.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + caretOffset } });
-    v.focus();
+    v.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + caretOffset }, scrollIntoView: true });
+    if (menuFocus.current) v.focus();
   };
   const copy = async () => {
     const v = view.current;
-    if (v) await clipboard.copy(v);
+    if (v) await clipboard.copy(v, false, { focus: menuFocus.current, menu: true });
   };
   const cut = async () => {
     const v = view.current;
-    if (v) await clipboard.copy(v, true);
+    if (v) await clipboard.copy(v, true, { focus: menuFocus.current, menu: true });
   };
   const paste = async () => {
     const v = view.current;
-    if (v) await clipboard.paste(v);
+    if (v) await clipboard.paste(v, { focus: menuFocus.current, menu: true });
   };
   const selectAll = () => {
     const v = view.current;
@@ -176,6 +181,15 @@ export default function MarkdownView(props: MarkdownViewProps) {
       context.tagMenu(tag.dataset.nativeTag!, e.nativeEvent, mode === 'reading' ? 'reading' : tag.closest('.cm-props') ? 'property' : 'editor');
       return;
     }
+    const pointerType = (e.nativeEvent as Partial<PointerEvent>).pointerType;
+    const touch = pointerType === 'touch' || (!pointerType && !!touchPress.current);
+    menuFocus.current = !touch || !!touchPress.current?.focused;
+    if (v && touch) {
+      adoptTouchSelection(v, e.clientX, e.clientY);
+      // The long-press itself focused the editor; the menu must not hand that
+      // focus back on close, which would raise the keyboard.
+      if (!menuFocus.current && v.hasFocus) v.contentDOM.blur();
+    }
     const captured = v?.state;
     const selection = captured?.selection.main;
     const linkElement = (e.target as Element).closest<HTMLElement>('[data-menu-link], a[href]');
@@ -189,7 +203,11 @@ export default function MarkdownView(props: MarkdownViewProps) {
     const protect = (items: RenderMenuItem[]): RenderMenuItem[] => items.map(item => ({ ...item,
       submenu: item.submenu && protect(item.submenu),
       onClick: item.onClick && (() => {
-        if (view.current?.state !== captured) { context.reportError?.('文档或选区已改变，请重新打开菜单'); return; }
+        // Focus/blur effects may replace the state; only content or selection changes make the menu stale.
+        const current = view.current?.state;
+        if (captured && (!current || current.doc !== captured.doc || !current.selection.eq(captured.selection))) {
+          context.reportError?.('文档或选区已改变，请重新打开菜单'); return;
+        }
         item.onClick?.();
       }),
     }));
@@ -296,7 +314,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
       selection: { anchor: initPos },
       extensions: [
         indentUnit.of('    '), EditorState.tabSize.of(4), editorPhrases, navigationExtensions, linkPreview,
-        editorSelection, editorDebugging, syntaxModel.init(() => p.analysis ?? analyzeMarkdown(p.snapshot.text, p.context.sourcePath, p.snapshot.version)), documentMetadata, embeddedFormulasField, blockModel,
+        editorSelection, editorDebugging, softKeyboardScroll, syntaxModel.init(() => p.analysis ?? analyzeMarkdown(p.snapshot.text, p.context.sourcePath, p.snapshot.version)), documentMetadata, embeddedFormulasField, blockModel,
         contextComp.of(renderContext.of(scopedContext)),
         clipboard.extension,
         extraComp.of(p.extensions ?? []),
@@ -396,6 +414,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
     mode !== 'source' ? 'is-live-preview live-preview' : '',
     mode === 'reading' ? 'is-reading-mode' : ''].join(' ');
   return <><div className={cls} data-document-id={snapshot.id} data-mode={mode} ref={host} onContextMenu={onContextMenu}
+    onPointerDownCapture={event => { touchPress.current = event.pointerType === 'touch' ? { focused: !!view.current?.hasFocus } : null; }}
     onMouseOver={event => {
       const tag = (event.target as Element).closest<HTMLElement>('[data-native-tag]');
       if (tag && !tag.contains(event.relatedTarget as Node | null)) context.tagHover?.(tag.dataset.nativeTag!, event.nativeEvent);

@@ -25,6 +25,7 @@ export interface RenderHarnessApi {
   mode: (slot: number, mode: MarkdownMode) => void;
   undo: (slot: number) => void;
   focus: (slot: number) => void;
+  view: (slot: number) => EditorView | null;
   closeSecondary: () => void;
   activeDocument: () => string | null;
   format: (mark: string) => void;
@@ -94,7 +95,7 @@ export default function RenderHarness() {
   }, [config]);
   const contexts = useMemo(() => sessions.map((session, slot): RenderContext => {
     const contextFor = (path: string): RenderContext => ({
-    bindEditor: registerEditor, navigationId: 'harness:' + slot, sourcePath: path, openLink: (target) => { links.current.push(slot + ':' + target); }, openMenu: () => {},
+    bindEditor: registerEditor, navigationId: 'harness:' + slot, sourcePath: path, openLink: (target) => { links.current.push(slot + ':' + target); }, openMenu: menu => useStore.getState().openContextMenu(menu),
     rawUrl: (target) => target, files: () => [], tags: async () => [], properties: async () => [],
     propertyTypes: () => ({}), setPropertyType: async () => ({}), renderEmbed: async target => {
       const parsed = parseLinkTarget(target);
@@ -152,7 +153,7 @@ export default function RenderHarness() {
       save: (slot) => sessions[slot].save(),
       undo: (slot) => { sessions[slot].undo(); },
       mode: (slot, mode) => setModes((previous) => previous.map((value, index) => index === slot ? mode : value)),
-      focus: (slot) => refs.current[slot]?.focus(), closeSecondary: () => setSecondary(false),
+      focus: (slot) => refs.current[slot]?.focus(), view: slot => refs.current[slot] ?? null, closeSecondary: () => setSecondary(false),
       activeDocument: () => getActiveEditor()?.dom.closest('[data-document-id]')?.getAttribute('data-document-id') ?? null,
       format: fmtInline, links: links.current, writes: writes.current,
       coords: (slot, position) => {

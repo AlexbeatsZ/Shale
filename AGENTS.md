@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-22 分支 `claude/intelligent-goldwasser-8f668d` 修复 Android 编辑器长按菜单粘贴无效、长按粘贴弹出键盘、键盘弹出时页面跳动（仅渲染器源码与回归，未构建发布、未装设备）。设计见 `docs/design/android-runtime.md`「Touch editing and soft keyboard」。
 - 2026-11-22 `android-v0.1.81` 预发布修复 Android 共享存储拒绝硬链接导致同步卡住。小米平板 6 Pro 正式包已原位升级到 0.1.81，STEM 首轮同步成功（revision 392，无冲突）。桌面 0.1.80 两份草稿（目标 67f7f43）仍未发布，未改动。
 - 2026-11-21 Shale 0.1.79 已发布（桌面 7 个资产、Android 2 个非调试 APK）。Mac 的 STEM 片段文件已更新，`mk` 插入 `\(\)`，`dm` 插入三行 `\[ … \]`。隔离 macOS 实包已用同一片段和格式化配置验证输入、保存及混合公式。应用只识别井号系列标题。Mac 日用安装仍为 0.1.76，其余设备的交互和配置同步待实测。设计 `docs/design/native-math.md`、`docs/design/native-writing.md`。
 - 2026-11-21 Shale 0.1.78 桌面与 Android 已发布。LaTeX 公式源码括号按正确配对的嵌套深度循环六色，错误标红并加波浪下划线。macOS 实包已验收，Windows 和 Android 安装包已验证构建与身份。
@@ -31,6 +32,7 @@
 - Mac 数据目录为 `~/Library/Application Support/@webobsidian/desktop`，服务日志为 `logs/server.log`。历史安装包从 GitHub Release 取回。历史 Release、永久密钥、SDK/依赖缓存与用户数据各在原归属位置。
 
 ## Active Work
+- 小米平板 6 Pro 待实机验收长按菜单粘贴/复制、不弹键盘和键盘弹出不跳动（用户要求先看结果再部署）。WebView 中 `navigator.clipboard.read()` 的实际行为未在设备确认，已有超时回退原生桥。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。
@@ -71,10 +73,13 @@
 
 - 改名 Shale 后 Windows NSIS(同 appId)会沿用旧安装目录 `%LOCALAPPDATA%\Programs\WebObsidian`,其中可执行文件变为 `Shale.exe`,不会出现 `Programs\Shale`。数据目录取自 package `name`(Mac `~/Library/Application Support/@webobsidian/desktop`),改 productName 不影响。
 
+- Android Chromium 长按会先选中词并聚焦 `.cm-content`，再发 `contextmenu`（PointerEvent，`pointerType: touch`）；键盘弹出缩小 WebView 后一帧，浏览器原生焦点滚动可能反向滚进未测量行。改动编辑器菜单、焦点恢复或滚动时运行 `tests/browser/touch-editing.spec.ts`。真实手势可用本机模拟器 Chrome + `adb input` + CDP（`adb forward tcp:9333 localabstract:chrome_devtools_remote`）复现，正式包 WebView 不可调试。
+
 - Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。
 
 ## Docs Index
 - 打字时忽略触控板点击 → `docs/design/typing-pointer-guard.md`。
+- Android 触摸编辑（长按菜单选区、键盘焦点、软键盘滚动）→ `docs/design/android-runtime.md`。
 - 桌面网页浏览与用户脚本 → `docs/design/web-viewer.md`、`docs/design/browser-userscripts.md`。
 - PowerPoint与共用分页阅读 → `docs/design/presentation-viewer.md`、`document-navigation.md`、`document-media-theme.md`。
 - `docs/design/`:模块设计文档。Callout 颜色/图标 → `callout-styles.md`;Callout 布局 → `callout-lists.md`;源码展开语法灰色 → `source-reveal.md`;`\\( \\)`/`\\[ \\]` 公式 → `native-math.md`;内容引用与嵌入控件 → `content-references.md`;公式编号、嵌入实例与引用编号解析 → `native-equations.md`。

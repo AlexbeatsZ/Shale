@@ -4,7 +4,14 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-21 (TeX 公式补全与井号标题)
+Cập nhật lần cuối: 2026-11-22 (Android 长按菜单粘贴与软键盘)
+
+### Android 触摸编辑修复 (2026-11-22)
+
+- [x] 编辑器长按菜单采用长按选中的词，粘贴/复制/剪切作用于该位置；异步读剪贴板期间的焦点/装饰事务不再让粘贴失效，Android 异步剪贴板挂起或为空时回退原生桥。浏览器与单元回归、模拟器真实手势验证通过。
+- [x] 长按前编辑器未获焦时，菜单操作不聚焦编辑器、不弹软键盘。
+- [x] 软键盘缩小 WebView 后撤销浏览器原生焦点滚动，按 CodeMirror 最小距离露出光标。
+- [ ] 小米平板 6 Pro 实机验收（未构建发布）。
 
 ### LaTeX 括号着色 (PRD 1.49)
 
@@ -721,6 +728,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-22 修复 Android 编辑器长按菜单粘贴无效、长按粘贴弹出键盘和键盘弹出时页面跳动。仅源码与回归，未发布、未装设备。
 
 - 2026-11-21 (PRD 1.50) TeX 定界符支持从空模板触发公式片段，默认格式化保留两种写法。标题只用井号。607 项单元、56 项浏览器回归和带 STEM 片段的 macOS 隔离实包通过，桌面及 Android 0.1.79 已发布。
 
