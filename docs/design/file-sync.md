@@ -89,7 +89,9 @@ On Android, the sole embedded runtime owns its private sync-state directory.
 A process-local lock keyed by that directory serializes recovery, sync and
 conflict resolution across engine instances. Android may terminate the process
 without cleanup or reassign its PID to another app, so legacy PID lock files
-are ignored in the embedded runtime. Desktop and standalone hosts continue to
+are ignored in the embedded runtime. Android shared storage (FUSE) rejects hard
+links, so creating a file that does not exist yet uses `createWithoutReplace`: link
+first, then an existence check plus rename inside the per-path write queue. Desktop and standalone hosts continue to
 coordinate through the disk lock.
 
 Conflicts never choose newest timestamp or insert markers into working notes. Retain

@@ -42,11 +42,29 @@ async function writeBytes(absolutePath: string, bytes: Buffer, baseRevision?: st
     try {
       await fs.writeFile(temporary, bytes);
       if (createOnly) {
-        try { await fs.link(temporary, absolutePath); }
+        try { await createWithoutReplace(temporary, absolutePath); }
         catch (error: any) { if (error.code === 'EEXIST') throw Object.assign(new Error('File already exists; existing content preserved'), { status: 409 }); throw error; }
       } else await fs.rename(temporary, absolutePath);
     } finally { await fs.unlink(temporary).catch(() => {}); }
   });
+}
+
+/**
+ * Publish a staged file without replacing an existing one. Hard links give an atomic
+ * exclusive create, but Android shared storage (FUSE) rejects link() with EACCES/EPERM,
+ * so fall back to an existence check plus rename. Callers hold withFileWrite for the path.
+ */
+export async function createWithoutReplace(temporary: string, target: string): Promise<void> {
+  try { await fs.link(temporary, target); return; }
+  catch (error) {
+    if (!['EACCES', 'EPERM', 'ENOSYS', 'ENOTSUP', 'EOPNOTSUPP', 'EXDEV'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
+  }
+  try { await fs.lstat(target); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    await fs.rename(temporary, target); return;
+  }
+  throw Object.assign(new Error('File already exists'), { code: 'EEXIST' });
 }
 
 export async function withFileWrite(absolutePath: string, work: () => Promise<void>): Promise<void> {
@@ -87,7 +105,7 @@ export async function writeFileFromSource(absolutePath: string, source: string |
       const handle = await fs.open(temporary, 'r+');
       try { await handle.sync(); } finally { await handle.close(); }
       await assertExpected();
-      if (expected === null) await fs.link(temporary, absolutePath);
+      if (expected === null) await createWithoutReplace(temporary, absolutePath);
       else await fs.rename(temporary, absolutePath);
     } finally { await fs.unlink(temporary).catch(error => { if (error.code !== 'ENOENT') throw error; }); }
   });

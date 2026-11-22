@@ -31,7 +31,7 @@
 
 ## Active Work
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
-- 小米平板 6 Pro 的 STEM 仍有 19 项文件版本冲突，等待用户选择。原同步配置及冲突两版已保留。
+- 小米平板 6 Pro 已按用户选择采用服务器版本解决 19 项冲突；随后因共享存储拒绝硬链接卡在 369 个新文件，0.1.81 修复，待确认平板 lastSuccess。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。
 
@@ -70,6 +70,8 @@
 - Android 构建前先 `node android/scripts/prepare.mjs` 刷新 `.gen`，否则 APK 用旧前端；仅手机包时 `./gradlew :app:assembleRelease -x requireTabletKey`。
 
 - 改名 Shale 后 Windows NSIS(同 appId)会沿用旧安装目录 `%LOCALAPPDATA%\Programs\WebObsidian`,其中可执行文件变为 `Shale.exe`,不会出现 `Programs\Shale`。数据目录取自 package `name`(Mac `~/Library/Application Support/@webobsidian/desktop`),改 productName 不影响。
+
+- Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。
 
 ## Docs Index
 - 打字时忽略触控板点击 → `docs/design/typing-pointer-guard.md`。
