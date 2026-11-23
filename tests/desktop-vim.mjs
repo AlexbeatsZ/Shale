@@ -46,13 +46,31 @@ try {
     const settings = await response.json(); window.dispatchEvent(new CustomEvent('settings-changed', { detail: settings }));
   }, ui);
   const settled = async () => expect(view).not.toHaveAttribute('data-vim-input-pending');
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: '编辑器', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: '启用 Vim', exact: true })).not.toBeChecked();
+  await page.getByRole('checkbox', { name: '启用 Vim', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: '启用 Vim', exact: true })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: '自动切换输入法', exact: true })).toBeChecked();
+  await page.keyboard.press('Escape'); await content.focus();
+  await page.keyboard.press('i'); await settled();
   await native('select', chineseState);
+  await page.keyboard.press('Escape'); await settled();
   await settings({ vimEnabled: true, vimInputMethod: true });
   await expect(view).toHaveAttribute('data-vim-mode', 'normal'); await settled();
   await expect.poll(async () => (await native('get')).source).toBe(englishID);
   await page.keyboard.press('i'); await expect(view).toHaveAttribute('data-vim-mode', 'insert'); await settled();
   await expect.poll(async () => (await native('get')).source).toBe(chinese.id);
   if (process.platform === 'win32') assert.equal((await native('get')).open, true);
+  if (process.env.VIM_OS_KEYS) {
+    // Optional OS-level composition acceptance. CGEvent goes through the actual
+    // input method, unlike Chromium's synthetic text insertion.
+    const keys = process.platform === 'darwin' ? ['45', '34', '4', '0', '31', '49'] : ['78', '73', '72', '65', '79', '32'];
+    await run(process.env.VIM_OS_KEYS, [String(pid), ...keys]);
+    await expect(content).toContainText('你好');
+    await page.keyboard.press('Escape'); await settled(); await page.keyboard.press('u');
+    await page.keyboard.press('i'); await settled();
+  }
   await page.keyboard.insertText('中文测试');
   await page.keyboard.press('Escape'); await settled();
   await expect.poll(async () => (await native('get')).source).toBe(englishID);
