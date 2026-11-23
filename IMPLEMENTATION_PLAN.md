@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-22 (同文件跨平台快捷键与 7 级标题)
+Cập nhật lần cuối: 2026-11-22 (原生菜单取消预设快捷键)
+
+### 原生菜单快捷键归设置管理 (PRD 1.54)
+
+- [~] 原生菜单零隐藏默认键、动作进入设置且默认不分配；释放 Command+R/M/Q，按授权调整 STEM 的移动文件和 Mac 设置键；实包验证并发布/升级。
 
 ### 同文件跨平台快捷键 (PRD 1.53)
 

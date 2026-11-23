@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.53 · Cập nhật: 2026-11-22 · Trạng thái: Draft
+> Phiên bản: 1.54 · Cập nhật: 2026-11-22 · Trạng thái: Draft
+> Changelog 1.54 (原生菜单快捷键归设置管理) 桌面菜单不注册 Electron/macOS 默认快捷键；重新加载、强制重新加载、开发者工具、窗口缩放/全屏/最小化/隐藏/退出等动作进入同一命令目录和快捷键设置，默认未分配。已有用户快捷键与跨平台主修饰键保留；撤销仍为 Ctrl/Command+Z，重做为独立动作。应用可释放的隐藏/最小化/退出组合不再触发自动 Control 回退；仅系统接管的切应用/Spotlight/同应用窗口切换保留回退。按用户要求从 STEM 的移动文件移除多余 Ctrl+Shift+M，Mac 设置入口覆盖为实体 Control+反引号。设计见 docs/design/hotkeys.md。
 > Changelog 1.53 (同文件跨平台快捷键) 快捷键统一存放 `.obsidian/webobsidian/hotkeys.jsonc` 并沿用原生文件同步；通用 Ctrl/Mod 在 macOS 优先解析为 Command，`PhysicalCtrl` 明确表示实体 Control。Windows/Linux/Android 继续使用 Ctrl。允许同一文件按命令设置 Windows 与 Mac 覆盖，设置页并排编辑两端、多组绑定、禁用与继承；已存在的统一文件优先，旧本机与 Obsidian 配置只在首次迁移读取。修复编辑器、剪贴板与原生命令的 Command 默认值；系统保留组合才回退 Control。设计见 docs/design/hotkeys.md。
 > Changelog 1.52 (用户脚本更新与卸载) 修复 Electron 33 下 GitHub 更新地址重定向失败；所有脚本、资产和 GM 请求逐跳检查 URL 与权限。卸载脚本直接删除源码、缓存、授权和 GM 数据，不再询问是否保留；加载旧存储时清理已卸载脚本的残留值与身份索引，保留仍安装脚本的数据。标签快速交换只作用于两个单独页面，分屏组内未被拖到的页面保持原位；拖动分屏组的留白/图标不能与单页交换，停留插入仍可整体移动分屏组。设计见 docs/design/browser-userscripts.md、workspace-sidebars.md。
 > Changelog 1.51 (标签排序/交换、分屏分隔线与侧栏吸附) 拖动标签时快速松手与目标交换位置（紫框），在目标上停留约 0.45 秒后目标及其后的标签让出空位并显示被拖标签的虚影，松手插到目标之前；拖到末尾空白处移到最后。分屏组作为一个整体参与排序和交换；普通标签快速放到可见分屏组的组员上仍放入该栏。触控屏长按约 0.35 秒提起标签后拖动，长按不动松手打开标签菜单，提起前移动仍滚动标签栏。两栏之间显示 1px 分隔线：拖动调整比例（设备本地保存），双击/双击触摸交换两页。侧栏拖动宽度时可吸附到左右分屏的分隔线，吸附后随分隔线移动。页面与面板滚动条隐藏，侧栏去掉阴影和半透明。设计见 docs/design/workspace-sidebars.md。

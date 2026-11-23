@@ -75,7 +75,7 @@ export default function HotkeySettings() {
   };
   return <div className="hotkey-settings">
     <h2>快捷键</h2>
-    <p className="setting-description">Windows 和 Mac 共用一份随仓库同步的快捷键。Mac 默认跟随 Windows：Ctrl → Command，Alt → Option；系统保留组合自动改用 Control。Mac 单独设置后保持独立。</p>
+    <p className="setting-description">Windows 和 Mac 共用一份随仓库同步的快捷键。Mac 默认跟随 Windows：Ctrl → Command，Alt → Option；系统接管的切应用、窗口切换等组合改用 Control；应用菜单动作默认不分配按键。Mac 单独设置后保持独立。</p>
     <p className="setting-description">文字录入：Ctrl+K 表示通用主修饰键，Command+K 明确使用 Command，Control+K 明确使用实体 Control。支持多组按键；空列表禁用。Windows 列也用于 Linux / Android 外接键盘。</p>
     <div className="hotkey-toolbar">
       <div className="hotkey-search"><Icon name="search" size={16} /><input ref={search} type="search" value={query} placeholder="搜索命令、ID 或快捷键…" aria-label="搜索快捷键" onChange={event => setQuery(event.target.value)} /></div>

@@ -1,3 +1,4 @@
+import { desktopActionCommands } from './desktopActions';
 import { useStore } from './store';
 import { showReviews } from './review/client';
 import { api } from './api';
@@ -21,6 +22,7 @@ function setMode(mode: 'live' | 'reading' | 'source' | 'toggle-preview' | 'toggl
     : mode === 'toggle-source' ? (state.viewMode === 'source' ? 'live' : 'source') : mode);
 }
 export const nativeCommands: NativeCommand[] = [
+  ...desktopActionCommands,
   { id: 'debug:toggle', title: '调试：开启或关闭记录', run: () => { const state = debugStatus(); return updateDebug(!state.enabled, state.source); } },
   { id: 'debug:capture', title: '调试：记录当前现场', run: async () => {
     if (!debugStatus().enabled) throw new Error('请先开启调试记录');

@@ -1,3 +1,4 @@
+import { desktopActions } from '../../../desktop/src/bridge';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -43,6 +44,7 @@ function fixture(platform = 'win32') {
       setUserAgent: vi.fn(),
       send: vi.fn(),
       setWindowOpenHandler: vi.fn(),
+      reload: vi.fn(),
     });
     close = vi.fn(() => {
       const event = { preventDefault: vi.fn() };
@@ -61,9 +63,14 @@ function fixture(platform = 'win32') {
   }
   const moduleExports: Record<string, any> = {};
   const electron = { app: application, BrowserWindow: FakeWindow, ipcMain: ipc, dialog: { showErrorBox, showMessageBox }, shell: { openExternal } };
+  const actionExports: Record<string, any> = {};
+  const actionSource = fileURLToPath(new URL('../../../desktop/src/nativeActions.ts', import.meta.url));
+  runInNewContext(transpileModule(readFileSync(actionSource, 'utf8'), { compilerOptions: { module: ModuleKind.CommonJS, target: ScriptTarget.ES2022 } }).outputText, {
+    exports: actionExports, require: (id: string) => id === 'electron' ? electron : { desktopActions }, process: { platform },
+  });
   runInNewContext(compiled + '\nexports.fixture = { createWindow, requestWindowClose, initialize: (launcher, server) => { serverPort = 8787; serverProcess = server; registerDesktopRequests(); mcpLauncher = launcher; } };', {
     exports: moduleExports,
-    require: (id: string) => id === 'electron' ? electron : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
+    require: (id: string) => id === 'electron' ? electron : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
     process: { platform, arch: 'x64', execPath: 'WebObsidian' },
     __dirname: fileURLToPath(new URL('../../../desktop/src', import.meta.url)),
     URL, Buffer, setTimeout, clearTimeout, console,
@@ -85,6 +92,16 @@ function fixture(platform = 'win32') {
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
 
 describe('desktop close coordinator against the production main implementation', () => {
+  it('allows only enumerated desktop actions from the local main frame', () => {
+    const host = fixture('darwin'), frame = host.window.webContents.mainFrame;
+    for (const event of [{ sender: {}, senderFrame: frame }, { sender: host.window.webContents, senderFrame: { url: frame.url } }])
+      expect(() => host.invoke('desktop:action', event, 'app:reload')).toThrow('Local application frame required');
+    const current = { sender: host.window.webContents, senderFrame: frame };
+    expect(() => host.invoke('desktop:action', current, 'unknown-action')).toThrow('Unsupported desktop action');
+    host.invoke('desktop:action', current, 'app:reload');
+    expect(host.window.webContents.reload).toHaveBeenCalledOnce();
+  });
+
   it('still waits for the application to save after a guest frame starts loading', async () => {
     const host = fixture('darwin');
     host.window.webContents.emit('did-start-loading');

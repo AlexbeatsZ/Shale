@@ -31,10 +31,14 @@ it('keeps one serialized file portable across platform reads and honors independ
 
 it('uses Control only for reserved inherited Mac combinations and preserves explicit platform choices', () => {
   const prefs = emptyHotkeys();
-  for (const combination of ['Ctrl+H', 'Ctrl+M', 'Ctrl+Q', 'Ctrl+Tab', 'Ctrl+Space', 'Ctrl+Alt+H']) {
+  for (const combination of ['Ctrl+Tab', 'Ctrl+Space', 'Ctrl+Alt+Space', 'Ctrl+`']) {
     const defaults = [bindingFromString(combination)!];
     expect(resolveHotkeys(prefs, 'test', defaults, true)[0].modifiers).toContain('PhysicalCtrl');
     expect(resolveHotkeys(prefs, 'test', defaults, false)).toEqual(defaults);
+  }
+  for (const combination of ['Ctrl+R', 'Ctrl+H', 'Ctrl+M', 'Ctrl+Q', 'Ctrl+Alt+H']) {
+    const binding = bindingFromString(combination)!;
+    expect(resolveHotkeys(prefs, 'test', [binding], true)).toEqual([binding]);
   }
   prefs.platforms = { mac: { test: [bindingFromString('Command+H')!] } };
   expect(hotkeyLabel(resolveHotkeys(prefs, 'test', [], true)[0], true)).toBe('⌘ + H');

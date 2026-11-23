@@ -87,7 +87,7 @@ export function hotkeyLabel(binding: Hotkey, mac = false): string {
   return [...physicalHotkey(binding, mac).modifiers.map(mod => mod === 'Meta' && mac ? '⌘'
     : mod === 'PhysicalCtrl' ? mac ? 'Control' : 'Ctrl' : mac && mod === 'Alt' ? 'Option' : mod), binding.key].join(' + ');
 }
-const macReserved = new Set(['Meta+h', 'Meta+Alt+h', 'Meta+m', 'Meta+q', 'Meta+Tab', 'Meta+Shift+Tab', 'Meta+Space', 'Meta+Alt+Space'].map(value => value.toLowerCase()));
+const macReserved = new Set(['Meta+Tab', 'Meta+Shift+Tab', 'Meta+Space', 'Meta+Alt+Space', 'Meta+`', 'Meta+Shift+`'].map(value => value.toLowerCase()));
 export function isReservedMacHotkey(binding: Hotkey): boolean {
   return macReserved.has(hotkeySignature(binding, true).toLowerCase());
 }

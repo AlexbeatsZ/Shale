@@ -1,3 +1,4 @@
+import { performDesktopAction } from './nativeActions';
 import { app, BrowserWindow, Menu, dialog, ipcMain, shell, safeStorage, clipboard, type IpcMainEvent, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron';
 import { configureWebViewer } from './webViewer';
 import { UserscriptService } from './userscripts/service';
@@ -239,7 +240,7 @@ function createWindow(starting = false): void {
   mainWindow.webContents.setUserAgent(`${mainWindow.webContents.getUserAgent()} WebObsidianDesktop`);
   configureWebViewer(mainWindow.webContents, () => serverPort, guest => userscripts?.attach(guest));
 
-  // Retain native actions/accelerators behind F10, without a visible menu row.
+  // Retain menu access behind F10, without a visible menu row or native accelerators.
   if (process.platform !== 'darwin') mainWindow.setMenuBarVisibility(false);
 
   mainWindow.webContents.on('will-navigate', (event, url) => {
@@ -333,7 +334,7 @@ function buildMenu(): void {
         { label: "打开数据文件夹", click: () => shell.openPath(DATA_DIR()) },
         { label: "打开日志", click: () => shell.openPath(LOG_FILE()) },
         { type: 'separator' },
-        isMac ? { role: 'close', label: '关闭窗口', accelerator: 'CmdOrCtrl+Shift+W' } : { role: 'quit', label: '退出' },
+        isMac ? { role: 'close', label: '关闭窗口' } : { role: 'quit', label: '退出' },
       ],
     },
     {
@@ -370,7 +371,7 @@ function buildMenu(): void {
       label: "窗口",
       submenu: [
         { role: 'minimize', label: '最小化' },
-        ...(isMac ? [{ role: 'zoom' as const, label: '缩放' }, { role: 'close' as const, label: '关闭窗口', accelerator: 'CmdOrCtrl+Shift+W' },
+        ...(isMac ? [{ role: 'zoom' as const, label: '缩放' }, { role: 'close' as const, label: '关闭窗口' },
           { type: 'separator' as const }, { role: 'front' as const, label: '全部置于顶层' },
           { role: 'window' as const, label: '窗口' }] : [{ role: 'close' as const, label: '关闭窗口' }]),
       ],
@@ -385,7 +386,24 @@ function buildMenu(): void {
       ],
     },
   ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  const roleCommands: Partial<Record<NonNullable<MenuItemConstructorOptions['role']>, DesktopCommand>> = {
+    undo: 'editor:undo', redo: 'editor:redo', cut: 'native:cut', copy: 'native:copy', paste: 'native:paste',
+    pasteAndMatchStyle: 'native:paste-plain', delete: 'native:delete', selectAll: 'native:select-all',
+    reload: 'app:reload', forceReload: 'app:force-reload', toggleDevTools: 'app:toggle-devtools',
+    resetZoom: 'app:reset-zoom', zoomIn: 'app:zoom-in', zoomOut: 'app:zoom-out', togglefullscreen: 'app:toggle-fullscreen',
+    minimize: 'app:minimize', zoom: 'app:zoom-window', close: 'workspace:close-window', quit: 'app:quit',
+    hide: 'app:hide', hideOthers: 'app:hide-others', unhide: 'app:unhide', front: 'app:bring-to-front',
+    startSpeaking: 'native:start-speaking', stopSpeaking: 'native:stop-speaking',
+  };
+  const withoutShortcuts = (items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] => items.map(item => {
+    const id = item.role ? roleCommands[item.role] : undefined;
+    const next = { ...item, accelerator: '' };
+    // A native role's selector can execute before click on Mac; remove it for catalog actions.
+    if (id) { delete next.role; next.id = id; next.click = command(id); }
+    if (Array.isArray(item.submenu)) next.submenu = withoutShortcuts(item.submenu);
+    return next;
+  });
+  Menu.setApplicationMenu(Menu.buildFromTemplate(withoutShortcuts(template)));
 }
 
 // Only the local app's top-level frame may operate native desktop chrome.
@@ -424,6 +442,12 @@ function registerTitleBar(): void {
 // App lifecycle
 // ---------------------------------------------------------------------------
 function registerDesktopRequests(): void {
+  ipcMain.handle('desktop:action', (event, action: unknown) => {
+    const window = desktopWindow(event);
+    if (!window) throw new Error('Local application frame required');
+    performDesktopAction(window, action);
+  });
+
   const mcp = mcpLauncher = new McpLauncher({
     runtimeDir: path.join(app.getPath('userData'), 'mcp'),
     binary: path.join(app.isPackaged ? path.join(process.resourcesPath, 'mcp-tunnel')

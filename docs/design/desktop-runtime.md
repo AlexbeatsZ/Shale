@@ -2,14 +2,23 @@
 
 ## macOS personal signing
 
-`mac.sign` explicitly calls the existing @electron/osx-sign dependency with an
-ad-hoc `-` identity and validates the complete app using codesign deep/strict
-before DMG/ZIP creation. The default identity lookup in electron-builder25.1.8
-does not interpret `mac.identity=-` as ad-hoc and silently skips signing; an
-arm64 linker signature alone lacks the resource seal and is insufficient.
-The explicit signer uses no keychain certificate, timestamp or provisioning
-profile. These are personal sideload builds, without Developer ID/notarization;
-Gatekeeper acceptance is separate from codesign structural validity.
+`mac.sign` calls the existing @electron/osx-sign dependency with the fixed
+`Local Development Code Signing` certificate and keeps bundle identifier
+`com.xnohat.webobsidian`. Deep/strict verification and `codesign -d -r-` must
+confirm a `certificate leaf`. These are local certificate signatures without
+Developer ID/notarization. Do not restore the historical ad-hoc signer.
+
+## Native commands and shortcuts
+
+The finite `desktopActions` catalog in `desktop/src/bridge.ts` is shared by the
+renderer command palette/settings and the validated main-frame IPC bridge.
+Native menu actions forward to this same command path; every app-owned menu
+item explicitly has an empty accelerator, disabling Electron's implicit role
+shortcuts. Reload, devtools, zoom, fullscreen, hide, minimize, close and quit
+start unassigned. The user can bind Windows/Mac keys through the synchronized
+Vault hotkey file. Standard text editing stays with the existing editor/clipboard
+owners. Native reload first flushes DocumentRegistry sessions; closing/quitting
+still follows the existing save/acknowledgement barrier. See `hotkeys.md`.
 
 ## Standalone server contract
 

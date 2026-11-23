@@ -13,10 +13,10 @@ This supersedes the 2026-11-06 literal-Control policy.
   `[]` disables, and clearing an override restores inheritance. Both columns are editable on
   any host through recording or textual combinations. Platform edits never rewrite the other map.
 - Inherited portable bindings that hit macOS reserved Hide, Hide Others, Minimize, Quit,
-  application switcher or Spotlight combinations use PhysicalCtrl instead. Explicit Mac overrides
+  application switcher or Spotlight combinations use PhysicalCtrl instead (superseded by PRD 1.54 below for app-owned menu combinations). Explicit Mac overrides
   are literal choices and remain visible, including a warning for a reserved system combination.
   Ordinary editor Command shortcuts retain CodeMirror's native platform behavior.
-  Native Close Window uses Command+Shift+W, leaving Command+W to the configurable tab command.
+  PRD 1.54 removes the native Close Window binding too; Command+W belongs to the configurable tab command.
 - Existing local settings/Obsidian hotkeys/writing imports seed the file only when absent;
   once present, the file wins on every read, reload and synchronization. Invalid bytes fail closed.
   Concurrent writes use the current revision and serialize locally; stale callers receive 409.
@@ -41,6 +41,27 @@ Example (one file on both devices):
   "migration": ""
 }
 ```
+
+## Native menu actions without hidden defaults (2026-11-22, PRD 1.54)
+
+- Every app-owned desktop menu item has `accelerator: ''`. Electron 33.4.11's
+  `menu.ts` only falls back to the role accelerator when the value is nullish;
+  an empty string disables that fallback. Do not use undefined/null for this.
+- Native maintenance/window/application actions share `desktopActions` with the
+  renderer catalog. They have no assigned bindings. Menu clicks dispatch through
+  the same command path; guarded main-frame IPC performs only the enumerated action.
+  Normal editor undo/redo and standard clipboard behavior keep their existing owners;
+  there is no second native-menu shortcut dispatch bypassing configured bindings.
+- Reload/force reload reuse saveWorkspaceBeforeExit to persist all document sessions
+  and workspace layout, rejecting pending edits, mutations or failed writes. Exit/close use the existing close gate.
+- Mac Command+H/M/Q and Option+Command+H are freed from app-owned menu defaults;
+  inherited Ctrl therefore becomes Command for these too. True system shortcuts
+  Command+Tab/Space/backtick remain physical-Control fallbacks. Explicit Mac choices
+  remain user-owned. No system/global keyboard preferences are changed.
+- Personal configuration change authorized by the user: move retains Ctrl+M and
+  drops its Ctrl+Shift+M alternative; Mac settings uses PhysicalCtrl+backtick.
+  Existing left-sidebar Ctrl+Shift+Z stays, so default redo loses to it in app dispatch;
+  native menu redo can no longer steal it. Undo Ctrl/Command+Z is unchanged.
 
 ## Vault identity follow-up (2026-10-23)
 
