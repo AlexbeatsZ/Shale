@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-22 Mac 已拉取 main 的 968f890 并构建桌面 0.1.80，`/Applications/Shale.app` 原位部署并启动，含下述同步与标签/分屏更新。网页浏览实包回归完整重跑通过（首轮侧栏地址栏焦点断言偶发失败）；签名改用固定 `Local Development Code Signing`，identifier 保持 `com.xnohat.webobsidian`，`codesign -d -r-` 含 `certificate leaf`，安装后 strict 校验及 `/healthz` 通过。仅本机部署，未发布新版 Release；真实同步冲突与触控仍待实机验收。
 - 2026-11-22 标签栏拖动（快速松手交换、停留插入并显示空位虚影、分屏组整体移动、触控长按提起）、分屏 1px 分隔线（拖动调比例、双击交换）、侧栏宽度吸附分隔线、隐藏滚动条并去掉侧栏阴影/半透明（PRD 1.51）。源码与回归已通过，未打包发布，Android 触控待实机验收。设计 `docs/design/workspace-sidebars.md`。
 - 2026-11-22 原生同步：首连时本机已同步过的旧文件自动追上服务器，文本两边改不同段落自动合并（共用 MCP 的 `mergeReview`）。剩余冲突在文件树（冲突分组+A/M/D）、状态栏一键同步与编辑器内 MCP 同款逐块审阅中处理。源码已提交，未构建发布、未部署。设计 `docs/design/file-sync.md`。
 - 2026-11-22 `android-v0.1.81` 预发布修复 Android 共享存储拒绝硬链接导致同步卡住。小米平板 6 Pro 正式包已原位升级到 0.1.81，STEM 首轮同步成功（revision 392，无冲突）。桌面 0.1.80 两份草稿（目标 67f7f43）仍未发布，未改动。
