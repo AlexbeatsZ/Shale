@@ -29,3 +29,13 @@ Scope: PRD 1.53; desktop 0.1.83, temporary Vaults/profiles only.
 - The final Mac WebViewer repeat initially lost the sidebar address focus while another
   temporary Electron keyboard fixture ran concurrently. A serialized complete repeat passed.
   Run native keyboard/focus fixtures sequentially.
+
+## Daily Mac deployment follow-up
+
+User authorized replacement: /Applications/Shale.app upgraded 0.1.82 -> 0.1.83,
+fixed certificate/identifier deep-strict validation passed, STEM opened and actual
+/healthz returned ok. Temporary previous bundle removed. The current hotkey API
+returned 77 binding overrides and no platform overrides. Real effective fallbacks:
+move Ctrl+M -> Mac physical Control+M; toggle-source Ctrl+Q -> Control+Q.
+Further conflicts remain visible in the project Active Work; they were not silently
+changed during deployment (native reload/window cycling and custom/default collisions).
