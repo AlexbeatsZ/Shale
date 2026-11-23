@@ -8,9 +8,10 @@ Cập nhật lần cuối: 2026-11-23 (Shale 完整身份迁移)
 
 ### Shale 完整身份迁移 (PRD 1.57)
 
-- [~] 仓库、包名/原生身份、Vault 配置与旧数据迁移；保留第三方兼容 ID 与来源。
-- [ ] 单元、生产构建、Mac/Windows 实包及 Android 构建验证，发布新版本。
-- [ ] Mac/OMEN/ROG 与在线 Android 迁移根目录、应用数据、MCP 和同步启动入口并验收。
+- [x] 仓库、包名/原生身份、Vault 配置与旧数据迁移；保留第三方兼容 ID 与来源。
+- [x] 单元、生产构建、Mac/Windows 实包及 Android 构建验证，桌面/Android 0.1.87 和同步服务 0.3.0 已发布。
+- [x] Mac/OMEN/ROG 与两台 Android 的根目录、应用数据、MCP 和同步启动入口已迁移；Mac 实同步通过，OMEN/Android healthz200。
+- [ ] 用户明确延后的 Android 完整同步/界面验收、OMEN 5 项配置冲突审阅，以及云端 MCP 网关429后的连接复验。旧 Android 包保留待新包验收后再确认清理。
 
 ### Vim 光标颜色 (PRD 1.56)
 

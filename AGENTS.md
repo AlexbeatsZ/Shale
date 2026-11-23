@@ -10,10 +10,11 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-23 正在完成完整 Shale 身份迁移（PRD 1.57）。GitHub 已改名 `AlexbeatsZ/Shale`；本机源码为 `/Users/meta/Developer/Shale`。
-- 目标版本桌面/Android 0.1.87，独立同步服务 0.3.0。桌面 identifier 和 Android applicationId=`io.github.alexbeatsz.shale`；桌面 profile=`<appData>/Shale`，Vault 配置=`.shale/`，原生同步默认=`/shale-sync/v1/`。Mac 固定 `Local Development Code Signing`，Windows 安装 GUID 沿用既有值以避免重复卸载项。Mac 钥匙串旧密钥已保留到 Shale 服务，正式包内含有签名迁移助手。
-- 用户明确授权同时改名 Mac/Windows 笔记父目录为 `Shale`，更新 MCP/原生同步/启动路径；迁移时同步移动 workspace、用户脚本与同步检查点的作用域身份，保留笔记、设置、认证和历史。遇到冲突保留双方并停止。设计见 `docs/design/identity-migration.md`。
-- 截至本条，640 单元、6 项旧数据迁移与三端类型检查、生产构建通过；新原生包/跨设备部署/Release 验收仍进行中。Mac 日用上次已安装 0.1.86，Windows 日用最后交付记录为 0.1.72，Android 平板最后已安装 0.1.81；不能把新源码等同于设备已升级。
+- 2026-11-23 完成 Shale 完整身份迁移（PRD 1.57）：仓库 `AlexbeatsZ/Shale`；Mac 主检出 `/Users/meta/Developer/Shale`，OMEN 主检出 `C:\Users\Meta\Project\Workspaces\Shale`，旧主目录已不存在。
+- 桌面/Android 0.1.87、同步服务 0.3.0 已公开发布（桌面 7 资产/latest，Android 新包 1 生产 APK/预发布，同步 ZIP/TAR/BUILD-INFO 3 资产）。原生 identifier/applicationId=`io.github.alexbeatsz.shale`；profile=`<appData>/Shale`，Vault 配置=`.shale/`，同步=`/shale-sync/v1/`。Windows 沿用安装 GUID；Mac 固定证书与钥匙串迁移助手，certificate leaf/deep/strict 通过。
+- Mac/OMEN/ROG 日用安装 0.1.87，笔记父目录与数据/启动引用已迁移；Mac 本地服务/原生同步完成、0 冲突，OMEN healthz200。ROG 桌面保持未选 Vault，ShaleNativeSync 服务 0.3.0 正常。K70/小米平板 6 Pro 新包及私有数据迁移、原生启动/healthz200 已完成，旧包 disabled-user 保留；用户明确要求完整设备同步/界面验收稍后。
+- 640 单元、7 迁移、33 相关浏览器（MCP 10 复验）、插件旧 ABI 夹具、13 同步服务+2 解压包+17 客户端、三端类型/生产构建、Mac WebViewer/MCP 实包与 Windows/Android 构建通过。现有云端 MCP 只读复验遇网关429，未宣称外部连接验收完成。报告 `tests/reports/identity-migration-20261123.md`。
+- OMEN 有 5 个迁移前配置差异的冲突（appearance/bookmarks/hotkeys/Hider.css/Theme.css），两版已保留待审阅；没有覆盖用户配置。恢复状态见 `~/.agents/shale--identity-migration/AGENTS.md`。迁移设计 `docs/design/identity-migration.md`。
 - 既有 Vim/输入法、跨平台快捷键、完整 WebViewer/用户脚本、原生文件同步与冲突审阅、PPT/PDF 与连续文档功能均保留。历次版本/验收见 `docs/log/` 和 `tests/reports/`。
 - ROG 同步端口 18744，workspaceId=`76fcca29-885b-4dd1-832e-cfac4f07cc09`；同一数据根/凭据/回执必须保留。旧地址仅作为过渡导入兼容入口。
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
@@ -24,7 +25,7 @@
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。
 
 ## Build / Run / Test
-- 桌面Release提供Mac arm64 DMG/ZIP/blockmap/latest-mac和Windows x64 NSIS/blockmap/latest，Android独立预发布提供手机/平板两非调试APK。Mac仅Apple Silicon arm64；Linux历史预构建为v0.1.43。
+- 桌面Release提供Mac arm64 DMG/ZIP/blockmap/latest-mac和Windows x64 NSIS/blockmap/latest，Android独立预发布提供新 applicationId 的非调试生产 APK（旧证书兼容变体按需要另发）。Mac仅Apple Silicon arm64；Linux历史预构建为v0.1.43。
 - `gh release` 显式传 `--repo AlexbeatsZ/Shale`（本机默认上游），`--target`使用完整源码SHA。API创建tag不会触发推送式CI。
 - PPT/PPTX 与 PDF 共用阅读回归为 `node tests/desktop-presentations.mjs <原生可执行文件>`，使用一次性 Vault/profile。相关浏览器为 presentation、pdf-identity、pdf-toolbar、pdf-virtual-zoom。
 - 依赖与构建:`npm ci && npm run build`。
@@ -68,6 +69,7 @@
 - Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。
 
 ## Docs Index
+- Shale 身份、profile/Vault/跨设备迁移 → `docs/design/identity-migration.md`。
 - 原生 Vim 与输入法联动 → `docs/design/vim-input-method.md`。
 - 原生同步、自动合并与冲突审阅 → `docs/design/file-sync.md`；MCP 审阅 → `docs/design/native-mcp.md`。
 - 打字时忽略触控板点击 → `docs/design/typing-pointer-guard.md`。
