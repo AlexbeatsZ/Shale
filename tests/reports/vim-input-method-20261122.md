@@ -44,6 +44,9 @@ source/history/save ownership. Reading views do not run Vim.
   remembered English, rapid transitions, u/Ctrl-r, :w, settings UI and disable
   restore passed. Optional Windows SendInput events went through Microsoft Pinyin
   and committed `你好`. Initial Pinyin state restored after test.
+- Published v0.1.85, source `2f2f26597039a0480338a4df45ce578f57f37d1c`, release ID
+  `455018498`. All seven assets (Mac arm64 dmg/zip/blockmap/latest-mac and Windows x64
+  nsis/blockmap/latest) uploaded, size and digest verified, published as latest.
 
 ## Boundaries
 
