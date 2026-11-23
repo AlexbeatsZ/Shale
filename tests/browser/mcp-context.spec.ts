@@ -138,7 +138,7 @@ test('shortcut and context menu capture exact source coordinates, pinning and on
     const view = getActiveEditor()!, from = view.state.doc.toString().indexOf('selected');
     view.dispatch({ selection: { anchor: from, head: from + 'selected 😀'.length } }); view.focus();
   });
-  await page.keyboard.press('Control+Shift+M');
+  await page.keyboard.press(`${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+M`);
   await expect(page.locator('.mcp-context-item')).toHaveCount(1);
   const selected = await page.evaluate(async () => {
     const { request } = await import('/src/lib/api.ts'); return request('/api/operations/context');
@@ -177,7 +177,7 @@ test('shortcut and context menu capture exact source coordinates, pinning and on
 
 test('path-only context, manual removal, oversize selection rejection and reload persistence', async ({ page }) => {
   await page.locator('.main-pane .cm-content').click();
-  await page.keyboard.press('Control+Shift+M');
+  await page.keyboard.press(`${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+M`);
   await expect(page.locator('.mcp-context-item')).toHaveCount(1);
   await page.getByRole('button', { name: '移除上下文' }).click();
   await expect(page.locator('.mcp-context-item')).toHaveCount(0);

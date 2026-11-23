@@ -67,7 +67,7 @@ path-only pending 和 path-only history 已删除。没有增加文档保存服�
    [Page preview](https://obsidian.md/help/Plugins/Page%2Bpreview)、
    [Basic formatting syntax](https://obsidian.md/help/syntax)、
    [Footnotes view](https://obsidian.md/help/plugins/footnotes)。
-2. 本机只读参考：`C:/Users/Meta/AppData/Roaming/shale/shale-1.14.5.asar`。
+2. 本机只读参考：`C:/Users/Meta/AppData/Roaming/obsidian/obsidian-1.14.5.asar`（第三方 Obsidian 参考，不是本项目数据目录）。
    通过仓库已有的 `@electron/asar` 读取 `package.json`、`app.js`、`app.css`；归档报告版本为 1.14.5。
    安装器外壳的版本号不同，不能把 `Program Files/Shale/resources/app.asar` 的包版本当成当前应用版本。
 3. 使用 computer-use 只读查看了现有 STEM 窗口，窗口标题也报告 1.14.5；没有点击、输入、切页、修改

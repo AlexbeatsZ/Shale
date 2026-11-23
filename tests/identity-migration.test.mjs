@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { createHash } from 'node:crypto';
+import { migrateUserData, persistedVaultKey } from '../scripts/migrate-user-data.mjs';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
@@ -64,4 +66,28 @@ test('merges disjoint native and CSS snippet directories without altering conten
   await migrateVaultConfiguration(root);
   assert.equal(await fs.readFile(path.join(root, '.shale/snippets/Theme.css'), 'utf8'), '.cm-s-obsidian { color: red; }');
   assert.equal(await fs.readFile(path.join(root, '.shale/snippets/personal.js'), 'utf8'), 'const user = 1;');
+});
+
+test('moves scoped sync and userscript identities with the Vault while keeping acknowledged versions', async t => {
+  const root = await fixture(t), old = path.join(root, 'Obsidian'), next = path.join(root, 'Shale');
+  const profile = path.join(root, 'profile'), previousVault = path.join(old, 'STEM'), vault = path.join(next, 'STEM');
+  const hash = (value, length = 64) => createHash('sha256').update(value).digest('hex').slice(0, length);
+  const data = path.join(profile, 'server-data');
+  await fs.mkdir(path.join(vault, '.shale', 'snippets'), { recursive: true });
+  await fs.writeFile(path.join(vault, '.shale', 'snippets', 'Theme.css'), '.cm-s-obsidian { color: red; } /* obsidian-latex-suite */');
+  await fs.writeFile(path.join(vault, '.shale', 'snippets', 'personal.js'), 'const selector = ".cm-s-obsidian";');
+  await fs.mkdir(path.join(data, 'file-sync', hash(previousVault)), { recursive: true });
+  await fs.mkdir(path.join(data, 'userscripts'), { recursive: true });
+  await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: previousVault }));
+  await fs.writeFile(path.join(data, 'settings.json'), JSON.stringify({ vault: { path: previousVault, allowedRoots: [old] } }));
+  const checkpoint = { root: previousVault, revision: 468, deviceId: 'same-device', base: { '.obsidian/webobsidian/sync.jsonc': { version: 412, hash: 'original' } } };
+  await fs.writeFile(path.join(data, 'file-sync', hash(previousVault), 'checkpoint.json'), JSON.stringify(checkpoint));
+  await fs.writeFile(path.join(data, 'userscripts', hash(previousVault, 24) + '.json'), JSON.stringify({ vault: previousVault, source: 'const webobsidian = "preserve source";' }));
+  await migrateUserData(profile, old, next);
+  const updated = JSON.parse(await fs.readFile(path.join(data, 'file-sync', hash(vault), 'checkpoint.json'), 'utf8'));
+  assert.deepEqual(updated, { ...checkpoint, root: vault });
+  assert.equal(JSON.parse(await fs.readFile(path.join(data, 'userscripts', hash(vault, 24) + '.json'), 'utf8')).source, 'const webobsidian = "preserve source";');
+  assert.equal(await fs.readFile(path.join(vault, '.shale', 'snippets', 'Theme.css'), 'utf8'), '.cm-s-shale { color: red; } /* obsidian-latex-suite */');
+  assert.equal(await fs.readFile(path.join(vault, '.shale', 'snippets', 'personal.js'), 'utf8'), 'const selector = ".cm-s-obsidian";');
+  assert.equal(persistedVaultKey('C:/Users/Meta/Documents/Shale/STEM', 'win32'), 'c:\\users\\meta\\documents\\shale\\stem');
 });

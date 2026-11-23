@@ -9,7 +9,7 @@ import { build } from 'esbuild';
 import { migrateLinterReplacements } from '../../packages/markdown-core/src/legacyReplacement';
 
 const fixtureCode = `
-const {Plugin,PluginSettingTab,Setting,MarkdownRenderChild} = require('shale');
+const {Plugin,PluginSettingTab,Setting,MarkdownRenderChild} = require('obsidian');
 const {EditorView} = require('@codemirror/view');
 module.exports = class extends Plugin {
  async onload() {
@@ -104,6 +104,8 @@ async function setup(
     }
     if (url.pathname === '/api/settings/')
       return json({ vault: { path: 'fixture' }, ui: {}, plugins: {} });
+    if (url.pathname === '/api/backlinks') return json({ backlinks: [] });
+    if (url.pathname === '/api/search') return json({ hits: [] });
     if (url.pathname === '/api/property-types') return json({ types: {} });
     if (url.pathname === '/api/tags') return json({ tags: [] });
     if (url.pathname === '/api/properties') return json({ properties: [] });

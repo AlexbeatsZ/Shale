@@ -46,10 +46,11 @@ historical Tip transient cause remain unverified.
 
 ## Evidence and ownership
 
-Reference archive read only: `C:/Users/Meta/AppData/Roaming/shale/shale-1.14.5.asar`.
+Reference archive read only: `C:/Users/Meta/AppData/Roaming/obsidian/obsidian-1.14.5.asar`
+(the third-party Obsidian reference, not Shale application data).
 Its package.json reports Shale 1.14.5. app.js and app.css were extracted temporarily
 with the repository's existing @electron/asar reader; no application or plugin was
-executed. The older docs/obsidian-desktop-internals.md describes macOS 1.12.7 and is
+executed. The older docs/shale-desktop-internals.md describes macOS 1.12.7 and is
 background rather than evidence for this installed version.
 
 In 1.14.5 app.js, the formatting-quote branch uses a transparent mark (q5) for the

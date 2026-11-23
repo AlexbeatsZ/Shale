@@ -4,9 +4,30 @@ import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { canonicalConfigurationPath, migrateRuntimeSettings, migrateVaultConfiguration } from './identity-migration.mjs';
 
+export function persistedVaultKey(root, platform = process.platform) {
+  return platform === 'win32' ? path.win32.resolve(root).toLowerCase() : path.resolve(root);
+}
+
+export async function migrateNativeStyles(root) {
+  const directory = path.join(root, '.shale', 'snippets');
+  const entries = await fs.readdir(directory, { withFileTypes: true }).catch(error => { if (error.code === 'ENOENT') return []; throw error; });
+  for (const entry of entries) {
+    if (entry.isSymbolicLink()) throw new Error('Native styles may not use symbolic links');
+    if (!entry.isFile() || !entry.name.endsWith('.css')) continue;
+    const file = path.join(directory, entry.name), original = await fs.readFile(file, 'utf8');
+    const updated = original.replace(/\.cm-s-obsidian(?![\w-])/g, '.cm-s-shale')
+      .replaceAll('Native WebObsidian', 'Native Shale').replaceAll('lib/obsidian/ui.ts', 'lib/shale/ui.ts');
+    if (updated !== original) {
+      const temporary = file + '.shale-migration.tmp';
+      await fs.writeFile(temporary, updated, { mode: (await fs.stat(file)).mode });
+      await fs.rename(temporary, file);
+    }
+  }
+}
+
 export async function migrateUserData(profile, oldParent, newParent) {
   const windows = process.platform === 'win32';
-  const pathKey = value => windows ? path.resolve(value).toLowerCase() : path.resolve(value);
+  const pathKey = value => persistedVaultKey(value);
   const remap = value => {
     const separator = value.includes('\\') ? '\\' : '/';
     const old = oldParent.replaceAll('\\', separator).replaceAll('/', separator);
@@ -26,7 +47,9 @@ export async function migrateUserData(profile, oldParent, newParent) {
   async function json(file, configurationPaths = true) {
     let original;
     try { original = await fs.readFile(file, 'utf8'); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
-    const data = JSON.parse(original), updated = rewrite(data, configurationPaths), text = JSON.stringify(updated, null, 2);
+    const data = JSON.parse(original), updated = rewrite(data, configurationPaths);
+    if (path.basename(file) === 'checkpoint.json' && typeof updated.root === 'string') updated.root = pathKey(updated.root);
+    const text = JSON.stringify(updated, null, 2);
     if (JSON.stringify(data) !== JSON.stringify(updated)) { const temporary = file + '.shale-migration.tmp'; await fs.writeFile(temporary, text, { mode: 0o600 }); await fs.rename(temporary, file); }
     return updated;
   }
@@ -64,7 +87,10 @@ export async function migrateUserData(profile, oldParent, newParent) {
     }
   }
   await migrateRuntimeSettings(data);
-  for (const root of new Set([config?.vaultPath, settings?.vault?.path].filter(Boolean))) await migrateVaultConfiguration(root);
+  for (const root of new Set([config?.vaultPath, settings?.vault?.path].filter(Boolean))) {
+    await migrateVaultConfiguration(root);
+    await migrateNativeStyles(root);
+  }
   return { profile, vault: settings?.vault?.path ?? config?.vaultPath, scopedRoots: roots.size };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
