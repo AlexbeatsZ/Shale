@@ -5,6 +5,8 @@ import { codeBlocks, pluginPostProcessing } from '../lib/obsidian/markdown';
 import { mountMarkdownFragment } from './MarkdownFragment';
 import { Annotation, Compartment, EditorState, Prec } from '@codemirror/state';
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
+import { nativeVimExtensions } from '../lib/nativeVim';
+import { vimEditOrigin } from '../lib/vimState';
 import { editorSelection } from '../lib/editorSelection';
 import { editorDebugging } from '../lib/editorDebug';
 import { bindMarkdownWheelZoom } from '../lib/markdownWheelZoom';
@@ -294,6 +296,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
       doc: p.snapshot.text,
       selection: { anchor: initPos },
       extensions: [
+        nativeVimExtensions({ undo: () => historyAction(false), redo: () => historyAction(true), save: () => latest.current.onSave?.() }),
         indentUnit.of('    '), EditorState.tabSize.of(4), editorPhrases, navigationExtensions, linkPreview,
         editorSelection, editorDebugging, syntaxModel.init(() => p.analysis ?? analyzeMarkdown(p.snapshot.text, p.context.sourcePath, p.snapshot.version)), documentMetadata, embeddedFormulasField, blockModel,
         contextComp.of(renderContext.of(scopedContext)),
@@ -340,7 +343,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
           const snippet=u.transactions.map(tr=>tr.annotation(snippetGroup)).find(Boolean);
           const history={owner:instanceId,before:captureWritingState(u.startState),after:captureWritingState(u.state)};
           const next = latest.current.onChange?.(changes, version.current,
-            operation??snippet??(typing ? 'input.type:' + instanceId : 'edit'), u.state.field(syntaxModel),history);
+            vimEditOrigin(u.view)??operation??snippet??(typing ? 'input.type:' + instanceId : 'edit'), u.state.field(syntaxModel),history);
           if (next) version.current = next.version;
         }),
       ],

@@ -11,6 +11,7 @@ import { rmSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { bundleServer } from '../../scripts/bundle-server.mjs';
+import { buildInputMethod } from './build-input-method.mjs';
 import { bundleTunnel } from './bundle-tunnel.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -45,5 +46,6 @@ await build({
 const genServer = path.join(desktopDir, '.gen', 'server');
 await bundleServer(repoDir, genServer);
 await bundleTunnel(process.platform, process.arch);
+buildInputMethod();
 
 console.log('[desktop] build complete → dist/ + .gen/server/');

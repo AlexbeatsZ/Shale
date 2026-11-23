@@ -10,8 +10,9 @@ enablement. Preserve upstream MIT attribution for adapted source.
 
 Keep the native snippet directory or an explicitly configured source authoritative.
 Do not import app/plugin settings on startup. Conceal defaults off;
-other retained visual/input features default on. Exclude matrix input shortcuts,
-automatic input-method switching and Vim. Matrix template snippets remain valid.
+other retained visual/input features default on. Exclude matrix input shortcuts.
+Native Vim and desktop input-method switching now follow vim-input-method.md
+(PRD 1.55), superseding their previous exclusion. Matrix template snippets remain valid.
 Normal IME composition handling remains necessary. Future Excalidraw formula
 editors must consume these same native editing capabilities.
 

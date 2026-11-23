@@ -1,3 +1,4 @@
+import { InputMethodService, inputMethodBackend } from './inputMethod';
 import { performDesktopAction } from './nativeActions';
 import { app, BrowserWindow, Menu, dialog, ipcMain, shell, safeStorage, clipboard, type IpcMainEvent, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron';
 import { configureWebViewer } from './webViewer';
@@ -38,6 +39,7 @@ let mainWindow: BrowserWindow | null = null;
 let desktopConfig: DesktopConfig | undefined;
 let mcpLauncher: McpLauncher | undefined;
 let userscripts: UserscriptService | undefined;
+let inputMethodService: InputMethodService | undefined;
 let initialVaultChoice: string | undefined;
 let finishingQuit = false;
 let quitRequest: Promise<void> | undefined;
@@ -76,6 +78,7 @@ function requestWindowClose(window: BrowserWindow, quit: boolean): Promise<void>
   quitRequest = (async () => {
     try {
       await prepareWindowClose(window);
+      await inputMethodService?.releaseAll();
       if (quitRequested) {
         await Promise.all([mcpLauncher?.stop(), userscripts?.stop()]);
         await serverProcess?.stop();
@@ -442,6 +445,18 @@ function registerTitleBar(): void {
 // App lifecycle
 // ---------------------------------------------------------------------------
 function registerDesktopRequests(): void {
+  const inputMethod = inputMethodService = new InputMethodService(inputMethodBackend(path.join(
+    app.isPackaged ? path.join(process.resourcesPath, 'input-method') : path.join(__dirname, '..', '.gen', 'input-method', process.arch),
+    process.platform === 'win32' ? 'im-select.exe' : 'im-select'), process.pid),
+    () => !!mainWindow && !mainWindow.isDestroyed() && mainWindow.isFocused());
+  ipcMain.handle('desktop:input-method-list', event => {
+    if (!desktopWindow(event)) throw new Error('Local application frame required');
+    return inputMethod.list();
+  });
+  ipcMain.handle('desktop:input-method-update', (event, request: unknown) => {
+    if (!desktopWindow(event)) throw new Error('Local application frame required');
+    return inputMethod.update(request);
+  });
   ipcMain.handle('desktop:action', (event, action: unknown) => {
     const window = desktopWindow(event);
     if (!window) throw new Error('Local application frame required');

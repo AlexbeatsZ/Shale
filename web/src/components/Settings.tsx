@@ -13,6 +13,7 @@ import { useStore } from '../lib/store';
 import { api, request } from '../lib/api';
 import FileSyncSettings from './FileSyncSettings';
 import Icon from './Icon';
+import NativeVimSettings from './NativeVimSettings';
 import WritingSettings from './WritingSettings';
 import ConfiguredMenuSettings from './ConfiguredMenuSettings';
 import TagSettings from './TagSettings';
@@ -756,6 +757,7 @@ function EditorSettings() {
   const viewMode = useStore(state => state.viewMode);
   return <div>
     <h2>编辑器</h2>
+    <NativeVimSettings />
     <SettingGroup title="文档视图">
       <Row name="当前编辑视图" desc="工作区使用的视图模式，也可在文档右下角切换。"><select value={viewMode} onChange={event => useStore.getState().setViewMode(event.target.value as typeof viewMode)}>
         <option value="live">实时预览</option><option value="source">源码模式</option><option value="reading">阅读视图</option>

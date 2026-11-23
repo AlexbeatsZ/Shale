@@ -8,7 +8,7 @@ service own text/history and rendering. No original plugin instance is loaded.
 snippet semantics, TeX grammar, bracket/conceal algorithms and defaults. It
 replaces whole-document/background parsing with the host Markdown model and
 formula-local trees, replaces Obsidian services with direct host calls, removes
-Vim/matrix/Excalidraw integration, and attaches tabstop restoration to session
+upstream Vim/matrix/Excalidraw integration (native Vim is owned by nativeVim.ts), and attaches tabstop restoration to session
 history. The original license is in `latex/LICENSE`.
 
 `linter/` adapts platers/obsidian-linter tag **1.31.2** (MIT), retaining all rule

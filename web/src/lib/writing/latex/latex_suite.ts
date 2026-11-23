@@ -1,4 +1,5 @@
 // @ts-nocheck -- adapted upstream rule implementation; native boundaries are type checked.
+import { vimAllowsInsert } from '../../vimState';
 import { EditorView, ViewPlugin, ViewUpdate, type KeyBinding, runScopeHandlers, keymap } from "@codemirror/view";
 import { runSnippets } from "./features/run_snippets";
 import { runAutoFraction } from "./features/autofraction";
@@ -20,6 +21,7 @@ export const keyboardEventPlugin = ViewPlugin.fromClass(class {
 	lastKeyboardEvent: KeyboardEvent | null = null;
 
 	onKeydown(event: KeyboardEvent, view: EditorView) {
+        if (!vimAllowsInsert(view)) return;
 		if (event.key == "Unidentified" || event.key == "Process" || event.key == "Dead") {
 			this.lastKeyboardEvent = event;
 			return;
@@ -57,6 +59,7 @@ export const keyboardEventPlugin = ViewPlugin.fromClass(class {
 })
 
 export const onInput = (view: EditorView, _from: number, _to: number, text: string): boolean => {
+    if (!vimAllowsInsert(view)) return false;
 	const lastKeyboardEvent = view.plugin(keyboardEventPlugin)?.lastKeyboardEvent;
 	if (text === "\0\0") return true;
 	if (text.length == 1 && lastKeyboardEvent) {
@@ -81,7 +84,7 @@ export const onInput = (view: EditorView, _from: number, _to: number, text: stri
 }
 
 export const handleKeydown = (key: string, ctrlKey: boolean, isIME: boolean, view: EditorView) => {
-	if (view.state.readOnly || view.composing || key.length > 1) {
+	if (!vimAllowsInsert(view) || view.state.readOnly || view.composing || key.length > 1) {
 		return false
 	}
 
@@ -147,7 +150,7 @@ function getKeymaps(settings: LatexSuiteCMSettings, snippets: Snippet[]): LatexS
 		return (view: EditorView) => {
 			const settings = getLatexSuiteConfig(view);
 			// Prevent IME from triggering keydown events.
-			if (view.state.readOnly || view.composing)
+			if (!vimAllowsInsert(view) || view.state.readOnly || view.composing)
 				return false;
 			try {
 				const options = {recursive: settings.snippetRecursion, debug: settings.snippetDebug};
@@ -220,7 +223,7 @@ function getKeymaps(settings: LatexSuiteCMSettings, snippets: Snippet[]): LatexS
 
 	return keybindings.map((keybinding) => ({
 		...keybinding,
-        run: view => view.state.readOnly || view.composing ? false : keybinding.run?.(view) ?? false,
+        run: view => !vimAllowsInsert(view) || view.state.readOnly || view.composing ? false : keybinding.run?.(view) ?? false,
 		scope: "editor latex-suite",
 	}));
 }

@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-22 原生 Vim 与内置桌面输入法联动（PRD 1.55）开发中，隔离分支 `codex/vim-input-method`。Vim 默认关闭，设置 › 编辑器可开启；Normal/Visual 切英文、Insert 恢复上次输入法。Mac 实包已验证鼠须管/ABC No Option 往返、快速切换、共享撤销/重做、:w 与禁用恢复，原输入源已还原。Windows MSVC 助手已编译，交互验收和桌面 0.1.85 发布待完成。设计 `docs/design/vim-input-method.md`。
 - 2026-11-22 正在按用户要求取消桌面原生菜单隐藏快捷键（PRD 1.54）：23 个原生动作进入同一命令目录且默认不分配，菜单转发目录，主框架 IPC 白名单执行；释放 Command+R/H/M/Q，系统接管的窗口/应用切换等仍回退 Control。STEM 已通过 API 删除 move 的 Ctrl+Shift+M 并设置 Mac settings=PhysicalCtrl+反引号；撤销保留 Ctrl/Command+Z，用户左栏 Ctrl+Shift+Z 保留。0.1.84 固定证书 Mac 实包原生动作/自定义 reload、既有快捷键和完整 WebViewer 回归通过，Windows 构建和发布/部署进行中。
 - 2026-11-22 跨平台快捷键改为同一 Vault 文件 `.obsidian/webobsidian/hotkeys.jsonc`（PRD 1.53）：Ctrl/Mod 在 Mac 使用 Command，PhysicalCtrl/Control 明确表示实体 Control；Mac 未覆盖时跟随 Windows。设置页并排编辑两端、禁用/恢复继承；文件存在后不再用旧本机 settings 覆盖，文件同步变更即时刷新。补齐 `editor:set-heading-7`（正文内标题）和旧 apply-heading7 别名，允许 7 级改回 0–6 级。桌面 v0.1.83 已发布（Mac arm64 + Windows x64 共 7 资产，源码 250fa6a）；Mac 固定证书签名与实包快捷键/完整 WebViewer 回归通过，Windows 隔离构建与版本通过。Mac `/Applications/Shale.app` 已按后续授权原位升级 0.1.82→0.1.83，签名/启动/healthz 通过，STEM 统一快捷键文件已迁移；Windows 实体键盘交互未验收。设计 `docs/design/hotkeys.md`、`heading-level-commands.md`。
 - 2026-11-22 桌面 v0.1.82 已发布（Mac arm64、Windows x64 共 7 资产，源码 52b70d0），Mac `/Applications/Shale.app` 已原位升级并通过固定证书/identifier 签名、启动及 healthz 检查。脚本更新修复 GitHub 重定向，卸载直接清除数据并清理历史孤立值；真实 STEM 两条卸载残留已清除。标签快速交换仅针对两页（含可见/暂存分屏），停留插入仍可整体移动分屏组。619 单元、45 分屏浏览器、真实 Electron 网络/迁移与 macOS 实包回归通过。ALR 0.3.0 下载成功，扩大站点范围待用户审阅（仍运行 0.2.1）。报告 `tests/reports/browser-userscripts-20261122.md`。
@@ -86,6 +87,7 @@
 - Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。
 
 ## Docs Index
+- 原生 Vim 与输入法联动 → `docs/design/vim-input-method.md`。
 - 原生同步、自动合并与冲突审阅 → `docs/design/file-sync.md`；MCP 审阅 → `docs/design/native-mcp.md`。
 - 打字时忽略触控板点击 → `docs/design/typing-pointer-guard.md`。
 - 桌面网页浏览与用户脚本 → `docs/design/web-viewer.md`、`docs/design/browser-userscripts.md`。

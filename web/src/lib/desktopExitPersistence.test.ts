@@ -1,3 +1,4 @@
+import { InputMethodService } from '../../../desktop/src/inputMethod';
 import { desktopActions } from '../../../desktop/src/bridge';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -27,6 +28,8 @@ function fixture(platform = 'win32') {
   });
   const ipc = Object.assign(new EventEmitter(), { handle: vi.fn() });
   const launcher = { stop: vi.fn().mockResolvedValue(undefined) };
+  const inputBackend = { list: vi.fn().mockResolvedValue([{ id: 'english', label: 'English', english: true }]),
+    get: vi.fn().mockResolvedValue({ source: 'pinyin', open: true }), select: vi.fn().mockResolvedValue(undefined) };
   const server = { stop: vi.fn().mockResolvedValue(undefined) };
   const showErrorBox = vi.fn();
   const showMessageBox = vi.fn().mockResolvedValue({ response: 0 });
@@ -57,6 +60,7 @@ function fixture(platform = 'win32') {
     show = vi.fn();
     constructor() { super(); window = this; }
     isDestroyed() { return this.destroyed; }
+    isFocused() { return true; }
     setMenuBarVisibility() {}
     isFullScreen() { return false; }
     loadURL(url: string) { this.url = url; this.webContents.mainFrame.url = url; return Promise.resolve(); }
@@ -70,7 +74,7 @@ function fixture(platform = 'win32') {
   });
   runInNewContext(compiled + '\nexports.fixture = { createWindow, requestWindowClose, initialize: (launcher, server) => { serverPort = 8787; serverProcess = server; registerDesktopRequests(); mcpLauncher = launcher; } };', {
     exports: moduleExports,
-    require: (id: string) => id === 'electron' ? electron : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
+    require: (id: string) => id === 'electron' ? electron : id === './inputMethod' ? { InputMethodService, inputMethodBackend: () => inputBackend } : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
     process: { platform, arch: 'x64', execPath: 'WebObsidian' },
     __dirname: fileURLToPath(new URL('../../../desktop/src', import.meta.url)),
     URL, Buffer, setTimeout, clearTimeout, console,
@@ -83,7 +87,7 @@ function fixture(platform = 'win32') {
     const sender = guest ? { mainFrame: window.webContents.mainFrame } : window.webContents;
     ipc.emit('desktop:close-result', { sender, senderFrame: window.webContents.mainFrame }, requestedToken, result);
   };
-  return { application, window, launcher, server, showErrorBox, showMessageBox,
+  return { application, window, launcher, server, inputBackend, showErrorBox, showMessageBox,
     markReady: (ready: boolean) => ipc.emit('desktop:renderer-ready', { sender: window.webContents, senderFrame: window.webContents.mainFrame }, ready), openExternal, token, reply,
     invoke: (channel: string, event: unknown, ...args: unknown[]) => ipc.handle.mock.calls.find(call => call[0] === channel)![1](event, ...args),
     close: (quit: boolean) => moduleExports.fixture.requestWindowClose(window, quit) as Promise<void> };
@@ -100,6 +104,18 @@ describe('desktop close coordinator against the production main implementation',
     expect(() => host.invoke('desktop:action', current, 'unknown-action')).toThrow('Unsupported desktop action');
     host.invoke('desktop:action', current, 'app:reload');
     expect(host.window.webContents.reload).toHaveBeenCalledOnce();
+  });
+
+  it('restricts input-method IPC to the local main frame and restores the foreground lease', async () => {
+    const host = fixture('darwin'), frame = host.window.webContents.mainFrame;
+    for (const event of [{ sender: {}, senderFrame: frame }, { sender: host.window.webContents, senderFrame: { url: frame.url } }])
+      for (const channel of ['desktop:input-method-list', 'desktop:input-method-update'])
+        expect(() => host.invoke(channel, event, { owner: 'one', mode: 'normal' })).toThrow('Local application frame');
+    const current = { sender: host.window.webContents, senderFrame: frame };
+    await host.invoke('desktop:input-method-update', current, { owner: 'one', mode: 'normal' });
+    expect(host.inputBackend.select).toHaveBeenLastCalledWith({ source: 'english', open: false });
+    await host.invoke('desktop:input-method-update', current, { owner: 'one', mode: 'insert' });
+    expect(host.inputBackend.select).toHaveBeenLastCalledWith({ source: 'pinyin', open: true });
   });
 
   it('still waits for the application to save after a guest frame starts loading', async () => {

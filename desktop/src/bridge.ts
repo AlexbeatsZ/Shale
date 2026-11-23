@@ -32,6 +32,7 @@ export const desktopCommands = ['new', 'files', 'save', 'settings', 'vault-switc
 export type DesktopCommand = typeof desktopCommands[number];
 
 export interface DesktopBridge {
+  inputMethod: import('./inputMethodTypes').InputMethodBridge;
   isDesktop: true;
   platform: string;
   version: string;

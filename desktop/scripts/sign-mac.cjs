@@ -11,7 +11,11 @@ module.exports = async function signMac(options) {
     identity: 'Local Development Code Signing', identityValidation: false,
     preAutoEntitlements: false, preEmbedProvisioningProfile: false,
     gatekeeperAssess: false, strictVerify: undefined,
-    optionsForFile: () => ({ hardenedRuntime: false, timestamp: 'none' }),
+    optionsForFile: file => ({ hardenedRuntime: false, timestamp: 'none',
+      ...(file.endsWith('/Resources/input-method/im-select') ? {
+        additionalArguments: ['--identifier', 'com.xnohat.webobsidian.input-method'],
+      } : {}),
+    }),
   });
   execFileSync('/usr/bin/codesign', ['--verify', '--deep', '--strict', options.app], { stdio: 'inherit' });
 };

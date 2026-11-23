@@ -101,7 +101,7 @@ export class DocumentSession {
     if (origin !== 'format') this.userEdits++;
     const now = Date.now();
     const previous = this.undoStack.at(-1);
-    if (previous?.origin === origin && (origin.startsWith('input.type:') && now - previous.at < 500 || origin.startsWith('snippet:'))) {
+    if (previous?.origin === origin && (origin.startsWith('input.type:') && now - previous.at < 500 || origin.startsWith('snippet:') || origin.startsWith('vim:'))) {
       previous.edits.push(inverse);
       previous.at = now;
       if (previous.state && state?.owner === previous.state.owner) previous.state.after = state.after;

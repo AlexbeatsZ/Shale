@@ -111,6 +111,9 @@ export class CommandManager extends Events {
     if (event.defaultPrevented || event.isComposing || event.getModifierState('AltGraph')) return false;
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('[data-hotkey-recorder], [role="dialog"], .modal-container, .settings-overlay, .palette-backdrop')) return false;
+    const vimMode = target?.closest<HTMLElement>('[data-vim-mode]')?.dataset.vimMode;
+    if (vimMode && vimMode !== 'insert' && vimMode !== 'replace' && !event.metaKey && !event.altKey &&
+        (!event.ctrlKey || /^[rdufbeyoivax]$/i.test(event.key))) return false;
     const binding = eventHotkey(event);
     if (!binding) return false;
     const index = this.keyIndex(), signature = hotkeySignature(binding, isMacOS());

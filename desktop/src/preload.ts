@@ -7,6 +7,11 @@ import type { McpConnectionInput } from './mcpLauncher';
 const nativeArg = process.argv.find(arg => arg.startsWith('--webobsidian-native-vault='));
 const desktopApi: DesktopBridge = {
   isDesktop: true,
+  inputMethod: {
+    supported: process.platform === 'darwin' || process.platform === 'win32',
+    list: () => ipcRenderer.invoke('desktop:input-method-list'),
+    update: request => ipcRenderer.invoke('desktop:input-method-update', request),
+  },
   platform: process.platform,
   version: process.argv.find(arg => arg.startsWith('--webobsidian-version='))?.split('=')[1] ?? '',
   nativePlugins: !!nativeArg,

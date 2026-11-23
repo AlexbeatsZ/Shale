@@ -1,6 +1,6 @@
 {
   "name": "@webobsidian/desktop",
-  "version": "0.1.84",
+  "version": "0.1.85",
   "private": true,
   "description": "Shale native desktop application",
   "author": "xnohat <xnohat@gmail.com>",
@@ -48,6 +48,14 @@
       {
         "from": ".gen/tunnel/${arch}",
         "to": "mcp-tunnel"
+      },
+      {
+        "from": ".gen/input-method/${arch}",
+        "to": "input-method",
+        "filter": [
+          "im-select*",
+          "LICENSE*"
+        ]
       }
     ],
     "asar": true,
