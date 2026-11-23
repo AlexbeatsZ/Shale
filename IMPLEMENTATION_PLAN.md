@@ -4,7 +4,15 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-22 (标签排序/交换、分屏分隔线与侧栏吸附)
+Cập nhật lần cuối: 2026-11-22 (用户脚本重定向更新与卸载清理)
+
+### 同文件跨平台快捷键 (PRD 1.53)
+
+- [~] 统一 Vault 快捷键文件、Ctrl → Command 与实体 Control 标识，设置页并排编辑 Windows / Mac；验证同步后解释与两端独立覆盖。
+
+### 用户脚本更新与卸载 (PRD 1.52)
+
+- [~] 修复重定向下载，卸载直接清除数据，迁移清理历史残留；标签快速交换只作用于单页；验证真实 Electron 与 macOS 实包，发布并部署本机。
 
 ### LaTeX 括号着色 (PRD 1.49)
 

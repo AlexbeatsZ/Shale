@@ -59,7 +59,9 @@ require 缓存离线导入。缺失 asset 或不支持元数据的脚本保留�
 源码/URL/文件导入共用 prepareBundle。下载并解析全部资产成功后才安装；同
 namespace/name 的重导入暂存在原记录，明确审阅后替换。编辑器保存带 revision，
 防止旧编辑器覆盖新源码。重新导入/更新保留原 ID、启用、存储和自动更新设置。
-卸载可保留值：同 namespace/name 再次导入时恢复原 ID 和数据；不保留授权/启用。
+卸载直接删除脚本及其源码/资产、待审更新、授权和 GM 值，不再询问保留数据。
+旧存储加载时清除所有不属于当前已安装脚本的值与 retained 身份索引；重新导入
+已卸载脚本生成新 ID，不恢复旧数据。仍安装脚本的值保持原样。
 
 `updater.ts` 每分钟检查到期任务，用户设置的间隔为 1–720 小时；只有全局与逐脚本
 均开启才自动更新。单脚本并发合并，批量逐个处理；metadata 请求使用 ETag /
@@ -76,7 +78,11 @@ Last-Modified。@updateURL、@downloadURL 和来源 URL 有明确回退；none �
 更新不会把已打开网页上的旧脚本热替换，要重新加载页面；暂停/卸载取消其未完成的
 GM 请求，但无法逆转已修改 DOM、原型或定时器。
 
-网络统一由 `network.ts` 的 Electron 独立浏览会话 fetch 完成。
+网络统一由 `network.ts` 的 Electron 独立浏览会话 `net.request` 完成。
+Electron 33 的 `session.fetch({redirect: manual})` 遇到跳转直接抛出
+`Redirect was cancelled`，不能作为逐跳响应读取器；使用 `net.request` 的
+redirect 事件取得状态与 Location，然后取消当前 hop，验证目标后重新请求。
+请求在头部/流读取阶段共用超时和中止信号，过大响应立即中止。
 脚本/资产 8 MiB，单脚本合计 24 MiB，GM 响应 16 MiB；至多八次重定向，每一跳
 重新检查 HTTP(S)、凭据与 connect，跨源重定向移除 Authorization/Cookie 头。
 GM 使用 guest 的 session；anonymous 请求不发 cookies。脚本/更新下载不发 cookies。

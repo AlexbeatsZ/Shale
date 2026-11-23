@@ -21,8 +21,8 @@ type Pane = 'main' | 'split';
 const GROUP_KEY = '\u0000split-group', END_KEY = '\u0000end';
 interface DragSource { key: string; paths: string[]; path: string | null; title: string; width: number; group: boolean }
 /** swap = quick drop (purple outline), insert = after hovering (gap with a ghost), pane = into a split pane. */
-interface DropHint { key: string; mode: 'swap' | 'insert' | 'pane'; view?: Pane }
-type Hit = { key: string; view?: Pane } | 'gap' | null;
+interface DropHint { key: string; mode: 'swap' | 'insert' | 'pane'; view?: Pane; path?: string }
+type Hit = { key: string; view?: Pane; path?: string } | 'gap' | null;
 
 export default function WorkspaceTabs() {
   const tabs = useStore((s) => s.tabs);
@@ -265,7 +265,7 @@ export default function WorkspaceTabs() {
   // as one unit; dropping a tab on a visible group member puts it into that pane.
   const setHint = (next: DropHint | null) => {
     const prev = hintRef.current;
-    if (prev?.key === next?.key && prev?.mode === next?.mode && prev?.view === next?.view) return;
+    if (prev?.key === next?.key && prev?.mode === next?.mode && prev?.view === next?.view && prev?.path === next?.path) return;
     hintRef.current = next; setHintState(next);
   };
   const clearDwell = () => { window.clearTimeout(dwell.current); dwell.current = undefined; };
@@ -294,7 +294,7 @@ export default function WorkspaceTabs() {
     const unit = element.closest<HTMLElement>('[data-tab-unit]');
     if (!unit?.dataset.tabUnit) return null;
     const view = element.closest<HTMLElement>('[data-pane]')?.dataset.pane as Pane | undefined;
-    return { key: unit.dataset.tabUnit, view };
+    return { key: unit.dataset.tabUnit, view, path: element.closest<HTMLElement>('[data-tab-path]')?.dataset.tabPath };
   };
   const paneAccepts = (view: Pane, path: string | null) => !!path && (view === 'main' || isHomepagePath(path)
     || (path !== GRAPH_PATH && findNode(useStore.getState().tree, path)?.type !== 'folder'));
@@ -305,17 +305,24 @@ export default function WorkspaceTabs() {
     if (hit.key === from.key) {
       // Inside its own visible split group a member can still swap the two panes.
       const own = from.path === useStore.getState().activePath ? 'main' : 'split';
-      clearDwell(); setHint(hit.view && hit.view !== own ? { key: hit.key, mode: 'pane', view: hit.view } : null);
+      clearDwell(); setHint(from.path && hit.path && from.path !== hit.path
+        ? hit.view && hit.view !== own ? { key: hit.key, mode: 'pane', view: hit.view, path: hit.path }
+          : { key: hit.key, mode: 'swap', path: hit.path } : null);
       return;
     }
     // Resting on the tab that opened the gap keeps the gap (it slid right under the pointer).
-    if (current?.key === hit.key && (current.mode === 'insert' || current.view === hit.view)) return;
+    if (current?.key === hit.key && (current.mode === 'insert' || (current.view === hit.view && current.path === hit.path))) return;
     clearDwell();
     if (hit.key === END_KEY) { setHint({ key: END_KEY, mode: 'insert' }); return; }
     const intoPane = hit.key === GROUP_KEY && hit.view && !from.group && paneAccepts(hit.view, from.path);
-    setHint(intoPane ? { key: hit.key, mode: 'pane', view: hit.view } : { key: hit.key, mode: 'swap' });
+    const s = useStore.getState(), pair = s.parkedSplit;
+    const side = s.splitPath ?? pair?.side;
+    const sideReplacement = from.path === side ? hit.path : hit.path === side ? from.path : undefined;
+    const canSwap = from.path && hit.path && (!sideReplacement || paneAccepts('split', sideReplacement));
+    setHint(intoPane ? { key: hit.key, mode: 'pane', view: hit.view, path: hit.path }
+      : canSwap ? { key: hit.key, mode: 'swap', path: hit.path } : null);
     dwell.current = window.setTimeout(() => {
-      if (source.current === from && hintRef.current?.key === hit.key) setHint({ key: hit.key, mode: 'insert' });
+      if (source.current === from) setHint({ key: hit.key, mode: 'insert' });
     }, TAB_INSERT_DWELL_MS);
   };
   const autoScroll = (x: number) => {
@@ -330,7 +337,8 @@ export default function WorkspaceTabs() {
     if (!from || !at) return;
     const s = useStore.getState();
     if (at.mode === 'pane') { if (at.view && from.path) void s.replacePane(at.view, from.path).catch(error => notify(String(error))); }
-    else s.arrangeTabs(from.paths, at.key === END_KEY ? null : unitPaths.current.get(at.key) ?? [at.key], at.mode === 'swap' ? 'swap' : 'before');
+    else if (at.mode === 'swap') { if (from.path && at.path) void s.swapTabs(from.path, at.path).catch(error => notify(String(error))); }
+    else s.arrangeTabs(from.paths, at.key === END_KEY ? null : unitPaths.current.get(at.key) ?? [at.key], 'before');
   };
   useEffect(() => () => { clearDwell(); touch.current?.cleanup(); }, []);
 
@@ -414,7 +422,7 @@ export default function WorkspaceTabs() {
         {...(asUnit ? unitDragProps(unitKey) : { draggable: !isMobile })}
         className={`tab${view || activePath === tab.path ? ' active' : ''}${view && selected ? ' is-focused' : ''}`
           + `${view && hint?.mode === 'pane' && hint.view === view ? ' is-drop-target' : ''}`
-          + `${asUnit && hint?.mode === 'swap' && hint.key === unitKey ? ' is-drop-swap' : ''}`
+          + `${hint?.mode === 'swap' && hint.path === tab.path ? ' is-drop-swap' : ''}`
           + `${asUnit && dragging?.key === unitKey ? ' is-drag-source' : ''}`}
         role="tab" aria-selected={selected} tabIndex={selected ? 0 : -1}
         onClick={() => void selectTab(tab.path)}
@@ -460,7 +468,7 @@ export default function WorkspaceTabs() {
   const splitGroup = (main?: Tab) => group && splitTab && (
     <div key="split-group" {...unitDragProps(GROUP_KEY)}
       className={`tab-split-group${group.direction === 'down' ? ' is-down' : ''}${group.parked ? ' is-parked' : ''}`
-        + `${hint?.mode === 'swap' && hint.key === GROUP_KEY ? ' is-drop-swap' : ''}${dragging?.key === GROUP_KEY ? ' is-drag-source' : ''}`}
+        + `${dragging?.key === GROUP_KEY ? ' is-drag-source' : ''}`}
       role="group" aria-label={group.direction === 'down' ? '上下分屏' : '左右分屏'}>
       <Icon name={group.direction === 'down' ? 'rows' : 'columns'} size={13} className="split-icon" />
       {main && (group.parked ? tabNode(main) : tabNode(main, 'main'))}

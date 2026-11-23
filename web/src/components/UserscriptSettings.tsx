@@ -8,7 +8,7 @@ function permissions(script: ScriptRecord) {
   return `${script.metadata.grants.join(', ') || '(无 GM 权限，页面 world)'}\n@connect: ${script.metadata.connects.join(', ') || '(仅同源)'}\nURL: ${[...script.metadata.matches, ...script.metadata.includes].join(', ') || '(无匹配)'}\n排除: ${[...script.metadata.excludes, ...script.metadata.excludeMatches].join(', ') || '(无)'}`;
 }
 function ScriptSettings({ script, run }: { script: ScriptRecord; run: (work: () => Promise<unknown>) => void }) {
-  const [reviewed, setReviewed] = useState(false), [removing, setRemoving] = useState(false), [keepValues, setKeepValues] = useState(true);
+  const [reviewed, setReviewed] = useState(false);
   useEffect(() => setReviewed(false), [script.revision, script.update.candidateId]);
   const action = (name: string, extra: Record<string, unknown> = {}) => userscriptRequest(name, { id: script.id, revision: script.revision, ...extra });
   const pending = script.update.pending;
@@ -31,12 +31,7 @@ function ScriptSettings({ script, run }: { script: ScriptRecord; run: (work: () 
       <button onClick={() => run(() => action('open-source', { pending: true, candidateId: script.update.candidateId }))}>外部查看待更新源码</button>{' '}
       <button onClick={() => run(() => action('approve', { pending: true, candidateId: script.update.candidateId }))}>批准并安装以上更新</button>
     </details>}
-    <SettingRow name="卸载脚本"><button onClick={() => setRemoving(!removing)}>卸载…</button></SettingRow>
-    {removing && <div>
-      <SettingRow name="保留此脚本存储"><input type="checkbox" checked={keepValues} onChange={event => setKeepValues(event.target.checked)} /></SettingRow>
-      <p>卸载后请重新加载已打开的匹配页面。</p>
-      <button onClick={() => run(() => action('remove', { keepValues }))}>确认卸载</button>{' '}<button onClick={() => setRemoving(false)}>取消</button>
-    </div>}
+    <SettingRow name="卸载脚本" desc="同时删除此脚本的全部数据。卸载后请重新加载已打开的匹配页面。"><button onClick={() => run(() => action('remove'))}>卸载</button></SettingRow>
   </SettingGroup>;
 }
 

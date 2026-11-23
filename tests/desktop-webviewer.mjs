@@ -29,6 +29,10 @@ ${extra}// ==/UserScript==
 document.body.dataset.fixtureScript = '${version}';
 `;
 const server = createServer((req, res) => {
+  if (req.url === '/redirect.user.js') {
+    res.writeHead(302, { Location: '/fixture.user.js' }).end();
+    return;
+  }
   if (req.url === '/fixture.user.js') {
     updateRequests++;
     const extra = version === '3.0.0' ? '// @match https://example.com/*\n' : '';
@@ -254,7 +258,7 @@ try {
   await expect(settings).toBeVisible();
   const script = name => settings.locator('.setting-group').filter({ has: page.getByRole('heading', { name, exact: true }) });
   const urlRow = settings.getByRole('group', { name: '.user.js URL' });
-  await urlRow.getByRole('textbox').fill(origin + '/fixture.user.js');
+  await urlRow.getByRole('textbox').fill(origin + '/redirect.user.js');
   await urlRow.getByRole('button', { name: '导入', exact: true }).click();
   const entry = script('URL fixture');
   const enable = async checkbox => {
@@ -274,6 +278,22 @@ try {
     name: 'local.user.js', mimeType: 'text/javascript', buffer: Buffer.from(source('File fixture', '1.0.0')),
   });
   await expect(script('File fixture')).toBeVisible();
+  const request = (action, payload) => page.evaluate(({ action, payload }) => window.webobsidianDesktop.userscripts.request(action, payload), { action, payload });
+  const fileId = (await request('list')).scripts.find(script => script.metadata.name === 'File fixture').id;
+  await request('set-values', { id: fileId, values: { fixture: 'erase on uninstall' } });
+  await script('File fixture').getByRole('button', { name: '卸载', exact: true }).click();
+  await expect(script('File fixture')).toHaveCount(0);
+  const storeFile = (await request('paths')).store;
+  const removed = JSON.parse(await fs.readFile(storeFile, 'utf8'));
+  assert.equal(Object.hasOwn(removed.values, fileId), false);
+  assert.equal(removed.retained, undefined);
+  await settings.getByLabel('从文件导入用户脚本').setInputFiles({
+    name: 'local.user.js', mimeType: 'text/javascript', buffer: Buffer.from(source('File fixture', '1.0.0')),
+  });
+  await expect(script('File fixture')).toBeVisible();
+  const reinstalledId = (await request('list')).scripts.find(script => script.metadata.name === 'File fixture').id;
+  assert.notEqual(reinstalledId, fileId);
+  assert.deepEqual(await request('values', { id: reinstalledId }), {});
   await page.getByRole('button', { name: '关闭设置' }).click();
   await refresh.click();
   await expect.poll(() => evaluateGuest('document.body?.dataset.fixtureScript')).toBe('1.0.0');

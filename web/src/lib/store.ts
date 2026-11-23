@@ -173,7 +173,9 @@ interface AppState {
   showTab: (path: string) => Promise<void>;
   /** Put a tab into one pane of the visible split group; the page it replaces takes the tab's old place. */
   replacePane: (viewId: 'main' | 'split', path: string) => Promise<void>;
-  /** Reorder tab-bar units (a split group moves as one): swap two units, or move one before
+  /** Swap exactly two pages, updating only the touched member of a visible or parked split. */
+  swapTabs: (source: string, target: string) => Promise<void>;
+  /** Reorder tab-bar units (a split group moves as one for insertion): swap two single tabs, or move one before
    *  another (`target` null = to the end). Only the order changes; no page is opened. */
   arrangeTabs: (source: string[], target: string[] | null, mode: 'swap' | 'before') => void;
 
@@ -700,6 +702,22 @@ export const useStore = create<AppState>()(
           return { tabs };
         });
         activateNavigation(viewId);
+      },
+      swapTabs: async (source, target) => {
+        if (source === target) return;
+        let s = get();
+        const pair = splitPair(s);
+        const member = pair?.includes(source) ? source : pair?.includes(target) ? target : null;
+        if (member && s.parkedSplit) {
+          const parked = s.parkedSplit;
+          await get().showTab(member);
+          s = get();
+          if (s.activePath !== parked.main || s.splitPath !== parked.side) return;
+        }
+        if (s.splitPath && member) {
+          const view = member === s.activePath ? 'main' : 'split';
+          await get().replacePane(view, member === source ? target : source);
+        } else get().arrangeTabs([source], [target], 'swap');
       },
       arrangeTabs: (source, target, mode) => set(s => {
         const tabs = arrangeTabUnits(s.tabs, splitPair(s), source, target, mode);

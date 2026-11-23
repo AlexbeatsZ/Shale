@@ -2,7 +2,7 @@ import { clipboard, ipcMain, Notification, type BrowserWindow, type IpcMainEvent
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { GuestStatus, ScriptMenu, ScriptRecord } from '../../../web/src/lib/userscripts/types';
-import { matches, needsApproval, connectAllowed, identity } from './metadata';
+import { matches, needsApproval, connectAllowed } from './metadata';
 import { approval, prepareBundle, UserscriptStore } from './store';
 import { scriptFetch } from './network';
 import { UserscriptUpdater } from './updater';
@@ -184,7 +184,7 @@ export class UserscriptService {
         const id = string(p.id, 200);
         await store.mutate(d => {
           const old = d.scripts.find(s => s.id === id); if (!old) throw new Error('Script no longer exists');
-          if (p.keepValues) (d.retained ??= {})[identity(old.metadata)] = id; else delete d.values[id];
+          delete d.values[id];
           d.scripts = d.scripts.filter(s => s.id !== id);
         });
         for (const g of this.guests.values()) { for (const [key, menu] of g.menus) if (menu.scriptId === id) g.menus.delete(key); }

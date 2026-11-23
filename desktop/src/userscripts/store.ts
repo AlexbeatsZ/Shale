@@ -68,6 +68,14 @@ export class UserscriptStore {
         if (!s.warnings?.some((w: string) => w.startsWith('Migration blocked:'))) { s.metadata = parseMetadata(s.source); validateSyntax(s.source, s.id); }
       }
       this.data = d;
+      // Old uninstall flows kept GM values by identity. Only installed scripts own data now.
+      const installed = new Set(this.data.scripts.map(s => s.id));
+      const orphaned = Object.keys(this.data.values).filter(id => !installed.has(id));
+      if (orphaned.length || this.data.retained) {
+        for (const id of orphaned) delete this.data.values[id];
+        delete this.data.retained;
+        await this.persist(this.data);
+      }
       return;
     } catch (e: any) { if (e.code !== 'ENOENT') throw e; }
     let legacy: any;
@@ -149,8 +157,7 @@ export class UserscriptStore {
       }
       if (d.scripts.some(s => s !== old && identity(s.metadata) === identity(bundle.metadata))) throw new Error('Another installed script already has this @namespace/@name');
       const now = Date.now();
-      const retainedId = d.retained?.[identity(bundle.metadata)];
-      const record: ScriptRecord = { ...bundle, id: old?.id ?? retainedId ?? randomUUID(), revision: (old?.revision ?? 0) + 1,
+      const record: ScriptRecord = { ...bundle, id: old?.id ?? randomUUID(), revision: (old?.revision ?? 0) + 1,
         enabled: old?.enabled ?? false, importedAt: old?.importedAt ?? now, updatedAt: now,
         sourceUrl: options.sourceUrl ?? old?.sourceUrl, autoUpdate: old?.autoUpdate ?? false,
         approved: options.approve ? approval(bundle) : old?.approved ?? { grants: [], connects: [], pageWorld: false, rules: { matches: [], includes: [], excludes: [], excludeMatches: [] } }, update: { state: 'saved' } };

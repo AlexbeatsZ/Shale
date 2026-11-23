@@ -949,7 +949,7 @@ test('tab bar: a quick drop swaps two tabs, resting first inserts before the hov
   await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'parity-blank.md');
 });
 
-test('tab bar: a split group swaps and reorders as one unit', async ({ page, backend }) => {
+test('tab bar: quick swaps affect one split page, while insertion moves the group', async ({ page, backend }) => {
   await page.evaluate(async () => {
     const module = '/src/lib/store.ts'; const state = (await import(module)).useStore.getState();
     await state.openFile('replacement.md', true, 'main'); await state.openFile('parity-blank.md', true, 'main');
@@ -958,15 +958,36 @@ test('tab bar: a split group swaps and reorders as one unit', async ({ page, bac
   await openSplit(page, 'side.md');
   const units = page.locator('.tab-bar .tab-scroll > :is(.tab, .tab-split-group):not(.tab-drop-gap)');
   await expect(units).toHaveText([/mainside/, /replacement/, /parity-blank/]);
-  // Quick drop of the group on the last tab swaps the group with it.
+  // Dragging a member out swaps only that page with the outside tab.
   await groupTab(page, 'main.md').dragTo(page.locator('.tab-bar .tab-scroll > [data-tab-path="parity-blank.md"]'));
-  await expect(units).toHaveText([/parity-blank/, /replacement/, /mainside/]);
-  // Resting on the first tab inserts the whole group before it.
-  await slowDrag(page, groupTab(page, 'side.md'), page.locator('.tab-bar .tab-scroll > [data-tab-path="parity-blank.md"]'));
-  await page.mouse.up();
-  await expect(units).toHaveText([/mainside/, /parity-blank/, /replacement/]);
-  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'main.md');
+  await expect(units).toHaveText([/parity-blank.*side/, /replacement/, /main/]);
+  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'parity-blank.md');
   await expect(host(page, 'split')).toHaveAttribute('data-document-id', 'side.md');
+  // The reverse direction replaces only the targeted member too.
+  await page.locator('.tab-bar .tab-scroll > [data-tab-path="main.md"]').dragTo(groupTab(page, 'side.md'));
+  await expect(units).toHaveText([/parity-blank.*main/, /replacement/, /side/]);
+  await expect(host(page, 'split')).toHaveAttribute('data-document-id', 'main.md');
+  // Resting on the first tab inserts the whole group before it.
+  await slowDrag(page, groupTab(page, 'main.md'), page.locator('.tab-bar .tab-scroll > [data-tab-path="side.md"]'));
+  await page.mouse.up();
+  await expect(units).toHaveText([/replacement/, /parity-blank.*main/, /side/]);
+  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'parity-blank.md');
+  await expect(host(page, 'split')).toHaveAttribute('data-document-id', 'main.md');
+});
+
+test('tab bar: a parked split also swaps only the selected page', async ({ page, backend }) => {
+  await page.evaluate(async () => {
+    const module = '/src/lib/store.ts'; const state = (await import(module)).useStore.getState();
+    await state.openFile('replacement.md', true, 'main');
+    await state.openFile('main.md', true, 'main');
+  });
+  await openSplit(page, 'side.md');
+  await page.locator('.tab-bar .tab-scroll > [data-tab-path="replacement.md"]').click();
+  await expect(page.locator('.tab-split-group')).toHaveClass(/is-parked/);
+  await groupTab(page, 'side.md').dragTo(page.locator('.tab-bar .tab-scroll > [data-tab-path="replacement.md"]'));
+  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'main.md');
+  await expect(host(page, 'split')).toHaveAttribute('data-document-id', 'replacement.md');
+  await expect(page.locator('.tab-bar .tab-scroll > .tab')).toHaveText([/side/]);
 });
 
 test('split divider: drag resizes the pages, double click swaps them, a snapped sidebar follows', async ({ page, backend }, info) => {

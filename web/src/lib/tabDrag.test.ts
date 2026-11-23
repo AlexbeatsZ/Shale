@@ -24,10 +24,12 @@ describe('arrangeTabUnits', () => {
     expect(arrangeTabUnits(tabs('a', 'b'), null, ['a'], ['a'], 'swap')).toBeNull();
   });
 
-  it('moves and swaps a split group as one unit, main page first', () => {
+  it('inserts a split group as one unit, main page first, but rejects whole-group swaps', () => {
     const list = tabs('a', 'm', 's', 'c');
     expect(order(arrangeTabUnits(list, ['m', 's'], ['m', 's'], ['a'], 'before'))).toEqual(['m', 's', 'a', 'c']);
-    expect(order(arrangeTabUnits(list, ['m', 's'], ['s'], ['c'], 'swap'))).toEqual(['a', 'c', 'm', 's']);
+    expect(arrangeTabUnits(list, ['m', 's'], ['s'], ['c'], 'swap')).toBeNull();
+    expect(arrangeTabUnits(list, ['m', 's'], ['m', 's'], ['c'], 'swap')).toBeNull();
+    expect(arrangeTabUnits(list, ['m', 's'], ['c'], ['m', 's'], 'swap')).toBeNull();
     expect(order(arrangeTabUnits(list, ['m', 's'], ['c'], ['m', 's'], 'before'))).toEqual(['a', 'c', 'm', 's']);
   });
 

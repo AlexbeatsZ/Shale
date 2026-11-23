@@ -1,7 +1,9 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.51 · Cập nhật: 2026-11-22 · Trạng thái: Draft
+> Phiên bản: 1.53 · Cập nhật: 2026-11-22 · Trạng thái: Draft
+> Changelog 1.53 (同文件跨平台快捷键) 快捷键统一存放 `.obsidian/webobsidian/hotkeys.jsonc` 并沿用原生文件同步；通用 Ctrl/Mod 在 macOS 优先解析为 Command，`PhysicalCtrl` 明确表示实体 Control。Windows/Linux/Android 继续使用 Ctrl。允许同一文件按命令设置 Windows 与 Mac 覆盖，设置页并排编辑两端、多组绑定、禁用与继承；已存在的统一文件优先，旧本机与 Obsidian 配置只在首次迁移读取。修复编辑器、剪贴板与原生命令的 Command 默认值；系统保留组合才回退 Control。设计见 docs/design/hotkeys.md。
+> Changelog 1.52 (用户脚本更新与卸载) 修复 Electron 33 下 GitHub 更新地址重定向失败；所有脚本、资产和 GM 请求逐跳检查 URL 与权限。卸载脚本直接删除源码、缓存、授权和 GM 数据，不再询问是否保留；加载旧存储时清理已卸载脚本的残留值与身份索引，保留仍安装脚本的数据。标签快速交换只作用于两个单独页面，分屏组内未被拖到的页面保持原位；拖动分屏组的留白/图标不能与单页交换，停留插入仍可整体移动分屏组。设计见 docs/design/browser-userscripts.md、workspace-sidebars.md。
 > Changelog 1.51 (标签排序/交换、分屏分隔线与侧栏吸附) 拖动标签时快速松手与目标交换位置（紫框），在目标上停留约 0.45 秒后目标及其后的标签让出空位并显示被拖标签的虚影，松手插到目标之前；拖到末尾空白处移到最后。分屏组作为一个整体参与排序和交换；普通标签快速放到可见分屏组的组员上仍放入该栏。触控屏长按约 0.35 秒提起标签后拖动，长按不动松手打开标签菜单，提起前移动仍滚动标签栏。两栏之间显示 1px 分隔线：拖动调整比例（设备本地保存），双击/双击触摸交换两页。侧栏拖动宽度时可吸附到左右分屏的分隔线，吸附后随分隔线移动。页面与面板滚动条隐藏，侧栏去掉阴影和半透明。设计见 docs/design/workspace-sidebars.md。
 > Changelog 1.50 (公式补全与标题语法) STEM 的 `mk` / `dm` 展开为 `\(…\)` / `\[…\]`，空公式内可立即使用数学补全。美元定界符继续解析，格式化默认保留两种写法。标题只识别 `#` 系列，正文中的 `---` 仍可用作分隔线，文首 YAML 继续识别。
 > Changelog 1.49 (LaTeX 括号按深度着色) 公式源码中，正确配对的括号按嵌套深度依次使用金、紫、蓝、绿、橙、青，第七层从金色重新开始。未闭合、多余或类型不匹配的括号标红并显示波浪下划线。沿用原有括号着色开关。设计见 docs/design/native-writing.md。
