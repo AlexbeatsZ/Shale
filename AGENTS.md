@@ -10,7 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-22 正在按用户要求取消桌面原生菜单隐藏快捷键（PRD 1.54）：23 个原生动作进入同一命令目录且默认不分配，菜单转发目录，主框架 IPC 白名单执行；释放 Command+R/H/M/Q，系统接管的窗口/应用切换等仍回退 Control。STEM 已通过 API 删除 move 的 Ctrl+Shift+M 并设置 Mac settings=PhysicalCtrl+反引号；撤销保留 Ctrl/Command+Z，用户左栏 Ctrl+Shift+Z 保留。0.1.84 固定证书 Mac 实包原生动作/自定义 reload、既有快捷键和完整 WebViewer 回归通过，Windows 构建和发布/部署进行中。
+- 2026-11-22 桌面 v0.1.84 已发布（7 资产，源码 8651466），Mac `/Applications/Shale.app` 已原位升级并通过固定证书/identifier、deep/strict、STEM 启动与 healthz。PRD 1.54：全部应用菜单零快捷键，23 个原生动作进入设置且默认未分配；释放 Command+R/H/M/Q，仅系统组合回退 Control。STEM move 只留 Ctrl+M，Mac settings=PhysicalCtrl+反引号；撤销 Ctrl/Command+Z，左栏 Ctrl/Command+Shift+Z，重做仍可用 Ctrl/Command+Y。自定义 reload 复用完整文档/布局保存屏障。Mac 原生动作、既有快捷键及完整 WebViewer 实包通过；Windows x64 构建/版本通过但未原位安装、未验收实体键盘。设计 `docs/design/hotkeys.md`，验收 `tests/reports/native-menu-shortcuts-20261122.md`。
 - 2026-11-22 跨平台快捷键改为同一 Vault 文件 `.obsidian/webobsidian/hotkeys.jsonc`（PRD 1.53）：Ctrl/Mod 在 Mac 使用 Command，PhysicalCtrl/Control 明确表示实体 Control；Mac 未覆盖时跟随 Windows。设置页并排编辑两端、禁用/恢复继承；文件存在后不再用旧本机 settings 覆盖，文件同步变更即时刷新。补齐 `editor:set-heading-7`（正文内标题）和旧 apply-heading7 别名，允许 7 级改回 0–6 级。桌面 v0.1.83 已发布（Mac arm64 + Windows x64 共 7 资产，源码 250fa6a）；Mac 固定证书签名与实包快捷键/完整 WebViewer 回归通过，Windows 隔离构建与版本通过。Mac `/Applications/Shale.app` 已按后续授权原位升级 0.1.82→0.1.83，签名/启动/healthz 通过，STEM 统一快捷键文件已迁移；Windows 实体键盘交互未验收。设计 `docs/design/hotkeys.md`、`heading-level-commands.md`。
 - 2026-11-22 桌面 v0.1.82 已发布（Mac arm64、Windows x64 共 7 资产，源码 52b70d0），Mac `/Applications/Shale.app` 已原位升级并通过固定证书/identifier 签名、启动及 healthz 检查。脚本更新修复 GitHub 重定向，卸载直接清除数据并清理历史孤立值；真实 STEM 两条卸载残留已清除。标签快速交换仅针对两页（含可见/暂存分屏），停留插入仍可整体移动分屏组。619 单元、45 分屏浏览器、真实 Electron 网络/迁移与 macOS 实包回归通过。ALR 0.3.0 下载成功，扩大站点范围待用户审阅（仍运行 0.2.1）。报告 `tests/reports/browser-userscripts-20261122.md`。
 - 2026-11-22 Mac 已拉取 main 的 968f890 并构建桌面 0.1.80，`/Applications/Shale.app` 原位部署并启动，含下述同步与标签/分屏更新。网页浏览实包回归完整重跑通过（首轮侧栏地址栏焦点断言偶发失败）；签名改用固定 `Local Development Code Signing`，identifier 保持 `com.xnohat.webobsidian`，`codesign -d -r-` 含 `certificate leaf`，安装后 strict 校验及 `/healthz` 通过。仅本机部署，未发布新版 Release；真实同步冲突与触控仍待实机验收。
@@ -37,7 +37,6 @@
 - Mac 数据目录为 `~/Library/Application Support/@webobsidian/desktop`，服务日志为 `logs/server.log`。历史安装包从 GitHub Release 取回。历史 Release、永久密钥、SDK/依赖缓存与用户数据各在原归属位置。
 
 ## Active Work
-- 2026-11-22 日用 STEM 快捷键仍有待处理项：`commands` 的 Ctrl+R 在 Mac 映射 Command+R 与原生 reload 重叠；`settings` 的 Ctrl+反引号映射后与 Mac 切窗键重叠（尚未验证实际抢键）。自定义左栏 Ctrl+Shift+Z 与默认重做、移动文件 Ctrl+Shift+M 与默认 MCP 上下文绑定同键，按当前规则自定义覆盖默认；0.1.83 未改绑。已自动回退的是移动文件 Ctrl+M→Mac Control+M、切换源码 Ctrl+Q→Mac Control+Q。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。
@@ -57,6 +56,7 @@
 - Windows 安装在 Session1 进行(一次性 Interactive 计划任务):先 `CloseMainWindow` 正常关闭，再 `Shale-<ver>-win-x64-setup.exe /S`。Android 从 OMEN `git archive` 隔离目录构建时需把 Mac 已解压的 `android/.runtime`(nodejs-mobile)放入，并临时复制 `meta-obsidian/android/.signing`,构建后删除。
 
 ## Durable Lessons
+- Electron33 的 role 菜单在 accelerator 为 null/undefined 时仍补默认键，须显式空字符串；Mac role 原生 selector 还可能先于 click 执行，同目录动作必须移除 role 再转发。reload 须复用 saveWorkspaceBeforeExit 保存布局与文档，仅保存文档会被 beforeunload 的布局脏状态阻止。
 - 仅副作用导入的上游 Worker 包装可能被 package sideEffects 树摇删除，须使用真实打包入口。Electron33 Worker 请求不继承页面 User-Agent 标记，课件本地 blob 内联也受 connect-src 限制，原生包必须覆盖实际 Worker 与图片页。
 - 代码块不声明root时会命中浏览器的同名应用根节点；隔离来源请求运行时会带Origin:null。复用localAccess，仅为固定只读runtime资产放行，API/WS继续拒绝，原生验收必须覆盖生产CSP；生成的native Markdown还需paint containment避免固定定位类覆盖应用。
 - 章节高度不能按宽泛`[role=status]`判未就绪（公式也有该角色）；只用整章`data-virtual-loading`。缓存会话重挂载时还要等CodeMirror `onReady`，否则空宿主会把长章缓存成81px，引起滚动跳动。加载标记移除后重测，原生验收必须做章节开头反向滚动。

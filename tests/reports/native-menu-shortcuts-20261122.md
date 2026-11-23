@@ -18,4 +18,12 @@ unassigned and are available in the same synchronized shortcut settings.
   through settings saves documents/layout and actually reloads. Unknown IPC actions reject.
 - Existing packaged hotkeys and complete WebViewer regressions passed sequentially.
 - Shared reload/exit persistence tests: 31 passed.
-- Windows build, publication and Mac daily replacement pending.
+- OMEN isolated Windows x64 NSIS build passed: FileVersion 0.1.84, ProductVersion
+  0.1.84.0. Installer 129998811 bytes; blockmap 135398; latest.yml 358.
+- Published v0.1.84, source 865146697296ce0ec90cabcf6bb4a2c2b57c694a, release ID
+  454987835. All seven asset names/sizes checked and latest tag verified.
+- Mac daily /Applications/Shale.app upgraded 0.1.83 -> 0.1.84; fixed certificate,
+  identifier and deep/strict checks passed. STEM healthz ok; actual hotkey API
+  retained move Ctrl+M and Mac settings PhysicalCtrl+backtick; native actions unassigned.
+  Temporary previous bundle and old generated Mac assets removed.
+- Windows daily installation and physical keyboard interaction not accepted by this task.
