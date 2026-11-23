@@ -39,3 +39,10 @@ returned 77 binding overrides and no platform overrides. Real effective fallback
 move Ctrl+M -> Mac physical Control+M; toggle-source Ctrl+Q -> Control+Q.
 Further conflicts remain visible in the project Active Work; they were not silently
 changed during deployment (native reload/window cycling and custom/default collisions).
+
+## Native menu follow-up
+
+The conflicts above were handled and daily Mac upgraded to 0.1.84; see
+`native-menu-shortcuts-20261122.md`. App-owned native menu shortcuts are now empty,
+so move Ctrl+M and source Ctrl+Q resolve to Command. Mac settings explicitly uses
+physical Control+backtick; the extra move Ctrl+Shift+M was removed.
