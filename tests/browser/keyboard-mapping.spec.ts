@@ -108,3 +108,57 @@ test('physical Option/Alt key events record Alt independently of Command', async
   await page.keyboard.press('Alt+z');
   expect(await page.evaluate(() => (window as Window & { recordedOptionBinding?: Hotkey }).recordedOptionBinding)).toEqual({ modifiers: ['Alt'], key: 'Z' });
 });
+
+test('Mac Command owns selection, shared history, clipboard and document navigation', async ({ page }) => {
+  test.skip(!await page.evaluate(() => /Mac/.test(navigator.platform)), 'Native Mac keymap');
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  const source = 'first line\n\nlast line';
+  await page.keyboard.press('Meta+ArrowDown');
+  await expect.poll(() => page.evaluate(() => window.renderHarness.location(0)?.anchor)).toBe(source.length);
+  await page.keyboard.press('Meta+ArrowUp');
+  await expect.poll(() => page.evaluate(() => window.renderHarness.location(0)?.anchor)).toBe(0);
+  await page.keyboard.press('Meta+a');
+  await page.keyboard.press('Meta+c');
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(source);
+  await page.keyboard.press('Meta+x');
+  await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe('');
+  await page.keyboard.press('Meta+z');
+  await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe(source);
+  await page.keyboard.press('Meta+Shift+Z');
+  await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe('');
+  await page.keyboard.press('Meta+v');
+  await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe(source);
+});
+
+test('level 7 is available in the actual native command catalog and edits BodyHeading syntax', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const load = (path: string) => import(path);
+    const { sharedApp } = await load('/src/lib/plugins.ts');
+    const { useStore } = await load('/src/lib/store.ts');
+    useStore.setState({ activePath: 'a.md' });
+    const command = sharedApp.commands.findCommand('editor:set-heading-7');
+    if (!command) return null;
+    window.renderHarness.focus(0);
+    sharedApp.commands.executeCommandById(command.id);
+    return { title: command.name, source: window.renderHarness.source(0) };
+  });
+  expect(result).toEqual({ title: '设为 7 级标题（正文内标题）', source: '####### first line\n\nlast line' });
+});
+
+
+test('body headings can become ordinary headings and plain paragraphs through the same command catalog', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    const load = (path: string) => import(path);
+    const { sharedApp } = await load('/src/lib/plugins.ts');
+    const { useStore } = await load('/src/lib/store.ts');
+    useStore.setState({ activePath: 'a.md' }); window.renderHarness.focus(0);
+    sharedApp.commands.executeCommandById('editor:set-heading-7');
+    const body = window.renderHarness.source(0);
+    sharedApp.commands.executeCommandById('editor:set-heading-2');
+    const ordinary = window.renderHarness.source(0);
+    sharedApp.commands.executeCommandById('editor:set-heading-7');
+    sharedApp.commands.executeCommandById('editor:set-heading-0');
+    return { body, ordinary, plain: window.renderHarness.source(0) };
+  });
+  expect(result).toEqual({ body: '####### first line\n\nlast line', ordinary: '## first line\n\nlast line', plain: 'first line\n\nlast line' });
+});

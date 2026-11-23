@@ -9,6 +9,7 @@ import { FileSyncEngine } from './fileSyncEngine.js';
 import { OrderedSyncTransport, normalizeSyncEndpoint } from './syncTransport.js';
 import { createSyncServer } from '../../../sync-server/server.mjs';
 import { prefix, validPath } from '../../../sync-server/protocol.mjs';
+import { normalizeHotkeyPreferences, resolveHotkeys, hotkeyLabel } from '@webobsidian/search-core';
 import type { FileSyncPreferences } from '../contracts/fileSync.js';
 
 const token = 'fixture-only-token-not-a-live-credential-123456';
@@ -67,6 +68,25 @@ describe('native file synchronization', () => {
     expect((await second.engine.run()).phase).toBe('idle');
     expect((await first.engine.run()).phase).toBe('idle');
     expect(await fs.readFile(path.join(first.root, '笔记.md'), 'utf8')).toBe('另一台设备修改');
+  });
+
+  it('syncs one hotkey file with independent Windows and physical-Control Mac bindings intact', async () => {
+    const first = await client('win-keys'), second = await client('mac-keys');
+    const filename = '.obsidian/webobsidian/hotkeys.jsonc';
+    const preferences = { version: 1, bindings: { save: [{ modifiers: ['Ctrl'], key: 'S' }] }, platforms: {
+      windows: { 'editor:set-heading-7': [{ modifiers: ['Ctrl', 'Alt'], key: '7' }] },
+      mac: { 'editor:set-heading-7': [{ modifiers: ['PhysicalCtrl', 'Alt'], key: '8' }] },
+    } };
+    await first.write(filename, JSON.stringify(preferences));
+    expect((await first.engine.run()).phase).toBe('idle'); expect((await second.engine.run()).phase).toBe('idle');
+    let synced = normalizeHotkeyPreferences(JSON.parse(await fs.readFile(path.join(second.root, filename), 'utf8')));
+    expect(hotkeyLabel(resolveHotkeys(synced, 'save', [], true)[0], true)).toBe('⌘ + S');
+    expect(hotkeyLabel(resolveHotkeys(synced, 'editor:set-heading-7', [], true)[0], true)).toBe('Control + Option + 8');
+    synced.platforms!.windows!['editor:set-heading-7'][0].key = '9';
+    await second.write(filename, JSON.stringify(synced)); await second.engine.run(); await first.engine.run();
+    synced = normalizeHotkeyPreferences(JSON.parse(await fs.readFile(path.join(first.root, filename), 'utf8')));
+    expect(synced.platforms!.windows!['editor:set-heading-7'][0].key).toBe('9');
+    expect(hotkeyLabel(resolveHotkeys(synced, 'editor:set-heading-7', [], true)[0], true)).toBe('Control + Option + 8');
   });
 
   it('propagates binary replacement, rename and deletion with tombstones', async () => {

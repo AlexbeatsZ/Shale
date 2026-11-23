@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-22 跨平台快捷键改为同一 Vault 文件 `.obsidian/webobsidian/hotkeys.jsonc`（PRD 1.53）：Ctrl/Mod 在 Mac 使用 Command，PhysicalCtrl/Control 明确表示实体 Control；Mac 未覆盖时跟随 Windows。设置页并排编辑两端、禁用/恢复继承；文件存在后不再用旧本机 settings 覆盖，文件同步变更即时刷新。补齐 `editor:set-heading-7`（正文内标题）和旧 apply-heading7 别名，允许 7 级改回 0–6 级。源码与回归已通过，0.1.83 打包/发布验收进行中。设计 `docs/design/hotkeys.md`、`heading-level-commands.md`。
 - 2026-11-22 桌面 v0.1.82 已发布（Mac arm64、Windows x64 共 7 资产，源码 52b70d0），Mac `/Applications/Shale.app` 已原位升级并通过固定证书/identifier 签名、启动及 healthz 检查。脚本更新修复 GitHub 重定向，卸载直接清除数据并清理历史孤立值；真实 STEM 两条卸载残留已清除。标签快速交换仅针对两页（含可见/暂存分屏），停留插入仍可整体移动分屏组。619 单元、45 分屏浏览器、真实 Electron 网络/迁移与 macOS 实包回归通过。ALR 0.3.0 下载成功，扩大站点范围待用户审阅（仍运行 0.2.1）。报告 `tests/reports/browser-userscripts-20261122.md`。
 - 2026-11-22 Mac 已拉取 main 的 968f890 并构建桌面 0.1.80，`/Applications/Shale.app` 原位部署并启动，含下述同步与标签/分屏更新。网页浏览实包回归完整重跑通过（首轮侧栏地址栏焦点断言偶发失败）；签名改用固定 `Local Development Code Signing`，identifier 保持 `com.xnohat.webobsidian`，`codesign -d -r-` 含 `certificate leaf`，安装后 strict 校验及 `/healthz` 通过。仅本机部署，未发布新版 Release；真实同步冲突与触控仍待实机验收。
 - 2026-11-22 标签栏拖动（快速松手交换、停留插入并显示空位虚影、分屏组整体移动、触控长按提起）、分屏 1px 分隔线（拖动调比例、双击交换）、侧栏宽度吸附分隔线、隐藏滚动条并去掉侧栏阴影/半透明（PRD 1.51）。源码与回归已通过，未打包发布，Android 触控待实机验收。设计 `docs/design/workspace-sidebars.md`。
@@ -65,7 +66,7 @@
 - OMEN Windows 构建：常规仓库 `C:\Users\Meta\Project\Workspaces\meta-obsidian` 常有未提交改动，只 `git fetch`,用 `git archive <commit>` 导出到 `%TEMP%\.agents\webobsidian-build-<ver>` 隔离构建(`npm ci`→`npm run build`→`desktop: node scripts/build.mjs`→`electron-builder --win nsis --x64 --publish never`)。OMEN 上 `npm ci` 的 Electron 下载会无限挂起：设 `ELECTRON_SKIP_BINARY_DOWNLOAD=1`,electron-builder 会用 `%LOCALAPPDATA%\electron\Cache` 里已有的 zip;tunnel 下载会超时：把常规仓库 `desktop/.gen/tunnel-downloads/tunnel-client-v0.0.19-windows-amd64*` 复制进隔离目录同一路径。PowerShell 5.1 脚本不要用 `$ErrorActionPreference='Stop'`(git 的 stderr 进度会被当成错误),改看 `$LASTEXITCODE`。
 - 浏览器回归直接用 `RENDER_TEST_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'`；已有核心 dist 时设 `RENDER_TEST_SKIP_CORE_BUILD=1`。2026-11-06 本轮 160 个相关浏览器/集成、546 个单元全部通过，旧的 16 个已知失败已经修复；不再视为允许忽略的基线失败。全单元用 `npx vitest run --testTimeout=30000`，Git 子进程测试需这个超时。临时撤下代码后必须先 `npm run build:core`，不能沿用旧 dist。
 - 发版时上传大文件常遇 GitHub HTTP 500/502,`gh release create` 带文件失败会删掉整个草稿。做法:先 `--draft` 建空 Release,逐个 `gh release upload --clobber` 并重试,用 API 按 release id 核对大小(草稿按 tag 查不到),再 `gh release edit --draft=false --latest`。主检出有其他任务改动时，用 `git worktree add --detach /tmp/.agents/webobsidian-release-<ver> <sha>` 隔离构建，复制主检出当前平台所需的 `desktop/.gen/tunnel/arm64` 跳过 tunnel 下载（Mac只保留arm64）。
-- 渲染 harness(`/__render-test`):slot 0 实时预览、slot 1 阅读；`reset` 后光标在 0，测首行嵌入控件前先移到文末。快捷键测试直接发 `Control`/`Alt`，按用户要求不换成 Command；Shift+Z 应发大写 `Z`。脚注跳转是异步任务，用 `expect.poll` 等待位置完成。
+- 渲染 harness(`/__render-test`):slot 0 实时预览、slot 1 阅读；`reset` 后光标在 0，测首行嵌入控件前先移到文末。快捷键测试按目标语义发真实按键：Mac 主快捷键用 `Meta`（Command）、实体 Control 用 `Control`，Windows 主快捷键用 `Control`；Shift+Z 应发大写 `Z`。脚注跳转是异步任务，用 `expect.poll` 等待位置完成。
 - 测试源码里用 JS `String.replace` 插入 `$$…$$` 时替换参数必须用函数(`() => '…'`),字符串里的 `$$` 会被当成一个 `$`,公式变成行内数学，看起来像编号丢失。
 - zsh 默认 noclobber,`>` 覆盖已有日志会失败导致命令未执行;构建链放进 `bash -c` 或用 `>|`。
 

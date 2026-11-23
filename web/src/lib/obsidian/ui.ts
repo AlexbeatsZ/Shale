@@ -1,3 +1,4 @@
+import { physicalHotkey } from '@webobsidian/search-core';
 import { isMacOS } from '../platform';
 import { registerBackHandler } from '../host';
 import { matchName } from '../search';
@@ -45,14 +46,9 @@ export class Scope {
   }
 }
 export function matchesModifiers(e: KeyboardEvent, mods: string[]) {
-  const mac = isMacOS(),
-    mod = mods.includes('Mod');
-  return (
-    e.ctrlKey === (mods.includes('Ctrl') || (mod && !mac)) &&
-    e.metaKey === (mods.includes('Meta') || (mod && mac)) &&
-    e.altKey === mods.includes('Alt') &&
-    e.shiftKey === mods.includes('Shift')
-  );
+  const resolved = physicalHotkey({ modifiers: mods, key: '' }, isMacOS()).modifiers;
+  return e.ctrlKey === resolved.includes('PhysicalCtrl') && e.metaKey === resolved.includes('Meta') &&
+    e.altKey === resolved.includes('Alt') && e.shiftKey === resolved.includes('Shift');
 }
 export const Keymap = {
   isModEvent: (e: MouseEvent | KeyboardEvent) => (isMacOS() ? e.metaKey : e.ctrlKey),

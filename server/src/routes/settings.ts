@@ -12,7 +12,7 @@ import { selectVaultWorkspace } from '../services/uistate.js';
 import { z } from 'zod';
 import { readCssSnippets, readCssSnippet, setCssSnippetEnabled } from '../services/cssSnippets.js';
 import { MCP_CONFIGURATION_PATH, readMcpPreferences, saveMcpPreferences } from '../services/mcpPreferences.js';
-import { readHotkeys, patchHotkeys } from '../services/hotkeySettings.js';
+import { readHotkeys, patchHotkeys, HOTKEY_CONFIGURATION_PATH } from '../services/hotkeySettings.js';
 import { DebugLog } from '../services/debugLog.js';
 import { UiSettingsSchema } from '../contracts/uiSettings.js';
 import { FilePlacementSchema } from '../contracts/filePlacement.js';
@@ -58,7 +58,11 @@ settingsRouter.put('/mcp', asyncHandler(async (req, res) => {
 }));
 
 settingsRouter.get('/hotkeys', asyncHandler(async (_req, res) => { res.json(await readHotkeys()); }));
-settingsRouter.put('/hotkeys', asyncHandler(async (req, res) => { res.json(await patchHotkeys(req.body)); }));
+settingsRouter.put('/hotkeys', asyncHandler(async (req, res) => {
+  const value = await patchHotkeys(req.body);
+  broadcast({ type: 'vault-configuration-changed', path: HOTKEY_CONFIGURATION_PATH, event: 'change' });
+  res.json(value);
+}));
 
 settingsRouter.get(
   '/',

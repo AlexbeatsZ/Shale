@@ -18,7 +18,7 @@ export function bindRenderedLink(anchor: HTMLAnchorElement, view: EditorView, ta
   // Chromium on macOS emits contextmenu instead of click for Control+primary.
   // A real secondary-button click continues through the ordinary context menu.
   anchor.addEventListener('contextmenu', event => {
-    if (event.button === 0 && event.ctrlKey) open(event);
+    if (event.button === 0 && (event.ctrlKey || event.metaKey)) open(event);
   });
 }
 

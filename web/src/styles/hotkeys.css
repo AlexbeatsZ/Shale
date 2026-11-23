@@ -25,3 +25,14 @@
   .hotkey-controls { justify-content: flex-start; max-width: 100%; }
   .hotkey-bindings { justify-content: flex-start; }
 }
+.hotkey-list .setting-row { flex-wrap: wrap; }
+.hotkey-platforms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; margin-top: 8px; }
+.hotkey-platform { min-width: 0; padding: 10px; border: 1px solid var(--background-modifier-border); border-radius: 6px; }
+.hotkey-platform-title { margin-bottom: 8px; font-size: 12px; font-weight: 600; }
+.hotkey-platform .hotkey-bindings { justify-content: flex-start; min-height: 24px; }
+.hotkey-platform .hotkey-actions { margin-top: 8px; align-items: center; }
+.hotkey-recording { display: grid; gap: 8px; margin-top: 8px; }
+.hotkey-recording form { display: flex; flex-wrap: wrap; gap: 6px; }
+.hotkey-recording form input { width: 100%; }
+@media (max-width: 560px) { .hotkey-platforms { grid-template-columns: minmax(0, 1fr); } }
+.settings-content .hotkey-list .setting-row > .control { width: 100%; max-width: none; }

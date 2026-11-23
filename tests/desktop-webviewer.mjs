@@ -66,7 +66,7 @@ try {
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });
   const command = async name => {
-    await page.keyboard.press('Control+p');
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+p' : 'Control+p');
     await page.locator('.palette-input').fill(name);
     await page.keyboard.press('Enter');
     await expect(page.locator('.palette-backdrop')).toHaveCount(0);

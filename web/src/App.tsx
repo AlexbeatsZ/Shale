@@ -2,7 +2,7 @@ import { host, handleBack } from './lib/host';
 import { desktopCommands } from '../../desktop/src/bridge';
 import { ensureWriting, writingFileChanged, watchExternalWritingSources } from './lib/writing/config';
 import { bindWritingNavigation } from './lib/writing/commands';
-import { refreshSearch, searchSettings } from './lib/search';
+import { refreshSearch, refreshHotkeys, searchSettings } from './lib/search';
 import { clearSyncConflicts, refreshSyncConflicts } from './lib/syncConflicts';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { api, invalidateVaultRequests } from './lib/api';
@@ -166,6 +166,7 @@ export default function App() {
         } else if (msg.type === 'automation-changed') {
           void sharedApp.automation.reload().catch(error => useStore.getState().notify(String(error)));
         } else if (msg.type === 'vault-configuration-changed') {
+          if (msg.path === '.obsidian/webobsidian/hotkeys.jsonc') void refreshHotkeys();
           writingFileChanged(msg.path);
           if (msg.path === '.obsidian/webobsidian/automation.jsonc')
             void sharedApp.automation.reload().catch(error => useStore.getState().notify(String(error)));

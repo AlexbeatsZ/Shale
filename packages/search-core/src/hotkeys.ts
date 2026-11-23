@@ -1,12 +1,15 @@
 /** One binding format for native commands, plugin adapters and legacy imports. */
 export interface Hotkey { modifiers: string[]; key: string }
+export type HotkeyPlatform = 'windows' | 'mac';
+export type HotkeyBindings = Record<string, Hotkey[]>;
 export interface HotkeyPreferences {
   version: 1;
   bindings: Record<string, Hotkey[]>;
+  platforms?: Partial<Record<HotkeyPlatform, HotkeyBindings>>;
   imported: string[];
   migration: string;
 }
-export interface VaultHotkeys extends HotkeyPreferences { vault: string }
+export interface VaultHotkeys extends HotkeyPreferences { vault: string; revision?: string }
 export const emptyHotkeys = (): HotkeyPreferences => ({ version: 1, bindings: {}, imported: [], migration: '' });
 
 const aliases: Record<string, string> = {
@@ -36,7 +39,7 @@ const aliases: Record<string, string> = {
   'obsidian-latex-suite:latex-suite-toggle-conceal': 'formula-conceal',
 };
 export function hotkeyCommandId(id: string): string {
-  const heading = /^obsidian-heading-shifter:apply-heading([0-6])$/.exec(id);
+  const heading = /^obsidian-heading-shifter:apply-heading([0-7])$/.exec(id);
   return heading ? `editor:set-heading-${heading[1]}` : aliases[id] ?? id;
 }
 export function normalizeKey(key: string): string {
@@ -47,23 +50,23 @@ export function normalizeHotkey(value: unknown): Hotkey | null {
   if (!value || typeof value !== 'object') return null;
   const binding = value as Partial<Hotkey>;
   if (typeof binding.key !== 'string' || !binding.key || binding.key.length > 40 || !Array.isArray(binding.modifiers)) return null;
-  const names: Record<string, string> = { mod: 'Mod', ctrl: 'Ctrl', control: 'Ctrl', meta: 'Meta', cmd: 'Meta', command: 'Meta', alt: 'Alt', option: 'Alt', shift: 'Shift' };
+  const names: Record<string, string> = { mod: 'Mod', ctrl: 'Ctrl', control: 'PhysicalCtrl', physicalctrl: 'PhysicalCtrl', meta: 'Meta', cmd: 'Meta', command: 'Meta', alt: 'Alt', option: 'Alt', shift: 'Shift' };
   const mods = binding.modifiers.map(mod => typeof mod === 'string' ? names[mod.toLowerCase()] : undefined);
   if (mods.some(mod => !mod)) return null;
-  return { modifiers: ['Mod', 'Ctrl', 'Meta', 'Alt', 'Shift'].filter(mod => mods.includes(mod)), key: normalizeKey(binding.key) };
+  return { modifiers: ['Mod', 'Ctrl', 'PhysicalCtrl', 'Meta', 'Alt', 'Shift'].filter(mod => mods.includes(mod)), key: normalizeKey(binding.key) };
 }
 export function bindingFromString(value: string): Hotkey | null {
   // Split modifiers from the front so Ctrl++ remains a valid plus key.
   const modifiers: string[] = []; let key = value.trim();
   for (;;) {
-    const match = /^(Mod|Ctrl|Control|Meta|Cmd|Command|Alt|Option|Shift)\+/i.exec(key);
+    const match = /^(Mod|Ctrl|Control|PhysicalCtrl|Meta|Cmd|Command|Alt|Option|Shift)\+/i.exec(key);
     if (!match) break;
     modifiers.push(match[1]); key = key.slice(match[0].length);
   }
   return normalizeHotkey({ modifiers, key });
 }
 export function hotkeySignature(binding: Hotkey, mac = false): string {
-  const mods = new Set(binding.modifiers.map(mod => mod === 'Mod' ? (mac ? 'Meta' : 'Ctrl') : mod));
+  const mods = new Set(binding.modifiers.map(mod => mod === 'Mod' || mod === 'Ctrl' ? (mac ? 'Meta' : 'Ctrl') : mod === 'PhysicalCtrl' ? 'Ctrl' : mod));
   return ['Ctrl', 'Meta', 'Alt', 'Shift'].filter(mod => mods.has(mod)).concat(normalizeKey(binding.key).toLowerCase()).join('+');
 }
 /** Layout characters first; shifted number/punctuation keys retain their base key. */
@@ -73,11 +76,52 @@ export function eventHotkey(event: { key: string; code: string; ctrlKey: boolean
   const key = event.altKey && /^Key[A-Z]$/.test(event.code) ? event.code.slice(3)
     : event.shiftKey || event.altKey ? (/^Digit[0-9]$/.test(event.code) ? event.code.slice(5) : punctuation[event.code] ?? event.key) : event.key;
   if (['Control', 'Meta', 'Alt', 'Shift', 'Dead', 'Process', 'Unidentified'].includes(key)) return null;
-  return normalizeHotkey({ modifiers: [event.ctrlKey && 'Ctrl', event.metaKey && 'Meta', event.altKey && 'Alt', event.shiftKey && 'Shift'].filter(Boolean), key });
+  return normalizeHotkey({ modifiers: [event.ctrlKey && 'PhysicalCtrl', event.metaKey && 'Meta', event.altKey && 'Alt', event.shiftKey && 'Shift'].filter(Boolean), key });
+}
+/** Resolve to physical modifiers before displaying or matching; never persist this view. */
+export function physicalHotkey(binding: Hotkey, mac = false): Hotkey {
+  return { ...binding, modifiers: [...new Set(binding.modifiers.map(mod => mod === 'Ctrl' || mod === 'Mod'
+    ? mac ? 'Meta' : 'PhysicalCtrl' : mod))] };
 }
 export function hotkeyLabel(binding: Hotkey, mac = false): string {
-  return [...binding.modifiers.map(mod => mod === 'Mod' ? (mac ? '⌘' : 'Ctrl') : mod === 'Meta' && mac ? '⌘'
-    : mac && mod === 'Ctrl' ? 'Control' : mac && mod === 'Alt' ? 'Option' : mod), binding.key].join(' + ');
+  return [...physicalHotkey(binding, mac).modifiers.map(mod => mod === 'Meta' && mac ? '⌘'
+    : mod === 'PhysicalCtrl' ? mac ? 'Control' : 'Ctrl' : mac && mod === 'Alt' ? 'Option' : mod), binding.key].join(' + ');
+}
+const macReserved = new Set(['Meta+h', 'Meta+Alt+h', 'Meta+m', 'Meta+q', 'Meta+Tab', 'Meta+Shift+Tab', 'Meta+Space', 'Meta+Alt+Space'].map(value => value.toLowerCase()));
+export function isReservedMacHotkey(binding: Hotkey): boolean {
+  return macReserved.has(hotkeySignature(binding, true).toLowerCase());
+}
+/** Only inherited primary-modifier bindings fall back; explicit Mac choices are preserved. */
+export function portableHotkey(binding: Hotkey, mac: boolean): Hotkey {
+  return mac && binding.modifiers.some(mod => mod === 'Ctrl' || mod === 'Mod') && isReservedMacHotkey(binding)
+    ? { ...binding, modifiers: binding.modifiers.map(mod => mod === 'Ctrl' || mod === 'Mod' ? 'PhysicalCtrl' : mod) }
+    : binding;
+}
+export function hasHotkeyOverride(preferences: HotkeyPreferences, command: string, mac: boolean): boolean {
+  return Object.hasOwn(preferences.platforms?.[mac ? 'mac' : 'windows'] ?? {}, command) || (mac && Object.hasOwn(preferences.platforms?.windows ?? {}, command)) || Object.hasOwn(preferences.bindings, command);
+}
+export function resolveHotkeys(preferences: HotkeyPreferences, command: string, defaults: Hotkey[], mac = false): Hotkey[] {
+  const override = preferences.platforms?.[mac ? 'mac' : 'windows']?.[command];
+  return override ?? (preferences.platforms?.windows?.[command] ?? preferences.bindings[command] ?? defaults).map(binding => portableHotkey(binding, mac));
+}
+export function normalizeHotkeyPreferences(value: unknown): HotkeyPreferences {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('快捷键文件格式无效');
+  const data = value as Record<string, unknown>;
+  if (data.version !== 1) throw new Error('快捷键文件版本无效');
+  const result: HotkeyPreferences = { version: 1, bindings: normalizeHotkeyMap(data.bindings ?? {}), imported: [], migration: '' };
+  if (data.imported !== undefined && (!Array.isArray(data.imported) || data.imported.some(id => typeof id !== 'string'))) throw new Error('快捷键迁移记录无效');
+  result.imported = (data.imported as string[] | undefined) ?? [];
+  if (data.migration !== undefined && typeof data.migration !== 'string') throw new Error('快捷键迁移说明无效');
+  result.migration = (data.migration as string | undefined) ?? '';
+  if (data.platforms !== undefined) {
+    if (!data.platforms || typeof data.platforms !== 'object' || Array.isArray(data.platforms)) throw new Error('快捷键平台配置无效');
+    result.platforms = {};
+    for (const [platform, bindings] of Object.entries(data.platforms)) {
+      if (platform !== 'mac' && platform !== 'windows') throw new Error('快捷键平台无效：' + platform);
+      result.platforms[platform] = normalizeHotkeyMap(bindings);
+    }
+  }
+  return result;
 }
 export function mergeHotkeys(target: Hotkey[], source: readonly Hotkey[]): Hotkey[] {
   const known = new Set(target.map(key => JSON.stringify(key)));

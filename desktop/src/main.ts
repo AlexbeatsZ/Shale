@@ -333,7 +333,7 @@ function buildMenu(): void {
         { label: "打开数据文件夹", click: () => shell.openPath(DATA_DIR()) },
         { label: "打开日志", click: () => shell.openPath(LOG_FILE()) },
         { type: 'separator' },
-        isMac ? { role: 'close', label: '关闭窗口' } : { role: 'quit', label: '退出' },
+        isMac ? { role: 'close', label: '关闭窗口', accelerator: 'CmdOrCtrl+Shift+W' } : { role: 'quit', label: '退出' },
       ],
     },
     {
@@ -370,7 +370,7 @@ function buildMenu(): void {
       label: "窗口",
       submenu: [
         { role: 'minimize', label: '最小化' },
-        ...(isMac ? [{ role: 'zoom' as const, label: '缩放' }, { role: 'close' as const, label: '关闭窗口' },
+        ...(isMac ? [{ role: 'zoom' as const, label: '缩放' }, { role: 'close' as const, label: '关闭窗口', accelerator: 'CmdOrCtrl+Shift+W' },
           { type: 'separator' as const }, { role: 'front' as const, label: '全部置于顶层' },
           { role: 'window' as const, label: '窗口' }] : [{ role: 'close' as const, label: '关闭窗口' }]),
       ],

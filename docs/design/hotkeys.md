@@ -1,13 +1,46 @@
 # 快捷键
 
-## Physical modifier mapping (2026-11-06, PRD 1.37)
+## Portable modifiers and one synchronized file (2026-11-22, PRD 1.53)
 
-- Native application/editor defaults use literal `Ctrl`: Control on macOS and Ctrl on Windows/Linux. `Alt` is Option on macOS. The native file-menu accelerators use the same Control bindings.
-- Stored/imported bindings are not rewritten. An explicitly configured `Meta`/Command remains separate; legacy `Mod` retains its platform meaning for compatibility.
-- MarkdownView prioritizes literal Control/Alt variants of CodeMirror's existing default/search keymaps, then keeps the native platform bindings. Shared DocumentSession history owns Control+Z/Y/Shift+Z in full notes and editable fragments.
-- Control+C/X/V on macOS calls the existing ContentClipboard policy, including typed-ID metadata, readonly checks and stale-selection guards. Windows/Linux continue through native clipboard events.
-- Option can produce a symbol or dead key (`Ω`, `÷`, `Dead`). Hotkey capture/matching uses the base `KeyboardEvent.code` for Alt-modified letters, digits and punctuation, while ordinary character input keeps layout characters. AltGraph/composition filtering remains in CommandManager.
-- Settings display literal bindings as Control/Option on Mac. Tests send actual `Control`/`Alt` events; they do not substitute Command to make a failing shortcut pass.
+This supersedes the 2026-11-06 literal-Control policy.
+- `.obsidian/webobsidian/hotkeys.jsonc` is authoritative and uses the existing revision-checked
+  Vault writer, watcher and native file synchronization. No per-device rewritten files.
+- `Ctrl` and `Mod` mean the primary modifier: Command on Mac, Ctrl elsewhere.
+  `PhysicalCtrl` (also accepted as `Control`) means the physical Control key on every platform;
+  `Meta`/`Command` means literal Command/Windows. Event capture preserves physical identity.
+- `bindings` stores portable overrides; optional `platforms.windows` and `platforms.mac` store
+  per-command overrides. Windows also covers Linux/Android keyboards. Mac entries missing from the map inherit the Windows override, then portable defaults;
+  `[]` disables, and clearing an override restores inheritance. Both columns are editable on
+  any host through recording or textual combinations. Platform edits never rewrite the other map.
+- Inherited portable bindings that hit macOS reserved Hide, Hide Others, Minimize, Quit,
+  application switcher or Spotlight combinations use PhysicalCtrl instead. Explicit Mac overrides
+  are literal choices and remain visible, including a warning for a reserved system combination.
+  Ordinary editor Command shortcuts retain CodeMirror's native platform behavior.
+  Native Close Window uses Command+Shift+W, leaving Command+W to the configurable tab command.
+- Existing local settings/Obsidian hotkeys/writing imports seed the file only when absent;
+  once present, the file wins on every read, reload and synchronization. Invalid bytes fail closed.
+  Concurrent writes use the current revision and serialize locally; stale callers receive 409.
+- Settings and command palette use the same platform resolution as dispatch; conflict detection
+  is per platform. File change notifications refresh the hotkey snapshot without reindexing notes.
+- Shared DocumentSession owns primary-modifier undo/redo. Command clipboard operations continue
+  through ContentClipboard's typed metadata, readonly and stale-selection rules. Legacy physical
+  Control editor aliases remain for compatibility alongside native Command keys.
+- Option-generated symbols/Dead keys still use KeyboardEvent.code for shortcut matching;
+  composition and AltGraph stay excluded.
+
+Example (one file on both devices):
+```json
+{
+  "version": 1,
+  "bindings": { "save": [{ "modifiers": ["Ctrl"], "key": "S" }] },
+  "platforms": {
+    "windows": { "editor:toggle-bold": [{ "modifiers": ["Ctrl"], "key": "B" }] },
+    "mac": { "editor:toggle-bold": [{ "modifiers": ["PhysicalCtrl"], "key": "B" }] }
+  },
+  "imported": [],
+  "migration": ""
+}
+```
 
 ## Vault identity follow-up (2026-10-23)
 
@@ -43,14 +76,14 @@ Fuzzy/编辑命令/标题移位/插件 ID → 本体命令）。`writing/command
 
 ## 配置与迁移
 
-按 Vault（绝对路径）存储在应用 settings 的 `hotkeys` 字段，`GET/PUT /api/settings/hotkeys`
+按 Vault 存储在 `.obsidian/webobsidian/hotkeys.jsonc`，`GET/PUT /api/settings/hotkeys`
 只做窄字段读写，沿用既有 Vault 身份/revision/串行写入检查。首次读取时迁移一次：
 
 1. `.obsidian/hotkeys.json` 只读导入，原文件不改；
 2. 旧 `search.chinese.shortcuts` 的单值绑定（含空值禁用语义）按命令别名并入；
 3. 旧写作/LaTeX 快捷键经同一别名表并入。
 
-迁移结果通过 `updateSettings` 写入一次，之后用户编辑只改 `bindings`；`null` 删除覆盖以
+旧 settings.hotkeys 作为首次迁移来源，迁移结果通过 Vault 配置写入一次，之后用户编辑只改对应平台/通用 `bindings`；`null` 删除覆盖以
 恢复默认，`[]` 保留为显式禁用。
 
 ## 设置界面

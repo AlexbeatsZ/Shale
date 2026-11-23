@@ -11,6 +11,7 @@ import {
   emptyHotkeys,
   type VaultHotkeys,
   type Hotkey,
+  type HotkeyPlatform,
 } from '@webobsidian/search-core';
 import { api, request, type NoteMatches } from './api';
 import { projectVirtualCatalog, isVirtualDocument, subscribeVirtualDocuments } from './virtualDocuments';
@@ -84,13 +85,26 @@ export async function refreshSearch() {
   }
   changed();
 }
+/** Refresh only bindings when the synchronized configuration changes. */
+export async function refreshHotkeys() {
+  const generation = ++hotkeyGeneration;
+  try {
+    const next = await request<VaultHotkeys>('/api/settings/hotkeys');
+    if (generation !== hotkeyGeneration) return;
+    hotkeys = next; hotkeyError = '';
+  } catch (failure) {
+    if (generation !== hotkeyGeneration) return;
+    hotkeyError = `快捷键载入失败，保留上次有效配置：${String(failure)}`;
+  }
+  changed();
+}
 let hotkeyWrites: Promise<unknown> = Promise.resolve();
 /** Server serializes patches; no optimistic reset or loss of another command's bindings. */
-export function updateHotkeys(command: string, bindings: Hotkey[] | null) {
+export function updateHotkeys(command: string, bindings: Hotkey[] | null, platform?: HotkeyPlatform) {
   const vault = hotkeys.vault;
   hotkeyGeneration++;
   const operation = hotkeyWrites.catch(() => {}).then(async () => {
-    const next = await request<VaultHotkeys>('/api/settings/hotkeys', { method: 'PUT', body: JSON.stringify({ vault, command, bindings }) });
+    const next = await request<VaultHotkeys>('/api/settings/hotkeys', { method: 'PUT', body: JSON.stringify({ vault, command, bindings, platform, revision: hotkeys.revision }) });
     if (hotkeys.vault !== vault) return;
     hotkeyGeneration++;
     hotkeys = next; hotkeyError = ''; changed();

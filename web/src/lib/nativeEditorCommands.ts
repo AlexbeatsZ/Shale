@@ -21,7 +21,7 @@ export const nativeEditorCommands: NativeCommand[] = [
   edit('editor:toggle-bullet-list', '切换无序列表', view => toggleLineStyle(view, 'bullet')),
   edit('editor:toggle-numbered-list', '切换有序列表', view => toggleLineStyle(view, 'ordered')),
   edit('editor:toggle-blockquote', '切换引用', view => toggleLineStyle(view, 'quote')),
-  ...Array.from({ length: 7 }, (_, level) => edit(`editor:set-heading-${level}`, level ? `设为 ${level} 级标题` : '取消标题', view => toggleLineStyle(view, level))),
+  ...Array.from({ length: 8 }, (_, level) => edit(`editor:set-heading-${level}`, level === 7 ? '设为 7 级标题（正文内标题）' : level ? `设为 ${level} 级标题` : '取消标题', view => toggleLineStyle(view, level))),
   edit('editor:insert-table', '插入表格', () => fmtInsert('\n| 标题 | 标题 |\n| --- | --- |\n| 内容 | 内容 |\n')),
   edit('editor:insert-horizontal-rule', '插入水平分隔线', () => fmtInsert('\n\n---\n\n')),
   edit('editor:insert-codeblock', '插入代码块', view => surroundSelection(view, '\n```\n', '\n```\n')),

@@ -36,3 +36,13 @@ the main store's active file. There are no default shortcuts.
 Validation remains static only: TypeScript, isolated bundles and prepared
 `web/src/lib/headingLevels.test.ts` regression source. No unit/browser/server/
 Electron execution, live-Vault edits or portable package is authorized by this task.
+
+## Explicit body heading command (2026-11-22)
+
+`editor:set-heading-7` exposes 设为 7 级标题（正文内标题） through the same native
+catalog, palette, shortcut settings and configured menus as levels 0–6.
+It calls the existing `toggleLineStyle(view, 7)` and sets `####### ` (level 0 removes it);
+BodyHeading parsing/rendering already supports this syntax. Explicit level 0–6 commands
+also accept an existing BodyHeading so it can be converted back to a paragraph or ordinary heading. The old
+`obsidian-heading-shifter:apply-heading7` ID resolves to the new command so imported
+bindings work too. Promote/demote still operate only on H1–H6.

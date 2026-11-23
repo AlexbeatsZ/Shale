@@ -9,7 +9,7 @@ import { getActiveEditor, getEditorForPath } from './activeEditor';
 import { contextOf } from './renderContext';
 import { documents } from './documents';
 import { useStore } from './store';
-import { eventHotkey, hotkeySignature, type Hotkey } from '@webobsidian/search-core';
+import { eventHotkey, hotkeySignature, resolveHotkeys, hasHotkeyOverride, portableHotkey, type Hotkey } from '@webobsidian/search-core';
 import { hotkeySettings } from './search';
 
 export interface CommandContext {
@@ -80,33 +80,32 @@ export class CommandManager extends Events {
   }
   findCommand(id: string) { id = this.resolveId(id); return this.nativeCommands().get(id) ?? this.registered.get(id); }
   getDefaultHotkeys(id: string): Hotkey[] { return this.findCommand(id)?.hotkeys ?? []; }
-  getHotkeys(id: string): Hotkey[] {
+  getHotkeys(id: string, mac = isMacOS()): Hotkey[] {
     id = this.resolveId(id);
-    return hotkeySettings().bindings[id] ?? this.getDefaultHotkeys(id);
+    return resolveHotkeys(hotkeySettings(), id, this.getDefaultHotkeys(id), mac);
   }
   /** Settings also keeps imported commands whose plugin/capability is absent. */
   hotkeyCatalog() {
     const commands = this.listCommands(), known = new Set(commands.map(command => command.id));
     return [...commands.map(command => ({ ...command, installed: true })),
-      ...Object.keys(hotkeySettings().bindings).filter(id => !known.has(id)).map(id => ({ id, name: id, installed: false }))];
+      ...[...new Set([...Object.keys(hotkeySettings().bindings), ...Object.values(hotkeySettings().platforms ?? {}).flatMap(map => Object.keys(map))])].filter(id => !known.has(id)).map(id => ({ id, name: id, installed: false }))];
   }
-  private keyCache?: { config: ReturnType<typeof hotkeySettings>; revision: number; native: readonly NativeCommand[];
+  private keyCache?: { config: ReturnType<typeof hotkeySettings>; revision: number; native: readonly NativeCommand[]; mac: boolean;
     bindings: Map<string, { command: Command; custom: boolean }[]>; blocked: Set<string> };
   private keyIndex() {
-    const config = hotkeySettings(), revision = this.getRevision(), native = this.getNative();
-    if (this.keyCache?.config === config && this.keyCache.revision === revision && this.keyCache.native === native) return this.keyCache;
+    const config = hotkeySettings(), revision = this.getRevision(), native = this.getNative(), mac = isMacOS();
+    if (this.keyCache?.config === config && this.keyCache.revision === revision && this.keyCache.native === native && this.keyCache.mac === mac) return this.keyCache;
     const bindings = new Map<string, { command: Command; custom: boolean }[]>(), blocked = new Set<string>();
-    const mac = isMacOS();
     for (const command of this.listCommands()) {
-      const custom = Object.hasOwn(config.bindings, command.id);
+      const custom = hasHotkeyOverride(config, command.id, mac);
       for (const binding of this.getHotkeys(command.id)) {
         const signature = hotkeySignature(binding, mac);
         const candidates = bindings.get(signature) ?? [];
         if (!candidates.some(candidate => candidate.command.id === command.id)) bindings.set(signature, [...candidates, { command, custom }]);
       }
-      if (custom) for (const binding of command.hotkeys ?? []) blocked.add(hotkeySignature(binding, mac));
+      if (custom) for (const binding of command.hotkeys ?? []) blocked.add(hotkeySignature(portableHotkey(binding, mac), mac));
     }
-    return this.keyCache = { config, revision, native, bindings, blocked };
+    return this.keyCache = { config, revision, native, mac, bindings, blocked };
   }
   dispatchHotkey(event: KeyboardEvent): boolean {
     if (event.defaultPrevented || event.isComposing || event.getModifierState('AltGraph')) return false;

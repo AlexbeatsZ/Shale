@@ -292,7 +292,7 @@ function selectedMarkdownLines(view: EditorView, bodyHeading = false) {
 export function toggleLineStyle(view: EditorView, style: 'bullet' | 'ordered' | 'quote' | number): boolean {
   const state = view.state;
   if (state.readOnly) return false;
-  const lines = selectedMarkdownLines(view, style === 7);
+  const lines = selectedMarkdownLines(view, typeof style === 'number');
   const marker = style === 'bullet' ? /^(?:[-+*])[ \t]+/ : style === 'ordered' ? /^\d+[.)][ \t]+/ : style === 'quote' ? /^>[ \t]?/ : /^#{1,7}(?:[ \t]+|$)/;
   const rows = [...lines.values()].map(line => {
     const indent = line.text.match(/^[ \t]*/)?.[0].length ?? 0;

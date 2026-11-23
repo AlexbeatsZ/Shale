@@ -49,8 +49,7 @@ import { livePreviewPlugin, livePreviewState, livePreviewTheme, frontmatterField
   livePreviewReadonly, setLivePreviewReadonly, setLivePreviewEnabled, setNoteTitle } from '../lib/livePreview';
 
 export type MarkdownMode = 'live' | 'reading' | 'source';
-// Keep Windows/Linux key names literal on Mac: Ctrl is Control, Alt is Option.
-// Retain the platform keymap afterwards for its additional native bindings.
+// Command uses the native keymap; retain physical Control aliases for existing editors.
 const physicalKeymap = (bindings: readonly KeyBinding[]) => bindings.flatMap(({ key, mac: _mac, win: _win, linux: _linux, ...binding }) =>
   key ? [{ ...binding, key: key.replace(/\bMod-/g, 'Ctrl-') }] : []);
 
