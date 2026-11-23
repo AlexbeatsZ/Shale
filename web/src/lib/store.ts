@@ -15,6 +15,7 @@ import { getActiveEditor, activateNavigation, getActiveNavigationId } from './ac
 import { contextOf } from './renderContext';
 import type { MenuContext } from './configuredMenus/types';
 import { TEXT_EXT_RE } from './media';
+import { arrangeTabUnits } from './tabDrag';
 let openGeneration = 0;
 let splitGeneration = 0;
 const rightGenerations = new Map<string, number>();
@@ -172,6 +173,9 @@ interface AppState {
   showTab: (path: string) => Promise<void>;
   /** Put a tab into one pane of the visible split group; the page it replaces takes the tab's old place. */
   replacePane: (viewId: 'main' | 'split', path: string) => Promise<void>;
+  /** Reorder tab-bar units (a split group moves as one): swap two units, or move one before
+   *  another (`target` null = to the end). Only the order changes; no page is opened. */
+  arrangeTabs: (source: string[], target: string[] | null, mode: 'swap' | 'before') => void;
 
   recent: string[];
   removeRecent: (path: string) => void;
@@ -306,6 +310,11 @@ function remapWorkspacePaths(state: AppState, from: string, to?: string): Partia
 }
 
 // ---- server-side workspace persistence (shared across browsers/devices) ----
+/** The two pages shown (or set aside) as one split-group tab, main first. */
+function splitPair(s: { activePath: string | null; splitPath: string | null; parkedSplit: { main: string; side: string } | null }) {
+  return s.splitPath && s.activePath ? [s.activePath, s.splitPath] : s.parkedSplit ? [s.parkedSplit.main, s.parkedSplit.side] : null;
+}
+
 const PERSIST_KEYS = [
   'tabs', 'activePath', 'viewMode', 'expanded', 'splitPath', 'splitDirection', 'parkedSplit',
   'recent', 'bookmarks', 'leftPanel', 'rightPanel', 'leftOpen', 'rightOpen', 'graphSettings',
@@ -692,6 +701,10 @@ export const useStore = create<AppState>()(
         });
         activateNavigation(viewId);
       },
+      arrangeTabs: (source, target, mode) => set(s => {
+        const tabs = arrangeTabUnits(s.tabs, splitPair(s), source, target, mode);
+        return tabs ? { tabs } : {};
+      }),
       closePane: async (viewId) => {
         const s = get(), path = viewId === 'split' ? s.splitPath : s.activePath, other = viewId === 'split' ? s.activePath : s.splitPath;
         if (path === null) return;

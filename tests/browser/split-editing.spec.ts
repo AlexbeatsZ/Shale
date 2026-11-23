@@ -914,6 +914,98 @@ test('dragging an outside tab into the split group swaps it with the replaced pa
   await expect(page.locator('.tab-bar .tab-scroll > .tab')).toHaveText([/main/]);
 });
 
+/** Drag with the mouse and rest on the target long enough to turn a swap into an insert. */
+async function slowDrag(page: Page, from: Locator, to: Locator, rest = true) {
+  const a = (await from.boundingBox())!, b = (await to.boundingBox())!;
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(a.x + a.width / 2 + 12, a.y + a.height / 2, { steps: 3 });
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 6 });
+  // Rest on the target with small nudges, like the continuous dragover of a real hover.
+  for (let i = 1; rest && i <= 6; i++) {
+    await page.waitForTimeout(130);
+    await page.mouse.move(b.x + b.width / 2 + i, b.y + b.height / 2);
+  }
+}
+
+test('tab bar: a quick drop swaps two tabs, resting first inserts before the hovered tab', async ({ page, backend }, info) => {
+  await page.evaluate(async () => {
+    const module = '/src/lib/store.ts'; const state = (await import(module)).useStore.getState();
+    for (const file of ['replacement.md', 'side.md', 'parity-blank.md']) await state.openFile(file, true, 'main');
+  });
+  const order = page.locator('.tab-bar .tab-scroll > .tab:not(.tab-drop-gap)');
+  const tab = (file: string) => page.locator(`.tab-bar .tab-scroll > [data-tab-path="${file}"]`);
+  await expect(order).toHaveText([/main/, /replacement/, /side/, /parity-blank/]);
+  // Quick drop: the last and the first trade places, the middle stays.
+  await tab('parity-blank.md').dragTo(tab('main.md'));
+  await expect(order).toHaveText([/parity-blank/, /replacement/, /side/, /main/]);
+  // Resting on the first tab opens a gap with a ghost; the drop moves the tab there and shifts the rest.
+  await slowDrag(page, tab('main.md'), tab('parity-blank.md'));
+  await expect(page.locator('.tab-drop-gap')).toContainText('main');
+  await page.locator('.tab-bar').screenshot({ path: info.outputPath('tab-insert-gap.png') });
+  await page.mouse.up();
+  await expect(order).toHaveText([/main/, /parity-blank/, /replacement/, /side/]);
+  await expect(page.locator('.tab-drop-gap')).toHaveCount(0);
+  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'parity-blank.md');
+});
+
+test('tab bar: a split group swaps and reorders as one unit', async ({ page, backend }) => {
+  await page.evaluate(async () => {
+    const module = '/src/lib/store.ts'; const state = (await import(module)).useStore.getState();
+    await state.openFile('replacement.md', true, 'main'); await state.openFile('parity-blank.md', true, 'main');
+    await state.openFile('main.md', true, 'main');
+  });
+  await openSplit(page, 'side.md');
+  const units = page.locator('.tab-bar .tab-scroll > :is(.tab, .tab-split-group):not(.tab-drop-gap)');
+  await expect(units).toHaveText([/mainside/, /replacement/, /parity-blank/]);
+  // Quick drop of the group on the last tab swaps the group with it.
+  await groupTab(page, 'main.md').dragTo(page.locator('.tab-bar .tab-scroll > [data-tab-path="parity-blank.md"]'));
+  await expect(units).toHaveText([/parity-blank/, /replacement/, /mainside/]);
+  // Resting on the first tab inserts the whole group before it.
+  await slowDrag(page, groupTab(page, 'side.md'), page.locator('.tab-bar .tab-scroll > [data-tab-path="parity-blank.md"]'));
+  await page.mouse.up();
+  await expect(units).toHaveText([/mainside/, /parity-blank/, /replacement/]);
+  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'main.md');
+  await expect(host(page, 'split')).toHaveAttribute('data-document-id', 'side.md');
+});
+
+test('split divider: drag resizes the pages, double click swaps them, a snapped sidebar follows', async ({ page, backend }, info) => {
+  await openSplit(page, 'side.md');
+  const divider = page.locator('.editor-area > .pane-divider');
+  const box = async () => (await divider.boundingBox())!;
+  const area = (await page.locator('.editor-area').boundingBox())!;
+  const start = await box();
+  expect(Math.abs(start.x - (area.x + area.width / 2))).toBeLessThan(3);
+  // Drag the divider to about a third of the area.
+  await page.mouse.move(start.x, start.y + 100); await page.mouse.down();
+  await page.mouse.move(area.x + area.width / 3, start.y + 100, { steps: 6 }); await page.mouse.up();
+  await expect.poll(async () => Math.round((await box()).x - area.x - area.width / 3)).toBeLessThan(3);
+  expect(Math.abs((await pane(page, 'main').boundingBox())!.width - area.width / 3)).toBeLessThan(3);
+  // Double click swaps the two pages.
+  const at = await box();
+  await page.mouse.dblclick(at.x, at.y + 100);
+  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'side.md');
+  await expect(host(page, 'split')).toHaveAttribute('data-document-id', 'main.md');
+  // The left sidebar snaps to the boundary near it, then follows it when the split moves.
+  await page.evaluate(async () => { const m = '/src/lib/store.ts'; (await import(m)).useStore.setState({ leftOpen: true }); });
+  const dock = page.locator('.dock-left.is-open');
+  await expect(dock).toBeVisible();
+  await page.waitForTimeout(300); // let the slide-in transition finish before measuring the grip
+  const resizer = page.locator('.dock-left > .sidebar-resizer'), grip = (await resizer.boundingBox())!;
+  const boundary = (await box()).x + 0.5;
+  await page.mouse.move(grip.x + 3, grip.y + 200); await page.mouse.down();
+  await page.mouse.move(boundary - 8, grip.y + 200, { steps: 8 }); await page.mouse.up();
+  const edge = async () => { const d = (await dock.boundingBox())!; return d.x + d.width; };
+  await expect.poll(async () => Math.abs(await edge() - boundary)).toBeLessThan(2);
+  await page.locator('.app').screenshot({ path: info.outputPath('sidebar-snapped.png') });
+  await page.evaluate(async () => {
+    const m = '/src/lib/splitLayout.ts', { applySplitRatio } = await import(m);
+    applySplitRatio(document.querySelector('.editor-area') as HTMLElement, 0.6);
+  });
+  await expect.poll(async () => Math.abs(await edge() - ((await box()).x + 0.5))).toBeLessThan(2);
+  expect(await edge()).toBeGreaterThan(area.x + area.width * 0.55);
+});
+
 test('focused page routing: headings palette and outline read and navigate split', async ({ page, backend }) => {
   await openSplit(page, 'parity-rich.md');
   await content(page, 'split').click();

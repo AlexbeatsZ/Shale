@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-22 标签栏拖动（快速松手交换、停留插入并显示空位虚影、分屏组整体移动、触控长按提起）、分屏 1px 分隔线（拖动调比例、双击交换）、侧栏宽度吸附分隔线、隐藏滚动条并去掉侧栏阴影/半透明（PRD 1.51）。源码与回归已通过，未打包发布，Android 触控待实机验收。设计 `docs/design/workspace-sidebars.md`。
 - 2026-11-22 原生同步：首连时本机已同步过的旧文件自动追上服务器，文本两边改不同段落自动合并（共用 MCP 的 `mergeReview`）。剩余冲突在文件树（冲突分组+A/M/D）、状态栏一键同步与编辑器内 MCP 同款逐块审阅中处理。源码已提交，未构建发布、未部署。设计 `docs/design/file-sync.md`。
 - 2026-11-22 `android-v0.1.81` 预发布修复 Android 共享存储拒绝硬链接导致同步卡住。小米平板 6 Pro 正式包已原位升级到 0.1.81，STEM 首轮同步成功（revision 392，无冲突）。桌面 0.1.80 两份草稿（目标 67f7f43）仍未发布，未改动。
 - 2026-11-21 Shale 0.1.79 已发布（桌面 7 个资产、Android 2 个非调试 APK）。Mac 的 STEM 片段文件已更新，`mk` 插入 `\(\)`，`dm` 插入三行 `\[ … \]`。隔离 macOS 实包已用同一片段和格式化配置验证输入、保存及混合公式。应用只识别井号系列标题。Mac 日用安装仍为 0.1.76，其余设备的交互和配置同步待实测。设计 `docs/design/native-math.md`、`docs/design/native-writing.md`。
@@ -71,6 +72,9 @@
 - Android 构建前先 `node android/scripts/prepare.mjs` 刷新 `.gen`，否则 APK 用旧前端；仅手机包时 `./gradlew :app:assembleRelease -x requireTabletKey`。
 
 - 改名 Shale 后 Windows NSIS(同 appId)会沿用旧安装目录 `%LOCALAPPDATA%\Programs\WebObsidian`,其中可执行文件变为 `Shale.exe`,不会出现 `Programs\Shale`。数据目录取自 package `name`(Mac `~/Library/Application Support/@webobsidian/desktop`),改 productName 不影响。
+
+- OMEN 上 `npm ci` 直连 npm 会因 TLS 中断失败，且失败时已清空 node_modules；设 `HTTPS_PROXY/HTTP_PROXY=http://127.0.0.1:7897` 与 `ELECTRON_SKIP_BINARY_DOWNLOAD=1` 后 17s 完成。Playwright 版本要求的 headless shell 未安装时，用已有的 `%LOCALAPPDATA%\ms-playwright\chromium-1208\chrome-win64\chrome.exe` 作 `RENDER_TEST_BROWSER`，不必下载。
+- HTML5 拖放中途改动指针下的 DOM（如插入空位）时，放置容器必须同时取消 `dragenter` 和 `dragover`，否则 Chrome 不再触发 drop；Chrome 的 dragleave 常无 relatedTarget，用坐标判断离开。Playwright 的拖放模拟会把 dragover 滞后一步，测试"停留"要在目标上分几次小幅移动。
 
 - Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。
 

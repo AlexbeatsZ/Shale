@@ -4,7 +4,7 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-21 (TeX 公式补全与井号标题)
+Cập nhật lần cuối: 2026-11-22 (标签排序/交换、分屏分隔线与侧栏吸附)
 
 ### LaTeX 括号着色 (PRD 1.49)
 
@@ -176,6 +176,9 @@ Cập nhật lần cuối: 2026-11-21 (TeX 公式补全与井号标题)
 - [x] 两栏平等：副栏页面进入标签列表，关闭任一栏后另一栏铺满并保留模式
 - [x] 向右/向下分屏保留当前页，新侧打开 Homepage，被打开的文件替换
 - [x] 标签拖到某一栏替换内容，未分屏时拖到右/下半边建立分屏
+- [x] (PRD 1.51) 标签栏拖动：快速松手交换、停留 0.45s 让位插入（空位虚影），分屏组整体参与；触控长按提起后拖动
+- [x] (PRD 1.51) 分屏 1px 分隔线：拖动调整比例、双击交换两页；侧栏宽度吸附到分隔线并跟随
+- [x] (PRD 1.51) 隐藏滚动条，删除侧栏阴影与半透明
 
 ## Picker ranking parity (PRD 1.20)
 
@@ -721,6 +724,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-22 (PRD 1.51) 标签栏排序/交换（鼠标与触控）、分屏组整体移动、分屏分隔线调整比例与双击交换、侧栏吸附分隔线、隐藏滚动条并去掉侧栏阴影/半透明。619 项单元、split-editing 与 sidebar 浏览器回归 48 项通过（Windows Chromium），未打包、未在 Android 实机验收触控。
 
 - 2026-11-21 (PRD 1.50) TeX 定界符支持从空模板触发公式片段，默认格式化保留两种写法。标题只用井号。607 项单元、56 项浏览器回归和带 STEM 片段的 macOS 隔离实包通过，桌面及 Android 0.1.79 已发布。
 

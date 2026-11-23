@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.50 · Cập nhật: 2026-11-21 · Trạng thái: Draft
+> Phiên bản: 1.51 · Cập nhật: 2026-11-22 · Trạng thái: Draft
+> Changelog 1.51 (标签排序/交换、分屏分隔线与侧栏吸附) 拖动标签时快速松手与目标交换位置（紫框），在目标上停留约 0.45 秒后目标及其后的标签让出空位并显示被拖标签的虚影，松手插到目标之前；拖到末尾空白处移到最后。分屏组作为一个整体参与排序和交换；普通标签快速放到可见分屏组的组员上仍放入该栏。触控屏长按约 0.35 秒提起标签后拖动，长按不动松手打开标签菜单，提起前移动仍滚动标签栏。两栏之间显示 1px 分隔线：拖动调整比例（设备本地保存），双击/双击触摸交换两页。侧栏拖动宽度时可吸附到左右分屏的分隔线，吸附后随分隔线移动。页面与面板滚动条隐藏，侧栏去掉阴影和半透明。设计见 docs/design/workspace-sidebars.md。
 > Changelog 1.50 (公式补全与标题语法) STEM 的 `mk` / `dm` 展开为 `\(…\)` / `\[…\]`，空公式内可立即使用数学补全。美元定界符继续解析，格式化默认保留两种写法。标题只识别 `#` 系列，正文中的 `---` 仍可用作分隔线，文首 YAML 继续识别。
 > Changelog 1.49 (LaTeX 括号按深度着色) 公式源码中，正确配对的括号按嵌套深度依次使用金、紫、蓝、绿、橙、青，第七层从金色重新开始。未闭合、多余或类型不匹配的括号标红并显示波浪下划线。沿用原有括号着色开关。设计见 docs/design/native-writing.md。
 > Changelog 1.48 (打字时忽略触控板点击) 设置 › 界面可开启“打字时忽略触控板点击”，并设置 100–3000 ms 的忽略时长（默认关闭、1000 ms）。键盘输入后的这段时间内，应用窗口忽略触控板/鼠标的按下与点击，避免手掌误触移动光标或切换焦点。带修饰键的点击、触摸屏、笔和滚动不受影响。设计见 docs/design/typing-pointer-guard.md。
@@ -379,6 +380,12 @@ webobsidian/
   - Kéo tab thả vào một pane để mở ở pane đó; khi chưa split, thả vào nửa phải/dưới của vùng soạn thảo để tạo split.
     Khi đang split, thả tab C lên pane B (hoặc lên tab B trong nhóm): [A,B],C → [A,C],B — nhóm giữ nguyên vị trí, B về
     chỗ cũ của C; thả một thành viên lên thành viên kia → đổi chỗ hai pane (1.22).
+  - Sắp xếp tab trên tab bar (1.51): thả nhanh lên tab khác → đổi chỗ hai tab (viền tím); dừng trên tab ~0.45s →
+    các tab phía sau nhường chỗ, chỗ trống hiện bóng mờ của tab đang kéo, thả → chèn trước tab đó; thả vào khoảng
+    trống cuối → chuyển xuống cuối. Nhóm split di chuyển/đổi chỗ như một khối. Cảm ứng: giữ ~0.35s để nhấc tab rồi kéo;
+    giữ rồi thả không di chuyển → menu tab; di chuyển trước khi nhấc → cuộn tab bar.
+  - Đường phân cách 1px giữa hai pane: kéo để đổi tỉ lệ (lưu cục bộ trên thiết bị), nhấp đúp / chạm đúp để đổi chỗ
+    hai trang. Kéo mép sidebar gần đường phân cách (split trái/phải) sẽ hút vào đó và đi theo khi đường phân cách đổi.
   - **Find/Replace trong note**: tích hợp `@codemirror/search` (panel top, ⌘F mở Find, ⌘⇧F Replace, ⌘G next).
   - **Reveal file in navigation**: mở rộng folder tổ tiên + cuộn/nháy sáng row trong file tree.
   - **Add file property**: chèn property rỗng vào frontmatter YAML (tạo block nếu chưa có) → render trong Properties widget.

@@ -20,7 +20,9 @@ thresholds, storage and device acceptance entry points are in android-runtime.md
   已注册插件视图。中键、Delete、
   标题关闭按钮和右键菜单关闭标签，方向键选择标签。
 - 只读参照实际 STEM `.obsidian/snippets/Hider.css` 的有效规则：浮在正文之上，
-  左面板默认 280px，右栏整体 opacity=.95。hover 自动隐藏代码处于注释状态，不采用。
+  左面板默认 280px。hover 自动隐藏代码处于注释状态，不采用。2026-11-22 用户要求删除侧栏阴影
+  和右栏 opacity=.95 半透明，两侧现为不透明、只有内侧 1px 边线。页面、面板和列表的滚动条
+  全局隐藏（仍可滚动），不要再给单个区域加回可见滚动条。
   两侧位于 32px 工作区标题栏下方，不覆盖原生窗口按钮；展开/收起不改变正文列宽。
 - 采用用户提供的 Obsidian 参考：16–18px 单色细线图标、中性底色、紧凑菜单行、
   8px 菜单圆角、右侧勾选标记、胶囊形启动动作、带图标和分组的设置导航。
@@ -86,6 +88,24 @@ App 保留左侧 Sidebar 外壳，只用 open 控制可见固定面板和动态�
 - `closePane(view)` 是关闭一栏的唯一入口：关闭副栏 = `closeSplit` 后移除其标签；关闭主栏 = 保存屏障后把副栏页面提升为 `activePath`，并把副栏 DOM 上的 `data-mode` 写入 workspace `viewMode`，保持存活页面的模式。同文件双栏关闭任一栏只退出分屏，不删标签。`closeTab`、正文 overlay ×、`workspace:close`、`WorkspaceLeaf.detach` 都走这条路径。`closeSplit` 只表示"取消分屏"，两页都保留为标签。
 - 标签右键"向右/向下分屏"、命令 `split`/`split-down` 调 `splitWithHomepage`：保留该页在主栏，新侧 `openHomepage('split')` 并聚焦。文件树/书签/链接的"在右侧打开"仍打开指定文件。
 - 拖拽：标签 `draggable`，数据类型 `TAB_DRAG_TYPE`，dragover 期间路径放在 `lib/tabDrag.ts`(dragover 读不到数据)。`.editor-area` 用 capture 阶段的 dragover/drop 并 stopPropagation，防止 CodeMirror 把标签当文本插入。分屏时落点为指针下的栏，交给 `replacePane(view, path)`：打开后在 `tabs` 中交换被拖标签与被替换页，使 [A,B],C 拖 C 到 B 得到 [A,C],B(用户 2026-11-01 指出旧行为让 C 原地不动、反直觉)；拖的是另一组员时交换两栏；副栏不接受 Graph/文件夹。分屏组中可见成员的标签也是落点(`.is-drop-target` 高亮)，行为相同。未分屏时右半/下半区域建立 right/down 分屏，其余替换主栏。指示层 `.pane-drop-indicator` 相对 `.workspace` 绝对定位，`.editor-area` 不加定位以免影响子元素。
+
+## 标签排序与交换（2026-11-22）
+
+用户要求：标签可以排序（把最后一个移到第一个，其他顺延），也可以交换（最后一个与第一个对调），分屏组作为整体参与；两种操作都是拖动，必须明确区分，触控也要能用。采用用户提出的方案：
+
+- **快速松手 = 交换**：拖到另一个单位（标签或分屏组）上立即显示紫色框选（`.is-drop-swap`），此时松手交换两个单位。
+- **停留 = 排序**：在同一目标上停留 `TAB_INSERT_DWELL_MS`(450ms) 后，目标及其后的标签让出空位 `.tab-drop-gap`，空位里显示被拖标签的虚影（宽度取被拖单位），松手插到目标之前。空位出现后目标右移，指针落在空位或目标上都保持插入状态，换到别的单位才重新计时。拖动期间末尾出现 48px 的 `.tab-drop-end`，停在那里插到最后。
+- **分屏组**：组 `div` 是拖动单位 `data-tab-unit`，组员本身也 `draggable`，这样 HTML5 `dragstart` 的 target 就是组员（dragstart 的 target 是可拖元素本身而不是指针下的子元素），`tabDrag.path` 记录该组员供拖到正文栏使用；拖组的留白/图标时 `path` 为 null，只能排序交换。普通标签快速放到可见组的组员上仍是 1.22 的"放入该栏"（`replacePane`，副栏拒收图谱/文件夹时退回交换整组）；停留则插到组前。组员拖到同组另一组员上仍交换两栏。
+- **排列逻辑**唯一实现在 `lib/tabDrag.ts` 的 `arrangeTabUnits`（纯函数、有单元测试），由 store `arrangeTabs` 调用。单位划分与渲染一致：分屏组（可见或暂存）位于 main 页在 `tabs` 中的位置，主页不在 `tabs` 时位于末尾；移动时组的两页连在一起、main 在前。只改顺序，不打开页面。
+- **鼠标**走 HTML5 DnD，与拖到正文栏共用 `TAB_DRAG_TYPE`/`tabDrag`。标签条必须同时取消 `dragenter` 和 `dragover`：否则空位插到指针下时 Chrome 只发 dragenter 而不再接受 dragover，松手不触发 drop。dragleave 用坐标判断是否离开标签条（Chrome 的 dragleave 常无 relatedTarget）。拖动开始时的 React 重渲染放到 rAF，避免 Chrome 中止拖动。
+- **触控**（`pointerType !== 'mouse'`）：按住 `TAB_TOUCH_LIFT_MS`(350ms) 提起（`.is-lifted`、短振动），之后移动才是拖动，之前移动超过 8px 视为滚动标签条并放弃。提起后用非 passive `touchmove` 阻止滚动，`elementFromPoint` 做同样的命中判断。提起后不动松手才打开标签菜单（原生长按 contextmenu 在手势期间被拦下，松手时补发），拖动/菜单后吞掉随后的 click。移动端标签不设 `draggable`，桌面触摸屏的原生 dragstart 在触控手势中也被取消。触控暂不支持拖到正文栏（仍可用右键菜单分屏）。
+
+## 分屏分隔线与侧栏吸附（2026-11-22）
+
+- 两栏之间渲染 `.pane-divider`（1px 可见线、左右各 4px 透明抓取区、z-index 高于正文背景；旧的 inset box-shadow 会被子元素背景盖住，看不见边界）。DOM 位置在 main 之后、网页栏之前，`order:1`，副栏 `order:2`。
+- 拖动调整比例：`lib/splitLayout.ts` 把比例（0.15–0.85）写成 `.editor-area` 的 `--split-main/--split-side`，只作用于 `.editor-area.is-split` 的两个 `[data-view-id]` 子元素（未分屏时不能用小于 1 的 flex-grow，否则主栏只占一半）。比例设备本地 `localStorage wo-split-ratio`，不进工作区持久化。键盘方向键调比例，Enter 交换。
+- 双击/双触交换两页：自己在 pointerup 上识别 350ms 内两次轻点（`touch-action:none` 下移动端不保证 dblclick），调用既有 `replacePane('main', splitPath)`，标签顺序同步对调。
+- 侧栏吸附：拖动 `SidebarDock` 内缘时，若左右分屏存在且内缘距分隔线 ≤14px，宽度取让内缘落在分隔线上的值（可超过自由拖动的 900px 上限）。吸附状态存 `wo-sidebar-width-snap` / `wo-right-sidebar-width-snap`。吸附时监听 `wo-split-layout` 事件（分屏打开/关闭/换向、拖分隔线时由 Workspace 发出）和窗口 resize，跟随分隔线；没有左右分屏时保持最后宽度，再次分屏时重新贴上。键盘调宽或拖离分隔线解除吸附。用途：侧栏盖住一侧页面，作为该侧的快速切换页面。
 
 ## 活动页面与命令路由（2026-11-01）
 

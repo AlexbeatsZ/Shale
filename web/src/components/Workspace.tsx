@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath } from '../lib/store';
 import { activateNavigation } from '../lib/activeEditor';
 import { isFolderPath } from '../lib/tree';
@@ -11,6 +11,58 @@ import WebViewerTab from './WebViewerTab';
 import WorkspaceFile from './WorkspaceFile';
 import { EditorView } from '@codemirror/view';
 import { insertImageFiles } from '../lib/attachmentImages';
+import { applySplitRatio, clampSplitRatio, loadSplitRatio, notifySplitLayout, saveSplitRatio } from '../lib/splitLayout';
+
+/** The 1px boundary between split pages: drag resizes them, a double click or
+ *  double tap swaps the two pages, arrows/Enter do the same from the keyboard. */
+function PaneDivider({ down }: { down: boolean }) {
+  const lastTap = useRef<{ time: number; x: number; y: number } | null>(null);
+  const swap = () => {
+    const s = useStore.getState();
+    if (s.splitPath) void s.replacePane('main', s.splitPath).catch(error => s.notify(String(error)));
+  };
+  const area = (element: HTMLElement) => element.parentElement as HTMLElement;
+  const ratioAt = (element: HTMLElement, x: number, y: number) => {
+    const box = area(element).getBoundingClientRect();
+    return clampSplitRatio(down ? (y - box.top) / box.height : (x - box.left) / box.width);
+  };
+  return <div className="pane-divider" role="separator" aria-orientation={down ? 'horizontal' : 'vertical'}
+    aria-label="调整分屏比例；双击交换两侧页面" title="拖动调整分屏比例，双击交换两侧页面" tabIndex={0}
+    onKeyDown={event => {
+      if (event.key === 'Enter') { event.preventDefault(); swap(); return; }
+      const step = { ArrowLeft: -0.02, ArrowUp: -0.02, ArrowRight: 0.02, ArrowDown: 0.02 }[event.key];
+      if (step === undefined || (down ? !/Up|Down/.test(event.key) : !/Left|Right/.test(event.key))) return;
+      event.preventDefault();
+      const ratio = clampSplitRatio(loadSplitRatio() + step);
+      applySplitRatio(area(event.currentTarget), ratio); saveSplitRatio(ratio);
+    }}
+    onPointerDown={event => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      const element = event.currentTarget, start = { x: event.clientX, y: event.clientY };
+      let moved = false;
+      element.setPointerCapture(event.pointerId);
+      element.classList.add('is-dragging');
+      document.body.classList.add(down ? 'wo-row-resizing' : 'wo-col-resizing');
+      const move = (next: PointerEvent) => {
+        if (!moved && Math.hypot(next.clientX - start.x, next.clientY - start.y) < 4) return;
+        moved = true;
+        applySplitRatio(area(element), ratioAt(element, next.clientX, next.clientY));
+      };
+      const stop = (end: PointerEvent) => {
+        element.removeEventListener('pointermove', move); element.removeEventListener('pointerup', stop); element.removeEventListener('pointercancel', stop);
+        element.classList.remove('is-dragging');
+        document.body.classList.remove('wo-row-resizing', 'wo-col-resizing');
+        if (moved) { saveSplitRatio(ratioAt(element, end.clientX, end.clientY)); lastTap.current = null; return; }
+        if (end.type !== 'pointerup') return;
+        // One double-tap/double-click detector for mouse, pen and touch.
+        const tap = lastTap.current, now = performance.now();
+        if (tap && now - tap.time < 350 && Math.hypot(end.clientX - tap.x, end.clientY - tap.y) < 24) { lastTap.current = null; swap(); }
+        else lastTap.current = { time: now, x: end.clientX, y: end.clientY };
+      };
+      element.addEventListener('pointermove', move); element.addEventListener('pointerup', stop); element.addEventListener('pointercancel', stop);
+    }} />;
+}
 
 function WorkspacePane({ path, navigationId }: { path: string; navigationId: 'main' | 'split' }) {
   const close = useStore((state) => state.closePane);
@@ -34,6 +86,12 @@ export default function Workspace() {
   const tabs = useStore((s) => s.tabs);
   const activeIsHome = isHomepagePath(activePath);
   const workspace = useRef<HTMLDivElement>(null);
+  const editorArea = useRef<HTMLDivElement>(null);
+  // Apply the saved split share and tell snapped sidebars whenever the boundary may move.
+  useLayoutEffect(() => {
+    if (editorArea.current) applySplitRatio(editorArea.current, loadSplitRatio());
+    else notifySplitLayout();
+  }, [splitPath, splitDirection, activePath]);
   const [drop, setDrop] = useState<{ view: 'main' | 'split' | 'right' | 'down'; left: number; top: number; width: number; height: number } | null>(null);
 
   useEffect(() => {
@@ -95,7 +153,7 @@ export default function Workspace() {
   };
   return (
     <div className="workspace" ref={workspace} onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
-      <div className={`editor-area ${splitDirection === 'down' ? 'split-down' : ''}`}
+      <div ref={editorArea} className={`editor-area${splitPath ? ' is-split' : ''}${splitDirection === 'down' ? ' split-down' : ''}`}
         onDragOverCapture={onTabDragOver} onDropCapture={onTabDrop}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrop(null); }}>
         {(!activePath || activeIsHome) && (
@@ -106,6 +164,7 @@ export default function Workspace() {
         {activePath && !activeIsHome && !isWebViewerPath(activePath) && (
           <WorkspacePane path={activePath} navigationId="main" />
         )}
+        {splitPath && <PaneDivider down={splitDirection === 'down'} />}
         {tabs.filter(tab => isWebViewerPath(tab.path)).map(tab => {
           const pane = tab.path === activePath ? 'main' : tab.path === splitPath ? 'split' : undefined;
           return <div key={tab.path} className={`pane webviewer-pane${pane ? ' ' + pane + '-pane' : ''}`} data-view-id={pane} hidden={!pane}>
