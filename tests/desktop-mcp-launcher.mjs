@@ -11,7 +11,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 const executable = path.resolve(process.argv[2] ?? '');
 assert(process.argv[2], 'Pass the packaged executable');
 await fs.access(executable);
-const resources = path.join(path.dirname(executable), 'resources');
+const resources = process.platform === 'darwin' ? path.resolve(path.dirname(executable), '..', 'Resources') : path.join(path.dirname(executable), 'resources');
 const tunnel = path.join(resources, 'mcp-tunnel', process.platform === 'win32' ? 'tunnel-client.exe' : 'tunnel-client');
 const tunnelVersion = execFileSync(tunnel, ['-v'], { encoding: 'utf8', windowsHide: true }).trim();
 assert.match(tunnelVersion, /0\.0\.19/);

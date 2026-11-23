@@ -116,7 +116,7 @@
       "icon": "buildResources/icon.png",
       "category": "Utility",
       "maintainer": "xnohat <xnohat@gmail.com>",
-      "synopsis": "Personal Shale-like Markdown notes app",
+      "synopsis": "Personal Markdown notes app",
       "target": [
         {
           "target": "AppImage",
