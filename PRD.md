@@ -1,7 +1,8 @@
 # PRD — WebObsidian
 
 > Product Requirements Document
-> Phiên bản: 1.55 · Cập nhật: 2026-11-22 · Trạng thái: Draft
+> Phiên bản: 1.56 · Cập nhật: 2026-11-22 · Trạng thái: Draft
+> Changelog 1.56 (Vim 光标颜色) Vim 默认光标沿用普通编辑器的正文灰黑色（深色主题自动转浅），替换插件固定的低对比度配色；设置 › 编辑器 › Vim 可分别调整浅色/深色主题的光标颜色并恢复默认，即时生效且不重置 Vim 模式、选区或输入法状态。插入模式细光标与普通/可视模式块光标共用颜色，块光标保留文字可读性。设计见 docs/design/vim-input-method.md。
 > Changelog 1.55 (原生 Vim 与内置输入法联动) 原生 Markdown 编辑器可开启 Vim；进入普通/可视模式使用指定英文输入源，返回插入模式恢复离开插入模式前的输入法。助手随桌面包构建，无需全局安装；仅当前聚焦编辑器可切换，离开编辑器恢复输入法。保持共享文档历史、片段和保存语义。Android 提供 Vim，系统输入法自动切换仅桌面 macOS/Windows。设计见 docs/design/vim-input-method.md。
 > Changelog 1.54 (原生菜单快捷键归设置管理) 桌面菜单不注册 Electron/macOS 默认快捷键；重新加载、强制重新加载、开发者工具、窗口缩放/全屏/最小化/隐藏/退出等动作进入同一命令目录和快捷键设置，默认未分配。已有用户快捷键与跨平台主修饰键保留；撤销仍为 Ctrl/Command+Z，重做为独立动作。应用可释放的隐藏/最小化/退出组合不再触发自动 Control 回退；仅系统接管的切应用/Spotlight/同应用窗口切换保留回退。按用户要求从 STEM 的移动文件移除多余 Ctrl+Shift+M，Mac 设置入口覆盖为实体 Control+反引号。设计见 docs/design/hotkeys.md。
 > Changelog 1.53 (同文件跨平台快捷键) 快捷键统一存放 `.obsidian/webobsidian/hotkeys.jsonc` 并沿用原生文件同步；通用 Ctrl/Mod 在 macOS 优先解析为 Command，`PhysicalCtrl` 明确表示实体 Control。Windows/Linux/Android 继续使用 Ctrl。允许同一文件按命令设置 Windows 与 Mac 覆盖，设置页并排编辑两端、多组绑定、禁用与继承；已存在的统一文件优先，旧本机与 Obsidian 配置只在首次迁移读取。修复编辑器、剪贴板与原生命令的 Command 默认值；系统保留组合才回退 Control。设计见 docs/design/hotkeys.md。

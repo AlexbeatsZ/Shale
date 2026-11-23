@@ -52,7 +52,34 @@ try {
   await page.getByRole('checkbox', { name: '启用 Vim', exact: true }).click();
   await expect(page.getByRole('checkbox', { name: '启用 Vim', exact: true })).toBeChecked();
   await expect(page.getByRole('checkbox', { name: '自动切换输入法', exact: true })).toBeChecked();
+  if (process.env.VIM_SCREENSHOT_DIR) {
+    await fs.mkdir(process.env.VIM_SCREENSHOT_DIR, { recursive: true });
+    await page.screenshot({ path: path.join(process.env.VIM_SCREENSHOT_DIR, 'vim-settings.png'), animations: 'disabled' });
+  }
+  for (const [theme, color, key] of [['浅色', '#123456', 'vimCursorLight'], ['深色', '#abcdef', 'vimCursorDark']]) {
+    const picker = page.getByLabel(`${theme}主题光标颜色`, { exact: true });
+    await picker.fill(color);
+    await expect.poll(() => page.evaluate(async key => (await (await fetch('/api/settings/')).json()).ui[key], key)).toBe(color);
+  }
   await page.keyboard.press('Escape'); await content.focus();
+  await expect(view.locator('.cm-fat-cursor').first()).toHaveCSS('outline-color', 'rgb(18, 52, 86)');
+  await page.keyboard.press('i'); await settled();
+  await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', 'rgb(18, 52, 86)');
+  await settings({ theme: 'obsidian-dark' });
+  await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', 'rgb(171, 205, 239)');
+  await expect(view).toHaveAttribute('data-vim-mode', 'insert');
+  await page.getByRole('button', { name: '设置', exact: true }).click();
+  await page.getByRole('button', { name: '编辑器', exact: true }).click();
+  for (const theme of ['浅色', '深色']) {
+    await page.getByRole('button', { name: `恢复${theme}主题光标颜色默认值`, exact: true }).click();
+    await expect(page.getByRole('button', { name: `恢复${theme}主题光标颜色默认值`, exact: true })).toBeDisabled();
+  }
+  await page.keyboard.press('Escape'); await settings({ theme: 'obsidian-light' }); await content.focus();
+  const defaultColor = await content.evaluate(element => getComputedStyle(element).color);
+  await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', defaultColor);
+  await page.keyboard.press('Escape');
+  await expect(view.locator('.cm-fat-cursor').first()).toHaveCSS('outline-color', defaultColor);
+  if (process.env.VIM_SCREENSHOT_DIR) await view.screenshot({ path: path.join(process.env.VIM_SCREENSHOT_DIR, 'vim-default-cursor.png'), animations: 'disabled' });
   await page.keyboard.press('i'); await settled();
   await native('select', chineseState);
   await page.keyboard.press('Escape'); await settled();

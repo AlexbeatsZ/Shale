@@ -38,6 +38,11 @@ export function nativeVimExtensions(commands: Actions): Extension {
       queueMicrotask(() => {
         if (!this.alive) return;
         const settings = vimSettings(), enabled = settings.vimEnabled && !this.view.state.readOnly;
+        // Appearance changes must preserve the engine, selection and IME lease.
+        for (const [property, color] of [['--vim-cursor-light', settings.vimCursorLight], ['--vim-cursor-dark', settings.vimCursorDark]]) {
+          if (enabled && color) this.view.dom.style.setProperty(property, color);
+          else this.view.dom.style.removeProperty(property);
+        }
         const key = JSON.stringify([enabled, settings.vimInputMethod, settings.vimEnglishSource]);
         if (this.key === key) return;
         this.key = key;

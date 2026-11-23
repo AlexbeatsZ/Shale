@@ -25,6 +25,19 @@ export default function NativeVimSettings() {
       <input aria-label="启用 Vim" type="checkbox" checked={settings.vimEnabled} disabled={busy}
         onChange={event => void save({ vimEnabled: event.target.checked })} />
     </SettingRow>
+    {(['light', 'dark'] as const).map(theme => {
+      const key = theme === 'light' ? 'vimCursorLight' : 'vimCursorDark';
+      const label = `${theme === 'light' ? '浅色' : '深色'}主题光标颜色`;
+      return <SettingRow key={theme} name={label} desc="默认跟随正文颜色；同时用于块光标和插入光标，修改后立即生效。">
+        <div className="vim-cursor-setting">
+          <input aria-label={label} type="color" value={settings[key] || (theme === 'light' ? '#222222' : '#dadada')}
+            disabled={busy} onChange={event => void save({ [key]: event.target.value })} />
+          <span>{settings[key] || '跟随主题'}</span>
+          <button type="button" aria-label={`恢复${label}默认值`} disabled={busy || !settings[key]}
+            onClick={() => void save({ [key]: '' })}>恢复默认</button>
+        </div>
+      </SettingRow>;
+    })}
     <SettingRow name="自动切换输入法" desc={bridge?.supported
       ? '普通模式使用英文，插入模式恢复上次输入法；离开编辑器恢复输入。'
       : '当前平台支持 Vim；系统输入法自动切换仅适用于 macOS 和 Windows 桌面端。'}>

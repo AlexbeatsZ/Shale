@@ -1,6 +1,6 @@
 {
   "name": "@webobsidian/desktop",
-  "version": "0.1.85",
+  "version": "0.1.86",
   "private": true,
   "description": "Shale native desktop application",
   "author": "xnohat <xnohat@gmail.com>",

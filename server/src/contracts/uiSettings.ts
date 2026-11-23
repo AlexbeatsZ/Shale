@@ -17,6 +17,8 @@ export const UiSettingsSchema = z.object({
   vimEnabled: z.boolean().default(false),
   vimInputMethod: z.boolean().default(true),
   vimEnglishSource: z.string().max(256).default(''),
+  vimCursorLight: z.string().regex(/^(?:#[0-9a-fA-F]{6})?$/).default(''),
+  vimCursorDark: z.string().regex(/^(?:#[0-9a-fA-F]{6})?$/).default(''),
   typingPointerGuard: z.boolean().default(false),
   typingPointerGuardMs: z.number().int().min(typingPointerGuardDelay.min).max(typingPointerGuardDelay.max)
     .default(typingPointerGuardDelay.default),

@@ -17,6 +17,19 @@ Native snippets and editing shortcuts run in Insert only. Reading views are not
 Vim editors. Application commands/search textboxes and WebViewer guests are separate contexts.
 Vim’s own command-line panel retains English so :w and other Ex commands work.
 
+## Cursor appearance (PRD 1.56)
+
+The default Vim cursor uses the ordinary editor's `--text-normal` color: gray/black
+in light themes and a light color in dark themes. Do not use the engine's fixed
+cursor palette. Settings > Editor > Vim exposes independent light/dark color
+pickers and reset buttons. Empty values follow the theme, and explicit values are
+opaque six-digit hex colors stored in the existing UI settings. The same color
+owns the Normal/Visual block and Insert caret. The block uses a translucent fill
+with a visible outline so text underneath stays legible; the unfocused block
+retains its outline. Color updates must not reconfigure the engine or acquire a
+new input-method lease, reset modes, change selection, or edit document source.
+Disabling Vim restores ordinary cursor styling. Theme changes apply immediately.
+
 ## Input-method contract
 
 - Snapshot on leaving Insert, then force English for Normal/Visual/Replace-normal.

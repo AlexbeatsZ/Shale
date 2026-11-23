@@ -2,8 +2,8 @@ import { useSyncExternalStore } from 'react';
 import { api } from './api';
 import { UiSettingsSchema, type UiSettings } from '../../../server/src/contracts/uiSettings';
 
-export type VimSettings = Pick<UiSettings, 'vimEnabled' | 'vimInputMethod' | 'vimEnglishSource'>;
-let current: VimSettings = { vimEnabled: false, vimInputMethod: true, vimEnglishSource: '' };
+export type VimSettings = Pick<UiSettings, 'vimEnabled' | 'vimInputMethod' | 'vimEnglishSource' | 'vimCursorLight' | 'vimCursorDark'>;
+let current: VimSettings = { vimEnabled: false, vimInputMethod: true, vimEnglishSource: '', vimCursorLight: '', vimCursorDark: '' };
 const listeners = new Set<() => void>();
 let loading: Promise<void> | undefined, revision = 0;
 export const vimSettings = () => current;
@@ -11,8 +11,8 @@ export const subscribeVimSettings = (listener: () => void) => { listeners.add(li
 function accept(value: unknown) {
   const parsed = UiSettingsSchema.safeParse(value);
   if (!parsed.success) return;
-  const { vimEnabled, vimInputMethod, vimEnglishSource } = parsed.data;
-  const next = { vimEnabled, vimInputMethod, vimEnglishSource };
+  const { vimEnabled, vimInputMethod, vimEnglishSource, vimCursorLight, vimCursorDark } = parsed.data;
+  const next = { vimEnabled, vimInputMethod, vimEnglishSource, vimCursorLight, vimCursorDark };
   if (JSON.stringify(next) === JSON.stringify(current)) return;
   current = next; revision++; listeners.forEach(listener => listener());
 }

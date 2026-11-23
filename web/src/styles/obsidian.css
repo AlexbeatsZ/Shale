@@ -540,6 +540,20 @@ body.wo-row-resizing { cursor: row-resize; user-select: none; }
 .cm-editor .cm-cursor { border-left-color: var(--text-normal); }
 .cm-secondary-cursors .cm-cursor { display: block; }
 
+/* Vim shares the ordinary cursor palette; its block must leave text readable. */
+.cm-editor[data-vim-mode] { --vim-cursor-color: var(--vim-cursor-light, var(--text-normal)); }
+.theme-dark .cm-editor[data-vim-mode] { --vim-cursor-color: var(--vim-cursor-dark, var(--text-normal)); }
+.cm-editor[data-vim-mode] .cm-cursor { border-left-color: var(--vim-cursor-color); }
+.cm-editor[data-vim-mode] .cm-fat-cursor {
+  background-color: color-mix(in srgb, var(--vim-cursor-color) 30%, transparent);
+  outline: 1px solid var(--vim-cursor-color);
+  outline-offset: -1px;
+}
+.cm-editor[data-vim-mode]:not(.cm-focused) .cm-fat-cursor { background-color: transparent; }
+.vim-cursor-setting { display: flex; align-items: center; gap: 8px; }
+.vim-cursor-setting input[type="color"] { width: 36px; height: 28px; padding: 2px; cursor: pointer; }
+.vim-cursor-setting span { color: var(--text-muted); font-size: 12px; }
+
 /* CodeMirror's default light surfaces are independent of the app theme. */
 .cm-host .cm-editor .cm-panels,
 .cm-host .cm-editor .cm-tooltip {

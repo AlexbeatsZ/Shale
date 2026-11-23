@@ -33,6 +33,68 @@ test('Vim is opt-in and changing the setting reconfigures the existing editor', 
   await expect(view).not.toHaveAttribute('data-vim-mode');
 });
 
+test('default Vim cursors follow the ordinary text color in light and dark themes', async ({ page }) => {
+  const view = await editor(page);
+  for (const theme of ['theme-light', 'theme-dark']) {
+    await view.evaluate((element, theme) => {
+      const root = element.closest('.theme-light, .theme-dark')!;
+      root.classList.remove('theme-light', 'theme-dark'); root.classList.add(theme);
+    }, theme);
+    const text = await view.locator('.cm-content').evaluate(element => getComputedStyle(element).color);
+    const block = view.locator('.cm-fat-cursor').first();
+    await expect(block).toHaveCSS('outline-color', text);
+    await expect(block).not.toHaveCSS('background-color', 'rgb(255, 150, 150)');
+    await page.keyboard.press('i');
+    await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', text);
+    await page.keyboard.press('Escape');
+  }
+});
+
+test('cursor colors update per theme without resetting Vim mode, selection, history or input-method lease', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as any).vimRequests = [];
+    (window as any).webobsidianDesktop = { inputMethod: { supported: true,
+      update: async (request: unknown) => { (window as any).vimRequests.push(request); }, list: async () => [] } };
+  });
+  const view = await editor(page);
+  await page.keyboard.press('i'); await page.keyboard.type('hello ');
+  const requests = await page.evaluate(() => (window as any).vimRequests.length);
+  const selection = await page.evaluate(async () => {
+    const { getActiveEditor } = await import('/src/lib/activeEditor.ts');
+    return getActiveEditor()!.state.selection.toJSON();
+  });
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('settings-changed', { detail: { ui: {
+    vimEnabled: true, vimInputMethod: false, vimCursorLight: '#123456', vimCursorDark: '#abcdef',
+  } } })));
+  await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', 'rgb(18, 52, 86)');
+  await expect(view).toHaveAttribute('data-vim-mode', 'insert');
+  expect(await page.evaluate(async () => {
+    const { getActiveEditor } = await import('/src/lib/activeEditor.ts');
+    return getActiveEditor()!.state.selection.toJSON();
+  })).toEqual(selection);
+  expect(await page.evaluate(() => (window as any).vimRequests.length)).toBe(requests);
+  await page.keyboard.press('Escape');
+  await expect(view.locator('.cm-fat-cursor').first()).toHaveCSS('outline-color', 'rgb(18, 52, 86)');
+  await page.keyboard.press('v');
+  await view.evaluate(element => {
+    const root = element.closest('.theme-light, .theme-dark')!;
+    root.classList.remove('theme-light'); root.classList.add('theme-dark');
+  });
+  await expect(view).toHaveAttribute('data-vim-mode', 'visual');
+  await expect(view.locator('.cm-fat-cursor').first()).toHaveCSS('outline-color', 'rgb(171, 205, 239)');
+  await page.keyboard.press('Escape'); await page.keyboard.press('u');
+  await expect.poll(() => source(page)).toBe('alpha beta\nsecond line\n');
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('settings-changed', { detail: { ui: { vimEnabled: true, vimInputMethod: false } } })));
+  const text = await view.locator('.cm-content').evaluate(element => getComputedStyle(element).color);
+  await expect(view.locator('.cm-fat-cursor').first()).toHaveCSS('outline-color', text);
+  await page.evaluate(() => { const input = document.createElement('input'); document.body.append(input); input.focus(); });
+  await expect(view.locator('.cm-fat-cursor').first()).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(view.locator('.cm-fat-cursor').first()).toHaveCSS('outline-color', text);
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('settings-changed', { detail: { ui: { vimEnabled: false } } })));
+  await expect(view).not.toHaveAttribute('data-vim-mode');
+  await expect(view).not.toHaveAttribute('style', /--vim-cursor-/);
+});
+
 test('Normal motions/delete, Insert, Visual and native undo/redo share one history', async ({ page }) => {
   const view = await editor(page);
   await page.keyboard.type('dw');

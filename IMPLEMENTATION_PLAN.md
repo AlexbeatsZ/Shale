@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-22 (原生 Vim 与内置输入法联动)
+Cập nhật lần cuối: 2026-11-22 (Vim 光标颜色)
+
+### Vim 光标颜色 (PRD 1.56)
+
+- [x] 默认沿用普通编辑器光标颜色；浅色/深色主题分别自定义并恢复默认，热更新保持 Vim/输入法状态；三端类型、640 单元和 7 项 Vim 浏览器回归通过。
+- [~] 桌面 0.1.86 Mac/Windows 实包验收、构建发布。
 
 ### 原生 Vim 与内置输入法联动 (PRD 1.55)
 
@@ -743,6 +748,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-22 (PRD 1.56)：Vim 默认灰黑/浅色光标与按主题自定义/恢复默认完成，颜色热更新保留模式、选区、历史与输入法租约；640 单元、7 项 Vim 浏览器回归和生产构建通过，桌面 0.1.86 交付进行中。
 
 - 2026-11-22: PRD 1.53 同文件跨平台快捷键、Windows/Mac 双栏配置及 7 级正文内标题命令完成源码和隔离回归；桌面 0.1.83 已发布，Mac 实包与 Windows 构建验收通过。
 

@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-22 PRD 1.56：Vim 光标默认复用普通编辑器的正文灰黑/浅色，块光标半透明填充并加清晰轮廓；设置 › 编辑器 › Vim 可分别选择浅色/深色主题颜色与恢复默认，沿用 UI 设置持久化。颜色热更新不重建 Vim，不改变模式、选区、历史或输入法租约。三端类型、生产 build、640 单元和 7 项 Vim 浏览器回归通过；桌面 0.1.86 打包/发布与实包验收进行中。设计 `docs/design/vim-input-method.md`。
 - 2026-11-22 桌面 v0.1.85 已发布（Mac arm64、Windows x64 共 7 资产，源码 2f2f265）。PRD 1.55：原生编辑器内置 Vim 与桌面输入法联动，设置 › 编辑器可开启；Normal/Visual 自动切英文，Insert 恢复上次输入法（上次为英文时保持英文）。内置 macOS/Windows 输入法助手，复用 macism 与 Windows IME 状态恢复；u/Ctrl+r 接入共享文档历史，ciw/插入/LaTeX 片段同组撤销，:w 接入原生保存。640 单元、14 浏览器、Mac/Windows 0.1.85 实包源与中英文状态往返、快速模式切换、设置开关/禁用恢复及系统键盘事件经过真实输入法提交“你好”通过；Mac 完整 WebViewer 回归通过；固定证书/identifier 签名与 NSIS/版本检查通过。Mac `/Applications/Shale.app` 已原位升级部署 0.1.84→0.1.85，固定证书/identifier 签名、strict 校验、启动与 healthz 通过。Windows 未原位安装。设计 `docs/design/vim-input-method.md`，验收 `tests/reports/vim-input-method-20261122.md`。
 - 2026-11-22 桌面 v0.1.84 已发布（7 资产，源码 8651466），Mac `/Applications/Shale.app` 已原位升级并通过固定证书/identifier、deep/strict、STEM 启动与 healthz。PRD 1.54：全部应用菜单零快捷键，23 个原生动作进入设置且默认未分配；释放 Command+R/H/M/Q，仅系统组合回退 Control。STEM move 只留 Ctrl+M，Mac settings=PhysicalCtrl+反引号；撤销 Ctrl/Command+Z，左栏 Ctrl/Command+Shift+Z，重做仍可用 Ctrl/Command+Y。自定义 reload 复用完整文档/布局保存屏障。Mac 原生动作、既有快捷键及完整 WebViewer 实包通过；Windows x64 构建/版本通过但未原位安装、未验收实体键盘。设计 `docs/design/hotkeys.md`，验收 `tests/reports/native-menu-shortcuts-20261122.md`。
 - 2026-11-22 跨平台快捷键改为同一 Vault 文件 `.obsidian/webobsidian/hotkeys.jsonc`（PRD 1.53）：Ctrl/Mod 在 Mac 使用 Command，PhysicalCtrl/Control 明确表示实体 Control；Mac 未覆盖时跟随 Windows。设置页并排编辑两端、禁用/恢复继承；文件存在后不再用旧本机 settings 覆盖，文件同步变更即时刷新。补齐 `editor:set-heading-7`（正文内标题）和旧 apply-heading7 别名，允许 7 级改回 0–6 级。桌面 v0.1.83 已发布（Mac arm64 + Windows x64 共 7 资产，源码 250fa6a）；Mac 固定证书签名与实包快捷键/完整 WebViewer 回归通过，Windows 隔离构建与版本通过。Mac `/Applications/Shale.app` 已按后续授权原位升级 0.1.82→0.1.83，签名/启动/healthz 通过，STEM 统一快捷键文件已迁移；Windows 实体键盘交互未验收。设计 `docs/design/hotkeys.md`、`heading-level-commands.md`。
@@ -38,6 +39,7 @@
 - Mac 数据目录为 `~/Library/Application Support/@webobsidian/desktop`，服务日志为 `logs/server.log`。历史安装包从 GitHub Release 取回。历史 Release、永久密钥、SDK/依赖缓存与用户数据各在原归属位置。
 
 ## Active Work
+- 桌面 0.1.86：完成 Mac/Windows 构建、实包颜色设置验收与 Release 交付。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。
