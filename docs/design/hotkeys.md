@@ -9,7 +9,7 @@ This supersedes the 2026-11-06 literal-Control policy.
   `PhysicalCtrl` (also accepted as `Control`) means the physical Control key on every platform;
   `Meta`/`Command` means literal Command/Windows. Event capture preserves physical identity.
 - `bindings` stores portable overrides; optional `platforms.windows` and `platforms.mac` store
-  per-command overrides. Windows also covers Linux/Android keyboards. Mac entries missing from the map inherit the Windows override, then portable defaults;
+  per-command overrides. Windows also covers Linux/Android keyboards. Mac entries missing from the map inherit the Windows override, then portable bindings and defaults;
   `[]` disables, and clearing an override restores inheritance. Both columns are editable on
   any host through recording or textual combinations. Platform edits never rewrite the other map.
 - Inherited portable bindings that hit macOS reserved Hide, Hide Others, Minimize, Quit,
@@ -117,3 +117,9 @@ Fuzzy/编辑命令/标题移位/插件 ID → 本体命令）。`writing/command
 2026-10-23 早先收尾：修复 `HotkeySettings` 的 React 事件类型错误，删除被统一目录取代的
 `runWritingHotkey`/`writingCommandId`。已做全仓 `typecheck`；未运行 tests、构建、应用、
 服务、浏览器、真实键盘/IME 或性能验收，未写真实 Vault 快捷键文件。
+
+## 2026-11-22 validation
+
+See `tests/reports/portable-hotkeys-20261122.md` for actual unit, Chromium, native sync
+and packaged application evidence. Earlier static-only validation boundaries above
+refer to the historical 2026-10-23 task, not this implementation.
