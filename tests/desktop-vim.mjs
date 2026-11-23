@@ -24,9 +24,11 @@ try {
   page = await app.firstWindow();
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });
-  await app.evaluate(({ BrowserWindow }) => { const win = BrowserWindow.getAllWindows()[0]; win.show(); win.focus(); });
+  await app.evaluate(({ app, BrowserWindow }) => { app.focus({ steal: true }); const win = BrowserWindow.getAllWindows()[0]; win.show(); win.focus(); });
   await page.keyboard.press(`${primary}+o`);
-  await page.locator('.palette-input').fill('Note'); await page.keyboard.press('Enter');
+  await page.locator('.palette-input').fill('Note');
+  await expect(page.getByRole('option', { name: 'Note Note.md', exact: true })).toBeVisible();
+  await page.keyboard.press('Enter');
   const view = page.locator('.workspace .main-pane .cm-editor').first(), content = view.locator('.cm-content');
   await expect(content).toContainText('alpha beta'); await content.focus();
   const nativeHost = await app.evaluate(() => ({ pid: process.pid, resources: process.resourcesPath, platform: process.platform }));
@@ -57,7 +59,7 @@ try {
     await page.screenshot({ path: path.join(process.env.VIM_SCREENSHOT_DIR, 'vim-settings.png'), animations: 'disabled' });
   }
   for (const [theme, color, key] of [['浅色', '#123456', 'vimCursorLight'], ['深色', '#abcdef', 'vimCursorDark']]) {
-    const picker = page.getByLabel(`${theme}主题光标颜色`, { exact: true });
+    const picker = page.getByRole('textbox', { name: `${theme}主题光标颜色`, exact: true });
     await picker.fill(color);
     await expect.poll(() => page.evaluate(async key => (await (await fetch('/api/settings/')).json()).ui[key], key)).toBe(color);
   }
@@ -115,7 +117,7 @@ try {
   await expect.poll(() => fs.readFile(path.join(vault, 'Note.md'), 'utf8')).toContain('中文测试');
   await settings({ vimEnabled: false }); await expect(view).not.toHaveAttribute('data-vim-mode'); await settled();
   await expect.poll(async () => (await native('get')).source).toBe(chinese.id);
-  console.log(`PASS packaged Vim modes, Chinese/English restoration, remembered English, rapid transitions, native undo/redo, :w and disable restoration (${process.platform})`);
+  console.log(`PASS packaged Vim theme colors, settings persistence/reset, modes, Chinese/English restoration, remembered English, rapid transitions, native undo/redo, :w and disable restoration (${process.platform})`);
   console.log(JSON.stringify({ english: english.id, chinese: chinese.id, original: initial }));
 } finally {
   if (app) {
