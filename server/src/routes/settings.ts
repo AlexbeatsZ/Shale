@@ -40,7 +40,7 @@ settingsRouter.put('/css-snippets', asyncHandler(async (req, res) => {
   const input = z.object({ source: z.object({ path: z.literal('appearance.json'), content: z.string().max(1024 * 1024),
     exists: z.boolean(), revision: z.string().optional(), vault: z.string() }).strict(), name: z.string(), enabled: z.boolean() }).strict().parse(req.body);
   const value = await setCssSnippetEnabled(input.source, input.name, input.enabled);
-  broadcast({ type: 'vault-configuration-changed', path: '.obsidian/appearance.json', event: 'change' });
+  broadcast({ type: 'vault-configuration-changed', path: '.shale/appearance.json', event: 'change' });
   res.json(value);
 }));
 settingsRouter.get('/css-snippets/:name', asyncHandler(async (req, res) => {
@@ -128,7 +128,7 @@ settingsRouter.put(
     } else {
       if (body.git) {
         await saveGitPreferences(body.git);
-        broadcast({ type: 'vault-configuration-changed', path: '.obsidian/webobsidian/git.jsonc', event: 'change' });
+        broadcast({ type: 'vault-configuration-changed', path: '.shale/git.jsonc', event: 'change' });
       }
       // A Git-only edit belongs entirely to the Vault; avoid a second app-data write.
       if (Object.keys(body).some(key => key !== 'git')) await commit();

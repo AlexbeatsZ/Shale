@@ -1,4 +1,4 @@
-import { contentTargets, extractMetadata, updateMarkdown, type DocumentSnapshot, type SourceChange } from '@webobsidian/markdown-core';
+import { contentTargets, extractMetadata, updateMarkdown, type DocumentSnapshot, type SourceChange } from '@shale/markdown-core';
 import type { FragmentEditBinding } from './renderContext';
 
 export class EmbedProjection {

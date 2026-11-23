@@ -1,9 +1,9 @@
-import { parseSearchQuery } from '@webobsidian/search-core';
+import { parseSearchQuery } from '@shale/search-core';
 import { api } from './api';
 import { subscribeSearch } from './search';
 import { linkIntent } from './fragmentNavigation';
-import { Component } from './obsidian/events';
-import { registerCodeProcessor, type CodeBlockContext } from './obsidian/markdown';
+import { Component } from './shale/events';
+import { registerCodeProcessor, type CodeBlockContext } from './shale/markdown';
 
 const queryResultLimit = 100;
 
@@ -25,7 +25,7 @@ export function installQueryBlocks(): () => void {
     }
     if (pathQuery) {
       const note = element.ownerDocument.createElement('small');
-      note.textContent = '路径沿用应用搜索的分词、模糊与前缀设置，尚不支持 Obsidian 的完整路径匹配语义。';
+      note.textContent = '路径沿用应用搜索的分词、模糊与前缀设置，尚不支持 Shale 的完整路径匹配语义。';
       element.append(note);
     }
     const results = element.ownerDocument.createElement('ul');

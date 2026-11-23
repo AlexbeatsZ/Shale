@@ -46,8 +46,8 @@ historical Tip transient cause remain unverified.
 
 ## Evidence and ownership
 
-Reference archive read only: `C:/Users/Meta/AppData/Roaming/obsidian/obsidian-1.14.5.asar`.
-Its package.json reports Obsidian 1.14.5. app.js and app.css were extracted temporarily
+Reference archive read only: `C:/Users/Meta/AppData/Roaming/shale/shale-1.14.5.asar`.
+Its package.json reports Shale 1.14.5. app.js and app.css were extracted temporarily
 with the repository's existing @electron/asar reader; no application or plugin was
 executed. The older docs/obsidian-desktop-internals.md describes macOS 1.12.7 and is
 background rather than evidence for this installed version.
@@ -60,7 +60,7 @@ layout measures its endpoint before applying negative textIndent and positive
 paddingInlineStart. app.css lines 3736-3737 reset child text-indent; lines 11609-11635
 color revealed markers, retain transparent inactive ones and draw quote borders
 through full-height pseudo-elements. This is source evidence, not a claim that
-our DOM must copy Obsidian's tokenizer or that the user's screenshot was reproduced.
+our DOM must copy Shale's tokenizer or that the user's screenshot was reproduced.
 
 app.js MW/TW supplies fold indicators from existing folded ranges/foldable sections.
 app.css lines 8277-8291 gives the inline fold anchor a zero-width text strut and
@@ -77,7 +77,7 @@ and padding, so a second line rule or isolated numeric glyph offset is unnecessa
 
 Our heading path added cm-heading-labelled only when inactive. Its ::before used
 bottom:0 on the entire padded line and a separate small UI-font line box. The
-local test-copy .obsidian/snippets/Theme.css lines 47-105 additionally sets heading
+local test-copy .shale/snippets/Theme.css lines 47-105 additionally sets heading
 ::before via .HyperMD-header-N, left:-3em and margin-top:var(--hN-size), excluding
 .cm-active; our path does not produce that active class. These are competing
 source rules with different anchors and state predicates. Which enabled CSS won

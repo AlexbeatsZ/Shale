@@ -19,12 +19,12 @@ thresholds, storage and device acceptance entry points are in android-runtime.md
 - 中央、左栏和右栏的 + 只创建 Homepage 标签，不创建文件。左右下方是独立笔记、
   已注册插件视图。中键、Delete、
   标题关闭按钮和右键菜单关闭标签，方向键选择标签。
-- 只读参照实际 STEM `.obsidian/snippets/Hider.css` 的有效规则：浮在正文之上，
+- 只读参照实际 STEM `.shale/snippets/Hider.css` 的有效规则：浮在正文之上，
   左面板默认 280px。hover 自动隐藏代码处于注释状态，不采用。2026-11-22 用户要求删除侧栏阴影
   和右栏 opacity=.95 半透明，两侧现为不透明、只有内侧 1px 边线。页面、面板和列表的滚动条
   全局隐藏（仍可滚动），不要再给单个区域加回可见滚动条。
   两侧位于 32px 工作区标题栏下方，不覆盖原生窗口按钮；展开/收起不改变正文列宽。
-- 采用用户提供的 Obsidian 参考：16–18px 单色细线图标、中性底色、紧凑菜单行、
+- 采用用户提供的 Shale 参考：16–18px 单色细线图标、中性底色、紧凑菜单行、
   8px 菜单圆角、右侧勾选标记、胶囊形启动动作、带图标和分组的设置导航。
   主色和字体仍来自现有主题变量，不加载外部图标包或重新实现一套主题。
 - 删除右竖栏底部的命令、插件快捷入口、同步和主题工具组；设置放到左侧仓库底栏。
@@ -43,7 +43,7 @@ thresholds, storage and device acceptance entry points are in android-runtime.md
 | 自定义视图的创建与清理 | WorkspaceLeaf + viewRegistry + Component | SidebarTabPanels 调用既有 mountView；Modal 和左右侧栏共享加载路径 |
 | 全局编辑焦点 | activeEditor | 排除 hidden/aria-hidden，覆盖命令、模板、保存 |
 | 标题、块、公式定位 | fragmentNavigation | 可指定 EditorView，避免同路径多实例跳错 |
-| 图标路径 | lib/icons.ts | React Icon 与 Obsidian DOM getIcon 共用目录 |
+| 图标路径 | lib/icons.ts | React Icon 与 Shale DOM getIcon 共用目录 |
 | 右键、视图、搜索排序菜单行 | ContextMenu.MenuList | 共用图标列、标签列、勾选与键盘操作 |
 | 空工作区与三处 Homepage | WorkspaceLauncher | 共用新建笔记、打开文件、网页和图谱动作，调用已有命令/选择器并带目标区域 |
 | 左右动态栏的键盘、关闭和菜单 | SidebarTabRail | side 参数只影响位置，复用同一 store 保存/替换/关闭流程 |

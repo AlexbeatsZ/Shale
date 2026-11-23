@@ -1,5 +1,5 @@
 import { createElement, useSyncExternalStore } from 'react';
-import { SourceDocument, rebaseReview, reviewHunks, type ReviewHunk } from '@webobsidian/markdown-core';
+import { SourceDocument, rebaseReview, reviewHunks, type ReviewHunk } from '@shale/markdown-core';
 import { documents } from '../documents';
 import { useStore } from '../store';
 import { resolveSyncConflict, subscribeSyncConflicts, syncConflictSnapshot } from '../syncConflicts';

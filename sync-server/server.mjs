@@ -5,23 +5,28 @@ import { prefix, validPath, validateManifest } from './protocol.mjs';
 import { runCli } from './cli.mjs';
 
 export async function createSyncServer({ root, token, maxBlobBytes = 1024 * 1024 * 1024 }) {
-  return createFileSyncServer({
+  const service = await createFileSyncServer({
     root, token, maxBlobBytes, routePrefix: prefix, validPath, validateManifest,
     validateToken(value) {
       if (typeof value !== 'string' || !/^[\x21-\x7e]{32,512}$/.test(value)) {
-        throw new Error('WEBOBSIDIAN_SYNC_TOKEN must contain 32-512 printable ASCII characters');
+        throw new Error('SHALE_SYNC_TOKEN must contain 32-512 printable ASCII characters');
       }
     },
     validateRequest: (request, url) => !request.headers.origin && !url.search && !request.url.includes('#'),
-    onError: ({ code }) => console.error('WebObsidian sync request failed:', code),
+    onError: ({ code }) => console.error('Shale sync request failed:', code),
   });
+  // Import-only route for devices that have not installed the migration release yet.
+  service.server.prependListener('request', request => {
+    if (request.url?.startsWith('/webobsidian-sync/')) request.url = request.url.replace('/webobsidian-sync/', '/shale-sync/');
+  });
+  return service;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try { await runCli(createSyncServer); }
   catch (error) {
     // Startup diagnostics must not expose a configuration token or private paths.
-    console.error('WebObsidian sync startup failed:', error.code ?? error.name);
+    console.error('Shale sync startup failed:', error.code ?? error.name);
     process.exitCode = 1;
   }
 }

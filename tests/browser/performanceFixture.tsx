@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { DocumentSession } from '@webobsidian/markdown-core';
+import { DocumentSession } from '@shale/markdown-core';
 import type { EditorView } from '@codemirror/view';
 import MarkdownView from '../../web/src/components/MarkdownView';
 import { blockLayout } from '../../web/src/lib/blockLayout';

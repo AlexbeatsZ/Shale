@@ -55,7 +55,7 @@ test('debug records progressive input, math source, view lifetime and errors acr
   }
   expect(source).toBe('> [!tip]\n> body $$x$$');
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: '导出日志', exact: true }).click();
-  expect((await download).suggestedFilename()).toMatch(/^webobsidian-debug-.*\.jsonl$/);
+  expect((await download).suggestedFilename()).toMatch(/^shale-debug-.*\.jsonl$/);
   const count = events.length;
   await page.reload(); await page.waitForFunction(() => Boolean(window.renderHarness));
   await expect(page.getByRole('checkbox', { name: '开启调试记录' })).toBeChecked();

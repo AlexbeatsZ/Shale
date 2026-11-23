@@ -1,6 +1,6 @@
 import { Prec, StateEffect, StateField, type EditorState } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
-import type { SourceSpan } from '@webobsidian/markdown-core';
+import type { SourceSpan } from '@shale/markdown-core';
 import { compositionSelection } from './editorSelection';
 import { recordDebug } from './debug';
 

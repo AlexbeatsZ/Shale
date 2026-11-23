@@ -1,6 +1,6 @@
 import { RangeSet, StateField, type Range, type EditorState } from '@codemirror/state';
 import { BlockWrapper, Decoration, EditorView, WidgetType } from '@codemirror/view';
-import { caretTouches, stripQuotePrefix, sourceLinePrefix, type SourceSpan } from '@webobsidian/markdown-core';
+import { caretTouches, stripQuotePrefix, sourceLinePrefix, type SourceSpan } from '@shale/markdown-core';
 import { blockModel } from './syntaxModel';
 import { livePreviewState, livePreviewReadonly } from './renderState';
 import { compositionSelection } from './inlineHtml';

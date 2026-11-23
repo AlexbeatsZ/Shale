@@ -1,7 +1,7 @@
 import { searchEntries, searchSettings, subscribeSearch, matchName, fileCandidates } from './search';
 import { documents } from './documents';
 import { contentReferenceSuggestions, resolveContentLink } from './contentReferences';
-import { extractMetadata, mathRegions, equations, equationAnchor, equationLabel, equationReferenceName, type MarkdownModel, type Equation } from '@webobsidian/markdown-core';
+import { extractMetadata, mathRegions, equations, equationAnchor, equationLabel, equationReferenceName, type MarkdownModel, type Equation } from '@shale/markdown-core';
 import { syntaxModel } from './syntaxModel';
 import { api } from './api';
 import { renderMath, mathDefinitionContext } from './mathjax';
@@ -15,7 +15,7 @@ import { prepareQuery, fuzzySearch, fuzzySearchPath, type FuzzyMatch } from './f
  *  - `[[` link suggester — trigger when lastIndexOf("[[") > lastIndexOf("]") on the
  *    line text up to the cursor; `![[` works the same. Stops in display-text mode (`|`).
  *  - `#` tag suggester — trigger on /(^|\s)#…$/ before the cursor.
- * Ranking uses the exact Obsidian fuzzy score (lib/fuzzy.ts). Max 20 items.
+ * Ranking uses the exact Shale fuzzy score (lib/fuzzy.ts). Max 20 items.
  */
 
 // Tag body charset (§7) — editor flavour additionally requires a letter.
@@ -192,7 +192,7 @@ class SuggestState {
   private previewItem?: Item['equation'];
   private generation = 0;
   private targetPath = '';
-  private targetLoad?: Promise<import('@webobsidian/markdown-core').DocumentSession>;
+  private targetLoad?: Promise<import('@shale/markdown-core').DocumentSession>;
   private destroyed = false;
   dom: HTMLElement | null = null;
   ctx: Ctx | null = null;
@@ -349,7 +349,7 @@ class SuggestState {
     if (!coords) return this.hide();
     dom.style.left = `${Math.round(Math.min(coords.left, window.innerWidth - 320))}px`;
     dom.style.display = 'block';
-    // Flip above the cursor when there is no room below (like Obsidian).
+    // Flip above the cursor when there is no room below (like Shale).
     this.renderPreview();
     const height = Math.min(dom.scrollHeight, 300);
     if (coords.bottom + 4 + height > window.innerHeight && coords.top - 4 - height > 0) {

@@ -8,10 +8,10 @@ const base = '/tmp/.agents';
 await fs.mkdir(base, { recursive: true });
 const fixture = await fs.mkdtemp(path.join(base, 'shale-hotkeys-'));
 const vault = path.join(fixture, 'vault'), profile = path.join(fixture, 'profile');
-await fs.mkdir(path.join(vault, '.obsidian/webobsidian'), { recursive: true });
+await fs.mkdir(path.join(vault, '.shale'), { recursive: true });
 await fs.mkdir(profile);
 await fs.writeFile(path.join(vault, 'Note.md'), 'body title\n\nlast line\n');
-const filename = path.join(vault, '.obsidian/webobsidian/hotkeys.jsonc');
+const filename = path.join(vault, '.shale/hotkeys.jsonc');
 await fs.writeFile(filename, JSON.stringify({ version: 1, bindings: {
   'editor:set-heading-7': [{ modifiers: ['Ctrl', 'Alt'], key: '7' }],
 }, platforms: {}, imported: [], migration: 'packaged fixture' }));

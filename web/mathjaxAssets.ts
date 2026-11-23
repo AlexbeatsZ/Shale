@@ -24,8 +24,8 @@ export function mathJaxAssets(): Plugin {
     ['LICENSE', join(root, 'LICENSE')],
   ]);
   for (const entry of mathPackages) {
-    if (entry.component.startsWith('[webobsidian]/')) {
-      const file = entry.component.slice('[webobsidian]/'.length);
+    if (entry.component.startsWith('[shale]/')) {
+      const file = entry.component.slice('[shale]/'.length);
       assets.set(`native/${file}`, fileURLToPath(new URL(`./mathjax/${entry.id}/${file}`, import.meta.url)));
       assets.set(`native/${entry.id}-LICENSE`, fileURLToPath(new URL(`./mathjax/${entry.id}/LICENSE`, import.meta.url)));
     }

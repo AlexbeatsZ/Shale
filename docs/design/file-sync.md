@@ -8,7 +8,7 @@ the existing watcher/fileupdates owns indexing and notifications. No second watc
 editor, parser or index is introduced. Git is only periodic backup and conflict history.
 
 Each Vault stores its enabled flag, ordered addresses, token and interval in
-`.obsidian/webobsidian/sync.jsonc`. The existing Vault configuration reader/JSONC parser
+`.shale/sync.jsonc`. The existing Vault configuration reader/JSONC parser
 and revision-checked physical writer are authoritative; application settings contain no
 second copy or implicit import. The file carries the access token, so Git backup never
 records it (see Vault Git configuration); native transport itself replicates it between
@@ -22,14 +22,14 @@ errors stop rather than silently switching data authorities. All addresses must 
 the same immutable workspace identity. HTTP is allowed only for private/loopback IPs;
 public connections require certificate-verified HTTPS. Redirects are not followed.
 
-The optional Sakura Web route is /webobsidian-sync/v1/, separate from Dayweave,
+The optional Sakura Web route is /shale-sync/v1/, separate from Dayweave,
 Mojian and subscriptions. No extra tunnel is required. Backend credentials/data are
 independent. Existing services/tasks and live Vaults are never implicitly changed.
 
 The standalone server is versioned and released independently with `sync-server-v*`
 tags. Its thin `createSyncServer` adapter delegates durable storage, streaming blobs,
 CAS, receipts and draining close to an exact-release-pinned `@alexbeatsz/file-sync-core`.
-`protocol.mjs` remains the WebObsidian path/manifest authority and the adapter retains
+`protocol.mjs` remains the Shale path/manifest authority and the adapter retains
 printable ASCII 32–512 token policy plus Origin/query/fragment rejection. Existing
 gateway exports, 18744 port, v1 route, receipt fingerprints and storage layout remain
 compatible. No second storage kernel is maintained in this repository. The tested core
@@ -40,9 +40,9 @@ Server releases never change desktop/mobile versions or the client's latest Rele
 ## Personal deployment
 
 The user's deployment requires only
-`http://100.106.169.46:18744/webobsidian-sync/v1/` in each device's connection
+`http://100.106.169.46:18744/shale-sync/v1/` in each device's connection
 list as of 2026-11-14. The ROG service binds its Tailscale IPv4 address through its
-existing `server.json` and `WebObsidianNativeSync` task. The production workspace is
+existing `server.json` and `ShaleNativeSync` task. The production workspace is
 `76fcca29-885b-4dd1-832e-cfac4f07cc09`. This deployment uses the existing
 endpoint model.
 
@@ -58,7 +58,7 @@ synchronized. Case-only aliases and file/directory shape conflicts stop for expl
 handling instead of deleting existing directories. Per-file limit is 1 GiB. Server
 history/blobs/receipts have no automatic GC.
 
-Only .obsidian/webobsidian is included from .obsidian; plugin state, workspace layouts,
+Only .shale is included from .shale; plugin state, workspace layouts,
 .git, .trash, Syncthing metadata and temporary files are excluded. Application sync
 credentials intentionally travel with the Vault configuration: use a private Vault
 repository and grant access only to trusted devices. General settings and connection
@@ -100,7 +100,7 @@ Git backup is enabled, additionally record local/remote snapshots on separate br
 without switching the working branch or changing its index. Binary conflicts need an
 explicit version choice. Native sync disables per-save Git commits and background Git
 pull; the existing Git timer instead commits periodically and optionally pushes backups
-to per-device webobsidian-backups branches, together with retained conflict branches.
+to per-device shale-backups branches, together with retained conflict branches.
 It also attempts a normal non-forced push to the configured repository branch, making
 the shared connection discoverable by a fresh clone. If that branch has diverged or
 rejects the update, the successful device backup remains available; never pull, merge,
@@ -159,7 +159,7 @@ credential helper (`GIT_TERMINAL_PROMPT=0`), never from configuration.
 
 ## Vault Git configuration
 
-Git backup settings now belong to `.obsidian/webobsidian/git.jsonc`: enabled,
+Git backup settings now belong to `.shale/git.jsonc`: enabled,
 remote, branch, optional token, authorName, authorEmail, autoSync,
 autoCommitOnSave, intervalSec and lfsPatterns. The existing settings UI/API reads
 and writes this file through the same Vault configuration reader and
@@ -169,7 +169,7 @@ is no longer used. A fresh Vault defaults to Git disabled. Existing legacy
 settings bytes are not silently imported or assigned to a different Vault.
 
 Both connection files can hold tokens, so Git backup excludes them: each commit
-writes `/.obsidian/webobsidian/sync.jsonc` and `/.obsidian/webobsidian/git.jsonc`
+writes `/.shale/sync.jsonc` and `/.shale/git.jsonc`
 to the repository's `.git/info/exclude` and untracks copies committed by earlier
 versions (`git rm --cached`, working files stay). Conflict branches skip them too.
 No token is stored in Git history or encrypted; the files stay plain device/Vault

@@ -9,7 +9,7 @@ import { resolveVaultPath, vaultPathKey } from './vaultFile.js';
 import { hashFile, writeFileFromSource } from './textFile.js';
 import { atomicSyncJson, fileSignature, stageLocalFile, stageSyncBlob, withSyncLock } from './syncStorage.js';
 import { OrderedSyncTransport, SyncHttpError } from './syncTransport.js';
-import { mergeReview } from '@webobsidian/markdown-core';
+import { mergeReview } from '@shale/markdown-core';
 import { decodeText, describeChange, textExtension, type DiffBlock } from './syncMerge.js';
 
 const hash = z.string().regex(hashPattern);
@@ -273,7 +273,7 @@ export class FileSyncEngine {
   private async scan(): Promise<void> {
     const requested = this.scanned ? [...this.dirty] : ['']; this.dirty.clear();
     const inspect = async (relative: string): Promise<void> => {
-      if (relative && relative !== '.obsidian' && !validPath(relative)) return;
+      if (relative && relative !== '.shale' && !validPath(relative)) return;
       const absolute = relative ? await resolveVaultPath(this.root, relative, true) : this.root;
       let info;
       try { info = await fs.lstat(absolute); }

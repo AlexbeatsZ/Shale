@@ -39,7 +39,7 @@ export function initializeCssSnippets(notify: (error: string) => void) {
   };
   const changed = (event: Event) => {
     const path = (event as CustomEvent<{ path: string }>).detail?.path;
-    if (path !== '.obsidian/appearance.json' && path !== '.obsidian/snippets' && !path?.startsWith('.obsidian/snippets/')) return;
+    if (path !== '.shale/appearance.json' && path !== '.shale/snippets' && !path?.startsWith('.shale/snippets/')) return;
     clearTimeout(timer); timer = setTimeout(() => void refresh(), 0);
   };
   const dispose = () => {

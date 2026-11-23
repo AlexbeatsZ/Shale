@@ -32,7 +32,7 @@ async function focusPane(direction: number) {
     const element = leaf.view.containerEl; return element.isConnected && !element.closest('[hidden], [aria-hidden="true"]');
   }).sort((a, b) => a.view.containerEl.getBoundingClientRect().left - b.view.containerEl.getBoundingClientRect().left || a.view.containerEl.getBoundingClientRect().top - b.view.containerEl.getBoundingClientRect().top);
   const current = leaves.indexOf(sharedApp.workspace.activeLeaf), target = leaves[(current + direction + leaves.length) % leaves.length];
-  if (target) { const view = target.view as import('./obsidian/workspace').MarkdownView; view.editor?.focus(); }
+  if (target) { const view = target.view as import('./shale/workspace').MarkdownView; view.editor?.focus(); }
 }
 export const nativeWorkspaceCommands: NativeCommand[] = [
   pdfFilterCommand,

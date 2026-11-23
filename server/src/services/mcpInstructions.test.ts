@@ -40,9 +40,9 @@ it('stores chosen notes in the Vault configuration and rejects hidden or non-Mar
   expect(empty.preferences.instructionNotes).toEqual([]);
   const saved = await saveMcpPreferences(empty.source, { instructionNotes: ['@管理/笔记规范.md', '@管理/笔记规范.md'] });
   expect(saved.preferences.instructionNotes).toEqual(['@管理/笔记规范.md']);
-  expect(JSON.parse(await fs.readFile(path.join(state.root, '.obsidian/webobsidian/mcp.jsonc'), 'utf8')))
+  expect(JSON.parse(await fs.readFile(path.join(state.root, '.shale/mcp.jsonc'), 'utf8')))
     .toEqual({ instructionNotes: ['@管理/笔记规范.md'] });
-  await expect(saveMcpPreferences(saved.source, { instructionNotes: ['.obsidian/app.md'] })).rejects.toThrow();
+  await expect(saveMcpPreferences(saved.source, { instructionNotes: ['.shale/app.md'] })).rejects.toThrow();
   await expect(saveMcpPreferences(saved.source, { instructionNotes: ['image.png'] })).rejects.toThrow();
   // A stale revision cannot overwrite a newer list.
   await saveMcpPreferences(saved.source, { instructionNotes: [] });
@@ -50,17 +50,17 @@ it('stores chosen notes in the Vault configuration and rejects hidden or non-Mar
 });
 
 it('get_context always carries the current text of standing instruction notes', async () => {
-  expect(await callOperation('obsidian_get_context', {})).not.toHaveProperty('standing_instructions');
+  expect(await callOperation('shale_get_context', {})).not.toHaveProperty('standing_instructions');
   const { source } = await readMcpPreferences();
   await saveMcpPreferences(source, { instructionNotes: ['@管理/笔记规范.md', 'gone.md'] });
-  const result = await callOperation('obsidian_get_context', {}) as any;
+  const result = await callOperation('shale_get_context', {}) as any;
   expect(result.source).toBe('no_active_note');
   expect(result.standing_instructions.notice).toMatch(/standing instructions/);
   expect(result.standing_instructions.notes[0]).toMatchObject({ path: '@管理/笔记规范.md', link: '[[@管理/笔记规范]]',
     content: '# 规范\n公式不手动编号。\n', truncated: false });
   expect(result.standing_instructions.notes[1]).toEqual({ path: 'gone.md', link: '[[gone]]', missing: true });
   await fs.writeFile(path.join(state.root, '@管理', '笔记规范.md'), '# 规范 v2\n');
-  expect((await callOperation('obsidian_get_context', {}) as any).standing_instructions.notes[0].content).toBe('# 规范 v2\n');
+  expect((await callOperation('shale_get_context', {}) as any).standing_instructions.notes[0].content).toBe('# 规范 v2\n');
 });
 
 it('connection instructions list links only, and long notes are truncated with a flag', async () => {

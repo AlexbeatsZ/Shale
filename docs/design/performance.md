@@ -106,7 +106,7 @@ Grammar reuse does not make the complete derived-node traversal incremental.
 
 ## Startup index cache (2026-11-02)
 
-Android exception (2026-11-06): `WEBOBSIDIAN_PLATFORM=android` skips this
+Android exception (2026-11-06): `SHALE_PLATFORM=android` skips this
 disposable cache on both read and write. The complete current STEM index builds
 inside768MiB in an isolated check, while MiniSearch.toJSON() exceeds1536MiB.
 The Android host uses a1024MiB bound for the live index and indexing work, and

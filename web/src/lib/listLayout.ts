@@ -1,7 +1,7 @@
 import { Decoration, EditorView, ViewPlugin, type DecorationSet, type ViewUpdate } from '@codemirror/view';
 import { MapMode, StateEffect, StateField, countColumn, type EditorState, type Line, type Range } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
-import { stripQuotePrefix, type MarkdownModel, type SourceSpan } from '@webobsidian/markdown-core';
+import { stripQuotePrefix, type MarkdownModel, type SourceSpan } from '@shale/markdown-core';
 import { syntaxModel } from './syntaxModel';
 
 /** One source owner for list headers and marker-free paragraphs/continuations. */

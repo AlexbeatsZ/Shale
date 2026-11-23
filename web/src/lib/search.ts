@@ -12,7 +12,7 @@ import {
   type VaultHotkeys,
   type Hotkey,
   type HotkeyPlatform,
-} from '@webobsidian/search-core';
+} from '@shale/search-core';
 import { api, request, type NoteMatches } from './api';
 import { projectVirtualCatalog, isVirtualDocument, subscribeVirtualDocuments } from './virtualDocuments';
 export { matchText, matchPath };

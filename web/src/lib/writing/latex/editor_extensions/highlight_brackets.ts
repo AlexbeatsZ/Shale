@@ -5,7 +5,7 @@ import { tempKeyPress } from '../snippets/snippet_management';
 import { EquationText } from '../utils/tokenizer';
 import { findFormulaBrackets, type FormulaBracket } from '../utils/bracketPairs';
 import { getMathBoundsPlugin } from '../editor_context/mathbounds';
-import { cmDarkClass, cmLightClass } from './obsidian_utils';
+import { cmDarkClass, cmLightClass } from './shale_utils';
 
 const cursorClass = 'latex-suite-highlighted-bracket';
 const colorClass = 'latex-suite-color-bracket';

@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest';
 import { EditorState } from '@codemirror/state';
-import { analyzeMarkdown } from '@webobsidian/markdown-core';
+import { analyzeMarkdown } from '@shale/markdown-core';
 import { syntaxModel } from '../syntaxModel';
 import { renderContext, type RenderContext } from '../renderContext';
 import { livePreviewState } from '../renderState';

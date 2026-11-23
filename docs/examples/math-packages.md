@@ -2,7 +2,7 @@
 
 Open Settings → 公式与片段 → MathJax 宏包与自定义命令.
 Choose a Vault-relative preamble file or enter a few additional macros, then Save.
-The configuration is stored in `.obsidian/webobsidian/math.jsonc` and can travel
+The configuration is stored in `.shale/math.jsonc` and can travel
 with the Vault. Existing plugin files remain untouched.
 
 ```latex
@@ -56,7 +56,7 @@ available in a different formula.
    Prefer the official extension build, externalizing the host core/input modules.
 2. Add a component under `web/mathjax/<id>/<file>.js` with its license/provenance.
 3. Add one descriptor to `packages/markdown-core/src/mathPackages.ts`, using
-   `[webobsidian]/<file>.js`. The asset build uses this same descriptor.
+   `[shale]/<file>.js`. The asset build uses this same descriptor.
 4. Declare real dependencies/conflicts and, optionally, command argument modes.
    Do not reproduce the full semantic parser in metadata. Chemical/unit/literal
    arguments should suppress ordinary snippets and cursor-marker injection.

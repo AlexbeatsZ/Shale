@@ -19,8 +19,8 @@ const output = path.resolve(process.argv[2] ?? path.join(root, 'release', metada
 await mkdir(output, { recursive: true });
 const temporaryRoot = path.join(os.tmpdir(), '.agents');
 await mkdir(temporaryRoot, { recursive: true });
-const temporary = await mkdtemp(path.join(temporaryRoot, 'webobsidian-sync-package-'));
-const folder = `webobsidian-sync-server-${metadata.version}`;
+const temporary = await mkdtemp(path.join(temporaryRoot, 'shale-sync-package-'));
+const folder = `shale-sync-server-${metadata.version}`;
 const stage = path.join(temporary, folder);
 const target = path.join(stage, 'sync-server');
 try {
@@ -37,11 +37,11 @@ try {
   await cp(path.join(root, '..', 'LICENSE'), path.join(stage, 'LICENSE'));
   const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
   const dirty = execFileSync('git', ['status', '--porcelain', '--', 'sync-server'], { cwd: path.join(root, '..'), encoding: 'utf8' }).trim();
-  if (dirty && !process.env.WEBOBSIDIAN_SYNC_ALLOW_DIRTY_BUILD) throw new Error('Commit sync-server sources before release packaging');
+  if (dirty && !process.env.SHALE_SYNC_ALLOW_DIRTY_BUILD) throw new Error('Commit sync-server sources before release packaging');
   await writeFile(path.join(stage, 'BUILD-INFO.json'), JSON.stringify({
-    product: 'WebObsidian Sync Server', version: metadata.version, sourceCommit: commit, sourceDirty: Boolean(dirty),
+    product: 'Shale Sync Server', version: metadata.version, sourceCommit: commit, sourceDirty: Boolean(dirty),
     core: { ...coreSource, integrity: lockedCore.integrity }, node: process.version, platform: process.platform,
-    entrypoint: 'sync-server/server.mjs', defaultPort: 18744, routePrefix: '/webobsidian-sync/v1/',
+    entrypoint: 'sync-server/server.mjs', defaultPort: 18744, routePrefix: '/shale-sync/v1/',
     requiresInstall: false, includesNodeRuntime: false,
   }, null, 2) + '\n');
   execFileSync('tar', ['-czf', path.join(output, folder + '.tar.gz'), '-C', temporary, folder], { stdio: 'inherit' });
@@ -54,6 +54,6 @@ try {
   await cp(path.join(stage, 'BUILD-INFO.json'), path.join(output, 'BUILD-INFO.json'));
   console.log(JSON.stringify({ version: metadata.version, commit, output, core: coreSource }, null, 2));
 } finally {
-  if (path.dirname(temporary) !== temporaryRoot || !path.basename(temporary).startsWith('webobsidian-sync-package-')) throw new Error('Unsafe staging directory');
+  if (path.dirname(temporary) !== temporaryRoot || !path.basename(temporary).startsWith('shale-sync-package-')) throw new Error('Unsafe staging directory');
   await rm(temporary, { recursive: true, force: true });
 }

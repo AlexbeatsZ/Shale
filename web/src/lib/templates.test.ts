@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import type { App } from './obsidian/runtime';
+import type { App } from './shale/runtime';
 import type { CommandContext } from './commands';
 
 // Prepared regression source only; execution remains user-deferred.
@@ -9,7 +9,7 @@ import type { CommandContext } from './commands';
 const insertion = vi.hoisted(() => vi.fn());
 vi.mock('./writing/editing', () => ({ insertWritingTemplate: insertion }));
 vi.mock('./commands', () => ({ commandContext: () => { throw new Error('Supply a captured test context'); } }));
-vi.mock('./obsidian/vault', () => ({
+vi.mock('./shale/vault', () => ({
   normalizePath: (path: string) => path.replace(/\\/g, '/').replace(/\/+/g, '/').replace(/^\.\//, '')
     .replace(/^\/+|\/+$/g, '').normalize('NFC'),
 }));

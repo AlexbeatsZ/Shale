@@ -1,4 +1,4 @@
-import { normalizeMathConfiguration, type MathConfiguration } from '@webobsidian/markdown-core';
+import { normalizeMathConfiguration, type MathConfiguration } from '@shale/markdown-core';
 import { api } from './api';
 
 export interface MathPreambleSegment { source: string; tex: string }

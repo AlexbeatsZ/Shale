@@ -1,6 +1,6 @@
 import { ChangeSet } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import type { DocumentSession } from '@webobsidian/markdown-core';
+import type { DocumentSession } from '@shale/markdown-core';
 import { contextOf } from './renderContext';
 import { sourceOf } from './syntaxModel';
 

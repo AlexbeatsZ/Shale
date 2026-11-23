@@ -3,9 +3,9 @@
 ## 目标
 
 新增 callout 类型只需要名称、颜色、图标三项，写一条 CSS 即可，不改源码、不重新构建。
-内置类型（Obsidian 标准类型与 proof/think/tactic/attention）保留。
+内置类型（Shale 标准类型与 proof/think/tactic/attention）保留。
 
-## 约定（与 Obsidian 相同）
+## 约定（与 Shale 相同）
 
 ```css
 .callout[data-callout="definition"] {
@@ -15,7 +15,7 @@
 ```
 
 名称就是 `[!definition]` 的类型；未写标题时显示 `Definition`。规则可写在应用 CSS、Vault 主题或
-`.obsidian/snippets/*.css`，按正常层叠顺序生效（片段最后加载，可覆盖内置）。
+`.shale/snippets/*.css`，按正常层叠顺序生效（片段最后加载，可覆盖内置）。
 
 ## 实现（web/src/lib/calloutStyles.ts）
 
@@ -38,5 +38,5 @@
 ## 失败与限制
 
 - 探针挂在 body 下，带祖先限定的选择器（如 `.markdown-source-view .callout[...]`）不会命中；
-  Obsidian 片段通常写裸 `.callout[data-callout]`，可用。
+  Shale 片段通常写裸 `.callout[data-callout]`，可用。
 - `--callout-icon` 只影响原生 Callout；插件生成的 `.callout` HTML 仍由插件自己放图标。

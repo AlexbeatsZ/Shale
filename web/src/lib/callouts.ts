@@ -26,7 +26,7 @@ export const CALLOUT_SLOT: Record<string, string> = {
   quote: 'quote', cite: 'quote',
 };
 
-// Lucide icon paths per slot (same icon family Obsidian ships).
+// Lucide icon paths per slot (same icon family Shale ships).
 export const CALLOUT_ICON: Record<string, string> = {
   default: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
   summary: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',

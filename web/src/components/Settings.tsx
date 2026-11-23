@@ -47,7 +47,7 @@ export default function Settings() {
   const [featureError, setFeatureError] = useState('');
   const [navQuery, setNavQuery] = useState('');
   const modal = useRef<HTMLDivElement>(null);
-  const mac = window.webobsidianDesktop?.platform === 'darwin';
+  const mac = window.shaleDesktop?.platform === 'darwin';
   const drag = useRef<{ id: number; x: number; y: number; left: number; top: number }>();
   useEffect(() => {
     if (!open) return;
@@ -546,7 +546,7 @@ function Plugins() {
       <h2>第三方插件</h2>
       {msg && <p role="alert">{msg}</p>}
       <SettingGroup title="已安装插件">
-        {plugins.length === 0 && <p>尚未在 .obsidian/plugins 安装插件</p>}
+        {plugins.length === 0 && <p>尚未在 .shale/plugins 安装插件</p>}
         {plugins.map((p) => (
           <div className="setting-row" key={p.id}>
             <div className="info">
@@ -604,7 +604,7 @@ function Appearance({ s }: { s: any }) {
   const reloadSnippets = () => {
     setError(''); void readCssSnippets().then(value => {
       setSnippets(value);
-      window.dispatchEvent(new CustomEvent('vault-configuration-changed', { detail: { path: '.obsidian/snippets' } }));
+      window.dispatchEvent(new CustomEvent('vault-configuration-changed', { detail: { path: '.shale/snippets' } }));
     }).catch(cause => setError(String(cause)));
   };
   useEffect(() => {
@@ -643,8 +643,8 @@ function Appearance({ s }: { s: any }) {
       <SettingGroup title="主题">
       <Row name="基础颜色" desc="设置应用界面、编辑和阅读视图的配色">
         <select className="text-input" value={s.ui.theme} onChange={event => void save({ theme: event.target.value as UiSettings['theme'] })}>
-          <option value="obsidian-dark">深色</option>
-          <option value="obsidian-light">浅色</option>
+          <option value="shale-dark">深色</option>
+          <option value="shale-light">浅色</option>
         </select>
       </Row>
       </SettingGroup>
@@ -671,10 +671,10 @@ function Appearance({ s }: { s: any }) {
       {uiError && <p role="alert">{uiError}</p>}
       <p role="status" aria-live="polite">{saving ? '正在保存…' : saved ? '已保存' : ''}</p>
       <SettingGroup title="CSS 样式片段">
-        <ConfigurationFile name="图片自定义属性" path=".obsidian/webobsidian/embeds.css">
+        <ConfigurationFile name="图片自定义属性" path=".shale/embeds.css">
           <span>在此文件定义 .embed-property-NAME 样式，NAME 会出现在图片的“添加属性”菜单。</span>
         </ConfigurationFile>
-        <ConfigurationFile name="片段文件夹" path=".obsidian/snippets">
+        <ConfigurationFile name="片段文件夹" path=".shale/snippets">
           <button type="button" disabled={busy} onClick={reloadSnippets}>刷新</button>
         </ConfigurationFile>
         <Row name="搜索片段"><input type="search" placeholder="搜索片段…" value={query} onChange={event => setQuery(event.target.value)} /></Row>
@@ -768,12 +768,12 @@ function EditorSettings() {
 
 function About() {
   return <div>
-    <h2>关于 WebObsidian</h2>
+    <h2>关于 Shale</h2>
     <p>面向个人知识管理与写作的笔记应用，提供 Markdown 编辑、公式与片段、文档格式化、搜索、白板和可配置工作流。</p>
     <SettingGroup title="项目">
-      <Row name="项目仓库" desc="个人维护与定制版本"><a href="https://github.com/AlexbeatsZ/webobsidian" target="_blank" rel="noreferrer">AlexbeatsZ/webobsidian</a></Row>
+      <Row name="项目仓库" desc="个人维护与定制版本"><a href="https://github.com/AlexbeatsZ/shale" target="_blank" rel="noreferrer">AlexbeatsZ/shale</a></Row>
       <Row name="GitHub"><a href="https://github.com/AlexbeatsZ" target="_blank" rel="noreferrer">AlexbeatsZ</a></Row>
-      <Row name="Fork 来源" desc="基于 xnohat/webobsidian 继续开发"><a href="https://github.com/xnohat/webobsidian" target="_blank" rel="noreferrer">xnohat/webobsidian</a></Row>
+      <Row name="Fork 来源" desc="基于上游开源项目继续开发"><a href="https://github.com/xnohat/webobsidian" target="_blank" rel="noreferrer">上游项目</a></Row>
     </SettingGroup>
   </div>;
 }

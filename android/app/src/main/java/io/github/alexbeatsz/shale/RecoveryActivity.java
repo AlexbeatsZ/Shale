@@ -1,4 +1,4 @@
-package io.github.alexbeatsz.webobsidian;
+package io.github.alexbeatsz.shale;
 
 import android.app.Activity;
 import android.content.Intent;

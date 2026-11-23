@@ -4,7 +4,7 @@ import { NoteLinkSection as Section } from './NoteLinks';
 
 /** Connection is secondary to context and proposals: collapsed once connected, open with the fix when not. */
 export default function McpLauncher() {
-  const desktop = window.webobsidianDesktop;
+  const desktop = window.shaleDesktop;
   const bridge = desktop?.mcp;
   const [state, setState] = useState<McpLauncherState>();
   const [busy, setBusy] = useState(false);
@@ -49,7 +49,7 @@ export default function McpLauncher() {
   };
   return <div className="mcp-connection" role="group" aria-label="MCP 连接" aria-busy={busy} data-state={failed ? 'failed' : connected ? 'connected' : 'idle'}>
     <Section title="连接" count={status} open={expanded} onToggle={() => setOpen(!expanded)}><div className="mcp-launcher">
-      {state && !state.available && <div className="editor-error" role="alert">安装包缺少内置 MCP 组件，请重新安装 WebObsidian。</div>}
+      {state && !state.available && <div className="editor-error" role="alert">安装包缺少内置 MCP 组件，请重新安装 Shale。</div>}
       {error && <div className="editor-error" role="alert">{error}</div>}
       <div className="mcp-launcher-actions">
         <button type="button" className="btn" disabled={busy || !state?.available} onClick={() => void perform('connect')}>{connected ? '重新连接' : '连接'}</button>

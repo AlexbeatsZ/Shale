@@ -1,13 +1,13 @@
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
-import { routeWebObsidian } from './gateway-route.mjs';
+import { routeShale } from './gateway-route.mjs';
 
 export function addFileSyncRoute(gateway, routeMojian) {
   const listeners = gateway.server.listeners('request');
   if (listeners.length !== 1) throw new Error('Unexpected shared gateway handler; no service was started');
   gateway.server.removeListener('request', listeners[0]);
   gateway.server.on('request', (request, response) => {
-    if (!routeWebObsidian(request, response) && !routeMojian(request, response)) listeners[0].call(gateway.server, request, response);
+    if (!routeShale(request, response) && !routeMojian(request, response)) listeners[0].call(gateway.server, request, response);
   });
   gateway.server.requestTimeout = 10 * 60 * 1000;
   return gateway;

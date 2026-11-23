@@ -12,7 +12,7 @@ vi.mock('../../../web/src/lib/api', () => ({ api: {
   }),
 } }));
 vi.mock('../../../web/src/lib/tags/folderSession', async () => ({
-  WorkspaceDocumentSession: (await import('@webobsidian/markdown-core')).DocumentSession,
+  WorkspaceDocumentSession: (await import('@shale/markdown-core')).DocumentSession,
 }));
 
 const registryModule = '../../../web/src/lib/documents.ts';

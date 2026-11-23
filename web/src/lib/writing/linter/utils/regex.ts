@@ -17,7 +17,7 @@ export const wikiLinkRegex = /(!?)\[{2}([^\][\n|]+)(\|([^\][\n|]+))?(\|([^\][\n|
 export const genericLinkRegex = /(!?)\[([^[]*)\](\(.*\))/g;
 // based on https://help.obsidian.md/Editing+and+formatting/Tags#Tag+format
 export const tagWithLeadingWhitespaceRegex = /(\s|^)(#[\p{L}\-_\d/\p{Emoji_Presentation}]+)/gu;
-export const obsidianMultilineCommentRegex = /^%%\n[^%]*\n%%/gm;
+export const shaleMultilineCommentRegex = /^%%\n[^%]*\n%%/gm;
 export const wordSplitterRegex = /[,\s]+/;
 export const ellipsisRegex = /(\. ?){2}\./g;
 export const lineStartingWithWhitespaceOrBlockquoteTemplate = `\\s*(>\\s*)*`;

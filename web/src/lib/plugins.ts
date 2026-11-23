@@ -1,1 +1,1 @@
-export * from './obsidian/runtime';
+export * from './shale/runtime';

@@ -9,16 +9,16 @@ vi.mock('./vaultFile.js', async importOriginal => ({ ...await importOriginal<typ
 
 let directory: string;
 let configuration: string;
-const preferences = { enabled: true, endpoints: ['127.0.0.1:18744', 'https://example.com/webobsidian-sync/v1/'], token: 'fixture-only-preferences-token-0123456789', intervalSec: 15 };
+const preferences = { enabled: true, endpoints: ['127.0.0.1:18744', 'https://example.com/shale-sync/v1/'], token: 'fixture-only-preferences-token-0123456789', intervalSec: 15 };
 beforeEach(async () => {
   const base = path.join(os.tmpdir(), '.agents'); await fs.mkdir(base, { recursive: true });
-  directory = await fs.mkdtemp(path.join(base, 'webobsidian-sync-preferences-'));
+  directory = await fs.mkdtemp(path.join(base, 'shale-sync-preferences-'));
   fixture.root = path.join(directory, 'vault');
-  await fs.mkdir(path.join(fixture.root, '.obsidian/webobsidian'), { recursive: true });
-  configuration = path.join(fixture.root, '.obsidian/webobsidian/sync.jsonc');
+  await fs.mkdir(path.join(fixture.root, '.shale'), { recursive: true });
+  configuration = path.join(fixture.root, '.shale/sync.jsonc');
 });
 afterEach(async () => {
-  if (!path.resolve(directory).startsWith(path.join(os.tmpdir(), '.agents', 'webobsidian-sync-preferences-'))) throw new Error('Unsafe fixture');
+  if (!path.resolve(directory).startsWith(path.join(os.tmpdir(), '.agents', 'shale-sync-preferences-'))) throw new Error('Unsafe fixture');
   await fs.rm(directory, { recursive: true, force: true });
 });
 
@@ -30,7 +30,7 @@ describe('Vault-owned sync configuration', () => {
 
   it('reads JSONC and preserves the explicit endpoint order on every read', async () => {
     await fs.writeFile(configuration, '// shared Vault configuration\n' + JSON.stringify(preferences).replace(/}$/, ',}'));
-    expect(await fileSyncPreferences()).toEqual({ ...preferences, endpoints: ['http://127.0.0.1:18744/webobsidian-sync/v1/', preferences.endpoints[1]] });
+    expect(await fileSyncPreferences()).toEqual({ ...preferences, endpoints: ['http://127.0.0.1:18744/shale-sync/v1/', preferences.endpoints[1]] });
     await fs.writeFile(configuration, JSON.stringify({ ...preferences, endpoints: [...preferences.endpoints].reverse() }));
     expect((await fileSyncPreferences()).endpoints[0]).toBe(preferences.endpoints[1]);
   });

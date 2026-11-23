@@ -13,18 +13,18 @@ let directory: string;
 beforeEach(async () => {
   vi.resetModules();
   const base = path.join(os.tmpdir(), '.agents'); await fs.mkdir(base, { recursive: true });
-  directory = await fs.mkdtemp(path.join(base, 'webobsidian-sync-git-test-'));
+  directory = await fs.mkdtemp(path.join(base, 'shale-sync-git-test-'));
   fixture.root = path.join(directory, 'vault'); await fs.mkdir(fixture.root);
   fixture.settings.git.remote = '';
-  await fs.mkdir(path.join(fixture.root, '.obsidian/webobsidian'), { recursive: true });
-  await fs.writeFile(path.join(fixture.root, '.obsidian/webobsidian/sync.jsonc'), JSON.stringify({ enabled: true, endpoints: ['http://127.0.0.1:18744'], token: 'fixture-only-git-token-0123456789-abcdef' }));
-  await fs.writeFile(path.join(fixture.root, '.obsidian/webobsidian/git.jsonc'), JSON.stringify(fixture.settings.git));
+  await fs.mkdir(path.join(fixture.root, '.shale'), { recursive: true });
+  await fs.writeFile(path.join(fixture.root, '.shale/sync.jsonc'), JSON.stringify({ enabled: true, endpoints: ['http://127.0.0.1:18744'], token: 'fixture-only-git-token-0123456789-abcdef' }));
+  await fs.writeFile(path.join(fixture.root, '.shale/git.jsonc'), JSON.stringify(fixture.settings.git));
   const client = simpleGit(fixture.root); await client.init();
   await client.addConfig('user.name', 'Fixture'); await client.addConfig('user.email', 'fixture@localhost');
 });
 afterEach(async () => {
   vi.useRealTimers();
-  if (!path.resolve(directory).startsWith(path.join(os.tmpdir(), '.agents', 'webobsidian-sync-git-test-'))) throw new Error('Unsafe fixture');
+  if (!path.resolve(directory).startsWith(path.join(os.tmpdir(), '.agents', 'shale-sync-git-test-'))) throw new Error('Unsafe fixture');
   await fs.rm(directory, { recursive: true, force: true });
 });
 
@@ -32,16 +32,16 @@ describe('Git as backup, not file transport', () => {
   it('never records token-bearing connection files and untracks copies from earlier backups', async () => {
     const client = simpleGit(fixture.root);
     await fs.writeFile(path.join(fixture.root, 'note.md'), 'note');
-    await fs.writeFile(path.join(fixture.root, '.obsidian/webobsidian/math.jsonc'), '{}');
+    await fs.writeFile(path.join(fixture.root, '.shale/math.jsonc'), '{}');
     // Earlier versions force-added both connection files.
     await client.add(['--force', '.']); await client.commit('earlier backup');
     const { commitAll } = await import('./git.js');
     await fs.writeFile(path.join(fixture.root, 'note.md'), 'later');
     await commitAll(); await commitAll();
     const tracked = (await client.raw(['ls-files'])).split('\n');
-    expect(tracked).toContain('.obsidian/webobsidian/math.jsonc');
-    expect(tracked).not.toContain('.obsidian/webobsidian/sync.jsonc');
-    expect(tracked).not.toContain('.obsidian/webobsidian/git.jsonc');
+    expect(tracked).toContain('.shale/math.jsonc');
+    expect(tracked).not.toContain('.shale/sync.jsonc');
+    expect(tracked).not.toContain('.shale/git.jsonc');
     expect(await client.raw(['grep', '-I', 'fixture-only-git-token', 'HEAD']).catch(() => '')).toBe('');
     const exclude = await fs.readFile(path.join(fixture.root, '.git/info/exclude'), 'utf8');
     expect(exclude.split('\n').filter(line => line.endsWith('sync.jsonc'))).toHaveLength(1);
@@ -90,17 +90,17 @@ describe('Git as backup, not file transport', () => {
   it('backs up periodically to a per-device branch without pulling remote work into the Vault', async () => {
     const remote = path.join(directory, 'remote.git'); await fs.mkdir(remote); await simpleGit(remote).init(true);
     fixture.settings.git.remote = remote;
-    await fs.writeFile(path.join(fixture.root, '.obsidian/webobsidian/git.jsonc'), JSON.stringify(fixture.settings.git));
+    await fs.writeFile(path.join(fixture.root, '.shale/git.jsonc'), JSON.stringify(fixture.settings.git));
     await simpleGit(fixture.root).addRemote('origin', remote);
     await fs.writeFile(path.join(fixture.root, 'note.md'), 'local backup');
     const git = await import('./git.js');
     expect((await git.sync()).ok).toBe(true);
     const branches = (await simpleGit(remote).raw(['for-each-ref', '--format=%(refname:short)', 'refs/heads'])).trim().split('\n');
     expect(branches).toHaveLength(2); expect(branches).toContain('main');
-    const backup = branches.find(branch => branch.startsWith('webobsidian-backups/'))!; expect(backup).toBeDefined();
+    const backup = branches.find(branch => branch.startsWith('shale-backups/'))!; expect(backup).toBeDefined();
     await simpleGit(remote).raw(['symbolic-ref', 'HEAD', 'refs/heads/main']);
     const clone = path.join(directory, 'from-remote'); await simpleGit().clone(remote, clone);
-    await expect(fs.access(path.join(clone, '.obsidian/webobsidian/sync.jsonc'))).rejects.toThrow();
+    await expect(fs.access(path.join(clone, '.shale/sync.jsonc'))).rejects.toThrow();
     await expect(git.pull()).rejects.toThrow('仅用于备份'); await expect(git.clone()).rejects.toThrow('仅用于备份');
     await fs.writeFile(path.join(fixture.root, 'note.md'), 'later backup'); expect((await git.sync()).ok).toBe(true);
     expect(await simpleGit(remote).show([`${backup}:note.md`])).toBe('later backup');

@@ -1,3 +1,4 @@
+import { migrateRuntimeSettings } from '../../scripts/identity-migration.mjs';
 import { migrateSearchSettings } from './services/searchmigration.js';
 import { writingRouter } from './routes/writing.js';
 import express from 'express';
@@ -99,10 +100,11 @@ process.on('message', message => {
 if (process.connected) process.on('disconnect', () => { void shutdown(); });
 
 async function main() {
+  await migrateRuntimeSettings(config.dataDir);
   await loadSettings();
   // A native first-use choice is committed before any index/watcher/client
   // exists. Subsequent selections use the normal settings maintenance path.
-  const initialVault = process.env.WEBOBSIDIAN_INITIAL_VAULT;
+  const initialVault = process.env.SHALE_INITIAL_VAULT;
   if (initialVault) {
     await assertVaultPathAllowed({ path: initialVault, allowedRoots: config.allowedRoots });
     const previous = (await getSettings()).vault.path;
@@ -113,7 +115,7 @@ async function main() {
     });
     if (path.resolve(previous) !== path.resolve(initialVault)) await selectVaultWorkspace(previous, initialVault);
   }
-  if (process.env.WEBOBSIDIAN_REQUIRE_VAULT === '1') {
+  if (process.env.SHALE_REQUIRE_VAULT === '1') {
     const vault = (await getSettings()).vault.path;
     await assertVaultPathAllowed({ path: vault, allowedRoots: config.allowedRoots });
     await fs.access(vault, fs.constants.R_OK | fs.constants.W_OK);
@@ -194,7 +196,7 @@ async function main() {
       // Chromium workers use the session's default UA, independently of the
       // native page's override. Their bundled entry scripts still belong here.
       const workerAsset = req.get('Sec-Fetch-Dest') === 'worker' && /^\/assets\/(?:worker-|pdf\.worker\.)[\w.-]+\.(?:js|mjs)$/.test(req.path);
-      if (req.path !== '/javascript-widget-runtime.js' && !workerAsset && !/\bWebObsidian(?:Desktop|Android)\b/.test(req.get('User-Agent') ?? '')) {
+      if (req.path !== '/javascript-widget-runtime.js' && !workerAsset && !/\bShale(?:Desktop|Android)\b/.test(req.get('User-Agent') ?? '')) {
         res.sendStatus(404);
         return;
       }
@@ -243,6 +245,7 @@ async function main() {
     await previousWatcher?.close();
     await drainFileUpdates();
     await commit();
+    await ensureVault();
     await recoverFileSync();
     clearVaultStats();
     await rebuildFileIndexes(async () => {
@@ -256,7 +259,7 @@ async function main() {
 
   ready = true;
   await fs.rename(startingEndpoint, endpointFile);
-  console.log(`\n  WebObsidian server → http://${config.host}:${address.port}`);
+  console.log(`\n  Shale server → http://${config.host}:${address.port}`);
   console.log(`  Vault: ${await getVaultRoot()}`);
   console.log(`  Data:  ${config.dataDir}\n`);
 }
@@ -311,21 +314,21 @@ function setupWebsocket(server: http.Server) {
 let vaultWatcher: ReturnType<typeof chokidar.watch> | undefined;
 async function setupWatcher() {
   const root = await getVaultRoot();
-  // WEBOBSIDIAN_WATCH: 'auto' (default) = native inotify with automatic polling
+  // SHALE_WATCH: 'auto' (default) = native inotify with automatic polling
   // fallback when the host watch limit is exceeded; 'polling' = force polling.
-  const forcePolling = (process.env.WEBOBSIDIAN_WATCH ?? 'auto').toLowerCase() === 'polling';
+  const forcePolling = (process.env.SHALE_WATCH ?? 'auto').toLowerCase() === 'polling';
   await startWatcher(root, forcePolling);
 }
 
 function startWatcher(root: string, usePolling: boolean): Promise<void> {
   const watcher = chokidar.watch(root, {
-    // Keep Obsidian's frequently rewritten workspace/plugin state ignored.
+    // Keep Shale's frequently rewritten workspace/plugin state ignored.
     // Native configuration alone reuses this watcher without touching note indexes.
     ignored: (p) => {
       const relative = path.relative(root, p).split(path.sep).join('/');
       if (/(^|\/)(\.git|node_modules|\.trash)(\/|$)/.test(relative)) return true;
-      if (!relative.split('/').includes('.obsidian')) return false;
-      return relative !== '.obsidian' && !isVaultConfigurationPath(relative);
+      if (!relative.split('/').includes('.shale')) return false;
+      return relative !== '.shale' && !isVaultConfigurationPath(relative);
     },
     ignoreInitial: true,
     persistent: true,
@@ -398,7 +401,7 @@ async function dirExists(p: string): Promise<boolean> {
 
 main().catch(async (err) => {
   console.error('Fatal:', err);
-  if (process.env.WEBOBSIDIAN_EMBEDDED === '1') {
+  if (process.env.SHALE_EMBEDDED === '1') {
     // process.exit would also end the Android Activity that must offer recovery.
     await fs.mkdir(config.dataDir, { recursive: true });
     const temporary = startingEndpoint + `.${process.pid}.tmp`;

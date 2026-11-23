@@ -1,5 +1,5 @@
-import type { App } from '../obsidian/runtime';
-import { RenderLifetime } from '../obsidian/renderLifetime';
+import type { App } from '../shale/runtime';
+import { RenderLifetime } from '../shale/renderLifetime';
 import { nonExecutingContext, type FragmentOptions, type RenderContext } from '../renderContext';
 import { documents } from '../documents';
 

@@ -1,15 +1,15 @@
 import { isMacOS } from './platform';
 import type { EditorState } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import type { App } from './obsidian/runtime';
-import { Events } from './obsidian/events';
-import { Editor } from './obsidian/editor';
-import { MarkdownView } from './obsidian/workspace';
+import type { App } from './shale/runtime';
+import { Events } from './shale/events';
+import { Editor } from './shale/editor';
+import { MarkdownView } from './shale/workspace';
 import { getActiveEditor, getEditorForPath } from './activeEditor';
 import { contextOf } from './renderContext';
 import { documents } from './documents';
 import { useStore } from './store';
-import { eventHotkey, hotkeySignature, resolveHotkeys, hasHotkeyOverride, portableHotkey, type Hotkey } from '@webobsidian/search-core';
+import { eventHotkey, hotkeySignature, resolveHotkeys, hasHotkeyOverride, portableHotkey, type Hotkey } from '@shale/search-core';
 import { hotkeySettings } from './search';
 
 export interface CommandContext {
@@ -58,7 +58,7 @@ export type Command = {
 };
 export type NativeCommand = { id: string; title: string; run: () => unknown; hotkeys?: Hotkey[]; hotkeyScope?: 'editor'; available?: (context: CommandContext) => boolean };
 
-/** One invocation contract for native contributions, Obsidian adapters and user JS. */
+/** One invocation contract for native contributions, Shale adapters and user JS. */
 export class CommandManager extends Events {
   private nativeSource?: readonly NativeCommand[];
   private native = new Map<string, Command>();
@@ -177,7 +177,7 @@ export class CommandManager extends Events {
     if (!this.canExecute(command.id, context)) throw new Error(`当前无法执行指令：${command.name}`);
     return this.runChecked(command, args, context);
   }
-  /** Obsidian compatibility: boolean means dispatched; execute() awaits the result. */
+  /** Shale compatibility: boolean means dispatched; execute() awaits the result. */
   executeCommandById(id: string): boolean {
     const context = commandContext(), command = this.findCommand(id);
     if (!command || !this.canExecute(command.id, context)) return false;

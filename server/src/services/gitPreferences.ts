@@ -2,7 +2,7 @@ import { GitPreferencesSchema } from '../contracts/gitPreferences.js';
 import { parseConfiguration, readVaultConfiguration, writeVaultConfiguration } from './vaultConfiguration.js';
 
 export const GIT_CONFIGURATION = 'git.jsonc';
-export const GIT_CONFIGURATION_PATH = `.obsidian/webobsidian/${GIT_CONFIGURATION}`;
+export const GIT_CONFIGURATION_PATH = `.shale/${GIT_CONFIGURATION}`;
 
 export async function readGitPreferencesSource() {
   const source = await readVaultConfiguration(GIT_CONFIGURATION);

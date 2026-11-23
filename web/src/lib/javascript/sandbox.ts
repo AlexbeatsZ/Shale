@@ -87,7 +87,7 @@ export function renderJavascriptFrame(source: string, output: HTMLElement, run: 
       }
     };
     frame.addEventListener('load', () => {
-      if (!run.signal.aborted) frame.contentWindow?.postMessage({ type: 'webobsidian-widget', source, sourcePath: run.sourcePath, theme: theme() }, '*', [channel.port2]);
+      if (!run.signal.aborted) frame.contentWindow?.postMessage({ type: 'shale-widget', source, sourcePath: run.sourcePath, theme: theme() }, '*', [channel.port2]);
     }, { once: true });
   });
 }

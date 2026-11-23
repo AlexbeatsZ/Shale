@@ -1,5 +1,5 @@
 /**
- * Flat line icons (Lucide set — the same icon family Obsidian uses).
+ * Flat line icons (Lucide set — the same icon family Shale uses).
  * Stroke-based, 24x24 viewBox, currentColor. Add new glyphs to PATHS as needed.
  */
 import type { CSSProperties } from 'react';

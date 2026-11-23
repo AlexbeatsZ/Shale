@@ -33,7 +33,7 @@ searchRouter.get(
   }),
 );
 
-// Per-note match contexts for the rendered batch of results (Obsidian-style
+// Per-note match contexts for the rendered batch of results (Shale-style
 // grouped search). Reads bodies lazily so broad queries stay cheap.
 searchRouter.post(
   '/search/matches',

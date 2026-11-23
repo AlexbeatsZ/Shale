@@ -7,7 +7,7 @@ import { EXCLUSIONS } from "./environment";
 import { api, type PluginSnippetApi } from "./luasnip_api";
 import { ArrayNode, BaseNode, SnippetStringNode, SnippetTabstopOnlyNode, VisualSnippetNode } from "./luasnip_api/node";
 import { type MacroArgs, MacroArgsPipeSchema } from "../editor_context/default_text_areas";
-import { isMacOS } from "../editor_extensions/obsidian_utils";
+import { isMacOS } from "../editor_extensions/shale_utils";
 import picomatch from "picomatch";
 import type { EditorState } from "@codemirror/state";
 import type { Context } from "../editor_context/context";
@@ -90,7 +90,7 @@ function require(module) {
 function latex_suite_require(default_snippets: SnippetVariables, pluginApi: PluginSnippetApi) {
 	const parsed_api = api(default_snippets, pluginApi);
 	const original_require = (name: string) => {
- const native = (window as any).webobsidianNativeRequire;
+ const native = (window as any).shaleNativeRequire;
  if(native) return native(name);
  throw new Error('Snippet module unavailable in this host: ' + name);
  };

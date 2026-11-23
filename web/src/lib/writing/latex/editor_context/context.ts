@@ -15,7 +15,7 @@ import { Mode } from "./options";
 import type { Environment } from "../snippets/environment";
 import { getLatexSuiteConfig } from "../snippets/codemirror/config";
 import { syntaxModel } from "../../../syntaxModel";
-import { blockContainers } from "@webobsidian/markdown-core";
+import { blockContainers } from "@shale/markdown-core";
 import type { SyntaxNode } from "@lezer/common";
 import { type MacroArgs } from "./default_text_areas";
 import { getMathBoundsPlugin, MathMode, type MathBounds } from "./mathbounds";

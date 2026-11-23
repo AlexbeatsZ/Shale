@@ -3,7 +3,7 @@
 ## Contract (2026-10-22)
 
 `####### 标题` replaces the personal `> **标题**` convention recognized by
-Obsidian Plus custom-heading references. Exactly seven hashes plus a space/tab
+Shale Plus custom-heading references. Exactly seven hashes plus a space/tab
 (or an empty title while typing) define a single-line body title. Eight hashes,
 seven without a separator, code, HTML blocks, comments and YAML are not indexed
 as titles. Inline Markdown and optional ATX closing hashes are supported.

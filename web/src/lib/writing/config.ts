@@ -10,7 +10,7 @@ import { parseSnippets, parseSnippetVariables } from './latex/snippets/parse';
 import { parse } from 'valibot';
 import { MappingSchema } from './latex/editor_extensions/conceal_maps';
 import { mathlessArgsSchema } from './latex/editor_context/default_text_areas';
-import { mathArgumentInfo, mathBaseArguments, defaultMathConfiguration, type MathConfiguration } from '@webobsidian/markdown-core';
+import { mathArgumentInfo, mathBaseArguments, defaultMathConfiguration, type MathConfiguration } from '@shale/markdown-core';
 import type { VaultConfigurationSource } from '../../../../server/src/contracts';
 import { prepareMathProfile } from '../mathPreamble';
 import { validateMathProfile, type MathCandidate } from '../mathjax';
@@ -63,7 +63,7 @@ async function sources(
     config[kind === 'snippets' ? 'snippetsFileLocation' : 'snippetVariablesFileLocation'] ?? '',
   );
   if (/^(?:[A-Za-z]:[\\/]|\/|~\/)/.test(location)) {
-    const native = (window as any).webobsidianNativeRequire;
+    const native = (window as any).shaleNativeRequire;
     if (!native) throw new Error('外部片段路径需要可信桌面宿主');
     const fs = native('node:fs/promises'),
       path = native('node:path'),
@@ -243,7 +243,7 @@ export function writingFileChanged(path: string) {
   ].filter(Boolean);
   if (relevant.some((p) => path === p || path.startsWith(p.replace(/\/$/, '') + '/')))
     void refreshWriting(true).catch(console.error);
-  else if (path === '.obsidian/webobsidian/writing.jsonc' || path === '.obsidian/webobsidian/math.jsonc' || path === settings.math?.preambleFile)
+  else if (path === '.shale/writing.jsonc' || path === '.shale/math.jsonc' || path === settings.math?.preambleFile)
     void refreshWriting().catch(console.error);
 }
 
@@ -263,7 +263,7 @@ export function watchExternalWritingSources() {
     key = next;
     closers.forEach((fn) => fn());
     closers = [];
-    const native = (window as any).webobsidianNativeRequire;
+    const native = (window as any).shaleNativeRequire;
     if (!native) return;
     const fs = native('node:fs'),
       path = native('node:path'),

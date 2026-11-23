@@ -2,7 +2,7 @@
 import { EditorView, Decoration } from "@codemirror/view";
 import { EditorSelection, StateEffect, StateField } from "@codemirror/state";
 import { TabstopGroup } from "../tabstop";
-import { cmDarkClass } from "../../editor_extensions/obsidian_utils";
+import { cmDarkClass } from "../../editor_extensions/shale_utils";
 
 export const addTabstopsEffect = StateEffect.define<TabstopGroup[]>();
 export const removeAllTabstopsEffect = StateEffect.define();

@@ -4,7 +4,7 @@
 
 `mac.sign` calls the existing @electron/osx-sign dependency with the fixed
 `Local Development Code Signing` certificate and keeps bundle identifier
-`com.xnohat.webobsidian`. Deep/strict verification and `codesign -d -r-` must
+`io.github.alexbeatsz.shale`. Deep/strict verification and `codesign -d -r-` must
 confirm a `certificate leaf`. These are local certificate signatures without
 Developer ID/notarization. Do not restore the historical ad-hoc signer.
 
@@ -62,7 +62,7 @@ and elapsed time until health succeeds. Child-exit failures still report promptl
 the longer deadline does not conceal missing dependencies or other child exits.
 
 On Windows the log is under
-`%APPDATA%/@webobsidian/desktop/logs/server.log`. Startup diagnostics must never
+`%APPDATA%/Shale/logs/server.log`. Startup diagnostics must never
 print the persisted secret or reset desktop config/vault data to fix packaging.
 
 ## Production renderer boot (0.1.7)
@@ -116,7 +116,7 @@ production-browser regression, which cannot cover the NSIS extraction lifetime.
 ## Persisted Vault selection and local test data
 
 On Windows the desktop profile is
-`%APPDATA%/@webobsidian/desktop/`. `desktop-config.json` stores `vaultPath`,
+`%APPDATA%/Shale/`. `desktop-config.json` stores `vaultPath`,
 which the desktop passes as the server's `VAULT_PATH` startup default.
 `server-data/settings.json` stores the effective `vault.path`. An existing
 settings file takes precedence over that startup default; changing only the
@@ -138,7 +138,7 @@ not change the user's static-only acceptance instruction.
 
 ## External configuration files (2026-10-23)
 
-`window.webobsidianDesktop.openVaultPath(path): Promise<void>` is a narrow
+`window.shaleDesktop.openVaultPath(path): Promise<void>` is a narrow
 preload/main IPC entry for the existing settings path rows. It reuses
 `desktopWindow` to accept only the current local application main frame; WebViewer
 guests and other frames cannot invoke it. It works without enabling native plugins.
@@ -168,9 +168,9 @@ remains unverified and existing release outputs are unchanged.
 ## Local build retention
 
 On 2026-10-24 the user replaced the portable-only preference with a normal
-per-user installation under `%LOCALAPPDATA%/Programs/WebObsidian`. Windows builds
+per-user installation under `%LOCALAPPDATA%/Programs/Shale`. Windows builds
 now use the x64 NSIS target, producing
-`WebObsidian-<version>-win-x64-setup.exe`. Local npm packaging and release CI use
+`Shale-<version>-win-x64-setup.exe`. Local npm packaging and release CI use
 the same desktop/package.json configuration. The installer permits a custom
 directory, does not elevate or auto-launch, creates only a Start menu shortcut,
 and retains user data when uninstalled. macOS delivers Apple Silicon arm64 DMG/ZIP only from0.1.65 onward; Intel/x64

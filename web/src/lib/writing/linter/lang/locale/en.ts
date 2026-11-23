@@ -194,7 +194,7 @@ export default {
       },
       'additional-file-extensions': {
         'name': 'Additional file extensions',
-        'description': 'File extensions to lint in addition to md. For example, mdx or svx. Do not include the leading dot. <b>Note: Only files that Obsidian sees as markdown (whether natively or via other plugins) will be linted, regardless of extensions added.</b>',
+        'description': 'File extensions to lint in addition to md. For example, mdx or svx. Do not include the leading dot. <b>Note: Only files that Shale sees as markdown (whether natively or via other plugins) will be linted, regardless of extensions added.</b>',
         'extension-placeholder': 'e.g. mdx',
         'add-input-button-text': 'Add another extension',
         'delete-tooltip': 'Delete',
@@ -250,11 +250,11 @@ export default {
     'custom-command': {
       // custom-command-option.ts
       'name': 'Custom Commands',
-      'description': 'Custom commands are Obsidian commands that get run after the linter is finished running its regular rules. This means that they do not run before the YAML timestamp logic runs, so they can cause YAML timestamp to be triggered on the next run of the linter. You may only select an Obsidian command once.',
-      'warning': 'When selecting an option, make sure to select the option either by using the mouse or by hitting the enter key. Other selection methods may not work and only selections of an actual Obsidian command or an empty string will be saved.',
+      'description': 'Custom commands are Shale commands that get run after the linter is finished running its regular rules. This means that they do not run before the YAML timestamp logic runs, so they can cause YAML timestamp to be triggered on the next run of the linter. You may only select an Shale command once.',
+      'warning': 'When selecting an option, make sure to select the option either by using the mouse or by hitting the enter key. Other selection methods may not work and only selections of an actual Shale command or an empty string will be saved.',
 
       'add-input-button-text': 'Add new command',
-      'command-search-placeholder-text': 'Obsidian command',
+      'command-search-placeholder-text': 'Shale command',
       'move-up-tooltip': 'Move up',
       'move-down-tooltip': 'Move down',
       'delete-tooltip': 'Delete',
@@ -469,7 +469,7 @@ export default {
     // format-yaml-array.ts
     'format-yaml-array': {
       'name': 'Format YAML Array',
-      'description': 'Allows for the formatting of regular YAML arrays as either multi-line or single-line and <code>tags</code> and <code>aliases</code> are allowed to have some Obsidian specific YAML formats. <b>Note: that single string to single-line goes from a single string entry to a single-line array if more than 1 entry is present. The same is true for single string to multi-line except it becomes a multi-line array.</b>',
+      'description': 'Allows for the formatting of regular YAML arrays as either multi-line or single-line and <code>tags</code> and <code>aliases</code> are allowed to have some Shale specific YAML formats. <b>Note: that single string to single-line goes from a single string entry to a single-line array if more than 1 entry is present. The same is true for single string to multi-line except it becomes a multi-line array.</b>',
       'alias-key': {
         'name': 'Format YAML aliases section',
         'description': 'Turns on formatting for the YAML aliases section. You should not enable this option alongside the rule <code>YAML Title Alias</code> as they may not work well together or they may have different format styles selected causing unexpected results.',
@@ -977,7 +977,7 @@ export default {
     // yaml-timestamp.ts
     'file system': 'File system',
     'frontmatter': 'YAML frontmatter',
-    'user or Linter edits': 'Changes in Obsidian',
+    'user or Linter edits': 'Changes in Shale',
     // quote-style.ts
     '\'\'': '\'\'', // leave as is
     '‘’': '‘’', // leave as is

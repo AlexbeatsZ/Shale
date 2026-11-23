@@ -9,7 +9,7 @@ import { FileSyncEngine } from './fileSyncEngine.js';
 import { OrderedSyncTransport, normalizeSyncEndpoint } from './syncTransport.js';
 import { createSyncServer } from '../../../sync-server/server.mjs';
 import { prefix, validPath } from '../../../sync-server/protocol.mjs';
-import { normalizeHotkeyPreferences, resolveHotkeys, hotkeyLabel } from '@webobsidian/search-core';
+import { normalizeHotkeyPreferences, resolveHotkeys, hotkeyLabel } from '@shale/search-core';
 import type { FileSyncPreferences } from '../contracts/fileSync.js';
 
 const token = 'fixture-only-token-not-a-live-credential-123456';
@@ -44,13 +44,13 @@ async function client(name: string, options: Partial<FileSyncPreferences> = {}, 
 
 beforeEach(async () => {
   const base = path.join(os.tmpdir(), '.agents'); await fs.mkdir(base, { recursive: true });
-  directory = await fs.mkdtemp(path.join(base, 'webobsidian-sync-test-')); closes = [];
+  directory = await fs.mkdtemp(path.join(base, 'shale-sync-test-')); closes = [];
   endpoint = await hub();
 });
 afterEach(async () => {
   vi.restoreAllMocks();
   await Promise.all(closes.map(close => close()));
-  if (!path.resolve(directory).startsWith(path.join(os.tmpdir(), '.agents', 'webobsidian-sync-test-'))) throw new Error('Unsafe fixture path');
+  if (!path.resolve(directory).startsWith(path.join(os.tmpdir(), '.agents', 'shale-sync-test-'))) throw new Error('Unsafe fixture path');
   await fs.rm(directory, { recursive: true, force: true });
 });
 
@@ -72,7 +72,7 @@ describe('native file synchronization', () => {
 
   it('syncs one hotkey file with independent Windows and physical-Control Mac bindings intact', async () => {
     const first = await client('win-keys'), second = await client('mac-keys');
-    const filename = '.obsidian/webobsidian/hotkeys.jsonc';
+    const filename = '.shale/hotkeys.jsonc';
     const preferences = { version: 1, bindings: { save: [{ modifiers: ['Ctrl'], key: 'S' }] }, platforms: {
       windows: { 'editor:set-heading-7': [{ modifiers: ['Ctrl', 'Alt'], key: '7' }] },
       mac: { 'editor:set-heading-7': [{ modifiers: ['PhysicalCtrl', 'Alt'], key: '8' }] },
@@ -247,11 +247,11 @@ describe('native file synchronization', () => {
 
   it('excludes machine configuration and Git metadata; refuses Syncthing and symlink roots', async () => {
     const first = await client('first');
-    for (const name of ['.git/config', '.obsidian/workspace.json', '.obsidian/plugins/secret.json', '.trash/old.md']) await first.write(name, 'private');
-    await first.write('.obsidian/webobsidian/snippets/theme.css', 'native'); await first.write('note.md', 'allowed');
+    for (const name of ['.git/config', '.shale/workspace.json', '.shale/plugins/secret.json', '.trash/old.md']) await first.write(name, 'private');
+    await first.write('.shale/snippets/theme.css', 'native'); await first.write('note.md', 'allowed');
     expect((await first.engine.run()).phase).toBe('idle');
     const manifest = await new OrderedSyncTransport([endpoint], token).select();
-    expect(Object.keys(manifest.files).sort()).toEqual(['.obsidian/webobsidian/snippets/theme.css', 'note.md']);
+    expect(Object.keys(manifest.files).sort()).toEqual(['.shale/snippets/theme.css', 'note.md']);
     await fs.writeFile(path.join(first.root, '.stfolder'), ''); expect((await first.engine.run()).message).toContain('Syncthing');
     const disabled = new FileSyncEngine(first.root, first.state, { ...first.preferences, enabled: false }, { publish: async work => work(), changed: async () => {} });
     await expect(disabled.recover()).resolves.toBeUndefined();

@@ -14,7 +14,7 @@ import {
 } from '@codemirror/view';
 import { blockModel } from '../syntaxModel';
 import { livePreviewState, livePreviewReadonly } from '../renderState';
-import { caretTouches, type SourceSpan } from '@webobsidian/markdown-core';
+import { caretTouches, type SourceSpan } from '@shale/markdown-core';
 import { forceRendered, sourceIsOpen, sourceButton } from '../sourceControls';
 import { compositionSelection } from '../editorSelection';
 import { contextOf, renderContext, type RenderContext } from '../renderContext';
@@ -135,7 +135,7 @@ class CodeWidget extends WidgetType {
         pending.remove();
         if (!child.signal.aborted) { delete host.dataset.renderPending; view.requestMeasure(); }
       });
-    // Code processors receive their fenced body, matching Obsidian's contract.
+    // Code processors receive their fenced body, matching Shale's contract.
     if (!view.state.readOnly)
       host.append(sourceButton(view, () => this.identity.range, '代码块'));
     return host;

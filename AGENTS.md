@@ -1,42 +1,22 @@
-# AGENTS.md — WebObsidian
+# AGENTS.md — Shale
 
 项目规则与结构以 [CLAUDE.md](CLAUDE.md) 为准;设计见 [PRD.md](PRD.md),进度见 [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)。本文件只记录继续工作需要的当前事实和跨模块经验。
 
 ## Goal
-个人使用的 WebObsidian 原生桌面/Android 应用(fork 自 xnohat/webobsidian,远程 `AlexbeatsZ/webobsidian`)。
+个人使用的 Shale 原生桌面/Android 应用(fork 自 xnohat/webobsidian,远程 `AlexbeatsZ/Shale`)。
 - 中央与两侧主页提供同样的打开和新建动作，打开内容时在各自标签栏原位替换当前 Homepage。中央使用顶部标签，两侧使用各自竖排标签，侧栏专有固定面板继续归侧栏。桌面端须保留网页浏览、用户脚本文件/URL 导入及自动检查更新。修改宿主或工作区时运行桌面网页浏览回归。删除或停用任一能力需要用户明确同意。设计见 `docs/design/workspace-sidebars.md` 和 `docs/design/web-viewer.md`。
 
 ## Repository Records
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-22 桌面 v0.1.86 已发布（Mac arm64、Windows x64 共 7 资产，源码 3c1bf70，Release 455080351）。PRD 1.56：Vim 光标默认复用普通编辑器正文灰黑/浅色，块光标半透明填充并加清晰轮廓；设置 › 编辑器 › Vim 可分别选择浅色/深色主题颜色与恢复默认，沿用 UI 设置持久化。颜色热更新不重建 Vim，不改变模式、选区、历史或输入法租约。三端类型、生产 build、640 单元、7 项 Vim 浏览器及 Mac/Windows 实包颜色设置/保存/恢复与输入法回归通过，Mac 完整 WebViewer 通过。Mac `/Applications/Shale.app` 已按本轮授权原位升级 0.1.85→0.1.86，固定证书/identifier、certificate leaf、deep/strict、启动与 healthz 通过；当前深色主题/Vim 开启/无自定义颜色。Windows 未原位安装，Android 未重打包。设计 `docs/design/vim-input-method.md`，验收 `tests/reports/vim-cursor-colors-20261122.md`。
-- 2026-11-22 桌面 v0.1.85 已发布（Mac arm64、Windows x64 共 7 资产，源码 2f2f265）。PRD 1.55：原生编辑器内置 Vim 与桌面输入法联动，设置 › 编辑器可开启；Normal/Visual 自动切英文，Insert 恢复上次输入法（上次为英文时保持英文）。内置 macOS/Windows 输入法助手，复用 macism 与 Windows IME 状态恢复；u/Ctrl+r 接入共享文档历史，ciw/插入/LaTeX 片段同组撤销，:w 接入原生保存。640 单元、14 浏览器、Mac/Windows 0.1.85 实包源与中英文状态往返、快速模式切换、设置开关/禁用恢复及系统键盘事件经过真实输入法提交“你好”通过；Mac 完整 WebViewer 回归通过；固定证书/identifier 签名与 NSIS/版本检查通过。Mac `/Applications/Shale.app` 已原位升级部署 0.1.84→0.1.85，固定证书/identifier 签名、strict 校验、启动与 healthz 通过。Windows 未原位安装。设计 `docs/design/vim-input-method.md`，验收 `tests/reports/vim-input-method-20261122.md`。
-- 2026-11-22 桌面 v0.1.84 已发布（7 资产，源码 8651466），Mac `/Applications/Shale.app` 已原位升级并通过固定证书/identifier、deep/strict、STEM 启动与 healthz。PRD 1.54：全部应用菜单零快捷键，23 个原生动作进入设置且默认未分配；释放 Command+R/H/M/Q，仅系统组合回退 Control。STEM move 只留 Ctrl+M，Mac settings=PhysicalCtrl+反引号；撤销 Ctrl/Command+Z，左栏 Ctrl/Command+Shift+Z，重做仍可用 Ctrl/Command+Y。自定义 reload 复用完整文档/布局保存屏障。Mac 原生动作、既有快捷键及完整 WebViewer 实包通过；Windows x64 构建/版本通过但未原位安装、未验收实体键盘。设计 `docs/design/hotkeys.md`，验收 `tests/reports/native-menu-shortcuts-20261122.md`。
-- 2026-11-22 跨平台快捷键改为同一 Vault 文件 `.obsidian/webobsidian/hotkeys.jsonc`（PRD 1.53）：Ctrl/Mod 在 Mac 使用 Command，PhysicalCtrl/Control 明确表示实体 Control；Mac 未覆盖时跟随 Windows。设置页并排编辑两端、禁用/恢复继承；文件存在后不再用旧本机 settings 覆盖，文件同步变更即时刷新。补齐 `editor:set-heading-7`（正文内标题）和旧 apply-heading7 别名，允许 7 级改回 0–6 级。桌面 v0.1.83 已发布（Mac arm64 + Windows x64 共 7 资产，源码 250fa6a）；Mac 固定证书签名与实包快捷键/完整 WebViewer 回归通过，Windows 隔离构建与版本通过。Mac `/Applications/Shale.app` 已按后续授权原位升级 0.1.82→0.1.83，签名/启动/healthz 通过，STEM 统一快捷键文件已迁移；Windows 实体键盘交互未验收。设计 `docs/design/hotkeys.md`、`heading-level-commands.md`。
-- 2026-11-22 桌面 v0.1.82 已发布（Mac arm64、Windows x64 共 7 资产，源码 52b70d0），Mac `/Applications/Shale.app` 已原位升级并通过固定证书/identifier 签名、启动及 healthz 检查。脚本更新修复 GitHub 重定向，卸载直接清除数据并清理历史孤立值；真实 STEM 两条卸载残留已清除。标签快速交换仅针对两页（含可见/暂存分屏），停留插入仍可整体移动分屏组。619 单元、45 分屏浏览器、真实 Electron 网络/迁移与 macOS 实包回归通过。ALR 0.3.0 下载成功，扩大站点范围待用户审阅（仍运行 0.2.1）。报告 `tests/reports/browser-userscripts-20261122.md`。
-- 2026-11-22 Mac 已拉取 main 的 968f890 并构建桌面 0.1.80，`/Applications/Shale.app` 原位部署并启动，含下述同步与标签/分屏更新。网页浏览实包回归完整重跑通过（首轮侧栏地址栏焦点断言偶发失败）；签名改用固定 `Local Development Code Signing`，identifier 保持 `com.xnohat.webobsidian`，`codesign -d -r-` 含 `certificate leaf`，安装后 strict 校验及 `/healthz` 通过。仅本机部署，未发布新版 Release；真实同步冲突与触控仍待实机验收。
-- 2026-11-22 标签栏拖动（快速松手交换、停留插入并显示空位虚影、分屏组整体移动、触控长按提起）、分屏 1px 分隔线（拖动调比例、双击交换）、侧栏宽度吸附分隔线、隐藏滚动条并去掉侧栏阴影/半透明（PRD 1.51）。源码与回归已通过，未打包发布，Android 触控待实机验收。设计 `docs/design/workspace-sidebars.md`。
-- 2026-11-22 原生同步：首连时本机已同步过的旧文件自动追上服务器，文本两边改不同段落自动合并（共用 MCP 的 `mergeReview`）。剩余冲突在文件树（冲突分组+A/M/D）、状态栏一键同步与编辑器内 MCP 同款逐块审阅中处理。源码已提交，未构建发布、未部署。设计 `docs/design/file-sync.md`。
-- 2026-11-22 `android-v0.1.81` 预发布修复 Android 共享存储拒绝硬链接导致同步卡住。小米平板 6 Pro 正式包已原位升级到 0.1.81，STEM 首轮同步成功（revision 392，无冲突）。桌面 0.1.80 两份草稿（目标 67f7f43）仍未发布，未改动。
-- 2026-11-21 Shale 0.1.79 已发布（桌面 7 个资产、Android 2 个非调试 APK）。Mac 的 STEM 片段文件已更新，`mk` 插入 `\(\)`，`dm` 插入三行 `\[ … \]`。隔离 macOS 实包已用同一片段和格式化配置验证输入、保存及混合公式。应用只识别井号系列标题。Mac 日用安装仍为 0.1.76，其余设备的交互和配置同步待实测。设计 `docs/design/native-math.md`、`docs/design/native-writing.md`。
-- 2026-11-21 Shale 0.1.78 桌面与 Android 已发布。LaTeX 公式源码括号按正确配对的嵌套深度循环六色，错误标红并加波浪下划线。macOS 实包已验收，Windows 和 Android 安装包已验证构建与身份。
-- 2026-11-21 已发布空括号对一次删除修复，桌面 v0.1.77（macOS arm64、Windows x64）和 Android android-v0.1.77（手机及旧平板签名 APK）。macOS 隔离实包验证两种删除键、外侧光标、单括号选区和单步撤销。该交付未安排设备原位安装。
-- 2026-11-21 main 新增「设置 › 界面 › 打字时忽略触控板点击」（默认关闭，100–3000 ms，默认 1000 ms）。源码与回归已通过，随 0.1.78 发行包提供。
-- 2026-11-19 桌面 v0.1.76 已发布（macOS arm64、Windows x64 共 7 个资产）。空白网页地址栏在侧栏滑入时仍自动聚焦，窗口模式和原生全屏的工作区横向位移均为 0。Mac 的 `/Applications/Shale.app` 已原位升级，签名与本地服务通过，保留原右栏浏览器选中状态。Windows 安装器构建及版本检查通过。
-- 2026-11-19 小米平板 6 Pro 的正式包 `io.github.alexbeatsz.webobsidian` 原位升级 0.1.72→0.1.73。Android 17 实机深色主题上下白边消失，状态栏及手势栏保留，本地服务就绪。旧锁 PID 已被其他 UID 复用，旧锁和退出 Syncthing 后遗留的空 `.stfolder` 已改名留档。STEM 已连 ROG，首轮 19 项冲突（5 JS、14 SVG）两版已存，远端 19 项与 Mac 当前文件一致，仍等待选择版本。
-- 2026-11-19 桌面 0.1.75 修复 Homepage 打开内容时遗留空标签的问题。本机 `/Applications/Shale.app` 已原位升级，签名、启动和本地服务通过。隔离实包回归覆盖原位替换、浏览器脚本自动更新和布局重启恢复；Windows x64 安装器构建和版本检查通过，实机界面待验收。
-- 2026-11-19 已发布桌面 v0.1.74（7 个资产，标签源码 6bf3d1a）。本机 `/Applications/Shale.app` 已原位升级。实际工作区验证中央主页打开顶部浏览器标签，既有右侧网页标签保留；本地服务和签名通过。隔离实包回归覆盖左右侧栏入口、侧栏文件/图谱、布局重启恢复和脚本更新。Windows x64 安装器构建和版本检查通过，实机界面待验收。
-- 2026-11-19 已将本机 `/Applications/Shale.app` 从 0.1.72 原位升级到 0.1.73，并正常启动。实际 STEM 工作区首页已确认有「打开网页浏览器」，本地服务健康，签名校验通过。
-- 2026-11-19 已发布桌面 v0.1.73（7 个资产，标签源码 42121ed）。恢复 WebViewer、侧边竖排多标签、用户脚本导入和自动更新。601 单元、8 项侧栏/命令面板回归和 macOS 实际包专项通过，覆盖布局持久化、正常退出、重启恢复及脚本权限审阅。Windows x64 安装包已验证构建和版本，实机界面待验收。设计 `docs/design/web-viewer.md`、`docs/design/browser-userscripts.md`。
-- 2026-11-15 已发布桌面 v0.1.71（7资产）与 android-v0.1.71（2原证书非调试APK/code71），标签源码 b2095a6，main 另含后续交付记录。PPT/PPTX 静态查看复用 PDF 分页/搜索/缩放、右侧大纲与等比例缩略图，同用 `pdf:toggle-dark` 并保留旧快捷键和按文件状态。600单元、24相关浏览器、三端类型、Mac/Windows实际Electron33包与生产入口通过。Android构建/lint/包身份通过，真机课件与触摸待验收。设计 `docs/design/presentation-viewer.md`，验收 `tests/reports/presentation-viewer-20261115.md`。
-- 2026-11-16 品牌改名：安装后显示名为 **Shale**（Pixel 2026 白底图标），appId `com.xnohat.webobsidian`、Android 包名、数据目录与签名不变。0.1.72 已原位装到 Mac（新 `/Applications/Shale.app`，旧 WebObsidian.app 已移入废纸篓）、OMEN（保持未运行）、ROG（正常关闭后升级并重新启动）、K70（code72，user0，首次安装时间不变）。按用户要求未发 Release、未做界面/同步验收。平板离线，最后记录为0.1.66。
-- 0.1.70 的统一图片属性/图号引用/菜单、按背景适配滤镜、PDF和连续文档Ctrl+滚轮、默认关闭MD字号滚轮已交付。实际STEM Theme/Hider已清理，14张Wiki SVG按用户要求永久改色，exTable已补来源透传。设计 `docs/design/embed-properties.md`。
-- JavaScript图表在opaque-origin iframe运行，应用DOM/Node/原生桥/应用API保持隔离，内置只读组件与OpenAI控件已接通。CPU/内存耗尽仍可能影响渲染进程，iframe没有运算配额。设计 `docs/design/native-javascript.md`。
-- 原生同步地址为 `http://100.106.169.46:18744/webobsidian-sync/v1/`。ROG WebObsidianNativeSync按11月14日任务使用该IP监听，server.json/connection.json已更新且沿用workspaceId；Mac/OMEN已实同步。K70 sync.jsonc已改写并回读，实际同步待应用恢复响应。ROG桌面端无活动Vault。
-- 日常 Android 仅用非调试 release/tabletRelease。按实机包名和证书原位更新，旧 `.debug` 安装使用 tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭。Android 使用 1024MiB 堆且跳过全文 JSON 缓存。原密钥在 OMEN。
-- 项目入口/设计/日志已合并OMEN的198条十月与25条十一月记录、MCP验收回执和ROG初始部署记录并推送GitHub。历史实现、版本与验收归 `docs/log/` 和 `tests/reports/`，连续文档当前设计见 `docs/design/virtual-documents.md`。
-- Mac 数据目录为 `~/Library/Application Support/@webobsidian/desktop`，服务日志为 `logs/server.log`。历史安装包从 GitHub Release 取回。历史 Release、永久密钥、SDK/依赖缓存与用户数据各在原归属位置。
+- 2026-11-23 正在完成完整 Shale 身份迁移（PRD 1.57）。GitHub 已改名 `AlexbeatsZ/Shale`；本机源码为 `/Users/meta/Developer/Shale`。
+- 目标版本桌面/Android 0.1.87，独立同步服务 0.3.0。桌面 identifier 和 Android applicationId=`io.github.alexbeatsz.shale`；桌面 profile=`<appData>/Shale`，Vault 配置=`.shale/`，原生同步默认=`/shale-sync/v1/`。Mac 固定 `Local Development Code Signing`，Windows 安装 GUID 沿用既有值以避免重复卸载项。Mac 钥匙串旧密钥已保留到 Shale 服务，正式包内含有签名迁移助手。
+- 用户明确授权同时改名 Mac/Windows 笔记父目录为 `Shale`，更新 MCP/原生同步/启动路径；迁移时同步移动 workspace、用户脚本与同步检查点的作用域身份，保留笔记、设置、认证和历史。遇到冲突保留双方并停止。设计见 `docs/design/identity-migration.md`。
+- 截至本条，640 单元、6 项旧数据迁移与三端类型检查、生产构建通过；新原生包/跨设备部署/Release 验收仍进行中。Mac 日用上次已安装 0.1.86，Windows 日用最后交付记录为 0.1.72，Android 平板最后已安装 0.1.81；不能把新源码等同于设备已升级。
+- 既有 Vim/输入法、跨平台快捷键、完整 WebViewer/用户脚本、原生文件同步与冲突审阅、PPT/PDF 与连续文档功能均保留。历次版本/验收见 `docs/log/` 和 `tests/reports/`。
+- ROG 同步端口 18744，workspaceId=`76fcca29-885b-4dd1-832e-cfac4f07cc09`；同一数据根/凭据/回执必须保留。旧地址仅作为过渡导入兼容入口。
+- 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
@@ -45,7 +25,7 @@
 
 ## Build / Run / Test
 - 桌面Release提供Mac arm64 DMG/ZIP/blockmap/latest-mac和Windows x64 NSIS/blockmap/latest，Android独立预发布提供手机/平板两非调试APK。Mac仅Apple Silicon arm64；Linux历史预构建为v0.1.43。
-- `gh release` 显式传 `--repo AlexbeatsZ/webobsidian`（本机默认上游），`--target`使用完整源码SHA。API创建tag不会触发推送式CI。
+- `gh release` 显式传 `--repo AlexbeatsZ/Shale`（本机默认上游），`--target`使用完整源码SHA。API创建tag不会触发推送式CI。
 - PPT/PPTX 与 PDF 共用阅读回归为 `node tests/desktop-presentations.mjs <原生可执行文件>`，使用一次性 Vault/profile。相关浏览器为 presentation、pdf-identity、pdf-toolbar、pdf-virtual-zoom。
 - 依赖与构建:`npm ci && npm run build`。
 - 桌面网页浏览与用户脚本回归：`node tests/desktop-webviewer.mjs <打包应用可执行文件>`。使用隔离 Vault/profile 与本地 HTTP 夹具，自动更新验证需等一次调度。
@@ -55,7 +35,7 @@
   产物在 `desktop/release/<版本>/mac-arm64/Shale.app`(gitignored)。
 - Mac 发布包仅arm64:`npx electron-builder --mac --arm64 --publish never` 后 `gh release upload v<版本> ...dmg ...zip ...blockmap latest-mac.yml`。不要添加Intel/x64或universal产物；旧构建可清理，原签名密钥/SDK/用户数据/验收记录/历史Release保留。
 - 安装:退出应用后替换 `/Applications/Shale.app`,`codesign --verify --deep --strict` 通过后启动;用服务端口的 `/healthz` 验证(端口用 `lsof -iTCP -sTCP:LISTEN | grep -i shale` 查)。
-- Windows 安装在 Session1 进行(一次性 Interactive 计划任务):先 `CloseMainWindow` 正常关闭，再 `Shale-<ver>-win-x64-setup.exe /S`。Android 从 OMEN `git archive` 隔离目录构建时需把 Mac 已解压的 `android/.runtime`(nodejs-mobile)放入，并临时复制 `meta-obsidian/android/.signing`,构建后删除。
+- Windows 安装在 Session1 进行(一次性 Interactive 计划任务):先 `CloseMainWindow` 正常关闭，再 `Shale-<ver>-win-x64-setup.exe /S`。Android 从 OMEN `git archive` 隔离目录构建时需把 Mac 已解压的 `android/.runtime`(nodejs-mobile)放入，并临时复制 `Shale/android/.signing`,构建后删除。
 
 ## Durable Lessons
 - Electron33 的 role 菜单在 accelerator 为 null/undefined 时仍补默认键，须显式空字符串；Mac role 原生 selector 还可能先于 click 执行，同目录动作必须移除 role 再转发。reload 须复用 saveWorkspaceBeforeExit 保存布局与文档，仅保存文档会被 beforeunload 的布局脏状态阻止。
@@ -67,9 +47,9 @@
 - 虚拟阅读导航必须在真实长章节中检查正文位于可视区域；仅检查 DOM 挂载会漏掉前序章节异步长高导致的空白跳转。构建 core 后再跑单元/浏览器测试，不能与 core dist 写入并行。
 - 本机走 Clash 代理(127.0.0.1:7897):`@electron/get` 需要 `ELECTRON_GET_USE_PROXY=1` + `GLOBAL_AGENT_HTTPS_PROXY`;Node 原生 `fetch`(`bundle-tunnel.mjs`)不读代理变量,超时后可先用 curl 把 tunnel zip 和 licenses 放进 `desktop/.gen/tunnel-downloads/`(脚本会校验 SHA-256)。
 - Node 26 下 `extract-zip` 在解压 tunnel zip 时 Promise 永不 resolve,进程以 13(unsettled top-level await)退出,且只解出部分文件。处理:用系统 `unzip` 解到 `desktop/.gen/tunnel/<arch>/`,`chmod 755 tunnel-client`,拷贝 licenses 为 `THIRD-PARTY-LICENSES.txt`,写 `version.txt`(内容为 TUNNEL_VERSION),之后 build/before-pack 会直接跳过。CI 用 Node 20 不受影响。
-- OMEN Windows 构建：常规仓库 `C:\Users\Meta\Project\Workspaces\meta-obsidian` 常有未提交改动，只 `git fetch`,用 `git archive <commit>` 导出到 `%TEMP%\.agents\webobsidian-build-<ver>` 隔离构建(`npm ci`→`npm run build`→`desktop: node scripts/build.mjs`→`electron-builder --win nsis --x64 --publish never`)。OMEN 上 `npm ci` 的 Electron 下载会无限挂起：设 `ELECTRON_SKIP_BINARY_DOWNLOAD=1`,electron-builder 会用 `%LOCALAPPDATA%\electron\Cache` 里已有的 zip;tunnel 下载会超时：把常规仓库 `desktop/.gen/tunnel-downloads/tunnel-client-v0.0.19-windows-amd64*` 复制进隔离目录同一路径。PowerShell 5.1 脚本不要用 `$ErrorActionPreference='Stop'`(git 的 stderr 进度会被当成错误),改看 `$LASTEXITCODE`。
+- OMEN Windows 构建：常规仓库 `C:\Users\Meta\Project\Workspaces\Shale` 常有未提交改动，只 `git fetch`,用 `git archive <commit>` 导出到 `%TEMP%\.agents\shale-build-<ver>` 隔离构建(`npm ci`→`npm run build`→`desktop: node scripts/build.mjs`→`electron-builder --win nsis --x64 --publish never`)。OMEN 上 `npm ci` 的 Electron 下载会无限挂起：设 `ELECTRON_SKIP_BINARY_DOWNLOAD=1`,electron-builder 会用 `%LOCALAPPDATA%\electron\Cache` 里已有的 zip;tunnel 下载会超时：把常规仓库 `desktop/.gen/tunnel-downloads/tunnel-client-v0.0.19-windows-amd64*` 复制进隔离目录同一路径。PowerShell 5.1 脚本不要用 `$ErrorActionPreference='Stop'`(git 的 stderr 进度会被当成错误),改看 `$LASTEXITCODE`。
 - 浏览器回归直接用 `RENDER_TEST_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'`；已有核心 dist 时设 `RENDER_TEST_SKIP_CORE_BUILD=1`。2026-11-06 本轮 160 个相关浏览器/集成、546 个单元全部通过，旧的 16 个已知失败已经修复；不再视为允许忽略的基线失败。全单元用 `npx vitest run --testTimeout=30000`，Git 子进程测试需这个超时。临时撤下代码后必须先 `npm run build:core`，不能沿用旧 dist。
-- 发版时上传大文件常遇 GitHub HTTP 500/502,`gh release create` 带文件失败会删掉整个草稿。做法:先 `--draft` 建空 Release,逐个 `gh release upload --clobber` 并重试,用 API 按 release id 核对大小(草稿按 tag 查不到),再 `gh release edit --draft=false --latest`。主检出有其他任务改动时，用 `git worktree add --detach /tmp/.agents/webobsidian-release-<ver> <sha>` 隔离构建，复制主检出当前平台所需的 `desktop/.gen/tunnel/arm64` 跳过 tunnel 下载（Mac只保留arm64）。
+- 发版时上传大文件常遇 GitHub HTTP 500/502,`gh release create` 带文件失败会删掉整个草稿。做法:先 `--draft` 建空 Release,逐个 `gh release upload --clobber` 并重试,用 API 按 release id 核对大小(草稿按 tag 查不到),再 `gh release edit --draft=false --latest`。主检出有其他任务改动时，用 `git worktree add --detach /tmp/.agents/shale-release-<ver> <sha>` 隔离构建，复制主检出当前平台所需的 `desktop/.gen/tunnel/arm64` 跳过 tunnel 下载（Mac只保留arm64）。
 - 渲染 harness(`/__render-test`):slot 0 实时预览、slot 1 阅读；`reset` 后光标在 0，测首行嵌入控件前先移到文末。快捷键测试按目标语义发真实按键：Mac 主快捷键用 `Meta`（Command）、实体 Control 用 `Control`，Windows 主快捷键用 `Control`；Shift+Z 应发大写 `Z`。脚注跳转是异步任务，用 `expect.poll` 等待位置完成。
 - 测试源码里用 JS `String.replace` 插入 `$$…$$` 时替换参数必须用函数(`() => '…'`),字符串里的 `$$` 会被当成一个 `$`,公式变成行内数学，看起来像编号丢失。
 - zsh 默认 noclobber,`>` 覆盖已有日志会失败导致命令未执行;构建链放进 `bash -c` 或用 `>|`。
@@ -80,7 +60,7 @@
 
 - Android 构建前先 `node android/scripts/prepare.mjs` 刷新 `.gen`，否则 APK 用旧前端；仅手机包时 `./gradlew :app:assembleRelease -x requireTabletKey`。
 
-- 改名 Shale 后 Windows NSIS(同 appId)会沿用旧安装目录 `%LOCALAPPDATA%\Programs\WebObsidian`,其中可执行文件变为 `Shale.exe`,不会出现 `Programs\Shale`。数据目录取自 package `name`(Mac `~/Library/Application Support/@webobsidian/desktop`),改 productName 不影响。
+- Windows 0.1.87 沿用既有 NSIS GUID 但使用新 appId；部署时须将既有安装目录迁移为 `%LOCALAPPDATA%\Programs\Shale`，更新卸载/快捷方式引用后再安装。profile 显式为 `%APPDATA%\Shale`，不再由 npm 包名推导。
 
 - OMEN 上 `npm ci` 直连 npm 会因 TLS 中断失败，且失败时已清空 node_modules；设 `HTTPS_PROXY/HTTP_PROXY=http://127.0.0.1:7897` 与 `ELECTRON_SKIP_BINARY_DOWNLOAD=1` 后 17s 完成。Playwright 版本要求的 headless shell 未安装时，用已有的 `%LOCALAPPDATA%\ms-playwright\chromium-1208\chrome-win64\chrome.exe` 作 `RENDER_TEST_BROWSER`，不必下载。
 - HTML5 拖放中途改动指针下的 DOM（如插入空位）时，放置容器必须同时取消 `dragenter` 和 `dragover`，否则 Chrome 不再触发 drop；Chrome 的 dragleave 常无 relatedTarget，用坐标判断离开。Playwright 的拖放模拟会把 dragover 滞后一步，测试"停留"要在目标上分几次小幅移动。

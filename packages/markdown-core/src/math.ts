@@ -258,7 +258,7 @@ export function mathRegions(model: MarkdownModel, languages: readonly string[] =
     // ordinary typing inside it invalidates the previous formula analysis.
     const emptyDisplay = display && text[p + 2] === '$' && text[p + 3] === '$' && text[p + 4] !== '$';
     // A dollar that just closed the previous formula does not glue onto this
-    // opener: `$$a$$$$b$$` is two display formulas, as in Obsidian.
+    // opener: `$$a$$$$b$$` is two display formulas, as in Shale.
     if ((text[p - 1] === '$' && p !== closedAt) || (text[p + width] === '$' && !emptyDisplay)) {
       p += width;
       continue;

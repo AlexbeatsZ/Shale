@@ -66,6 +66,6 @@ it('returns a saved Tag Page plus failure, preserves exact bytes and does not du
 });
 
 it('reports ignored hidden paths as skipped without claiming indexing happened', async () => {
-  expect(await queueFileUpdate('.obsidian/plugins/test/data.json')).toMatchObject({ status: 'skipped', reason: 'ignored' });
+  expect(await queueFileUpdate('.shale/plugins/test/data.json')).toMatchObject({ status: 'skipped', reason: 'ignored' });
   expect(qmd.upsertNote).not.toHaveBeenCalled();
 });

@@ -93,6 +93,6 @@ export interface ReviewProposal {
   error?: string;
   uncertain?: { before: string; diskBefore: string; after: string; kind: 'accept' | 'recover'; hunks: ReviewHunk[] };
 }
-export const operationNames = ['obsidian_get_context', 'obsidian_list_files', 'obsidian_search', 'obsidian_read_file',
-  'obsidian_find_targets', 'obsidian_propose_changes', 'obsidian_get_change_status'] as const;
+export const operationNames = ['shale_get_context', 'shale_list_files', 'shale_search', 'shale_read_file',
+  'shale_find_targets', 'shale_propose_changes', 'shale_get_change_status'] as const;
 export type OperationName = typeof operationNames[number];

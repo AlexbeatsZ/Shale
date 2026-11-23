@@ -9,7 +9,7 @@ export function workspaceMaintenanceBlockers(): string[] {
     blockers.push('有未保存或冲突的文档，请先保存');
   if (useStore.getState().dirty) blockers.push('当前文件有未保存内容');
   if (pendingMutations()) blockers.push('仍有写入请求未完成');
-  if ((window as any).webobsidianDesktop?.nativePlugins)
+  if ((window as any).shaleDesktop?.nativePlugins)
     blockers.push('可信原生插件可直接写入文件，请关闭该模式并在下次启动后清理');
   return blockers;
 }

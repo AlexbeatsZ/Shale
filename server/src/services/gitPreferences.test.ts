@@ -12,13 +12,13 @@ let directory: string;
 let filename: string;
 beforeEach(async () => {
   const base = path.join(os.tmpdir(), '.agents'); await fs.mkdir(base, { recursive: true });
-  directory = await fs.mkdtemp(path.join(base, 'webobsidian-git-preferences-'));
+  directory = await fs.mkdtemp(path.join(base, 'shale-git-preferences-'));
   fixture.root = path.join(directory, 'vault'); await fs.mkdir(fixture.root);
-  filename = path.join(fixture.root, '.obsidian/webobsidian/git.jsonc');
+  filename = path.join(fixture.root, '.shale/git.jsonc');
 });
 afterEach(async () => {
   vi.restoreAllMocks();
-  if (!path.resolve(directory).startsWith(path.join(os.tmpdir(), '.agents', 'webobsidian-git-preferences-'))) throw new Error('Unsafe fixture');
+  if (!path.resolve(directory).startsWith(path.join(os.tmpdir(), '.agents', 'shale-git-preferences-'))) throw new Error('Unsafe fixture');
   await fs.rm(directory, { recursive: true, force: true });
 });
 

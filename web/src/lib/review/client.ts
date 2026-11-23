@@ -1,5 +1,5 @@
 import type { EditorView } from '@codemirror/view';
-import type { ReviewProposal } from '@webobsidian/markdown-core';
+import type { ReviewProposal } from '@shale/markdown-core';
 import { api, request } from '../api';
 import { documents } from '../documents';
 import { getActiveEditor } from '../activeEditor';

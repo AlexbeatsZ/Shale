@@ -1,6 +1,6 @@
-import type { App } from '../obsidian/runtime';
-import { Component } from '../obsidian/events';
-import { registerCodeProcessor, type CodeBlockContext } from '../obsidian/markdown';
+import type { App } from '../shale/runtime';
+import { Component } from '../shale/events';
+import { registerCodeProcessor, type CodeBlockContext } from '../shale/markdown';
 import { JavascriptRun } from './lifetime';
 export { JavascriptRun } from './lifetime';
 

@@ -1,11 +1,11 @@
 ---
-title: Welcome to WebObsidian
+title: Welcome to Shale
 tags: [welcome, getting-started]
 ---
 
-# Welcome to WebObsidian 🔮
+# Welcome to Shale 🔮
 
-This is a **self-hosted, Obsidian-compatible** web app. Your vault is just a folder of
+This is a **self-hosted, Shale-compatible** web app. Your vault is just a folder of
 Markdown files on the server.
 
 ## Try these

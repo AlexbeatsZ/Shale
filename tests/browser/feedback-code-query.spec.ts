@@ -297,14 +297,14 @@ test('F01 path punctuation reuses the existing API with its limited matching sem
   await privateContexts(page);
   const output = page.locator('[data-slot="1"] .block-language-query');
   await expect(output.locator('a')).toHaveText(expected.map(hit => hit.title));
-  await expect(output).toContainText('尚不支持 Obsidian 的完整路径匹配语义');
+  await expect(output).toContainText('尚不支持 Shale 的完整路径匹配语义');
   expect(observed).toEqual([query, query]);
 });
 
 test('F01 all registered code processors reveal intersecting selections and honor closed option', async ({ page }) => {
   await page.evaluate(async () => {
-    const { Component } = await import('/src/lib/obsidian/events.ts');
-    const { registerCodeProcessor } = await import('/src/lib/obsidian/markdown.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
+    const { registerCodeProcessor } = await import('/src/lib/shale/markdown.ts');
     const owner = new Component();
     registerCodeProcessor(owner, 'selection-fixture', (_source, element) => { element.textContent = 'FIXTURE OUTPUT'; }, 0, { requiresClosed: true });
   });

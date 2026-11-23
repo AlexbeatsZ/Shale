@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import { EditorState, EditorSelection, Annotation } from '@codemirror/state';
-import { analyzeMarkdown, contentTargets } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, contentTargets } from '@shale/markdown-core';
 
 vi.mock('./writing/editing', () => ({ writingOperation: Annotation.define<string>() }));
 import { ContentClipboardPolicy, contentClipboard, CONTENT_CLIPBOARD_MIME, type ClipboardOptions } from './contentClipboard';

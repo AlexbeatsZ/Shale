@@ -6,7 +6,7 @@ import { registerEditor } from '../lib/activeEditor';
 import { bindPluginEditor } from '../lib/plugins';
 import { manualSave, bindTimestampUpdates } from '../lib/writing/format';
 import MarkdownView from './MarkdownView';
-import { analyzeMarkdown, fragmentRange, equationContext } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, fragmentRange, equationContext } from '@shale/markdown-core';
 import { nativeReviewExtension, reviewExtension } from '../lib/review/view';
 import { syncReviewSource } from '../lib/review/sync';
 import { propertyTypesSnapshot, subscribePropertyTypes } from '../lib/propertyTypes';

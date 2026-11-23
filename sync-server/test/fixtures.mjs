@@ -10,11 +10,11 @@ export const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 export async function fixture(t) {
   const parent = path.join(os.tmpdir(), '.agents');
   await mkdir(parent, { recursive: true });
-  const directory = await mkdtemp(path.join(parent, 'webobsidian-server-test-'));
+  const directory = await mkdtemp(path.join(parent, 'shale-server-test-'));
   const services = [];
   t.after(async () => {
     await Promise.all(services.map(service => service.close()));
-    if (path.dirname(directory) !== parent || !path.basename(directory).startsWith('webobsidian-server-test-')) throw new Error('Unsafe fixture path');
+    if (path.dirname(directory) !== parent || !path.basename(directory).startsWith('shale-server-test-')) throw new Error('Unsafe fixture path');
     await rm(directory, { recursive: true, force: true, maxRetries: 3 });
   });
   return {

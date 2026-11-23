@@ -5,7 +5,7 @@ import { useStore } from '../lib/store';
 import { SettingGroup } from './SettingRow';
 import ConfigurationFile from './ConfigurationFile';
 
-const CONFIGURATION_PATH = '.obsidian/webobsidian/mcp.jsonc';
+const CONFIGURATION_PATH = '.shale/mcp.jsonc';
 const LIMIT = 20;
 interface McpPreferencesState { source: VaultConfigurationSource; preferences: { instructionNotes: string[] } }
 
@@ -52,7 +52,7 @@ export default function McpSettings() {
     <h2>MCP</h2>
     <SettingGroup title="说明笔记" desc={<>
       选中的笔记会作为固定说明交给通过 MCP 连接的 AI：连接时服务器说明里列出它们的链接，
-      每次读取上下文（<code>obsidian_get_context</code>）时附上当前全文，并要求 AI 在写入、修改或提议修改笔记时遵守。
+      每次读取上下文（<code>shale_get_context</code>）时附上当前全文，并要求 AI 在写入、修改或提议修改笔记时遵守。
       修改列表后需要重新连接 MCP，连接时的链接才会更新；全文总是读取最新保存的版本。
     </>}>
       {state && !notes.length && <p className="setting-description">还没有选择说明笔记。</p>}

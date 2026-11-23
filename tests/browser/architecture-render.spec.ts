@@ -39,8 +39,8 @@ test('equal footnote DOM transfers cleanup to the replacement widget', async ({ 
 
 test('public MarkdownRenderer settles when unloaded before ready', async ({ page }) => {
   const result = await page.evaluate(async () => {
-    const { Component } = await import('/src/lib/obsidian/events.ts');
-    const { MarkdownRenderer, sharedApp } = await import('/src/lib/obsidian/runtime.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
+    const { MarkdownRenderer, sharedApp } = await import('/src/lib/shale/runtime.ts');
     const host = document.createElement('div'); document.body.append(host);
     const owner = new Component(); await owner.load();
     const rendering = MarkdownRenderer.render(sharedApp, 'cancelled', host, 'cancel.md', owner);
@@ -53,8 +53,8 @@ test('public MarkdownRenderer settles when unloaded before ready', async ({ page
 
 test('postprocessors abort old work synchronously and preserve newer output', async ({ page }) => {
   const result = await page.evaluate(async () => {
-    const { Component } = await import('/src/lib/obsidian/events.ts');
-    const { registerPostProcessor, pluginPostProcessing } = await import('/src/lib/obsidian/markdown.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
+    const { registerPostProcessor, pluginPostProcessing } = await import('/src/lib/shale/markdown.ts');
     const { EditorView } = await import('/node_modules/.vite/deps/@codemirror_view.js');
     const { EditorState } = await import('/node_modules/.vite/deps/@codemirror_state.js');
     const { renderContext } = await import('/src/lib/renderContext.ts');
@@ -91,7 +91,7 @@ test('postprocessors abort old work synchronously and preserve newer output', as
 
 test('browser Component cancels actual DOM listeners from an in-flight onload before reloading', async ({ page }) => {
   const result = await page.evaluate(async () => {
-    const { Component } = await import('/src/lib/obsidian/events.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
     const owner = new Component(), host = document.createElement('button'); document.body.append(host);
     let release!: () => void, calls = 0, listenerHits = 0, disposed = 0;
     const gate = new Promise<void>(resolve => { release = resolve; });

@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
-import { DocumentSession, fragmentRange } from '@webobsidian/markdown-core';
+import { DocumentSession, fragmentRange } from '@shale/markdown-core';
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { useStore } from '../lib/store';
 import { createVaultRenderContext } from '../lib/vaultRenderContext';

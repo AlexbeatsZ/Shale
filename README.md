@@ -1,16 +1,16 @@
 <div align="center">
-  <img src="desktop/buildResources/icon-macos.png" alt="WebObsidian 当前 macOS 图标" width="120" />
+  <img src="desktop/buildResources/icon-macos.png" alt="Shale 当前 macOS 图标" width="120" />
 
-# WebObsidian
+# Shale
 
 **面向桌面与 Android 的本地优先 Markdown 笔记与资料阅读应用**
 
-[下载 Releases](https://github.com/AlexbeatsZ/webobsidian/releases) · [桌面端](desktop/README.md) · [Android 设计与运行](docs/design/android-runtime.md) · [独立同步服务](sync-server/README.md) · [MIT 许可](LICENSE)
+[下载 Releases](https://github.com/AlexbeatsZ/Shale/releases) · [桌面端](desktop/README.md) · [Android 设计与运行](docs/design/android-runtime.md) · [独立同步服务](sync-server/README.md) · [MIT 许可](LICENSE)
 </div>
 
 ## 项目定位
 
-WebObsidian 基于 [xnohat/webobsidian](https://github.com/xnohat/webobsidian) 继续开发，围绕个人知识库、长篇资料阅读、源码级 Markdown 编辑与原生设备交互重构。
+Shale 基于 [xnohat/webobsidian](https://github.com/xnohat/webobsidian) 继续开发，围绕个人知识库、长篇资料阅读、源码级 Markdown 编辑与原生设备交互重构。
 
 它是 **Windows / macOS / Linux / Android 应用**，不是可独立部署的网站。仓库中的 `web/` 是 Electron 和 Android WebView 共用的 React/CodeMirror 渲染层，`server/` 是随应用启动的本地回环服务；二者不提供独立公网笔记站点，也没有浏览器登录、在线账户或网页托管功能。笔记和附件仍是 Vault 中的普通文件。
 
@@ -21,7 +21,7 @@ WebObsidian 基于 [xnohat/webobsidian](https://github.com/xnohat/webobsidian) �
 - **多种编辑视图**：源码、实时预览、阅读模式；标签页、分屏及侧边笔记复用文档会话。
 - **原生 Markdown 工作流**：Wiki 链接、反向链接、稳定内容引用、标题大纲、关系图、标签、属性、表格、模板、命令和快捷操作。
 - **数学与技术笔记**：MathJax 公式、图表/图示语法、内容锚点以及可配置的写作、格式化规则。
-- **可定制界面**：Vault 内的 CSS snippets、菜单及工具配置；部分既有 Obsidian 社区插件由兼容宿主加载。插件并非 100% 兼容，原生 Node/Electron 权限由桌面端单独控制。
+- **可定制界面**：Vault 内的 CSS snippets、菜单及工具配置；部分既有 Shale 社区插件由兼容宿主加载。插件并非 100% 兼容，原生 Node/Electron 权限由桌面端单独控制。
 - **文件自主权**：文件和资源保持在原文件夹；应用更新不要求迁移 Vault。
 
 ### 连续阅读与 PDF
@@ -39,11 +39,11 @@ WebObsidian 基于 [xnohat/webobsidian](https://github.com/xnohat/webobsidian) �
 
 ## 安装与使用
 
-从 [GitHub Releases](https://github.com/AlexbeatsZ/webobsidian/releases) 下载对应平台的 **实际已发布**安装包：
+从 [GitHub Releases](https://github.com/AlexbeatsZ/Shale/releases) 下载对应平台的 **实际已发布**安装包：
 
 | 平台 | 打包目标 | 说明 |
 | --- | --- | --- |
-| Windows x64 | NSIS `.exe` 安装程序 | 用户级安装；安装前先退出正在运行的 WebObsidian |
+| Windows x64 | NSIS `.exe` 安装程序 | 用户级安装；安装前先退出正在运行的 Shale |
 | macOS arm64 / x64 | `.dmg` / `.zip` | 选择与 Apple Silicon / Intel 相符的构建 |
 | Linux x64 / arm64 | `.AppImage` / `.deb` | 是否有当前版本文件以 Release 资产为准 |
 | Android | `.apk` | 按 Android 文件选择与授权流程打开笔记库 |
@@ -57,8 +57,8 @@ WebObsidian 基于 [xnohat/webobsidian](https://github.com/xnohat/webobsidian) �
 需要 Git、**Node.js 20 或更新版本**及 npm；Android 构建还需要对应 Android SDK/JDK 和 Gradle 工具链（参见 [Android 文档](docs/design/android-runtime.md)）。在项目根目录：
 
 ```bash
-git clone https://github.com/AlexbeatsZ/webobsidian.git
-cd webobsidian
+git clone https://github.com/AlexbeatsZ/Shale.git
+cd shale
 npm ci
 
 npm run dev                 # 构建共用渲染层与本地服务，然后启动桌面端
@@ -97,4 +97,4 @@ node sync-server/server.mjs /absolute/path/to/server.json
 
 ## 许可与声明
 
-[MIT License](LICENSE)。基于 `xnohat/webobsidian`，与 Obsidian.md 官方无关联。
+[MIT License](LICENSE)。基于 `xnohat/webobsidian`，与 原项目官方无关联。

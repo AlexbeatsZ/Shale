@@ -41,7 +41,7 @@ export default function WebViewerTab({ id, url, active, sidebar = false }: { id:
 
   useEffect(() => {
     const container = host.current;
-    const bridge = window.webobsidianDesktop?.webViewer;
+    const bridge = window.shaleDesktop?.webViewer;
     if (!mountGuest || !container || !bridge) return;
 
     const view = document.createElement('webview') as WebviewTag;

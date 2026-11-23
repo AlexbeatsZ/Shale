@@ -4,7 +4,7 @@ import { installTitleBar } from './titlebar';
 import type { DesktopBridge } from './bridge';
 import type { McpConnectionInput } from './mcpLauncher';
 
-const nativeArg = process.argv.find(arg => arg.startsWith('--webobsidian-native-vault='));
+const nativeArg = process.argv.find(arg => arg.startsWith('--shale-native-vault='));
 const desktopApi: DesktopBridge = {
   isDesktop: true,
   inputMethod: {
@@ -13,7 +13,7 @@ const desktopApi: DesktopBridge = {
     update: request => ipcRenderer.invoke('desktop:input-method-update', request),
   },
   platform: process.platform,
-  version: process.argv.find(arg => arg.startsWith('--webobsidian-version='))?.split('=')[1] ?? '',
+  version: process.argv.find(arg => arg.startsWith('--shale-version='))?.split('=')[1] ?? '',
   nativePlugins: !!nativeArg,
   runAction: action => ipcRenderer.invoke('desktop:action', action),
   webViewer: {
@@ -58,14 +58,14 @@ const desktopApi: DesktopBridge = {
       ipcRenderer.send('desktop:renderer-ready', false);
     };
   },
-  vaultPath: nativeArg ? decodeURIComponent(nativeArg.slice('--webobsidian-native-vault='.length)) : undefined,
+  vaultPath: nativeArg ? decodeURIComponent(nativeArg.slice('--shale-native-vault='.length)) : undefined,
 };
 if (process.isMainFrame) {
-  if (process.contextIsolated) contextBridge.exposeInMainWorld('webobsidianDesktop', desktopApi);
+  if (process.contextIsolated) contextBridge.exposeInMainWorld('shaleDesktop', desktopApi);
   else {
-    Object.defineProperty(window, 'webobsidianDesktop', { value: desktopApi });
+    Object.defineProperty(window, 'shaleDesktop', { value: desktopApi });
     // Only present in the explicitly trusted, local desktop renderer.
-    Object.defineProperty(window, 'webobsidianNativeRequire', { value: require });
+    Object.defineProperty(window, 'shaleNativeRequire', { value: require });
   }
 }
 
@@ -73,7 +73,7 @@ if (process.isMainFrame) {
   ipcRenderer.on('desktop:command', (_event, command: string) => {
     window.dispatchEvent(new CustomEvent('desktop-command', { detail: command }));
   });
-  ipcRenderer.on('desktop:server-stopped', () => window.dispatchEvent(new Event('webobsidian-server-stopped')));
+  ipcRenderer.on('desktop:server-stopped', () => window.dispatchEvent(new Event('shale-server-stopped')));
   ipcRenderer.on('desktop:close-cancelled', () => window.dispatchEvent(new Event('desktop-close-cancelled')));
   window.addEventListener('DOMContentLoaded', () => void installTitleBar(), { once: true });
 }

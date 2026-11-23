@@ -1,12 +1,12 @@
 import { StateEffect, StateField, type Extension, type Range } from '@codemirror/state';
 import { Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet } from '@codemirror/view';
-import { SourceDocument, rebaseReview, type ReviewHunk } from '@webobsidian/markdown-core';
+import { SourceDocument, rebaseReview, type ReviewHunk } from '@shale/markdown-core';
 import { contextOf, nonExecutingContext } from '../renderContext';
 import { reviewSnapshot, subscribeReview, decideReview } from './client';
 import { createElement, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ReviewToolbar } from '../../components/ReviewHost';
-import { RenderLifetime } from '../obsidian/renderLifetime';
+import { RenderLifetime } from '../shale/renderLifetime';
 
 const refreshReview = StateEffect.define<void>();
 export type Placed = { id: string; from: number; to: number; insert: string; original: string; conflict?: boolean };

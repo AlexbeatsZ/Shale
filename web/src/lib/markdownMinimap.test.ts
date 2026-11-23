@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EditorState, Text } from '@codemirror/state';
 import { SearchQuery } from '@codemirror/search';
-import { analyzeMarkdown } from '@webobsidian/markdown-core';
+import { analyzeMarkdown } from '@shale/markdown-core';
 import { minimapRows, minimapSourceWidth, minimapViewport, minimapSearchRows, workspaceMatchRanges, MINIMAP_MAX_HEIGHT } from './markdownMinimap';
 
 describe('Markdown full-document minimap', () => {

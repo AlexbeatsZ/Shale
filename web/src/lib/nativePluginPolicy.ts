@@ -40,7 +40,7 @@ export function adaptNativePlusModules(plugin: unknown): void {
     typeof plus.setModuleEnabled !== 'function' ||
     typeof plus.register !== 'function'
   ) {
-    throw new Error('此 Obsidian Plus 版本需要更新原生模块适配；已停止加载以避免重复执行');
+    throw new Error('此 Shale Plus 版本需要更新原生模块适配；已停止加载以避免重复执行');
   }
   const enableModule = plus.enableModule;
   const setModuleEnabled = plus.setModuleEnabled;

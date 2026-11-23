@@ -50,7 +50,7 @@ export async function stageLocalFile(filename: string, directory: string, expect
 const embeddedSyncLocks = new Set<string>();
 
 export async function withSyncLock<T>(directory: string, work: () => Promise<T>): Promise<T> {
-  if (process.env.WEBOBSIDIAN_EMBEDDED === '1') {
+  if (process.env.SHALE_EMBEDDED === '1') {
     // Android runs one embedded Node process per app-private data directory.
     // A PID file can survive the process and refer to an unrelated Android UID.
     const key = path.resolve(directory);

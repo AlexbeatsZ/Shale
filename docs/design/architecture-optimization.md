@@ -111,7 +111,7 @@ files and migration persistence failures report errors instead of persisting
 defaults. Atomic persistence checks backup errors and removes its temporary file
 on failure. Desktop config follows the same missing-versus-invalid distinction.
 
-Property types stay in interoperable .obsidian/types.json. The existing limited
+Property types stay in interoperable .shale/types.json. The existing limited
 configuration IO and textFile owner provide UTF-8, symlink/Vault/revision checks
 and atomic writes. Serial field patches reread the latest source; different-field
 stale requests merge only when their own target value is unchanged. A changed
@@ -129,7 +129,7 @@ old writing hotkeys across equivalent path keys without rewriting those records.
 Linux casing remains distinct.
 
 Desktop startup reads effective server settings. Explicit first/recovery choice
-uses the existing WEBOBSIDIAN_INITIAL_VAULT path before clients/indexes exist.
+uses the existing SHALE_INITIAL_VAULT path before clients/indexes exist.
 The selected native root is included in startup allowed roots, so explicit local
 external-disk choices use the same validator. Cancel creates no default Vault.
 The native Switch Vault menu now

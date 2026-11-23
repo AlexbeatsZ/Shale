@@ -3,7 +3,7 @@ import { parseConfiguration, readVaultConfiguration } from './vaultConfiguration
 import { normalizeSyncEndpoint } from './syncTransport.js';
 
 export const FILE_SYNC_CONFIGURATION = 'sync.jsonc';
-export const FILE_SYNC_CONFIGURATION_PATH = `.obsidian/webobsidian/${FILE_SYNC_CONFIGURATION}`;
+export const FILE_SYNC_CONFIGURATION_PATH = `.shale/${FILE_SYNC_CONFIGURATION}`;
 
 export function parseFileSyncPreferences(value: unknown) {
   const parsed = FileSyncPreferencesSchema.strict().safeParse(value);

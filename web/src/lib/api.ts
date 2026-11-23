@@ -1,9 +1,9 @@
-import type { CatalogEntry } from '@webobsidian/search-core';
+import type { CatalogEntry } from '@shale/search-core';
 import { TEXT_EXT_RE } from './media';
 import { isReadOnlyAdapterOperation } from '../../../server/src/contracts';
 import type { VaultConfigurationSource, PropertyTypeExpectation, TreeNode, SearchHit, MatchContext, NoteMatches } from '../../../server/src/contracts';
 export type { VaultConfigurationSource, PropertyTypeExpectation, TreeNode, SearchHit, MatchContext, NoteMatches } from '../../../server/src/contracts';
-// Thin fetch wrapper around the WebObsidian server API.
+// Thin fetch wrapper around the Shale server API.
 
 export interface TrashItem {
   name: string;

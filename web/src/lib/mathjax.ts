@@ -1,4 +1,4 @@
-import { defaultMathConfiguration, mathRegions, resolveMathPackages, type MarkdownModel } from '@webobsidian/markdown-core';
+import { defaultMathConfiguration, mathRegions, resolveMathPackages, type MarkdownModel } from '@shale/markdown-core';
 import type { MathProfile } from './mathPreamble';
 import { debugEnabled, debugText, recordDebug, debugError } from './debug';
 
@@ -90,9 +90,9 @@ export function loadMathJax(): Promise<MathJaxRuntime> {
     const assetRoot = new URL(assetPath, document.baseURI).href;
     owner.MathJax = {
       loader: {
-        paths: { mathjax: assetRoot, fonts: `${assetRoot}/fonts`, webobsidian: `${assetRoot}/native` },
+        paths: { mathjax: assetRoot, fonts: `${assetRoot}/fonts`, shale: `${assetRoot}/native` },
         load: ['input/tex', 'output/svg', 'ui/safe', '[tex]/begingroup'],
-        dependencies: { '[webobsidian]/siunitx.js': ['input/tex'] },
+        dependencies: { '[shale]/siunitx.js': ['input/tex'] },
         failed: (error: { message: string }) => reject(new Error(error.message)),
       },
       startup: { typeset: false }, tex: { tags: 'none' },

@@ -20,7 +20,7 @@ async function fixture() {
   await fs.writeFile(binary, 'fixture'); await fs.writeFile(mcpEntry, 'fixture');
   const secrets = { isEncryptionAvailable: () => true, encryptString: (text: string) => Buffer.from(`encrypted:${text}`),
     decryptString: (bytes: Buffer) => bytes.toString().slice('encrypted:'.length) };
-  const options = { runtimeDir: path.join(directory, 'state'), binary, mcpEntry, executable: 'WebObsidian',
+  const options = { runtimeDir: path.join(directory, 'state'), binary, mcpEntry, executable: 'Shale',
     endpointFile: path.join(directory, 'operations-endpoint.json'), serverUrl: 'http://127.0.0.1:18787', secrets };
   return { directory, options, launcher: new McpLauncher(options) };
 }
@@ -37,9 +37,9 @@ describe('bundled MCP connection owner', () => {
     const { launcher, options } = await fixture();
     const state = await launcher.inspect();
     expect(state).toMatchObject({ available: true, hasKey: false, tunnelId: '', connected: false });
-    const config = JSON.parse(state.clientConfig).mcpServers.webobsidian;
-    expect(config).toEqual({ command: 'WebObsidian', args: [options.mcpEntry],
-      env: { ELECTRON_RUN_AS_NODE: '1', WEBOBSIDIAN_ENDPOINT_FILE: options.endpointFile } });
+    const config = JSON.parse(state.clientConfig).mcpServers.shale;
+    expect(config).toEqual({ command: 'Shale', args: [options.mcpEntry],
+      env: { ELECTRON_RUN_AS_NODE: '1', SHALE_ENDPOINT_FILE: options.endpointFile } });
     expect(spawn).not.toHaveBeenCalled();
     await fs.rm(options.mcpEntry);
     expect((await launcher.inspect()).available).toBe(false);

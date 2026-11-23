@@ -7,7 +7,7 @@ let portReady: (() => void) | undefined;
 const ready = new Promise<void>(resolve => { portReady = resolve; });
 if (typeof window !== 'undefined') window.addEventListener('message', event => {
   if (event.source && event.source !== window) return;
-  if (event.data !== 'webobsidian-host' || !event.ports[0] || !isAndroid() || androidPort) return;
+  if (event.data !== 'shale-host' || !event.ports[0] || !isAndroid() || androidPort) return;
   androidPort = event.ports[0];
   androidPort.onmessage = event => {
     const message = JSON.parse(event.data) as { id: number; value?: unknown; error?: string };
@@ -29,10 +29,10 @@ async function androidRequest(action: string, input?: unknown): Promise<unknown>
 
 export const host = {
   onBeforeClose(listener: () => Promise<void>): (() => void) | undefined {
-    return window.webobsidianDesktop?.onBeforeClose(listener);
+    return window.shaleDesktop?.onBeforeClose(listener);
   },
   setChrome(dark: boolean, workspace: boolean): void {
-    window.webobsidianDesktop?.setChrome?.(dark, workspace);
+    window.shaleDesktop?.setChrome?.(dark, workspace);
     if (workspace && isAndroid()) void androidRequest('set-chrome', { dark }).catch(() => {});
   },
   async readClipboardText(): Promise<string> {

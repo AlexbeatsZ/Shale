@@ -1,9 +1,9 @@
 import { expect, it, vi } from 'vitest';
 import { JavascriptRun } from './runtime';
-import { Component, Events } from '../obsidian/events';
-import type { App } from '../obsidian/runtime';
+import { Component, Events } from '../shale/events';
+import type { App } from '../shale/runtime';
 import { nonExecutingContext, type RenderContext } from '../renderContext';
-import { analyzeMarkdown, equationContext } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, equationContext } from '@shale/markdown-core';
 
 function fixture() {
   const vault = new Events(), remove = vi.fn();

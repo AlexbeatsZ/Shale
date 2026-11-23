@@ -38,7 +38,7 @@ for (const [effect, source] of [
       const { Prec, StateEffect } = await import('/node_modules/.vite/deps/@codemirror_state.js');
       const { renderContext } = await import('/src/lib/renderContext.ts');
       const { installBlockEffects } = await import('/src/lib/blocks/runtime.ts');
-      const { sharedApp } = await import('/src/lib/obsidian/runtime.ts');
+      const { sharedApp } = await import('/src/lib/shale/runtime.ts');
       installBlockEffects(sharedApp);
       for (const element of document.querySelectorAll<HTMLElement>('[data-slot] > .cm-host > .cm-editor')) {
         const view = EditorView.findFromDOM(element)!;
@@ -89,7 +89,7 @@ test('theme colors reach inherited UI text, body-mounted plugin modals and edito
   await reset(page, 'Plain body text\n\nend');
   await expect(page.locator('body')).toHaveCSS('color', 'rgb(34, 34, 34)');
   await page.evaluate(async () => {
-    const modulePath = '/src/lib/obsidian/ui.ts';
+    const modulePath = '/src/lib/shale/ui.ts';
     const { Modal } = await import(modulePath);
     const modal = new Modal({});
     modal.setTitle('Theme probe');

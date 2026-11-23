@@ -1,6 +1,6 @@
 // @ts-nocheck -- upstream rule positional adapter
 import { markdownAst, writingModel } from '../../analysis';
-import {tableModels} from '@webobsidian/markdown-core';
+import {tableModels} from '@shale/markdown-core';
 // @ts-nocheck -- adapted upstream rule implementation; native boundaries are type checked.
 import {visit} from 'unist-util-visit';
 import type {Position} from 'unist';

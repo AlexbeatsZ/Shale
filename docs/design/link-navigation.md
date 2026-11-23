@@ -1,6 +1,6 @@
-# 链接、跳转与脚注：Obsidian 行为研究及实现设计
+# 链接、跳转与脚注：Shale 行为研究及实现设计
 
-日期：2026-10-24。研究基线：WebObsidian `7bf49b7` / 0.1.23；本机 Obsidian 1.14.5。
+日期：2026-10-24。研究基线：Shale `7bf49b7` / 0.1.23；本机 Shale 1.14.5。
 研究于 `4452d77` 交付；2026-10-24 用户批准后已实现首轮产品闭环。
 研究时的差距保留为历史基线，当前实现及边界见下节；验证记录见
 `tests/reports/link-navigation-20261024.md`。
@@ -54,7 +54,7 @@ path-only pending 和 path-only history 已删除。没有增加文档保存服�
 
 ## 需求与结论
 
-用户反馈跳转后落点不清晰，缺少 Obsidian 的高亮反馈；脚注不便预览，整体链接与导航体验尚不成熟。
+用户反馈跳转后落点不清晰，缺少 Shale 的高亮反馈；脚注不便预览，整体链接与导航体验尚不成熟。
 需要补齐一条完整的使用流程：辨认目标、就地预览、打开到明确落点、看清目标、回到原位置。
 
 现有问题横跨语义解析、视图导航、预览和位置历史。应扩展现有所有者并迁移调用方，不能仅在各个
@@ -67,9 +67,9 @@ path-only pending 和 path-only history 已删除。没有增加文档保存服�
    [Page preview](https://obsidian.md/help/Plugins/Page%2Bpreview)、
    [Basic formatting syntax](https://obsidian.md/help/syntax)、
    [Footnotes view](https://obsidian.md/help/plugins/footnotes)。
-2. 本机只读参考：`C:/Users/Meta/AppData/Roaming/obsidian/obsidian-1.14.5.asar`。
+2. 本机只读参考：`C:/Users/Meta/AppData/Roaming/shale/shale-1.14.5.asar`。
    通过仓库已有的 `@electron/asar` 读取 `package.json`、`app.js`、`app.css`；归档报告版本为 1.14.5。
-   安装器外壳的版本号不同，不能把 `Program Files/Obsidian/resources/app.asar` 的包版本当成当前应用版本。
+   安装器外壳的版本号不同，不能把 `Program Files/Shale/resources/app.asar` 的包版本当成当前应用版本。
 3. 使用 computer-use 只读查看了现有 STEM 窗口，窗口标题也报告 1.14.5；没有点击、输入、切页、修改
    真实笔记或设置。该截图仅提供版本和当前界面观察，不能证明下列交互已经逐项操作验收。
 4. 当前仓库按以下模块逐条追踪；本轮未运行测试、类型检查、构建或新应用实例。
@@ -95,12 +95,12 @@ path-only pending 和 path-only history 已删除。没有增加文档保存服�
 | Footnotes view / Ote / Fte | app.js 3471803 附近 | 通过 metadata 维护定义与所有引用位置，按首次引用顺序组织，共用脚注 embed，支持局部编辑 |
 | is-flashing / footnote styles | app.css 3307 / 12562 附近 | 高亮用主题变量；脚注与回跳有独立样式 |
 
-## Obsidian 的行为与实现原理
+## Shale 的行为与实现原理
 
 ### 目标先解析为语义位置，再交给视图
 
 `[[笔记#标题]]`、`[[笔记#^块ID]]` 不是让浏览器任意查询一个全局 DOM ID。
-Obsidian 先由 metadata 解析源位置，再将临时导航状态交给当前 Markdown 模式。
+Shale 先由 metadata 解析源位置，再将临时导航状态交给当前 Markdown 模式。
 标题还可以按父子标题链定位；块目标可带列表结构；脚注目标携带其定义范围。
 
 阅读和编辑模式各自完成显示。编辑模式使用 CodeMirror 的范围装饰与滚动，并展开相关折叠；
@@ -114,7 +114,7 @@ Obsidian 先由 metadata 解析源位置，再将临时导航状态交给当前 
 所以不能声称两种模式有完全相同的清除时机。
 
 `app.js` 另有一个 750ms 的通用闪烁工具；不能因它同样使用 `is-flashing` 就把它认作链接导航的时长。
-我们的产品可以选择统一的短时反馈，但应把它记为自身交互选择，而非未经验证的 Obsidian 精确复刻。
+我们的产品可以选择统一的短时反馈，但应把它记为自身交互选择，而非未经验证的 Shale 精确复刻。
 
 ### Page preview 是可进入的内容视图
 
@@ -151,7 +151,7 @@ Obsidian 先由 metadata 解析源位置，再将临时导航状态交给当前 
 | 搜索 matchesFor / backlinksFor | 现有搜索与链接图 | MatchContext.ranges 只相对裁切后的 snippet，未保留全文源坐标；backlinksFor 只返回 path[] |
 | `MarkdownView.tsx` / configuredMenus | 已有 link 菜单上下文、打开/复制入口 | 普通 widget 使用 data-menu-link，而引用式链接/脚注 widget 未提供同等目标；菜单应消费统一语义及打开意图 |
 | `SidebarTabPanels.tsx` | 侧栏同文件显式指定 EditorView | 独立解析和打开逻辑，缺少统一的结果/历史；同文件多视图必须保留该目标归属 |
-| Obsidian workspace adapter | openLinkText、leaf.openFile | 已解析到文件时绕过 openWikilink；没有统一消费链接 fragment，leaf 只处理部分 eState.line |
+| Shale workspace adapter | openLinkText、leaf.openFile | 已解析到文件时绕过 openWikilink；没有统一消费链接 fragment，leaf 只处理部分 eState.line |
 | `vaultRenderContext.ts` / renderEmbed | DocumentRegistry、完整模型、片段范围、订阅和渲染上下文 | 可作为预览的数据入口；需明确片段绝对位置和同笔记完整定义可见性 |
 | MarkdownFragment / MathTooltip / TagPageHover | 共用 Markdown 渲染器、公式预览生命周期、标签页预览 | 没有覆盖所有来源的通用链接预览；TagPageHover 目前挂载独立片段 snapshot，未订阅后续正文更新 |
 
@@ -255,7 +255,7 @@ Live 保留原始定义的可编辑位置，引用处展示编号并支持正文
 侧栏列出正文、所有引用位置、未引用定义，复用同一语义/预览/导航。
 侧栏编辑通过原 DocumentSession 的带版本范围补丁实现，保留其他字节和统一 Undo；
 不能把 MarkdownFragment 的局部草稿误当成独立的脚注持久化文档。
-可编辑 hover 和复杂嵌套预览留在此后的独立阶段，首轮无需复制 Obsidian 全部窗口能力。
+可编辑 hover 和复杂嵌套预览留在此后的独立阶段，首轮无需复制 Shale 全部窗口能力。
 
 ## 性能、删除范围与依赖顺序
 

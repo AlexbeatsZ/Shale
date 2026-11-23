@@ -2,7 +2,7 @@
 
 ## Presentation
 
-Follow the user's native Obsidian reference: one compact 700px dialog, a single
+Follow the user's native Shale reference: one compact 700px dialog, a single
 52px input row with a clear/close control, neutral selected rows, and a quiet
 keyboard footer. Commands use 32px rows with actual assigned shortcuts on the
 right; pin actions appear on hover/focus or for pinned entries. Files use 48px

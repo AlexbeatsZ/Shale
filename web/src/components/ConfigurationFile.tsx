@@ -7,7 +7,7 @@ export default function ConfigurationFile({ path, name = '配置文件', desc, o
   path: string; name?: string; desc?: ReactNode; onOpen?: () => Promise<unknown>; children?: ReactNode;
 }) {
   const [error, setError] = useState('');
-  const desktop = window.webobsidianDesktop;
+  const desktop = window.shaleDesktop;
   const open = onOpen ?? (desktop ? () => desktop.openVaultPath(path) : undefined);
   const run = (work: () => Promise<unknown>) => {
     setError('');

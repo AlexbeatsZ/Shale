@@ -1,4 +1,4 @@
-import { physicalHotkey } from '@webobsidian/search-core';
+import { physicalHotkey } from '@shale/search-core';
 import { isMacOS } from '../platform';
 import { registerBackHandler } from '../host';
 import { matchName } from '../search';

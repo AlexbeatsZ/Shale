@@ -1,4 +1,4 @@
-import { fragmentRange, parseLinkTarget, equationContext, contentTargets, isGlobalContentTarget, type DocumentSession, type MarkdownModel } from '@webobsidian/markdown-core';
+import { fragmentRange, parseLinkTarget, equationContext, contentTargets, isGlobalContentTarget, type DocumentSession, type MarkdownModel } from '@shale/markdown-core';
 import { api } from './api';
 import { documents } from './documents';
 import { resolveContentLink } from './contentReferences';

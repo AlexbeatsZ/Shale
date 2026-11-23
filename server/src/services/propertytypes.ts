@@ -1,23 +1,23 @@
 import { applyEdits, modify } from 'jsonc-parser';
-import { readObsidianConfiguration, writeObsidianPropertyTypes } from './vaultConfiguration.js';
+import { readShaleConfiguration, writeShalePropertyTypes } from './vaultConfiguration.js';
 import { broadcast } from './realtime.js';
 import type { PropertyTypeExpectation } from '../contracts.js';
 export type { PropertyTypeExpectation } from '../contracts.js';
 
 /**
- * Obsidian stores per-vault property type assignments in `.obsidian/types.json`
+ * Shale stores per-vault property type assignments in `.shale/types.json`
  * ({ "types": { "<key>": "<type>" } } with types text|multitext|number|checkbox|
- * date|datetime|tags|aliases). We read/write the same file so WebObsidian's
- * property types interoperate with the Obsidian app.
+ * date|datetime|tags|aliases). We read/write the same file so Shale's
+ * property types interoperate with the Shale app.
  */
 
 export async function readPropertyTypes() {
-  const source = await readObsidianConfiguration('types.json');
+  const source = await readShaleConfiguration('types.json');
   const data = source.exists ? JSON.parse(source.content.replace(/^\uFEFF/, '')) : {};
   if (!data || typeof data !== 'object' || Array.isArray(data) ||
       data.types !== undefined && (!data.types || typeof data.types !== 'object' || Array.isArray(data.types) ||
         Object.values(data.types).some(value => typeof value !== 'string')))
-    throw Object.assign(new Error('属性类型配置无效，请修正 .obsidian/types.json'), { status: 400 });
+    throw Object.assign(new Error('属性类型配置无效，请修正 .shale/types.json'), { status: 400 });
   return { types: (data.types ?? {}) as Record<string, string>, source };
 }
 
@@ -38,8 +38,8 @@ export function setPropertyType(key: string, type: string, expected: PropertyTyp
     const source = { ...current.source, content: bom + applyEdits(content,
       modify(content, ['types', key], type === 'auto' ? undefined : type,
         { formattingOptions: { insertSpaces: true, tabSize: 2, eol: content.includes('\r\n') ? '\r\n' : '\n' } })) };
-    const saved = await writeObsidianPropertyTypes(source);
-    broadcast({ type: 'vault-configuration-changed', path: '.obsidian/types.json', event: 'change' });
+    const saved = await writeShalePropertyTypes(source);
+    broadcast({ type: 'vault-configuration-changed', path: '.shale/types.json', event: 'change' });
     return { types: (JSON.parse(saved.content.replace(/^\uFEFF/, '')).types ?? {}) as Record<string, string>, source: saved };
   });
   changes = operation;

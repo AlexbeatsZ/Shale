@@ -2,7 +2,7 @@
 import {Options, RuleType} from '../rules';
 import RuleBuilder, {BooleanOptionBuilder, ExampleBuilder, OptionBuilderBase, TextOptionBuilder} from './rule-builder';
 import dedent from 'ts-dedent';
-import {convertAliasValueToStringOrStringArray, escapeStringIfNecessaryAndPossible, formatYamlArrayValue, getYamlSectionValue, initYAML, DEFAULT_LINTER_ALIASES_HELPER_KEY, loadYAML, NormalArrayFormats, OBSIDIAN_ALIASES_KEYS, OBSIDIAN_ALIAS_KEY_PLURAL, QuoteCharacter, removeYamlSection, setYamlSection, SpecialArrayFormats, splitValueIfSingleOrMultilineArray, isValueEscapedAlready} from '../utils/yaml';
+import {convertAliasValueToStringOrStringArray, escapeStringIfNecessaryAndPossible, formatYamlArrayValue, getYamlSectionValue, initYAML, DEFAULT_LINTER_ALIASES_HELPER_KEY, loadYAML, NormalArrayFormats, SHALE_ALIASES_KEYS, SHALE_ALIAS_KEY_PLURAL, QuoteCharacter, removeYamlSection, setYamlSection, SpecialArrayFormats, splitValueIfSingleOrMultilineArray, isValueEscapedAlready} from '../utils/yaml';
 import {ignoreListOfTypes, IgnoreTypes} from '../utils/ignore-types';
 import {getFirstHeaderOneText, yamlRegex} from '../utils/regex';
 import {isNumeric} from '../utils/strings';
@@ -66,7 +66,7 @@ export default class YamlTitleAlias extends RuleBuilder<YamlTitleAliasOptions> {
 
     let aliasKeyForFile: string = null;
     const yamlKeys = Object.keys(parsedYaml);
-    for (const aliasKey of OBSIDIAN_ALIASES_KEYS) {
+    for (const aliasKey of SHALE_ALIASES_KEYS) {
       if (yamlKeys.includes(aliasKey)) {
         aliasKeyForFile = aliasKey;
 
@@ -104,7 +104,7 @@ export default class YamlTitleAlias extends RuleBuilder<YamlTitleAliasOptions> {
         newYaml = setYamlSection(newYaml, aliasKeyForFile, formatYamlArrayValue(newAliasValue, options.aliasArrayStyle, options.defaultEscapeCharacter, options.removeUnnecessaryEscapeCharsForMultiLineArrays, true/* escape numeric aliases see https://github.com/platers/obsidian-linter/issues/747*/));
       }
     } else if (!shouldRemoveTitleAlias) {
-      newYaml = setYamlSection(newYaml, OBSIDIAN_ALIAS_KEY_PLURAL, formatYamlArrayValue(title, options.aliasArrayStyle, options.defaultEscapeCharacter, options.removeUnnecessaryEscapeCharsForMultiLineArrays, true/* escape numeric aliases see https://github.com/platers/obsidian-linter/issues/747*/));
+      newYaml = setYamlSection(newYaml, SHALE_ALIAS_KEY_PLURAL, formatYamlArrayValue(title, options.aliasArrayStyle, options.defaultEscapeCharacter, options.removeUnnecessaryEscapeCharsForMultiLineArrays, true/* escape numeric aliases see https://github.com/platers/obsidian-linter/issues/747*/));
     }
 
     if (!options.useYamlKeyToKeepTrackOfOldFilenameOrHeading || shouldRemoveTitleAlias) {
@@ -190,28 +190,28 @@ export default class YamlTitleAlias extends RuleBuilder<YamlTitleAliasOptions> {
       new ExampleBuilder({
         description: 'Adds a header with the title from heading.',
         before: dedent`
-          # Obsidian
+          # Shale
         `,
         after: dedent`
           ---
           aliases:
-            - Obsidian
-          linter-yaml-title-alias: Obsidian
+            - Shale
+          linter-yaml-title-alias: Shale
           ---
-          # Obsidian
+          # Shale
         `,
       }),
       new ExampleBuilder({
         description: 'Adds a header with the title from heading without YAML key when the use of the YAML key is set to false.',
         before: dedent`
-          # Obsidian
+          # Shale
         `,
         after: dedent`
           ---
           aliases:
-            - Obsidian
+            - Shale
           ---
-          # Obsidian
+          # Shale
         `,
         options: {
           useYamlKeyToKeepTrackOfOldFilenameOrHeading: false,

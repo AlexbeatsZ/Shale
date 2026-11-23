@@ -22,7 +22,7 @@ await fs.writeFile(path.join(vault, 'Canvas.md'), wrap(pasted.replace('const hos
 await fs.writeFile(path.join(vault, 'Official.md'), fence(official));
 await fs.writeFile(path.join(vault, 'Isolation.md'), fence(`
 const result = { app: typeof app, process: typeof process, require: typeof require,
-  desktop: typeof webobsidianDesktop, nativeRequire: typeof webobsidianNativeRequire };
+  desktop: typeof shaleDesktop, nativeRequire: typeof shaleNativeRequire };
 try { parent.document.getElementById('root').innerHTML = 'destroyed'; result.parent = 'escaped'; }
 catch (error) { result.parent = error.name; }
 try { await fetch('/api/vault-identity'); result.network = 'escaped'; }
@@ -49,7 +49,7 @@ try {
     const toggle = page.getByRole('button', { name, exact: true });
     if (await toggle.getAttribute('aria-expanded') === 'true') await toggle.click();
   }
-  assert.equal(await page.evaluate(() => typeof window.webobsidianNativeRequire), 'function');
+  assert.equal(await page.evaluate(() => typeof window.shaleNativeRequire), 'function');
   await page.evaluate(() => { window.widgetAcceptanceRoot = document.getElementById('root'); });
   const open = async name => {
     await page.keyboard.press('Control+o');

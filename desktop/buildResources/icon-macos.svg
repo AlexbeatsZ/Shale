@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" xmlns:c2pa="http://c2pa.org/manifest"><defs>
 <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="14"/></filter>
 <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F1F3F4"/></linearGradient>
-<linearGradient id="webobsidiang0" gradientUnits="userSpaceOnUse" x1="64" y1="36" x2="144" y2="138"><stop offset="0" stop-color="#EBD9FF" stop-opacity="1.0"/><stop offset="1" stop-color="#CDA2F7" stop-opacity="1.0"/></linearGradient><linearGradient id="webobsidiang1" gradientUnits="userSpaceOnUse" x1="48.0" y1="48.0" x2="154.0" y2="154.0"><stop offset="0" stop-color="#B46DF4" stop-opacity="1.0"/><stop offset="1" stop-color="#7225C2" stop-opacity="1.0"/></linearGradient></defs>
+<linearGradient id="shaleg0" gradientUnits="userSpaceOnUse" x1="64" y1="36" x2="144" y2="138"><stop offset="0" stop-color="#EBD9FF" stop-opacity="1.0"/><stop offset="1" stop-color="#CDA2F7" stop-opacity="1.0"/></linearGradient><linearGradient id="shaleg1" gradientUnits="userSpaceOnUse" x1="48.0" y1="48.0" x2="154.0" y2="154.0"><stop offset="0" stop-color="#B46DF4" stop-opacity="1.0"/><stop offset="1" stop-color="#7225C2" stop-opacity="1.0"/></linearGradient></defs>
 <rect x="100" y="114" width="824" height="824" rx="185" fill="#000000" fill-opacity="0.22" filter="url(#sh)"/>
 <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#tile)"/>
-<g transform="translate(100 100) scale(4.29167)"><path d="M78,36 H130 A14,14 0 0 1 144,50 V124 A14,14 0 0 1 130,138 H78 A14,14 0 0 1 64,124 V50 A14,14 0 0 1 78,36 Z" fill="url(#webobsidiang0)"/>
-<path d="M62,50 H106 L132,76 V140 C132,147.73 125.73,154 118,154 H62 C54.27,154 48,147.73 48,140 V64 C48,56.27 54.27,50 62,50 Z" fill="url(#webobsidiang1)"/>
+<g transform="translate(100 100) scale(4.29167)"><path d="M78,36 H130 A14,14 0 0 1 144,50 V124 A14,14 0 0 1 130,138 H78 A14,14 0 0 1 64,124 V50 A14,14 0 0 1 78,36 Z" fill="url(#shaleg0)"/>
+<path d="M62,50 H106 L132,76 V140 C132,147.73 125.73,154 118,154 H62 C54.27,154 48,147.73 48,140 V64 C48,56.27 54.27,50 62,50 Z" fill="url(#shaleg1)"/>
 <path d="M106,50 V68 C106,72.42 109.58,76 114,76 H132 Z" fill="#E3C6FF"/>
 <path d="M66,100 H106 A4,4 0 0 1 110,104 V104 A4,4 0 0 1 106,108 H66 A4,4 0 0 1 62,104 V104 A4,4 0 0 1 66,100 Z" fill="#FFFFFF"/>
 <path d="M66,118 H88 A4,4 0 0 1 92,122 V122 A4,4 0 0 1 88,126 H66 A4,4 0 0 1 62,122 V122 A4,4 0 0 1 66,118 Z" fill="#FFFFFF" fill-opacity="0.75"/></g>

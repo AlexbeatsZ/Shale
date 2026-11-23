@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/error.js';
-import { operationNames, type OperationName } from '@webobsidian/markdown-core';
+import { operationNames, type OperationName } from '@shale/markdown-core';
 import { operationContract } from '../operations/contract.js';
 import { addMcpContext, callOperation, mcpInstructionNotes, nativeReview } from '../services/operations.js';
 import { mcpContext, mcpSelectionSchema } from '../services/mcpContext.js';
@@ -14,7 +14,7 @@ operationsRouter.post('/call', asyncHandler(async (req, res) => {
   const send = async () => {
     if (res.destroyed) return;
     const result = await callOperation(input.name as OperationName, input.arguments);
-    if (input.name !== 'obsidian_get_context' || !('queued_context' in result) || !('vault' in result)) { res.json(result); return; }
+    if (input.name !== 'shale_get_context' || !('queued_context' in result) || !('vault' in result)) { res.json(result); return; }
     const delivered = result as { vault: string; queued_context: McpContextItem[] };
     const finished = await new Promise<boolean>((resolve, reject) => {
       res.once('finish', () => resolve(true));
@@ -25,7 +25,7 @@ operationsRouter.post('/call', asyncHandler(async (req, res) => {
       console.error('MCP context consumption failed; pending context retained:', error);
     });
   };
-  if (input.name === 'obsidian_get_context') await mcpContext.deliver(send);
+  if (input.name === 'shale_get_context') await mcpContext.deliver(send);
   else await send();
 }));
 operationsRouter.get('/instructions', asyncHandler(async (_req, res) => res.json({ notes: await mcpInstructionNotes(false) })));

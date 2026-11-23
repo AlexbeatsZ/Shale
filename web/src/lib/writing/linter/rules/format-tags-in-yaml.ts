@@ -2,7 +2,7 @@
 import {Options, RuleType} from '../rules';
 import RuleBuilder, {ExampleBuilder, OptionBuilderBase} from './rule-builder';
 import dedent from 'ts-dedent';
-import {formatYAML, OBSIDIAN_TAG_KEY_SINGULAR, OBSIDIAN_TAG_KEY_PLURAL} from '../utils/yaml';
+import {formatYAML, SHALE_TAG_KEY_SINGULAR, SHALE_TAG_KEY_PLURAL} from '../utils/yaml';
 
 class FormatTagsInYamlOptions implements Options {}
 
@@ -22,7 +22,7 @@ export default class FormatTagsInYaml extends RuleBuilder<FormatTagsInYamlOption
   apply(text: string, options: FormatTagsInYamlOptions): string {
     return formatYAML(text, (text) => {
       return text.replace(
-          new RegExp(`^(${OBSIDIAN_TAG_KEY_PLURAL}|${OBSIDIAN_TAG_KEY_SINGULAR}):[ \\t]*(\\S.*|(?:(?:\\n *- \\S.*)|((?:\\n *- *))*|(\\n([ \\t]+[^\\n]*))*)*)\\n`, 'm'),
+          new RegExp(`^(${SHALE_TAG_KEY_PLURAL}|${SHALE_TAG_KEY_SINGULAR}):[ \\t]*(\\S.*|(?:(?:\\n *- \\S.*)|((?:\\n *- *))*|(\\n([ \\t]+[^\\n]*))*)*)\\n`, 'm'),
           function(tagsYAML) {
             return tagsYAML.replaceAll('#', '');
           },

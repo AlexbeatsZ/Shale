@@ -25,13 +25,13 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
       - name: Install only standalone server dependency
-        run: npm ci --workspace @webobsidian/sync-server --include-workspace-root=false --ignore-scripts --omit=dev
+        run: npm ci --workspace @shale/sync-server --include-workspace-root=false --ignore-scripts --omit=dev
       - name: Protocol and CLI compatibility
-        run: npm --workspace @webobsidian/sync-server test
+        run: npm --workspace @shale/sync-server test
       - name: Build standalone ZIP and TAR.GZ
-        run: npm --workspace @webobsidian/sync-server run build
+        run: npm --workspace @shale/sync-server run build
       - name: Run both extracted packages outside checkout
-        run: npm --workspace @webobsidian/sync-server run test:package
+        run: npm --workspace @shale/sync-server run test:package
       - uses: actions/upload-artifact@v4
         if: matrix.os == 'ubuntu-latest' && matrix.node == 22
         with:
@@ -50,8 +50,8 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npm run build:core
-      - run: npm --workspace @webobsidian/sync-server run build
-      - run: npm --workspace @webobsidian/sync-server run test:client
+      - run: npm --workspace @shale/sync-server run build
+      - run: npm --workspace @shale/sync-server run test:client
 
   publish:
     if: startsWith(github.ref, 'refs/tags/sync-server-v')
@@ -74,5 +74,5 @@ jobs:
           test "$RELEASE_TAG" = "sync-server-v$VERSION"
           gh release create "$RELEASE_TAG" release-assets/"$VERSION"/* \
             --verify-tag --latest=false \
-            --title "WebObsidian Sync Server $VERSION" \
+            --title "Shale Sync Server $VERSION" \
             --notes "Standalone Node 22+ server. Includes its tested, commit-pinned file-sync core; no runtime npm install. Existing v1 routes, port, data identity and receipts are retained. See sync-server/README.md for upgrade and rollback."

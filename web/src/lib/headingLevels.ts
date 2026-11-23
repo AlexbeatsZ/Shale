@@ -1,4 +1,4 @@
-import { extractMetadata, mathRegions, type MarkdownModel, type SourceChange } from '@webobsidian/markdown-core';
+import { extractMetadata, mathRegions, type MarkdownModel, type SourceChange } from '@shale/markdown-core';
 
 export type HeadingDirection = 'promote' | 'demote';
 export interface HeadingLevelPlan {

@@ -1,5 +1,5 @@
 {
-  "name": "@webobsidian/web",
+  "name": "@shale/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -30,8 +30,8 @@
     "@openai/apps-sdk-ui": "0.2.2",
     "@replit/codemirror-vim": "6.4.0",
     "@web-ppt/core": "0.8.0",
-    "@webobsidian/markdown-core": "*",
-    "@webobsidian/search-core": "*",
+    "@shale/markdown-core": "*",
+    "@shale/search-core": "*",
     "codemirror": "^5.65.21",
     "d3-force": "^3.0.0",
     "echarts": "6.1.0",

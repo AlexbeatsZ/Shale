@@ -1,7 +1,7 @@
 import { request } from './api';
 import type { VaultConfigurationSource } from '../../../server/src/contracts';
 
-export const EMBED_PROPERTIES_PATH = '.obsidian/webobsidian/embeds.css';
+export const EMBED_PROPERTIES_PATH = '.shale/embeds.css';
 const listeners = new Set<() => void>();
 let names: readonly string[] = [];
 export const customEmbedProperties = () => names;

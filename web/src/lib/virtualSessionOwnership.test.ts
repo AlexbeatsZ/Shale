@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('./api', () => ({ api: { read: vi.fn(async (path: string) => ({ path, content: '# Original', revision: 'v1', vault: 'fixture' })),
   write: vi.fn(async () => ({ revision: 'v2' })) } }));
-vi.mock('./tags/folderSession', async () => ({ WorkspaceDocumentSession: (await import('@webobsidian/markdown-core')).DocumentSession }));
+vi.mock('./tags/folderSession', async () => ({ WorkspaceDocumentSession: (await import('@shale/markdown-core')).DocumentSession }));
 import { DocumentRegistry } from './documents';
 import { api } from './api';
 beforeEach(() => vi.useFakeTimers());

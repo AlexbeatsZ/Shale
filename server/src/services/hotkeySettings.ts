@@ -1,12 +1,12 @@
 import { vaultPathKey } from './vaultFile.js';
 import { bindingFromString, emptyHotkeys, hotkeyCommandId, hotkeySignature, normalizeHotkeyMap,
-  normalizeHotkeyPreferences, type HotkeyPreferences, type VaultHotkeys, type HotkeyPlatform } from '@webobsidian/search-core';
+  normalizeHotkeyPreferences, type HotkeyPreferences, type VaultHotkeys, type HotkeyPlatform } from '@shale/search-core';
 import { getSettings } from './settings.js';
-import { parseConfiguration, readObsidianConfiguration, readVaultConfiguration, writeVaultConfiguration,
+import { parseConfiguration, readShaleConfiguration, readVaultConfiguration, writeVaultConfiguration,
   type VaultConfigurationSource } from './vaultConfiguration.js';
 
 export const HOTKEY_CONFIGURATION = 'hotkeys.jsonc';
-export const HOTKEY_CONFIGURATION_PATH = `.obsidian/webobsidian/${HOTKEY_CONFIGURATION}`;
+export const HOTKEY_CONFIGURATION_PATH = `.shale/${HOTKEY_CONFIGURATION}`;
 const fail = (message: string, status = 400) => Object.assign(new Error(message), { status });
 let writes: Promise<unknown> = Promise.resolve();
 const view = (preferences: HotkeyPreferences, source: VaultConfigurationSource): VaultHotkeys =>
@@ -44,7 +44,7 @@ async function legacyHotkeys(vault: string): Promise<HotkeyPreferences> {
     next.migration = '已迁移本机快捷键；通用 Ctrl 在 Mac 使用 Command，平台覆盖保存在同一同步文件';
     return next;
   }
-  const source = await readObsidianConfiguration('hotkeys.json');
+  const source = await readShaleConfiguration('hotkeys.json');
   if (source.vault !== vault) throw fail('Vault 已切换，请重新打开快捷键设置', 409);
   const next = emptyHotkeys();
   if (source.exists) next.bindings = normalizeHotkeyMap(parseConfiguration(source.content));
@@ -70,7 +70,7 @@ async function legacyHotkeys(vault: string): Promise<HotkeyPreferences> {
     const id = hotkeyCommandId(old);
     if (!Object.hasOwn(next.bindings, id)) Object.assign(next.bindings, normalizeHotkeyMap({ [old]: keys }));
   }
-  next.migration = source.exists ? '已只读导入 Obsidian 快捷键；通用 Ctrl 在 Mac 使用 Command' : '使用跨平台默认快捷键';
+  next.migration = source.exists ? '已只读导入 Shale 快捷键；通用 Ctrl 在 Mac 使用 Command' : '使用跨平台默认快捷键';
   return next;
 }
 export function patchHotkeys(input: unknown): Promise<VaultHotkeys> {

@@ -5,7 +5,7 @@ import { newFileFolder, newFilePath } from './filePlacement';
 import { findNode, filePaths, patchFileStat, type FileStat } from './tree';
 import { documents } from './documents';
 import { publishVirtualDocuments } from './virtualDocuments';
-import { isGlobalContentTarget, parseLinkTarget } from '@webobsidian/markdown-core';
+import { isGlobalContentTarget, parseLinkTarget } from '@shale/markdown-core';
 import { resolveContentLink } from './contentReferences';
 import { navigateTo, captureLocation, cancelNavigation, type NavigationLocation, type NavigationRequest, type LinkIntent } from './fragmentNavigation';
 import { sidebarTab, restoreSidebarTabs, sidebarFileType, type SidebarTab } from './sidebarTabs';
@@ -36,7 +36,7 @@ export type TreeSort =
   | 'ctime-desc' | 'ctime-asc';
 const TREE_SORTS: TreeSort[] = ['name-asc', 'name-desc', 'mtime-desc', 'mtime-asc', 'ctime-desc', 'ctime-asc'];
 
-/** Sentinel tab path for the Graph view (it lives in a tab, like Obsidian). */
+/** Sentinel tab path for the Graph view (it lives in a tab, like Shale). */
 export const GRAPH_PATH = 'graph://view';
 export const isHomepagePath = (path: string | null): boolean => /^home:\/\/[\w-]+$/.test(path ?? '');
 export const isWebViewerPath = (path: string | null): boolean => /^webviewer:\/\/[\w-]+$/.test(path ?? '');
@@ -55,7 +55,7 @@ export interface GraphGroup {
   color: string;
 }
 
-/** Persisted Graph view filters/display/forces — mirrors Obsidian's graph panel. */
+/** Persisted Graph view filters/display/forces — mirrors Shale's graph panel. */
 export interface GraphSettings {
   // filters
   search: string;
@@ -65,12 +65,12 @@ export interface GraphSettings {
   orphans: boolean;
   // groups
   groups: GraphGroup[];
-  // display (Obsidian's native ranges/defaults)
+  // display (Shale's native ranges/defaults)
   arrows: boolean;
   textFade: number; // -3..3, default 0 — higher = labels need more zoom
   nodeSize: number; // 0.1..5, default 1
   linkThickness: number; // 0.1..5, default 1
-  // forces (Obsidian's native ranges/defaults)
+  // forces (Shale's native ranges/defaults)
   centerForce: number; // 0..1, default 0.52
   repelForce: number; // 0..20, default 10
   linkForce: number; // 0..1, default 1
@@ -261,9 +261,9 @@ interface AppState {
   setContent: (c: string) => void;
   save: (cause?: 'manual' | 'background') => Promise<void>;
   createNote: (path: string, body?: string, applyTemplate?: boolean, viewId?: string) => Promise<void>;
-  /** Obsidian-style: create & open a fresh "Untitled" note (no prompt). `dir` = target folder, '' = vault root. */
+  /** Shale-style: create & open a fresh "Untitled" note (no prompt). `dir` = target folder, '' = vault root. */
   newNote: (dir?: string, viewId?: string) => Promise<void>;
-  /** Obsidian-style: create a fresh "Untitled" folder (no prompt) and start inline-renaming it. */
+  /** Shale-style: create a fresh "Untitled" folder (no prompt) and start inline-renaming it. */
   newFolder: (dir?: string) => Promise<void>;
   /** Tree path currently being inline-renamed (null = none); FileTree shows an input for it. */
   renamingPath: string | null;
@@ -332,7 +332,7 @@ function pickPersisted(s: any): Record<string, unknown> {
 
 /**
  * Merge persisted graph settings over defaults. Settings saved before the move
- * to Obsidian-native slider units (all sliders were normalized 0..1) are detected
+ * to Shale-native slider units (all sliders were normalized 0..1) are detected
  * by linkDistance ≤ 1 — keep the filters/groups but reset display/forces.
  */
 function migrateGraphSettings(gs: unknown): GraphSettings {
@@ -1054,7 +1054,7 @@ export const useStore = create<AppState>()(
       },
 
       newNote: async (dir, viewId = get().currentViewId()) => {
-        // Pick the first free "Untitled" name in the target folder, like Obsidian.
+        // Pick the first free "Untitled" name in the target folder, like Shale.
         const active = get().currentPath(viewId) ?? '';
         const source = findNode(get().tree, active)?.type === 'folder' ? `${active}/_` : active;
         const base = (dir ?? await newFileFolder(source)).replace(/\/+$/, '');
@@ -1072,7 +1072,7 @@ export const useStore = create<AppState>()(
 
       newFolder: async (dir) => {
         // Create an "Untitled" folder (unique name) and drop straight into inline
-        // rename — same as Obsidian, no prompt.
+        // rename — same as Shale, no prompt.
         const base = (dir ?? '').replace(/\/+$/, '');
         const parent = base ? findNode(get().tree, base) : get().tree;
         const taken = new Set((parent?.children ?? []).map((c) => c.name.toLowerCase()));

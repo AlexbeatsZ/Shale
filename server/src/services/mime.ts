@@ -2,7 +2,7 @@ import path from 'node:path';
 
 // Central MIME map + media extension sets, shared by the authenticated file
 // route, the public-share raw route and the SSR renderer. Keep the audio/video
-// sets in sync with web/src/lib/media.ts (Obsidian parity).
+// sets in sync with web/src/lib/media.ts (Shale parity).
 const MIME: Record<string, string> = {
   // images
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',

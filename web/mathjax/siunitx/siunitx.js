@@ -1,5 +1,5 @@
 /* Vendored from siunitx-pcc ee9f3dc890c13e5e165122bfa7a181680634e183.
- * Apache-2.0; see LICENSE. WebObsidian change: do not activate the old global
+ * Apache-2.0; see LICENSE. Shale change: do not activate the old global
  * parser patches. MathJax 4.1.3 provides these methods natively.
  */
 /******/ (() => { // webpackBootstrap

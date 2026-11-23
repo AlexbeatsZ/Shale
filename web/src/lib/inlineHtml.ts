@@ -1,6 +1,6 @@
 import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view';
-import { caretTouches, decodeHtmlEntity, simpleHtmlTags, type HtmlToken, type SourceSpan } from '@webobsidian/markdown-core';
+import { caretTouches, decodeHtmlEntity, simpleHtmlTags, type HtmlToken, type SourceSpan } from '@shale/markdown-core';
 import { syntaxModel, blockModel } from './syntaxModel';
 import { sourceIsOpen, forceRendered } from './sourceControls';
 import { livePreviewState, livePreviewReadonly } from './renderState';
@@ -36,7 +36,7 @@ class EntityWidget extends WidgetType {
   ignoreEvent() { return false; }
 }
 
-/** Revealed tags/entities use the faint ^id colour, like Obsidian. */
+/** Revealed tags/entities use the faint ^id colour, like Shale. */
 const sourceSyntax = Decoration.mark({ class: 'cm-formatting cm-formatting-html' });
 
 function build(state: EditorState): DecorationSet {

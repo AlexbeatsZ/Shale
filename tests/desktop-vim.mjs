@@ -10,7 +10,7 @@ const base = path.join(os.tmpdir(), '.agents');
 await fs.mkdir(base, { recursive: true });
 const fixture = await fs.mkdtemp(path.join(base, 'shale-vim-'));
 const vault = path.join(fixture, 'vault'), profile = path.join(fixture, 'profile');
-await fs.mkdir(path.join(vault, '.obsidian/webobsidian'), { recursive: true }); await fs.mkdir(profile);
+await fs.mkdir(path.join(vault, '.shale'), { recursive: true }); await fs.mkdir(profile);
 await fs.writeFile(path.join(vault, 'Note.md'), 'alpha beta\nsecond line\n');
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: false }));
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
@@ -67,7 +67,7 @@ try {
   await expect(view.locator('.cm-fat-cursor').first()).toHaveCSS('outline-color', 'rgb(18, 52, 86)');
   await page.keyboard.press('i'); await settled();
   await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', 'rgb(18, 52, 86)');
-  await settings({ theme: 'obsidian-dark' });
+  await settings({ theme: 'shale-dark' });
   await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', 'rgb(171, 205, 239)');
   await expect(view).toHaveAttribute('data-vim-mode', 'insert');
   await page.getByRole('button', { name: '设置', exact: true }).click();
@@ -76,7 +76,7 @@ try {
     await page.getByRole('button', { name: `恢复${theme}主题光标颜色默认值`, exact: true }).click();
     await expect(page.getByRole('button', { name: `恢复${theme}主题光标颜色默认值`, exact: true })).toBeDisabled();
   }
-  await page.keyboard.press('Escape'); await settings({ theme: 'obsidian-light' }); await content.focus();
+  await page.keyboard.press('Escape'); await settings({ theme: 'shale-light' }); await content.focus();
   const defaultColor = await content.evaluate(element => getComputedStyle(element).color);
   await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', defaultColor);
   await page.keyboard.press('Escape');

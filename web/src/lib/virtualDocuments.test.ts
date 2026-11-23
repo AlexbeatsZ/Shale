@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { projectVirtualCatalog, readingWindow, virtualDocumentsIn } from './virtualDocuments';
 import { VirtualReadingSession } from './virtualReading';
 import type { VirtualDocument } from './virtualDocuments';
-import type { CatalogEntry } from '@webobsidian/search-core';
+import type { CatalogEntry } from '@shale/search-core';
 
 const document: VirtualDocument = { path: 'Book', title: '物理化学 第三版', revision: 'v1', streams: [
   { id: 'text', title: '正文', files: [{ path: 'Book/ch01.md', title: '量子', kind: 'markdown', size: 300, headings: [] }] },

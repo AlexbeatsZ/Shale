@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore, type TreeSort, type ContextMenuItem } from '../lib/store';
-import { extendFileMenu } from '../lib/obsidian/menus';
+import { extendFileMenu } from '../lib/shale/menus';
 import { api, type TreeNode } from '../lib/api';
 import { findNode, pruneDescendants } from '../lib/tree';
 import { nativeBatchTagMenuItems, openTagOperation } from '../lib/tags/actions';
@@ -11,7 +11,7 @@ import SelectionBar from './SelectionBar';
 import { useSyncConflict, useSyncConflicts, withIncomingConflicts } from '../lib/syncConflicts';
 import SyncChanges from './SyncChanges';
 
-/** Inline rename box shown in place of a tree row's name (Obsidian-style). */
+/** Inline rename box shown in place of a tree row's name (Shale-style). */
 function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
   const renamePath = useStore((s) => s.renamePath);
   const notify = useStore((s) => s.notify);
@@ -22,7 +22,7 @@ function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
     const el = ref.current;
     if (!el) return;
     el.focus();
-    // Select the name but not the extension, like Obsidian.
+    // Select the name but not the extension, like Shale.
     const dot = node.type === 'file' ? node.name.lastIndexOf('.') : -1;
     el.setSelectionRange(0, dot > 0 ? dot : node.name.length);
   }, [node.name, node.type]);
@@ -62,7 +62,7 @@ function RenameInput({ node, onDone }: { node: TreeNode; onDone: () => void }) {
 
 function fileIcon(node: TreeNode): string | null {
   const ext = node.ext ?? '';
-  if (/\.(md|markdown)$/.test(ext)) return null; // markdown: text only, like Obsidian
+  if (/\.(md|markdown)$/.test(ext)) return null; // markdown: text only, like Shale
   if (/\.(png|jpe?g|gif|svg|webp)$/.test(ext)) return 'image';
   if (ext === '.pdf') return 'file-pdf';
   if (/^\.pptx?$/.test(ext)) return 'presentation';
@@ -135,7 +135,7 @@ function visibleOrder(): string[] {
 
 /**
  * Pick a name for `base` inside `targetDir` that doesn't collide with an
- * existing child — appends " copy" / " copy N" before the extension, like Obsidian.
+ * existing child — appends " copy" / " copy N" before the extension, like Shale.
  */
 function uniqueChildName(tree: TreeNode | null, targetDir: string, base: string): string {
   const folder = targetDir ? findNode(tree, targetDir) : tree;
@@ -181,7 +181,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
   const isCut = clipboard?.mode === 'cut' && clipboard.path === node.path;
 
   // Click selection: plain = single (+open/toggle), Cmd/Ctrl = toggle one,
-  // Shift = range from the anchor across the visible rows (like Obsidian/Finder).
+  // Shift = range from the anchor across the visible rows (like Shale/Finder).
   const onRowClick = (e: React.MouseEvent) => {
     if (e.metaKey || e.ctrlKey) {
       const cur = useStore.getState().selected;
@@ -405,7 +405,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
         onClick={onRowClick}
         onContextMenu={onContext}
         // A file is a valid drop target too: dropping onto it moves the dragged
-        // item into the file's parent folder (Obsidian behaviour). Without this,
+        // item into the file's parent folder (Shale behaviour). Without this,
         // drops on a file — or anywhere inside an expanded folder's contents —
         // bubble up to the root handler and either no-op or move to the vault root.
         onDragOver={(e) => { e.preventDefault(); setDropping(true); }}
@@ -442,7 +442,7 @@ export function collectFolderPaths(root: TreeNode | null): string[] {
 
 /**
  * Recursively sort a tree's children by the chosen order. Folders are always
- * grouped first and ordered by name (like Obsidian); the time/name criterion
+ * grouped first and ordered by name (like Shale); the time/name criterion
  * applies to files. Only rendered (expanded) folders' children are shown, so
  * this naturally sorts just what's visible in the panel.
  */

@@ -24,7 +24,7 @@ export async function readBlockEffects(expectedVault?: string) {
     if (!asset.exists) throw new Error('Block effect file is missing: ' + file);
     files.set(file, asset.content);
   }
-  return { vault: source.vault, path: '.obsidian/webobsidian/blocks/blocks.jsonc', definitions: settings.definitions.map(d => ({
+  return { vault: source.vault, path: '.shale/blocks/blocks.jsonc', definitions: settings.definitions.map(d => ({
     names: d.names, classes: d.classes, script: d.script,
     code: d.script ? files.get(d.script) : undefined, css: d.stylesheet ? files.get(d.stylesheet) : undefined,
   })) };

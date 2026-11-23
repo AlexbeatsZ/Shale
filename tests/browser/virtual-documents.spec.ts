@@ -140,7 +140,7 @@ test('status groups include highlighted JSON configuration, retain edits through
     const [React,ReactDOM,{default:Workspace},{default:Tabs},{default:ContextMenu},store,{publishVirtualDocuments}]=await Promise.all([
       load('/node_modules/.vite/deps/react.js'),load('/node_modules/.vite/deps/react-dom_client.js'),load('/src/components/Workspace.tsx'),
       load('/src/components/WorkspaceTabs.tsx'),load('/src/components/ContextMenu.tsx'),load('/src/lib/store.ts'),load('/src/lib/virtualDocuments.ts')]);
-    (window as any).nativeReveals=[];(window as any).webobsidianDesktop={isDesktop:true,platform:'darwin',revealVaultPath:async(path:string)=>{(window as any).nativeReveals.push(path);}};
+    (window as any).nativeReveals=[];(window as any).shaleDesktop={isDesktop:true,platform:'darwin',revealVaultPath:async(path:string)=>{(window as any).nativeReveals.push(path);}};
     document.getElementById('root')!.hidden=true;const host=document.createElement('div');host.id='virtual-config-fixture';host.style.cssText='position:fixed;inset:0';document.body.append(host);
     await store.useStore.getState().loadUiState();publishVirtualDocuments(tree);store.useStore.setState({tree,rightOpen:false,viewMode:'live'});
     await store.useStore.getState().openFile('Book');const h=(React.default??React).createElement;

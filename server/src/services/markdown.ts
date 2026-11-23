@@ -1,7 +1,7 @@
 import matter from 'gray-matter';
 import path from 'node:path';
-import { analyzeMarkdown, contentTargets, extractMetadata, isGlobalContentTarget, parseLinkTarget } from '@webobsidian/markdown-core';
-import { normalizeStoredTags } from '@webobsidian/search-core';
+import { analyzeMarkdown, contentTargets, extractMetadata, isGlobalContentTarget, parseLinkTarget } from '@shale/markdown-core';
+import { normalizeStoredTags } from '@shale/search-core';
 
 export interface ParsedNote {
   title: string;

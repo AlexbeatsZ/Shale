@@ -1,7 +1,7 @@
 import http from 'node:http';
 import { defaultPort } from './protocol.mjs';
 
-const prefix = '/webobsidian-sync/v1/';
+const prefix = '/shale-sync/v1/';
 const hopHeaders = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade']);
 
 function forwardedHeaders(headers) {
@@ -9,15 +9,15 @@ function forwardedHeaders(headers) {
   return Object.fromEntries(Object.entries(headers).filter(([name]) => !blocked.has(name.toLowerCase())));
 }
 
-export function routeWebObsidian(request, response, { port = defaultPort, maxBlobBytes = 1024 * 1024 * 1024 } = {}) {
-  if (request.url !== '/webobsidian-sync' && !request.url?.startsWith('/webobsidian-sync/')) return false;
+export function routeShale(request, response, { port = defaultPort, maxBlobBytes = 1024 * 1024 * 1024 } = {}) {
+  if (request.url !== '/shale-sync' && !request.url?.startsWith('/shale-sync/')) return false;
   const reject = status => {
     response.writeHead(status, { 'Cache-Control': 'no-store', Connection: 'close' }).end();
     request.resume();
   };
   const manifest = request.url === `${prefix}manifest` && request.method === 'GET';
   const commit = request.url === `${prefix}commit` && request.method === 'POST';
-  const blob = /^\/webobsidian-sync\/v1\/blobs\/[a-f0-9]{64}$/.test(request.url) && ['GET', 'PUT'].includes(request.method);
+  const blob = /^\/shale-sync\/v1\/blobs\/[a-f0-9]{64}$/.test(request.url) && ['GET', 'PUT'].includes(request.method);
   if (!manifest && !commit && !blob) { reject(404); return true; }
   if (request.headers.origin) { reject(403); return true; }
   const limit = commit ? 4 * 1024 * 1024 : request.method === 'PUT' ? maxBlobBytes : 0;
@@ -52,3 +52,6 @@ export function routeWebObsidian(request, response, { port = defaultPort, maxBlo
   request.pipe(upstream);
   return true;
 }
+
+// Existing outer gateway integrations can retain their import until deployment migrates.
+export const routeWebObsidian = routeShale;

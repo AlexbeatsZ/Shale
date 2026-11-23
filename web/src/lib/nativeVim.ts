@@ -105,7 +105,7 @@ export function nativeVimExtensions(commands: Actions): Extension {
       this.send(mode);
     }
     private send(mode: 'normal' | 'insert' | 'release') {
-      const bridge = window.webobsidianDesktop?.inputMethod;
+      const bridge = window.shaleDesktop?.inputMethod;
       if (!bridge?.supported) return;
       const request = bridge.update({ owner: this.owner, mode, englishSource: vimSettings().vimEnglishSource });
       this.pending++;

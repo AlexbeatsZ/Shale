@@ -3,7 +3,7 @@
 ## Portable modifiers and one synchronized file (2026-11-22, PRD 1.53)
 
 This supersedes the 2026-11-06 literal-Control policy.
-- `.obsidian/webobsidian/hotkeys.jsonc` is authoritative and uses the existing revision-checked
+- `.shale/hotkeys.jsonc` is authoritative and uses the existing revision-checked
   Vault writer, watcher and native file synchronization. No per-device rewritten files.
 - `Ctrl` and `Mod` mean the primary modifier: Command on Mac, Ctrl elsewhere.
   `PhysicalCtrl` (also accepted as `Control`) means the physical Control key on every platform;
@@ -17,7 +17,7 @@ This supersedes the 2026-11-06 literal-Control policy.
   are literal choices and remain visible, including a warning for a reserved system combination.
   Ordinary editor Command shortcuts retain CodeMirror's native platform behavior.
   PRD 1.54 removes the native Close Window binding too; Command+W belongs to the configurable tab command.
-- Existing local settings/Obsidian hotkeys/writing imports seed the file only when absent;
+- Existing local settings/Shale hotkeys/writing imports seed the file only when absent;
   once present, the file wins on every read, reload and synchronization. Invalid bytes fail closed.
   Concurrent writes use the current revision and serialize locally; stale callers receive 409.
 - Settings and command palette use the same platform resolution as dispatch; conflict detection
@@ -79,7 +79,7 @@ same editorCommands using their captured view. Source/diff evidence only.
 `hotkeyCatalog()` 额外列出已迁移但当前能力/插件不存在的命令，标记为不可用，只读展示，
 不注册空命令。
 
-命令 ID 的重命名集中在新版 `@webobsidian/search-core` 的 `hotkeyCommandId`（旧
+命令 ID 的重命名集中在新版 `@shale/search-core` 的 `hotkeyCommandId`（旧
 Fuzzy/编辑命令/标题移位/插件 ID → 本体命令）。`writing/commands.ts` 原有的
 `writingCommandId` 别名表与 `runWritingHotkey` 已删除，写入快捷键不再有第二套匹配实现。
 
@@ -97,10 +97,10 @@ Fuzzy/编辑命令/标题移位/插件 ID → 本体命令）。`writing/command
 
 ## 配置与迁移
 
-按 Vault 存储在 `.obsidian/webobsidian/hotkeys.jsonc`，`GET/PUT /api/settings/hotkeys`
+按 Vault 存储在 `.shale/hotkeys.jsonc`，`GET/PUT /api/settings/hotkeys`
 只做窄字段读写，沿用既有 Vault 身份/revision/串行写入检查。首次读取时迁移一次：
 
-1. `.obsidian/hotkeys.json` 只读导入，原文件不改；
+1. `.shale/hotkeys.json` 只读导入，原文件不改；
 2. 旧 `search.chinese.shortcuts` 的单值绑定（含空值禁用语义）按命令别名并入；
 3. 旧写作/LaTeX 快捷键经同一别名表并入。
 

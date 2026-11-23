@@ -1,7 +1,7 @@
-// Obsidian-parity media extension sets, shared across the Live Preview editor,
+// Shale-parity media extension sets, shared across the Live Preview editor,
 // the Reading-view renderer (markdown.ts) and the direct file view (Workspace).
 // Mirrors the desktop app's image/audio/video extension groups so `![[x.mp4]]`
-// and opening a media file behave the same as Obsidian.
+// and opening a media file behave the same as Shale.
 export const VIDEO_EXT_RE = /\.(mp4|webm|ogv|mov|mkv)$/i;
 export const AUDIO_EXT_RE = /\.(mp3|wav|m4a|3gp|flac|ogg|oga|opus)$/i;
 export const TEXT_EXT_RE = /\.(md|markdown|txt|json|csv|canvas|css|js|ya?ml)$/i;

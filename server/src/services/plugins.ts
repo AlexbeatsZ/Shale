@@ -5,11 +5,11 @@ import { getSettings, updateSettings } from './settings.js';
 import { writeBinaryFile, writeTextFile } from './textFile.js';
 
 /**
- * Obsidian community plugin support (PRD FR-8).
- * Plugins live in `<vault>/.obsidian/plugins/<id>/` with manifest.json + main.js
+ * Shale community plugin support (PRD FR-8).
+ * Plugins live in `<vault>/.shale/plugins/<id>/` with manifest.json + main.js
  * (+ optional styles.css), exactly like the desktop app. The server lists and
  * toggles already-installed plugins (no online install); the native renderer
- * loads main.js against the Obsidian API host (see web/src/lib/obsidian).
+ * loads main.js against the Shale API host (see web/src/lib/shale).
  */
 
 export interface PluginManifest {
@@ -30,11 +30,11 @@ export interface InstalledPlugin extends PluginManifest {
 }
 
 async function pluginsDir(): Promise<string> {
-  return resolveInVault('.obsidian/plugins');
+  return resolveInVault('.shale/plugins');
 }
 
 /**
- * A plugin id becomes a path segment under `.obsidian/plugins/` when toggling
+ * A plugin id becomes a path segment under `.shale/plugins/` when toggling
  * plugins and serving assets (taken from the URL). Reject anything that isn't a plain id so a crafted
  * `../../..` can't read or write outside the plugins directory.
  */
@@ -50,7 +50,7 @@ export async function listInstalled(): Promise<InstalledPlugin[]> {
   const s = await getSettings();
   // A fork reads the existing vault's enablement without rewriting it on startup.
   let enabled = s.plugins.enabled;
-  try { enabled = JSON.parse(await fs.readFile(await resolveInVault('.obsidian/community-plugins.json'), 'utf8')); }
+  try { enabled = JSON.parse(await fs.readFile(await resolveInVault('.shale/community-plugins.json'), 'utf8')); }
   catch (e: any) { if (e.code !== 'ENOENT') throw e; }
   if (!Array.isArray(enabled) || !enabled.every(id => typeof id === 'string')) throw new Error('Invalid community-plugins.json');
   let entries: string[] = [];
@@ -67,13 +67,13 @@ export async function listInstalled(): Promise<InstalledPlugin[]> {
       assertSafeId(id);
       const manifestRaw = await getPluginAsset(id, 'manifest.json');
       const manifest = JSON.parse(manifestRaw) as PluginManifest;
-      const hasStyles = await fileExists(await resolveInVault(`.obsidian/plugins/${id}/styles.css`));
+      const hasStyles = await fileExists(await resolveInVault(`.shale/plugins/${id}/styles.css`));
       out.push({
         ...manifest,
         id,
         enabled: enabled.includes(id),
         hasStyles,
-        dir: `.obsidian/plugins/${id}`,
+        dir: `.shale/plugins/${id}`,
       });
     } catch {
       /* skip invalid plugin dir */
@@ -87,7 +87,7 @@ export async function getPluginAsset(
   asset: 'main.js' | 'styles.css' | 'manifest.json',
 ): Promise<string> {
   assertSafeId(id);
-  return fs.readFile(await resolveInVault(`.obsidian/plugins/${id}/${asset}`), 'utf8');
+  return fs.readFile(await resolveInVault(`.shale/plugins/${id}/${asset}`), 'utf8');
 }
 
 let enableQueue = Promise.resolve();
@@ -102,10 +102,10 @@ async function updateEnabled(id: string, enabled: boolean): Promise<void> {
   if (!installed.some(p => p.id === id)) throw Object.assign(new Error('Plugin not installed'), { status: 404 });
   const ids = new Set(installed.filter(p => p.enabled).map(p => p.id));
   // Preserve missing plugin IDs in the original enablement file as well.
-  try { for (const entry of JSON.parse(await fs.readFile(await resolveInVault('.obsidian/community-plugins.json'), 'utf8'))) ids.add(entry); }
+  try { for (const entry of JSON.parse(await fs.readFile(await resolveInVault('.shale/community-plugins.json'), 'utf8'))) ids.add(entry); }
   catch (e: any) { if (e.code !== 'ENOENT') throw e; }
   if (enabled) ids.add(id); else ids.delete(id);
-  const target = await resolveInVault('.obsidian/community-plugins.json');
+  const target = await resolveInVault('.shale/community-plugins.json');
   await fs.mkdir(path.dirname(target), { recursive: true });
   await writeTextFile(target, JSON.stringify([...ids], null, 2));
   await updateSettings((d) => {
@@ -118,12 +118,12 @@ async function updateEnabled(id: string, enabled: boolean): Promise<void> {
 
 export async function readPluginData(id: string): Promise<unknown> {
   assertSafeId(id);
-  try { return JSON.parse(await fs.readFile(await resolveInVault(`.obsidian/plugins/${id}/data.json`), 'utf8')); }
+  try { return JSON.parse(await fs.readFile(await resolveInVault(`.shale/plugins/${id}/data.json`), 'utf8')); }
   catch (e: any) { if (e.code === 'ENOENT') return null; throw e; }
 }
 export async function writePluginData(id: string, data: unknown): Promise<void> {
   assertSafeId(id);
-  const target = await resolveInVault(`.obsidian/plugins/${id}/data.json`);
+  const target = await resolveInVault(`.shale/plugins/${id}/data.json`);
   await writeTextFile(target, JSON.stringify(data, null, 2));
 }
 

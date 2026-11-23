@@ -1,5 +1,5 @@
 // @ts-nocheck -- adapted upstream rule implementation; native boundaries are type checked.
-import {parseYamlSource} from '@webobsidian/markdown-core';
+import {parseYamlSource} from '@shale/markdown-core';
 import {getTextInLanguage} from '../lang/helpers';
 import {escapeDollarSigns, yamlRegex} from './regex';
 import {isNumeric} from './strings';
@@ -7,12 +7,12 @@ import {parse, Document, stringify, CST, YAMLMap} from 'yaml';
 import {YamlNode} from '../typings/yaml';
 import {FlowCollection} from 'yaml/dist/parse/cst';
 
-export const OBSIDIAN_TAG_KEY_SINGULAR = 'tag';
-export const OBSIDIAN_TAG_KEY_PLURAL = 'tags';
-export const OBSIDIAN_TAG_KEYS = [OBSIDIAN_TAG_KEY_SINGULAR, OBSIDIAN_TAG_KEY_PLURAL];
-export const OBSIDIAN_ALIAS_KEY_SINGULAR = 'alias';
-export const OBSIDIAN_ALIAS_KEY_PLURAL = 'aliases';
-export const OBSIDIAN_ALIASES_KEYS = [OBSIDIAN_ALIAS_KEY_SINGULAR, OBSIDIAN_ALIAS_KEY_PLURAL];
+export const SHALE_TAG_KEY_SINGULAR = 'tag';
+export const SHALE_TAG_KEY_PLURAL = 'tags';
+export const SHALE_TAG_KEYS = [SHALE_TAG_KEY_SINGULAR, SHALE_TAG_KEY_PLURAL];
+export const SHALE_ALIAS_KEY_SINGULAR = 'alias';
+export const SHALE_ALIAS_KEY_PLURAL = 'aliases';
+export const SHALE_ALIASES_KEYS = [SHALE_ALIAS_KEY_SINGULAR, SHALE_ALIAS_KEY_PLURAL];
 export const DEFAULT_LINTER_ALIASES_HELPER_KEY = 'linter-yaml-title-alias';
 export const DISABLED_RULES_KEY = 'disabled rules';
 
@@ -177,7 +177,7 @@ export type QuoteCharacter = '\'' | '"';
  * @param {string} defaultEscapeCharacter The character escape to use around the value if a specific escape character is not needed.
  * @param {boolean} removeEscapeCharactersIfPossibleWhenGoingToMultiLine Whether or not to remove no longer needed escape values when converting to a multi-line format.
  * @param {boolean} escapeNumericValues Whether or not to escape any numeric values found in the array.
- * @return {string} The formatted array in the specified YAML/obsidian YAML format.
+ * @return {string} The formatted array in the specified YAML/shale YAML format.
  */
 export function formatYamlArrayValue(value: string | string[], format: NormalArrayFormats | SpecialArrayFormats | TagSpecificArrayFormats, defaultEscapeCharacter: QuoteCharacter, removeEscapeCharactersIfPossibleWhenGoingToMultiLine: boolean, escapeNumericValues: boolean = false): string {
   if (typeof value === 'string') {
@@ -342,7 +342,7 @@ export function splitValueIfSingleOrMultilineArray(value: string): string | stri
 /**
  * Converts the tag string to the proper split up values based on whether or not it is already an array and if it has delimiters.
  * @param {string | string[]} value The value that is already good to go or needs to be split on a comma or spaces.
- * @return {string} The converted tag key value that should account for its obsidian formats.
+ * @return {string} The converted tag key value that should account for its shale formats.
  */
 export function convertTagValueToStringOrStringArray(value: string | string[]): string[] {
   if (value == null) {
@@ -367,7 +367,7 @@ export function convertTagValueToStringOrStringArray(value: string | string[]): 
 }
 
 /**
- * Converts the alias over to the appropriate array items for formatting taking into account obsidian formats.
+ * Converts the alias over to the appropriate array items for formatting taking into account shale formats.
  * @param {string | string[]} value The value of the aliases key that may need to be split into the appropriate parts.
  * @return {string} The alias value converted to the appropriate array items for formatting.
  */

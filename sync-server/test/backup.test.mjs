@@ -10,7 +10,7 @@ import { parseBackupOptions, runBackup } from '../backup.mjs';
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8', env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }).trim();
 const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 1, 2, 3]);
 const attributes = '*.png filter=lfs diff=lfs merge=lfs -text\n';
-const ignore = 'Thumbs.db\n.obsidian/*\n!.obsidian/webobsidian/\n';
+const ignore = 'Thumbs.db\n.shale/plugins/*\n!.shale/\n';
 
 /** Apply {path: bytes|null} to the hub through the real blob/commit protocol. */
 async function apply(hub, files) {
@@ -52,12 +52,13 @@ function clientHistory(directory, remote, files) {
 test('continues client history byte-for-byte, then commits and pushes later revisions with LFS', async t => {
   const { data, hub, remote, options } = await setup(t);
   const notes = { '.gitattributes': Buffer.from(attributes), '.gitignore': Buffer.from(ignore),
-    '笔记/化学 动力学.md': Buffer.from('# 动力学\n'), 'img/p.png': png, '.obsidian/webobsidian/math.jsonc': Buffer.from('{}\n'),
+    '笔记/化学 动力学.md': Buffer.from('# 动力学\n'), 'img/p.png': png, '.shale/math.jsonc': Buffer.from('{}\n'),
     // Windows clients commit CRLF text as LF (core.autocrlf=true); the server stores raw CRLF bytes.
     'img/c.svg': Buffer.from('<svg>\r\n</svg>\r\n') };
   const head = clientHistory(data.directory, remote, notes);
   await apply(hub, { ...notes, 'Thumbs.db': Buffer.from('device'),
-    '.obsidian/webobsidian/sync.jsonc': Buffer.from('{"token":"fixture-secret-token-should-never-be-committed"}') });
+    '.shale/sync.jsonc': Buffer.from('{"token":"fixture-secret-token-should-never-be-committed"}'),
+    '.obsidian/webobsidian/sync.jsonc': Buffer.from('{"token":"legacy-secret"}') });
 
   // Identical content to the git-lfs produced tree: no new commit, nothing pushed.
   const first = await runBackup({ dataRoot: hub.root, options });
@@ -76,10 +77,10 @@ test('continues client history byte-for-byte, then commits and pushes later revi
   assert.equal(git(remote, 'log', '-1', '--format=%an <%ae>', 'main'), 'Fixture Backup <backup@localhost>');
 
   const clone = path.join(data.directory, 'restore');
-  git(data.directory, '-c', 'core.autocrlf=false', 'clone', '-q', '-b', 'main', pathToFileURL(remote).href, clone);
+  git(data.directory, '-c', 'core.autocrlf=false', '-c', 'filter.lfs.process=git-lfs filter-process', '-c', 'filter.lfs.required=true', 'clone', '-q', '-b', 'main', pathToFileURL(remote).href, clone);
   assert.deepEqual(await readFile(path.join(clone, 'img/q.png')), larger);
   assert.equal(await readFile(path.join(clone, '笔记/化学 动力学.md'), 'utf8'), '# 动力学\n\n速率方程\n');
-  for (const excluded of ['Thumbs.db', '.obsidian/webobsidian/sync.jsonc', 'img/p.png']) await assert.rejects(access(path.join(clone, excluded)));
+  for (const excluded of ['Thumbs.db', '.shale/sync.jsonc', 'img/p.png']) await assert.rejects(access(path.join(clone, excluded)));
   assert.equal(git(clone, 'log', '--all', '-S', 'fixture-secret-token', '--format=%H'), '');
 
   assert.equal((await runBackup({ dataRoot: hub.root, options })).status, 'unchanged');

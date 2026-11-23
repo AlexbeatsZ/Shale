@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { test, expect } from './test';
 
 const source = '# Title ^heading-original\n\n[[^heading-original|Alias]]\n\n```md\n[[^heading-original]]\n```\n\n';
-const mime = 'application/x-webobsidian-content+json';
+const mime = 'application/x-shale-content+json';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/__render-test');

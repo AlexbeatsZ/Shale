@@ -79,7 +79,7 @@ export class UserscriptStore {
       return;
     } catch (e: any) { if (e.code !== 'ENOENT') throw e; }
     let legacy: any;
-    try { legacy = JSON.parse(await fs.readFile(path.join(this.vault, '.obsidian/plugins/webviewer-userscripts/data.json'), 'utf8')); }
+    try { legacy = JSON.parse(await fs.readFile(path.join(this.vault, '.shale/plugins/webviewer-userscripts/data.json'), 'utf8')); }
     catch (e: any) { if (e.code !== 'ENOENT') throw new Error('Legacy userscript migration failed: ' + e.message); }
     if (legacy) {
       if (legacy.schemaVersion !== 1 || !Array.isArray(legacy.scripts) || !legacy.values || Array.isArray(legacy.values)) throw new Error('Unsupported legacy userscript data; original was preserved');
@@ -122,7 +122,7 @@ export class UserscriptStore {
     this.sourceDirectory ??= (async () => {
       const root = path.join(os.tmpdir(), '.agents');
       await fs.mkdir(root, { recursive: true });
-      return fs.mkdtemp(path.join(root, 'webobsidian-userscripts-'));
+      return fs.mkdtemp(path.join(root, 'shale-userscripts-'));
     })().catch(error => { this.sourceDirectory = undefined; throw error; });
     // A text suffix opens an editor instead of an OS JavaScript execution host.
     // This is a disposable view, never an input to installed state or execution.

@@ -10,7 +10,7 @@ import { type CMBound, Context, getContextPlugin } from "../editor_context/conte
 import { autoEnlargeBrackets } from "./auto_enlarge_brackets";
 import type { snippetDebugLevel } from "../settings/settings";
 import { IncludedEnvironmentResult, Snippet, type SnippetType } from "../snippets/snippets";
-import { showSnippetInfo } from "../editor_extensions/obsidian_utils";
+import { showSnippetInfo } from "../editor_extensions/shale_utils";
 import type { ResultInsert } from "../snippets/luasnip_api/node";
 import { syntaxModel } from "../../../syntaxModel";
 

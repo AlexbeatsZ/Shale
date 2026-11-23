@@ -12,7 +12,7 @@ async function mount(page: Page, source: string) {
   await page.evaluate(async source => {
     const { mountMarkdownFragment } = await import('/src/components/MarkdownFragment.tsx');
     const { installJavascript } = await import('/src/lib/javascript/runtime.ts');
-    const { sharedApp } = await import('/src/lib/obsidian/runtime.ts');
+    const { sharedApp } = await import('/src/lib/shale/runtime.ts');
     const stop = installJavascript(sharedApp);
     const host = document.createElement('section');
     host.id = 'javascript-fixture'; host.className = 'theme-light'; host.style.width = '700px';
@@ -77,7 +77,7 @@ test('the corrected supplied canvas script draws and its quantum-number slider w
 
 test('scripts only access their frame DOM and have no application or native capabilities', async ({ page }) => {
   await mount(page, fence(`
-const result = { app: typeof app, native: typeof webobsidianDesktop, require: typeof require, android: typeof webobsidianAndroid };
+const result = { app: typeof app, native: typeof shaleDesktop, require: typeof require, android: typeof shaleAndroid };
 for (const key of ['parent', 'top']) {
   try { window[key].document.getElementById('root').innerHTML = 'destroyed'; result[key] = 'escaped'; }
   catch (error) { result[key] = error.name; }

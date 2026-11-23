@@ -1,7 +1,7 @@
 import { StateField, type EditorState, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view';
 import { caretTouches, footnotes, footnoteFragment, footnoteReferenceFragment, equationContext, extractMetadata,
-  type SourceSpan, type MarkdownModel, type Footnote } from '@webobsidian/markdown-core';
+  type SourceSpan, type MarkdownModel, type Footnote } from '@shale/markdown-core';
 import { syntaxModel, sourceOf } from './syntaxModel';
 import { livePreviewState, livePreviewReadonly } from './renderState';
 import { compositionSelection } from './inlineHtml';
@@ -13,7 +13,7 @@ import { decorationInputsChanged } from './decorationDependencies';
 import { blockEffectOwns } from './blocks/model';
 import { getIcon } from './icons';
 import { mathDefinitionContext } from './mathjax';
-import { RenderLifetime } from './obsidian/renderLifetime';
+import { RenderLifetime } from './shale/renderLifetime';
 
 class ReferenceLink extends WidgetType {
   constructor(readonly label: string, readonly target: string, readonly unresolved = false, readonly footnote: boolean | 'definition' = false, readonly highlighted = false) { super(); }
@@ -77,7 +77,7 @@ class FootnoteBody extends WidgetType {
   ignoreEvent() { return true; }
 }
 type SemanticItem = { span: SourceSpan; decoration: Decoration; source?: SourceSpan[] };
-/** Renderable syntax shown as source (caret on it) uses the faint ^id colour, like Obsidian. */
+/** Renderable syntax shown as source (caret on it) uses the faint ^id colour, like Shale. */
 const sourceSyntax = (kind: string) => Decoration.mark({ class: 'cm-formatting cm-formatting-' + kind });
 /** Parts of `[label](target)` / `[label][ref]` / `<url>` that disappear once rendered. */
 function linkSyntax(text: string, link: SourceSpan & { label: string }): SourceSpan[] {

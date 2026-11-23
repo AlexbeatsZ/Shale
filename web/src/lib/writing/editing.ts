@@ -9,7 +9,7 @@ import {
   type TabstopsState,
   addTabstopsEffect,
 } from './latex/snippets/codemirror/tabstops_state_field';
-import type { SourceChange } from '@webobsidian/markdown-core';
+import type { SourceChange } from '@shale/markdown-core';
 import { snippetGroup } from './latex/snippets/codemirror/history';
 export const writingOperation = Annotation.define<'format' | 'paste'>();
 export { snippetGroup } from './latex/snippets/codemirror/history';

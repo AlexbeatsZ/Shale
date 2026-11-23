@@ -1,7 +1,7 @@
-import type { App } from './obsidian/runtime';
+import type { App } from './shale/runtime';
 import type { CommandContext } from './commands';
 import { commandContext } from './commands';
-import { normalizePath, type TFile } from './obsidian/vault';
+import { normalizePath, type TFile } from './shale/vault';
 import { insertWritingTemplate } from './writing/editing';
 
 export interface TemplateOutput { text: string; cursors: { order: number; from: number; to: number }[] }
@@ -157,7 +157,7 @@ export async function renderTemplate(source: string, path: string, environment: 
   return output;
 }
 
-/** One Module for native palette and Obsidian template insertion. */
+/** One Module for native palette and Shale template insertion. */
 export class Templates {
   private running = new Set<AbortController>();
   constructor(private app: App) {}

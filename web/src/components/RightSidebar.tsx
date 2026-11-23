@@ -7,7 +7,7 @@ import { Text } from '@codemirror/state';
 import { documents } from '../lib/documents';
 import { useStore } from '../lib/store';
 import { useActivePage } from '../lib/useActivePage';
-import { extractMetadata } from '@webobsidian/markdown-core';
+import { extractMetadata } from '@shale/markdown-core';
 import TagsPanel from './TagsPanel';
 import Icon from './Icon';
 import { useIndexVersion } from '../lib/indexEvents';

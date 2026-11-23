@@ -1,13 +1,13 @@
 import { useDialogEscape } from '../lib/useDialogEscape';
 import { useEffect, useRef, useState } from 'react';
-import { SourceDocument } from '@webobsidian/markdown-core';
+import { SourceDocument } from '@shale/markdown-core';
 import { documents } from '../lib/documents';
 import { useStore } from '../lib/store';
 import { tagsApi, assertTagVaultCurrent } from '../lib/tags/api';
 import { closeTagDialog, useTagDialogRequest, useNativeTagHover, type TagOperationRequest, type TagDialogRequest } from '../lib/tags/actions';
-import { inTagScope, validateCapturedTagChanges, validateTagOperation } from '@webobsidian/markdown-core';
-import type { TagFilePreview, TagOperation, TagPreview } from '@webobsidian/markdown-core';
-import { tagKey } from '@webobsidian/search-core';
+import { inTagScope, validateCapturedTagChanges, validateTagOperation } from '@shale/markdown-core';
+import type { TagFilePreview, TagOperation, TagPreview } from '@shale/markdown-core';
+import { tagKey } from '@shale/search-core';
 import './nativeTags.css';
 import TagPageHover from './TagPageHover';
 

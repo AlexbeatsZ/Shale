@@ -294,7 +294,7 @@ function handleLeftRight({cursor, doc, maps}: MacroHandlerOptions): HandleConcea
 
 /**
  * helper for getting the first unicode grapheme cluster,
- * works on ios 14.5+ and obsidian 1.1.0 still supports ios 12+ thus
+ * works on ios 14.5+ and shale 1.1.0 still supports ios 12+ thus
  * using `String.codePointAt` as an alternative if the built in `Intl.Segmenter` isn't available.
  * @param text the text to get the first unicode grapheme cluster from.
  */

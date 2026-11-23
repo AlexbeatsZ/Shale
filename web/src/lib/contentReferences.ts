@@ -1,4 +1,4 @@
-import { contentTargets, isGlobalContentTarget, parseLinkTarget } from '@webobsidian/markdown-core';
+import { contentTargets, isGlobalContentTarget, parseLinkTarget } from '@shale/markdown-core';
 import { api } from './api';
 import { documents } from './documents';
 

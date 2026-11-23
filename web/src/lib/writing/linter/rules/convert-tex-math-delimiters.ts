@@ -2,7 +2,7 @@
 import {Options, RuleType} from '../rules';
 import RuleBuilder, {ExampleBuilder, OptionBuilderBase} from './rule-builder';
 import dedent from 'ts-dedent';
-import {analyzeMarkdown, mathRegions} from '@webobsidian/markdown-core';
+import {analyzeMarkdown, mathRegions} from '@shale/markdown-core';
 
 class ConvertTexMathDelimitersOptions implements Options {}
 

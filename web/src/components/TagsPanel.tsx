@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEven
 import { useIndexVersion } from '../lib/indexEvents';
 import { tagsApi } from '../lib/tags/api';
 import { openNativeTagMenu, searchNativeTag, openNativeTagPage, renameNativeTag, dropTagDestination, mergeNativeTags, deleteNativeTag } from '../lib/tags/actions';
-import { tagKey } from '@webobsidian/search-core';
-import type { TagSummary, TagPreferences } from '@webobsidian/markdown-core';
+import { tagKey } from '@shale/search-core';
+import type { TagSummary, TagPreferences } from '@shale/markdown-core';
 import TagPageHover from './TagPageHover';
 import Icon from './Icon';
 import SelectionBar from './SelectionBar';
@@ -128,7 +128,7 @@ export default function TagsPanel() {
   }
   function onDrop(event: DragEvent, target: string) {
     event.preventDefault(); event.stopPropagation();
-    const source = dragged ?? event.dataTransfer.getData('application/x-webobsidian-tag');
+    const source = dragged ?? event.dataTransfer.getData('application/x-shale-tag');
     setDragged(null); setDrop(null);
     if (!source) return;
     const destination = dropTagDestination(source, target);
@@ -141,7 +141,7 @@ export default function TagsPanel() {
       return <li key={tagKey(tag)}>
         <div className={'native-tags-row' + (drop === tagKey(tag) ? ' is-drop-target' : '') + (isSelected ? ' is-selected' : '')}
           draggable={preferences.wranglerEnabled && renaming !== tagKey(tag)}
-          onDragStart={(e) => { setHover(null); setDragged(tag); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', '#' + tag); e.dataTransfer.setData('application/x-webobsidian-tag', tag); }}
+          onDragStart={(e) => { setHover(null); setDragged(tag); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', '#' + tag); e.dataTransfer.setData('application/x-shale-tag', tag); }}
           onDragEnd={() => { setDragged(null); setDrop(null); }}
           onDragOver={(e) => { if (preferences.wranglerEnabled && dragged && dropTagDestination(dragged, tag)) { e.preventDefault(); e.stopPropagation(); setDrop(tagKey(tag)); e.dataTransfer.dropEffect = 'move'; } }}
           onDragLeave={() => setDrop(null)} onDrop={(e) => { if (preferences.wranglerEnabled) onDrop(e, tag); }}

@@ -74,7 +74,7 @@ function setupRuntime(script: ScriptRecord, initial: Record<string, unknown>, br
     },
     GM_log: (...args: any[]) => console.log('[Userscript ' + script.metadata.name + ']', ...args),
     GM_info: { script: script.metadata, scriptMetaStr: script.source.match(/\/\/\s*==UserScript==[\s\S]*?\/\/\s*==\/UserScript==/)?.[0] ?? '',
-      scriptHandler: 'WebObsidian', version: '1', scriptWillUpdate: script.autoUpdate, injectInto: bridge.world },
+      scriptHandler: 'Shale', version: '1', scriptWillUpdate: script.autoUpdate, injectInto: bridge.world },
     unsafeWindow: window,
   };
   const xhr = (details: any, promiseMode: boolean) => {

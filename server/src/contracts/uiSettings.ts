@@ -9,7 +9,7 @@ export const documentAppearance = {
 export const typingPointerGuardDelay = { default: 1000, min: 100, max: 3000 } as const;
 
 export const UiSettingsSchema = z.object({
-  theme: z.enum(['obsidian-dark', 'obsidian-light']).default('obsidian-light'),
+  theme: z.enum(['shale-dark', 'shale-light']).default('shale-light'),
   defaultView: z.enum(['live', 'source', 'reading']).default('live'),
   debugRecording: z.boolean().default(false),
   debugSource: z.boolean().default(true),

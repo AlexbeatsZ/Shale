@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { EditorState, StateEffect } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import { changesBetween } from '@webobsidian/markdown-core';
+import { changesBetween } from '@shale/markdown-core';
 import { DocumentSession } from '../../../packages/markdown-core/src/session';
 import { captureAttachmentInsertion, insertUploadedImages } from './attachmentInsertion';
 import { renderContext } from './renderContext';

@@ -35,7 +35,7 @@ export async function setPropertyType(key: string, type: string) {
 export function initializePropertyTypes(report: (error: unknown) => void): () => void {
   const refresh = () => { void reload().catch(report); };
   const changed = (event: Event) => {
-    if ((event as CustomEvent<{ path: string }>).detail?.path === '.obsidian/types.json') refresh();
+    if ((event as CustomEvent<{ path: string }>).detail?.path === '.shale/types.json') refresh();
   };
   const reset = () => { generation++; sequence++; loading = undefined; publish(undefined); };
   window.addEventListener('vault-configuration-changed', changed);

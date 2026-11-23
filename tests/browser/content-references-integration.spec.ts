@@ -23,7 +23,7 @@ const test = base.extend<{ backend: { vault: string; url: string } }>({
     const child = spawn(process.execPath, ['--import', 'tsx', 'server/src/index.ts'], {
       cwd: process.cwd(), windowsHide: true,
       env: { ...process.env, PORT: '0', HOST: '127.0.0.1', DATA_DIR: data, VAULT_PATH: vault,
-        ALLOWED_ROOTS: directory, WEBOBSIDIAN_INITIAL_VAULT: '', NODE_ENV: 'development' },
+        ALLOWED_ROOTS: directory, SHALE_INITIAL_VAULT: '', NODE_ENV: 'development' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let logs = '';

@@ -92,7 +92,7 @@ function defaults(): Settings {
 /**
  * Guarantee the folder browser can reach the configured vault. The default
  * allowedRoots are derived from the sample vault, so pointing the vault at a
- * path outside them (e.g. ~/ObsidianVault) made Browse… return 403 with
+ * path outside them (e.g. ~/ShaleVault) made Browse… return 403 with
  * "Path outside allowed roots". Add the vault's parent directory as a root
  * whenever it isn't already covered. Returns true if it mutated the draft.
  */

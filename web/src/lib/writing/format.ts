@@ -15,7 +15,7 @@ import {
   replacementCallback,
   REPLACEMENT_SYNTAX,
   type DocumentSession,
-} from '@webobsidian/markdown-core';
+} from '@shale/markdown-core';
 import { documents } from '../documents';
 import { getEditorForPath } from '../activeEditor';
 import { writingOperation, snippetChangeEffects } from './editing';

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const host = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn(), getUiState: vi.fn(), putUiState: vi.fn(), mutations: 0 }));
 vi.mock('./api', () => ({ api: { read: host.read, write: host.write, getUiState: host.getUiState, putUiState: host.putUiState }, pendingMutations: () => host.mutations }));
-vi.mock('./tags/folderSession', async () => ({ WorkspaceDocumentSession: (await import('@webobsidian/markdown-core')).DocumentSession }));
+vi.mock('./tags/folderSession', async () => ({ WorkspaceDocumentSession: (await import('@shale/markdown-core')).DocumentSession }));
 vi.mock('./writing/format', () => ({ manualSave: vi.fn() }));
 vi.mock('./fragmentNavigation', () => ({ navigateTo: vi.fn(), captureLocation: vi.fn(), cancelNavigation: vi.fn() }));
 vi.mock('./activeEditor', () => ({ getActiveEditor: () => null }));

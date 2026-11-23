@@ -20,7 +20,7 @@ export async function pdfAssetFiles() {
 
 export function pdfAssetsPlugin(): Plugin {
   return {
-    name: 'webobsidian-pdf-assets',
+    name: 'shale-pdf-assets',
     async configureServer(server) {
       const files = await pdfAssetFiles();
       server.middlewares.use(async (request, response, next) => {

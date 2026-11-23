@@ -7,11 +7,11 @@ import { readTextFile, writeTextFile } from './textFile.js';
 import type { VaultConfigurationSource } from '../contracts.js';
 export type { VaultConfigurationSource } from '../contracts.js';
 
-const DIRECTORY = '.obsidian/webobsidian';
+const DIRECTORY = '.shale';
 /** Configuration events bypass the note catalog and file tree. */
 export function isVaultConfigurationPath(relative: string): boolean {
-  return relative === DIRECTORY || relative.startsWith(DIRECTORY + '/') || relative === '.obsidian/appearance.json' || relative === '.obsidian/types.json'
-    || relative === '.obsidian/snippets' || /^\.obsidian\/snippets\/[^/]+\.css$/i.test(relative);
+  return relative === DIRECTORY || relative.startsWith(DIRECTORY + '/') || relative === '.shale/appearance.json' || relative === '.shale/types.json'
+    || relative === '.shale/snippets' || /^\.shale\/snippets\/[^/]+\.css$/i.test(relative);
 }
 const MAX_BYTES = 1024 * 1024;
 const failure = (message: string, status = 400) => Object.assign(new Error(message), { status });
@@ -54,8 +54,8 @@ export async function readVaultConfiguration(file: string, vault?: string, exten
   return readConfiguration(file, target);
 }
 /** Read-only legacy source: same size/symlink/revision/Vault checks, no writer. */
-export async function readObsidianConfiguration(file: string): Promise<VaultConfigurationSource> {
-  return readConfiguration(file, await location(file, undefined, ['.json'], '.obsidian'));
+export async function readShaleConfiguration(file: string): Promise<VaultConfigurationSource> {
+  return readConfiguration(file, await location(file, undefined, ['.json'], '.shale'));
 }
 async function readConfiguration(file: string, target: Awaited<ReturnType<typeof location>>): Promise<VaultConfigurationSource> {
   try {
@@ -74,14 +74,14 @@ export async function writeVaultConfiguration(input: VaultConfigurationSource, e
   const target = await location(input.path, input.vault, extensions);
   return writeConfiguration(input, target);
 }
-/** Only these two interoperable Obsidian files have native writers. */
-export async function writeObsidianPropertyTypes(input: VaultConfigurationSource): Promise<VaultConfigurationSource> {
+/** Only these two interoperable Shale files have native writers. */
+export async function writeShalePropertyTypes(input: VaultConfigurationSource): Promise<VaultConfigurationSource> {
   if (input.path !== 'types.json') throw failure('Invalid property configuration path');
-  return writeConfiguration(input, await location(input.path, input.vault, ['.json'], '.obsidian'));
+  return writeConfiguration(input, await location(input.path, input.vault, ['.json'], '.shale'));
 }
-export async function writeObsidianAppearance(input: VaultConfigurationSource): Promise<VaultConfigurationSource> {
+export async function writeShaleAppearance(input: VaultConfigurationSource): Promise<VaultConfigurationSource> {
   if (input.path !== 'appearance.json') throw failure('Invalid appearance configuration path');
-  return writeConfiguration(input, await location(input.path, input.vault, ['.json'], '.obsidian'));
+  return writeConfiguration(input, await location(input.path, input.vault, ['.json'], '.shale'));
 }
 async function writeConfiguration(input: VaultConfigurationSource, target: Awaited<ReturnType<typeof location>>): Promise<VaultConfigurationSource> {
   if (Buffer.byteLength(input.content, 'utf8') > MAX_BYTES) throw failure('Configuration exceeds 1 MiB', 413);

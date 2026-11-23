@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import { z } from 'zod';
 import { modify, applyEdits } from 'jsonc-parser';
-import { normalizeMathConfiguration, defaultMathConfiguration, type MathConfiguration } from '@webobsidian/markdown-core';
+import { normalizeMathConfiguration, defaultMathConfiguration, type MathConfiguration } from '@shale/markdown-core';
 import { readVaultConfiguration, writeVaultConfiguration, parseConfiguration, type VaultConfigurationSource } from './vaultConfiguration.js';
 import { resolveInVault } from './vaultFile.js';
 
@@ -11,7 +11,7 @@ export const MathConfigurationSchema = z.object({
   preamble: z.string().max(262144), migration: z.string().max(1024),
 }).strict();
 const readLegacy = async (file: string) => {
-  try { return JSON.parse(await fs.readFile(await resolveInVault('.obsidian/' + file), 'utf8')); }
+  try { return JSON.parse(await fs.readFile(await resolveInVault('.shale/' + file), 'utf8')); }
   catch (cause: any) { if (cause.code === 'ENOENT') return undefined; throw cause; }
 };
 /** Data-only defaults. Loading never writes the Vault or changes old plugin files. */

@@ -5,11 +5,11 @@ import { expect, test, vi } from 'vitest';
 import { withSyncLock } from './syncStorage.js';
 
 test('the embedded runtime ignores legacy PID locks and still excludes concurrent work', async () => {
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'webobsidian-sync-lock-'));
+  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'shale-sync-lock-'));
   const legacyLock = path.join(directory, 'client.lock');
   let release!: () => void;
   const hold = new Promise<void>(resolve => { release = resolve; });
-  vi.stubEnv('WEBOBSIDIAN_EMBEDDED', '1');
+  vi.stubEnv('SHALE_EMBEDDED', '1');
   try {
     await fs.writeFile(legacyLock, String(process.pid));
     const active = withSyncLock(directory, () => hold);

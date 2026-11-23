@@ -1,6 +1,6 @@
 /** Passive by default. Users opt into each rule/action by editing their Vault file. */
 export const MENU_CONFIG_EXAMPLE = `// 当前 Vault 的右键菜单配置。支持注释和尾逗号。
-// 路径：.obsidian/webobsidian/menus/menu.jsonc
+// 路径：.shale/menus/menu.jsonc
 {
   "version": 1,
   // 在当前文件规则之前加载；imports 是 includes 的别名。

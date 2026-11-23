@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CatalogEntry } from '@webobsidian/search-core';
+import type { CatalogEntry } from '@shale/search-core';
 import { fileCandidates } from './search';
 
 const entry = (path: string, title = path.split('/').at(-1)!.replace(/\.md$/, ''), aliases: string[] = [], tags: string[] = []): CatalogEntry =>

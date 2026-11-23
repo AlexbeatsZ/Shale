@@ -24,7 +24,7 @@ export default function AutomationSettings() {
   return <div>
     <h2>用户指令与模板</h2>
     <SettingGroup>
-      <ConfigurationFile path=".obsidian/webobsidian/automation.jsonc" desc="在外部编辑指令代码、模板指令和新建文件规则。保存后自动应用。">
+      <ConfigurationFile path=".shale/automation.jsonc" desc="在外部编辑指令代码、模板指令和新建文件规则。保存后自动应用。">
         <button disabled={busy} onClick={() => run(async () => { await sharedApp.automation.reload(); return readAutomation(); })}>重新加载</button>
       </ConfigurationFile>
       {snapshot && !snapshot.source.exists && <SettingRow name="创建配置" desc="保存当前配置到仓库；原有配置文件保留。">

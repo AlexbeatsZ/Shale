@@ -2,8 +2,8 @@ import { useSyncExternalStore } from 'react';
 import { useStore, type ContextMenuItem } from '../store';
 import { tagsApi, assertTagVaultCurrent } from './api';
 import { searchEntries } from '../search';
-import { withTagFilter, tagKey, tagName, tagPageAliases } from '@webobsidian/search-core';
-import type { TagOperation, TagScope } from '@webobsidian/markdown-core';
+import { withTagFilter, tagKey, tagName, tagPageAliases } from '@shale/search-core';
+import type { TagOperation, TagScope } from '@shale/markdown-core';
 
 export interface TagOperationRequest { scope: TagScope; operation?: TagOperation; title?: string }
 export type TagDialogRequest = { kind: 'operation'; value: TagOperationRequest } |

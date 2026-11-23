@@ -137,7 +137,7 @@ export async function listTree(): Promise<TreeNode> {
     // steady state reads from statCache → no syscalls. mtime/ctime power sort-by-time.
     const nodes = await Promise.all(
       entries
-        .filter((e) => !(ignoredVaultNames.has(e.name) || e.name.startsWith('.'))) // hide dotfiles like Obsidian
+        .filter((e) => !(ignoredVaultNames.has(e.name) || e.name.startsWith('.'))) // hide dotfiles like Shale
         .map(async (e): Promise<TreeNode | null> => {
           const abs = path.join(absDir, e.name);
           const rel = toRel(root, abs);

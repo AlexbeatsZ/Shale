@@ -163,7 +163,7 @@ therefore share one layout implementation across ordinary quotes, Callouts,
 nested quotes and lists. Callout frame paint remains independent of source origin.
 
 `text-indent` is inherited. A line's negative indent must stop at its direct
-element children: `.cm-s-obsidian .cm-line > * { text-indent: 0; }`. Native text
+element children: `.cm-s-shale .cm-line > * { text-indent: 0; }`. Native text
 still participates in the line's first-line indent, while inline marks, widgets
 and their nested presentation lay out their own contents without applying it
 again. This boundary also covers a newly added inline renderer without requiring
@@ -218,7 +218,7 @@ source entry also retains the prefix path when an enclosing quote remains styled
 opening a whole owning quote as source retains normal raw-source behavior.
 A Callout title uses shared quote-prefix measurement while excluding list-specific
 marker handling, even when nested in a parent ListItem. Full source mode retains literal text.
-See reference-editor-layout.md for the local Obsidian package evidence and limits.
+See reference-editor-layout.md for the local Shale package evidence and limits.
 
 `calloutFoldState` keeps its identity for unrelated transactions. Fold decorations
 depend on document/source/mode/block-effect changes and actual fold toggles,

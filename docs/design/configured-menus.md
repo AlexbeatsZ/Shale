@@ -20,7 +20,7 @@ menuCapture,main}.ts`。有价值的部分是标题空白/大小写归一化、�
 
 ## 文件与加载生命周期
 
-- 当前 Vault：`.obsidian/webobsidian/menus/menu.jsonc`。缺失时使用默认菜单，启动不
+- 当前 Vault：`.shale/menus/menu.jsonc`。缺失时使用默认菜单，启动不
   创建文件。设置页可显式创建空配置；规则与带注释范例在外部编辑器中维护。
 - 文件顶层为 `version: 1`、`includes` / `imports`、`rules` 和 `items`。两种导入字段
   都是相对文件路径数组；先 includes、后 imports，深度优先处理依赖，再处理当前文件。
@@ -107,10 +107,10 @@ icon/section，前一条改名不会改变后一条弱匹配的对象。输入�
 - React `ContextMenu.tsx` 在完整 items（含插件贡献）上同步调用 `applyConfiguredMenu`。
   配置更新后对原模型重新转换，避免反复改名/重复新增；禁用项不执行，勾选态可见。
   切换/释放配置会话时关闭已有 React 菜单；旧会话保留的回调也拒绝执行。
-- Obsidian `Menu` 通过 `toContextMenuItems()` 使用同一转换；`loadContextMenuItems()`
+- Shale `Menu` 通过 `toContextMenuItems()` 使用同一转换；`loadContextMenuItems()`
   是反向桥。`MenuItem.setId()`、`setSection()`、`setWarning()` 保留元数据。
   `extendFileMenu` / `extendEditorMenu` 只做贡献合并与上下文标记，规则仅在最终渲染时运行。
-- Obsidian Menu 仍用原 Menu renderer；子菜单共享根关闭生命周期，Esc、点击外部、执行
+- Shale Menu 仍用原 Menu renderer；子菜单共享根关闭生命周期，Esc、点击外部、执行
   子项、重载均释放 DOM 监听器。重载时关闭已经打开的 imperative menu，下次打开用新规则。
 - 最终清理删除隐藏项/空子菜单，合并连续分隔线并去掉首尾分隔线；不丢失禁用项回调。
 - 新增 command 经注入 host 委托 `sharedApp.commands`；不创建命令注册表。未知命令或
@@ -121,7 +121,7 @@ icon/section，前一条改名不会改变后一条弱匹配的对象。输入�
 `.local/feature-integration/menus/integration.md`。通用 `new Menu()` 默认为 generic；
 没有显式上下文时不猜测当前文件、选区、链接或修饰键。未接线调用者只能应用 generic/无条件规则。
 最终共享集成已为多数 file/tab/editor/link 等入口附加上下文和稳定 ID；
-编辑器暂未发送插件 `editor-menu` 事件，因为调用处尚未获得兼容 Obsidian Editor/View
+编辑器暂未发送插件 `editor-menu` 事件，因为调用处尚未获得兼容 Shale Editor/View
 bridge。共享规则已经适用于其原生菜单；插件 editor-menu 贡献的完整接线仍属兼容边界。
 
 原生 tags、attachment cleanup 和 plugin menus 应先提供带稳定 ID 的实际贡献，再走
@@ -151,7 +151,7 @@ Node bundle 的 `node --check` 通过。输出均在 Temp/.agents/meta-obsidian-
    Reload、页面刷新后确认生效。删除根配置应回到默认菜单，原 Plus 配置字节保持不变。
 2. 故意制造语法错误、未知字段、循环/缺失导入、重复 ID；核对文件/行/列和上一个有效
    菜单仍可用。修复后一次 Reload 立即恢复；无效配置不覆盖其他 Vault 的规则。
-3. 在 React 与 Obsidian Menu 分别检查隐藏、改名、图标、分组、同组排序、跨层移动、
+3. 在 React 与 Shale Menu 分别检查隐藏、改名、图标、分组、同组排序、跨层移动、
    空容器、嵌套子菜单、首尾/连续分隔线、checked、disabled、danger 和原始 callback。
 4. 检查 file/folder/multiple selection/tab/editor/link/tag/generic 条件、大小写扩展名、
    glob、Shift/Ctrl/Alt/Meta、组合条件，以及本地化后稳定 ID 仍匹配、弱匹配明确失配。

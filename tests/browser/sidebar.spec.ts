@@ -25,7 +25,7 @@ test.beforeEach(async ({ page }) => {
       { sharedApp }, { ItemView }, active] = await Promise.all([
       module('/node_modules/.vite/deps/react.js'), module('/node_modules/.vite/deps/react-dom_client.js'),
       module('/src/components/RightSidebar.tsx'), module('/src/components/Editor.tsx'), module('/src/lib/store.ts'),
-      module('/src/lib/documents.ts'), module('/src/lib/plugins.ts'), module('/src/lib/obsidian/workspace.ts'), module('/src/lib/activeEditor.ts'),
+      module('/src/lib/documents.ts'), module('/src/lib/plugins.ts'), module('/src/lib/shale/workspace.ts'), module('/src/lib/activeEditor.ts'),
     ]);
     const createRoot = ReactDOM.createRoot ?? ReactDOM.default.createRoot;
     document.getElementById('root')!.hidden = true;

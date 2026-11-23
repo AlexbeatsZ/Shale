@@ -16,7 +16,7 @@ it('cancels startup when its loading window already requested application quit',
 it('writes atomic private JSON and bounds live logs to the current file and one previous file', async () => {
   const parent = process.platform === 'win32' ? path.join(os.tmpdir(), '.agents') : '/tmp/.agents';
   await fs.mkdir(parent, { recursive: true });
-  const directory = await fs.mkdtemp(path.join(parent, 'webobsidian-host-files-'));
+  const directory = await fs.mkdtemp(path.join(parent, 'shale-host-files-'));
   try {
     const config = path.join(directory, 'config.json');
     await Promise.all([writeJson(config, { value: 1 }), writeJson(config, { value: 2 })]);

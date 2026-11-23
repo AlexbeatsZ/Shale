@@ -1,4 +1,4 @@
-import { analyzeMarkdown, mathRegions, type MarkdownModel } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, mathRegions, type MarkdownModel } from '@shale/markdown-core';
 
 interface Node {
   type: string;

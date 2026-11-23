@@ -57,9 +57,9 @@ export class McpLauncher {
     return {
       available: available.every(Boolean), tunnelId: connection.tunnelId, hasKey: !!connection.encryptedKey,
       connected: !!this.child && this.child.exitCode === null && !this.child.killed,
-      clientConfig: JSON.stringify({ mcpServers: { webobsidian: {
+      clientConfig: JSON.stringify({ mcpServers: { shale: {
         command: this.options.executable, args: [this.options.mcpEntry],
-        env: { ELECTRON_RUN_AS_NODE: '1', WEBOBSIDIAN_ENDPOINT_FILE: this.options.endpointFile },
+        env: { ELECTRON_RUN_AS_NODE: '1', SHALE_ENDPOINT_FILE: this.options.endpointFile },
       } } }, null, 2),
     };
   }

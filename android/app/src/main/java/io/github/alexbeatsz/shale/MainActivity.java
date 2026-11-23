@@ -1,4 +1,4 @@
-package io.github.alexbeatsz.webobsidian;
+package io.github.alexbeatsz.shale;
 
 import android.app.*;
 import android.content.*;
@@ -107,7 +107,7 @@ public final class MainActivity extends Activity {
                     openWorkspace(origin);
                 });
             } catch (Exception error) { handler.post(() -> showFailure(error.toString())); }
-        }, "WebObsidian-Ready");
+        }, "Shale-Ready");
         readiness.start();
     }
 
@@ -192,7 +192,7 @@ public final class MainActivity extends Activity {
         web = new WebView(this);
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
         WebSettings settings = web.getSettings();
-        settings.setUserAgentString(settings.getUserAgentString() + " WebObsidianAndroid/" + BuildConfig.VERSION_NAME);
+        settings.setUserAgentString(settings.getUserAgentString() + " ShaleAndroid/" + BuildConfig.VERSION_NAME);
         settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(false); settings.setAllowContentAccess(true);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -255,7 +255,7 @@ public final class MainActivity extends Activity {
 
     @Override protected void onPause() {
         if (web != null) {
-            web.evaluateJavascript("window.dispatchEvent(new Event('webobsidian-background'))", null);
+            web.evaluateJavascript("window.dispatchEvent(new Event('shale-background'))", null);
             web.onPause();
         }
         handler.removeCallbacks(checkRuntime);
@@ -266,7 +266,7 @@ public final class MainActivity extends Activity {
 
     private void handleBack() {
         if (web == null) { moveTaskToBack(true); return; }
-        web.evaluateJavascript("!window.dispatchEvent(new Event('webobsidian-back',{cancelable:true}))",
+        web.evaluateJavascript("!window.dispatchEvent(new Event('shale-back',{cancelable:true}))",
             result -> { if (!"true".equals(result)) moveTaskToBack(true); });
     }
 

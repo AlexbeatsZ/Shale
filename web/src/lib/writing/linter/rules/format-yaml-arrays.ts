@@ -9,8 +9,8 @@ import {convertAliasValueToStringOrStringArray,
   getYamlSectionValue,
   loadYAML,
   NormalArrayFormats,
-  OBSIDIAN_ALIASES_KEYS,
-  OBSIDIAN_TAG_KEYS,
+  SHALE_ALIASES_KEYS,
+  SHALE_TAG_KEYS,
   QuoteCharacter,
   setYamlSection,
   SpecialArrayFormats,
@@ -53,7 +53,7 @@ export default class RuleTemplate extends RuleBuilder<FormatYamlArrayOptions> {
         return text;
       }
 
-      for (const aliasKey of OBSIDIAN_ALIASES_KEYS) {
+      for (const aliasKey of SHALE_ALIASES_KEYS) {
         if (options.formatAliasKey && Object.keys(yaml).includes(aliasKey)) {
           text = setYamlSection(text,
               aliasKey,
@@ -70,7 +70,7 @@ export default class RuleTemplate extends RuleBuilder<FormatYamlArrayOptions> {
         }
       }
 
-      for (const tagKey of OBSIDIAN_TAG_KEYS) {
+      for (const tagKey of SHALE_TAG_KEYS) {
         if (options.formatTagKey && Object.keys(yaml).includes(tagKey)) {
           text = setYamlSection(text,
               tagKey,
@@ -87,7 +87,7 @@ export default class RuleTemplate extends RuleBuilder<FormatYamlArrayOptions> {
       }
 
       if (options.formatArrayKeys) {
-        const keysToIgnore = [...OBSIDIAN_ALIASES_KEYS, ...OBSIDIAN_TAG_KEYS, ...options.forceMultiLineArrayStyle, ...options.forceSingleLineArrayStyle];
+        const keysToIgnore = [...SHALE_ALIASES_KEYS, ...SHALE_TAG_KEYS, ...options.forceMultiLineArrayStyle, ...options.forceSingleLineArrayStyle];
 
         for (const key of Object.keys(yaml)) {
           // skip non-arrays, arrays of objects, ignored keys, and already accounted for keys

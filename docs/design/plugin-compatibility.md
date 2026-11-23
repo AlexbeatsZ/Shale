@@ -1,4 +1,4 @@
-# 现用 Obsidian 插件兼容宿主
+# 现用 Shale 插件兼容宿主
 
 2026-10-22：Interactive JS 0.1.0 已迁入原生代码块宿主、可信 JS 运行与便捷 widgets。
 普通 JS 使用现有 CodeMirror；`js-widget` / `javascript-widget` 和旧 `// @obsidian-js`
@@ -6,7 +6,7 @@
 构建检查；实际控件、图表及原笔记验收尚未进行。详见 [原生 JS](native-javascript.md)。
 
 2026-10-22：`fuzzy-chinese-pinyin` 已由原生中文搜索取代；加载器阻止重复执行，
-保留原插件文件与 Obsidian 启用配置。下方原包加载记录仅为历史证据。
+保留原插件文件与 Shale 启用配置。下方原包加载记录仅为历史证据。
 详见 [内置中文搜索](chinese-search.md)。
 
 2026-10-22：LaTeX Suite 与 Linter 已迁入原生公式/片段和文档格式化模块；加载器同样
@@ -18,7 +18,7 @@
 ## 范围与依据
 
 目标是直接加载现用插件的 CommonJS `main.js`，让命令、设置、文件访问、编辑器扩展、
-Markdown 处理器及卸载映射到真实应用能力。参考 [Obsidian 官方公开 API](https://github.com/obsidianmd/obsidian-api)；
+Markdown 处理器及卸载映射到真实应用能力。参考 [Shale 官方公开 API](https://github.com/obsidianmd/obsidian-api)；
 obsidian-typings 只作内部接口资料，不把类型声明当作运行时实现。
 
 2026-10-18 只读盘点 Windows 的 Manage / STEM，发现以下版本：
@@ -57,7 +57,7 @@ desktop 类型检查；先前动态结果只证明当时快照，不能视为最
 
 - 性能约定（2026-10-19）：MetadataCache 按会话版本缓存打开文档，按原文复用未打开文档元数据；位置换算复用行索引。modify 只更新对应源文件链接，create/delete/rename 按路径依赖重解析受影响源文件，批处理后统一 resolved；不更改插件既有链接选择规则。详见 performance.md，当前仅静态验证。
 
-- `web/src/lib/obsidian/events.ts`：Events、Component、子组件、事件、DOM 监听和定时器清理。
+- `web/src/lib/shale/events.ts`：Events、Component、子组件、事件、DOM 监听和定时器清理。
 - `dom.ts`、`ui.ts`：非枚举 DOM 辅助方法、模态框、建议、菜单、设置控件。
 - `vault.ts`：稳定文件对象、父子目录、真实读写/二进制/资源 URL、元数据和链接解析。
 - `workspace.ts`：当前编辑器、分栏、叶子、自定义视图、布局和文件事件。
@@ -70,7 +70,7 @@ desktop 类型检查；先前动态结果只证明当时快照，不能视为最
 
 `loadData()` 缺失时返回 null；损坏 JSON 报错，不悄悄以空配置覆盖。
 `saveData()` 串行写入临时文件后重命名。启停只更新所选插件，保留缺失插件的原 ID。
-启动读取 `.obsidian/community-plugins.json`，不在读取时改写现有设置。
+启动读取 `.shale/community-plugins.json`，不在读取时改写现有设置。
 
 渲染后处理器不得重写 CM 管理的可编辑正文；实时编辑只向其暴露 HTML/插件渲染块，
 readonly 视图可处理呈现 DOM。以文档和 viewport 标识缓存处理批次，避免插件异步输出
@@ -102,7 +102,7 @@ npm run test:unit
 $env:RENDER_TEST_BROWSER = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'
 npx playwright test --project=plugins
 # 选择现用原包进行只读隔离测试（不在 CI 中依赖本机目录）
-$env:OBSIDIAN_PLUGIN_VAULTS = 'C:/Users/Meta/Documents/Obsidian/Manage;C:/Users/Meta/Documents/Obsidian/STEM'
+$env:SHALE_PLUGIN_VAULTS = 'C:/Users/Meta/Documents/Shale/Manage;C:/Users/Meta/Documents/Shale/STEM'
 npx playwright test --project=plugins
 ```
 
@@ -111,19 +111,19 @@ npx playwright test --project=plugins
 代码块、跨刷新 JSON 持久化、raw 资源、路径越界拒绝和实时卸载。
 原有渲染回归仍用 `test:render`、`test:integration` 和 `tests/packaged-rendering.mjs`。
 
-使用时选择含 `.obsidian/plugins/` 的 vault，在设置 → Community Plugins 查看每个插件的
+使用时选择含 `.shale/plugins/` 的 vault，在设置 → Community Plugins 查看每个插件的
 实际加载状态；插件设置页会出现在设置侧栏。启停无需刷新整个网页。
 对复杂插件按真实笔记逐项验收，尤其是私有 DOM monkey patch、主题布局、跨站脚本、
 IME、移动手势、原生 TeX 和外部 MCP 审阅流程。
 
 ## 尚未宣称的能力
 
-- 完整 Obsidian 私有 DOM、所有 core 插件、所有命令和内部 API。
+- 完整 Shale 私有 DOM、所有 core 插件、所有命令和内部 API。
 - 所有 Dataview inline 表达式和自定义语法节点的等价性；本轮首先验证笔记索引。
 - 自定义扩展名关联、持久化自定义视图布局、真正独立的多窗口 workspace。
-- 外部 CLI 和操作系统 obsidian:// 协议分发；目前只保留插件处理器注册。
+- 外部 CLI 和操作系统 shale:// 协议分发；目前只保留插件处理器注册。
 - 缺失 `obsidian-footnotes` 安装包的行为。
-- 自动迁移、写入或接管现用 Obsidian 会话，以及外部设备/登录站点验收。
+- 自动迁移、写入或接管现用 Shale 会话，以及外部设备/登录站点验收。
 
 回滚用 `git revert` 回退交付提交，不重置或删除用户 vault。
 

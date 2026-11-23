@@ -1,10 +1,16 @@
-# IMPLEMENTATION PLAN — WebObsidian
+# IMPLEMENTATION PLAN — Shale
 
 > Track tiến độ phát triển. Tham chiếu thiết kế: [PRD.md](PRD.md).
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-22 (Vim 光标颜色)
+Cập nhật lần cuối: 2026-11-23 (Shale 完整身份迁移)
+
+### Shale 完整身份迁移 (PRD 1.57)
+
+- [~] 仓库、包名/原生身份、Vault 配置与旧数据迁移；保留第三方兼容 ID 与来源。
+- [ ] 单元、生产构建、Mac/Windows 实包及 Android 构建验证，发布新版本。
+- [ ] Mac/OMEN/ROG 与在线 Android 迁移根目录、应用数据、MCP 和同步启动入口并验收。
 
 ### Vim 光标颜色 (PRD 1.56)
 
@@ -162,8 +168,8 @@ Cập nhật lần cuối: 2026-11-22 (Vim 光标颜色)
 - [x] 格式化规则 `convert-tex-math-delimiters`(默认开启)转为 `$`/`$$`
 
 ## MCP instruction notes (PRD 1.30)
-- [x] 设置 › MCP 从仓库选择说明笔记,存 `.obsidian/webobsidian/mcp.jsonc`(revision 冲突拒绝,外部修改实时刷新)
-- [x] 服务器说明列出链接;`obsidian_get_context` 附全文(`standing_instructions`);提议修改说明要求遵守
+- [x] 设置 › MCP 从仓库选择说明笔记,存 `.shale/mcp.jsonc`(revision 冲突拒绝,外部修改实时刷新)
+- [x] 服务器说明列出链接;`shale_get_context` 附全文(`standing_instructions`);提议修改说明要求遵守
 - [ ] 用真实 MCP 客户端确认说明进入系统提示词、AI 遵守规范
 
 ## Custom callouts (PRD 1.29)
@@ -173,7 +179,7 @@ Cập nhật lần cuối: 2026-11-22 (Vim 光标颜色)
 - [x] 用户审定三种新类型的最终图标与颜色(definition book-open 靛蓝、premise layers 琥珀、conclusion circle-arrow-right 青蓝)
 
 ## MCP content reference targets (PRD 1.28)
-- [x] `obsidian_find_targets`:按 ID/标签/公式 TeX/路径查全库类型身份，可按类型过滤;`id` 模式检查占用
+- [x] `shale_find_targets`:按 ID/标签/公式 TeX/路径查全库类型身份，可按类型过滤;`id` 模式检查占用
 - [x] 提议修改校验新增类型 ID(重复、挂不到结构、已被其他笔记使用则拒绝),新增未解析引用返回 warnings
 - [x] MCP 说明鼓励语义 ID,先查后引，已有公式引用而不复制
 - [ ] 格式化全文的 MCP 工具(格式化器在渲染器侧，需另行接通;结果走审阅)
@@ -258,7 +264,7 @@ Cập nhật lần cuối: 2026-11-22 (Vim 光标颜色)
 - [x] Unified VaultCatalog and build/update ownership; one MiniSearch and scoped path index.
 - [x] Native default pickers, command shortcuts/history, heading/template actions and link/tag completion.
 - [x] Explicit full-text pinyin mode; literal unlinked mentions and agent defaults preserved.
-- [x] Supported legacy preferences imported without rewriting original Obsidian configuration.
+- [x] Supported legacy preferences imported without rewriting original Shale configuration.
 - [x] Types, isolated production web/server bundles and static standalone dependency guard.
 - [ ] Runtime/UI/IME, fixture execution, live-vault and performance acceptance (deferred).
 - [ ] New desktop portable deliverable (not requested in this task).
@@ -308,7 +314,7 @@ The user's existing app remains running on its previous assets.
 Project direction: [PRD §1.4](PRD.md#14-本-fork-的目标与优先级) and
 [design rationale](docs/design/product-direction.md).
 
-- [x] Record the owner's goal: rebuild an Obsidian-like app that can be customized beyond plugin limitations.
+- [x] Record the owner's goal: rebuild an Shale-like app that can be customized beyond plugin limitations.
 - [x] Document obsidian-typings as an internal-API reference and distinguish declarations from runtime behavior.
 - [x] Inventory current Manage/STEM plugin versions as the first compatibility targets; see plugin-compatibility.md.
 - [x] Map the current plugins to the host APIs, desktop-only capabilities and remaining private-API boundaries.
@@ -339,8 +345,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - [x] M2.1 Hash password (scrypt), JWT secret tự sinh
 - [x] M2.2 `POST /auth/setup`, `/auth/login`, `/auth/logout`, `GET /auth/me`
 - [x] M2.3 Middleware auth guard (httpOnly cookie), bảo vệ route
-- [x] M2.4 First-run setup flow (UI + env seed `WEBOBSIDIAN_PASSWORD`)
-- [x] M2.5 Pass mặc định 123456 + đổi mật khẩu (Settings→Account) + override khôi phục (`auth.passwordHash`/`WEBOBSIDIAN_PASSWORD`); migration pass cũ → `userPasswordHash`
+- [x] M2.4 First-run setup flow (UI + env seed `SHALE_PASSWORD`)
+- [x] M2.5 Pass mặc định 123456 + đổi mật khẩu (Settings→Account) + override khôi phục (`auth.passwordHash`/`SHALE_PASSWORD`); migration pass cũ → `userPasswordHash`
 
 ## Phase 3 — Vault filesystem — FR-1
 - [x] M3.1 Service vault: list tree, read, write, create, rename/move, delete→trash
@@ -380,8 +386,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - [x] M7.5 Tài liệu agent API (`docs/AGENT_API.md`)
 
 ## Phase 8 — Community plugins — FR-8
-- [x] M8.1 Đọc `.obsidian/plugins/*` (manifest + main.js)
-- [x] M8.2 Obsidian API shim (App, Vault, Workspace, Plugin, Notice, Setting…)
+- [x] M8.1 Đọc `.shale/plugins/*` (manifest + main.js)
+- [x] M8.2 Shale API shim (App, Vault, Workspace, Plugin, Notice, Setting…)
 - [x] M8.3 Plugin loader (eval main.js) + enable/disable
 - [x] M8.4 Browse + install từ community (GitHub releases)
 
@@ -392,9 +398,9 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - [x] M9.4 Reading view (remark/rehype, wikilinks, embeds, callouts, tasks, properties)
 - [x] M9.5 Search panel + command palette
 - [x] M9.6 Backlinks/outline/tags panels
-- [x] M9.7 Graph view (mở trong tab + panel Filters kiểu Obsidian)
+- [x] M9.7 Graph view (mở trong tab + panel Filters kiểu Shale)
 - [x] M9.8 Settings UI (vault/git/api keys/plugins/theme)
-- [x] M9.9 Theme Obsidian-like (dark/light)
+- [x] M9.9 Theme Shale-like (dark/light)
 - [x] M9.10 Navigation back/forward (toolbar ←/→ trên mọi view, history stack)
 - [x] M9.11 Search: filter/sort (match case, collapse, more context, sort) + sticky query box
 
@@ -403,7 +409,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - [x] M10.2 `docker-compose.yml` (vault + data volumes, env secrets, healthcheck)
 - [x] M10.3 `README.md` quickstart + `docs/AGENT_API.md`
 - [x] M10.4 Deploy hardening cho self-host: compose `.env`-driven (`VAULT_HOST_PATH`,
-  `HTTP_BIND/HTTP_PORT`, `WEBOBSIDIAN_WATCH`) → không clobber khi redeploy; watcher tự
+  `HTTP_BIND/HTTP_PORT`, `SHALE_WATCH`) → không clobber khi redeploy; watcher tự
   fallback polling khi inotify `ENOSPC/EMFILE`; `start_period=90s`; README mục Deploy-to-VPS
 
 ## Phase 11 — QA & DoD
@@ -423,16 +429,16 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - [x] M12.8 Git auto-commit-on-save (debounced) + toggle trong Settings
 - [x] M12.9 Code-split bundle (react/codemirror/markdown chunks)
 
-## Phase 13 — Obsidian look & feel (theo phản hồi người dùng)
+## Phase 13 — Shale look & feel (theo phản hồi người dùng)
 - [x] M13.1 Bộ icon Lucide flat (component `Icon`) thay toàn bộ emoji
-- [x] M13.2 Theme mặc định = Light (đúng Obsidian), palette/spacing/borders bám Obsidian
+- [x] M13.2 Theme mặc định = Light (đúng Shale), palette/spacing/borders bám Shale
 - [x] M13.3 File tree chỉ chevron (markdown không icon), active highlight tinh tế
 - [x] M13.4 Vault footer (tên vault + settings); status bar nhỏ góc phải
 - [x] M13.5 Right sidebar "Linked mentions" + "Outline" giống ảnh tham chiếu
 - [x] M13.6 Tab bar có toggle sidebar trái/phải + nút new tab
 
 ## Phase 14 — WYSIWYG editor & context menus (theo phản hồi người dùng)
-- [x] M14.1 Live Preview render đúng kiểu Obsidian: heading sạch (ẩn `#`), bold→đậm,
+- [x] M14.1 Live Preview render đúng kiểu Shale: heading sạch (ẩn `#`), bold→đậm,
       italic→nghiêng, `code`→nền mono, strikethrough, bullet→•, tag→pill
 - [x] M14.2 Lộ raw syntax **theo từng token tại con trỏ** (không lộ cả đoạn) — soạn thảo mượt
 - [x] M14.3 Sửa lỗi áp theme tối (oneDark) lên giao diện sáng → highlight theo theme
@@ -446,9 +452,9 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - [ ] Resolve conflict UI nâng cao cho git
 - [ ] Lazy-load cây thư mục cực lớn; canvas/whiteboard
 - [ ] ESLint/Prettier CI; live-preview render bảng/danh sách lồng sâu nhiều cấp
-- [ ] Graph: port d3-force simulation sang web worker (như Obsidian app chạy worker + WASM)
+- [ ] Graph: port d3-force simulation sang web worker (như Shale app chạy worker + WASM)
       để UI không khựng lúc graph 5.9k node đang "nở" — physics/render đã parity, chỉ còn
-      kiến trúc thread (xem sim.js trong obsidian.asar; web giữ nguyên tham số, chỉ chuyển chỗ chạy)
+      kiến trúc thread (xem sim.js trong shale.asar; web giữ nguyên tham số, chỉ chuyển chỗ chạy)
 
 ---
 
@@ -493,13 +499,13 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 
 ---
 
-## Phase 18 — Markdown editor parity Obsidian Desktop (docs/obsidian-desktop-internals.md)
+## Phase 18 — Markdown editor parity Shale Desktop (docs/shale-desktop-internals.md)
 - [x] M18.1 CSS design tokens theo app.css 1.12.7 (§19): accent HSL 258/88%/66% + accent-1/-2
       công thức light/dark, color-base ramp đúng giá trị, extended colors + `-rgb`, semantic
       tokens (`--background-*`, `--text-*`, `--interactive-*`), heading 1.618/1.462/1.318/
       1.188/1.076/1em + letter-spacing, `--bold-modifier: 200`, `--file-line-width: 700px`,
       callout slots RGB triplet (§21); giữ alias var cũ cho component hiện hữu
-- [x] M18.2 DOM classes chuẩn (§20): root `markdown-source-view cm-s-obsidian mod-cm6
+- [x] M18.2 DOM classes chuẩn (§20): root `markdown-source-view cm-s-shale mod-cm6
       is-live-preview is-readable-line-width`; line `HyperMD-header-1..6 / -list-line /
       -task-line[data-task] / -quote / -codeblock(-begin/-end/-bg) / -hr / -footnote`; span
       `cm-hashtag(-begin/-end), cm-strikethrough, cm-inline-code, cm-hmd-internal-link,
@@ -510,7 +516,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       task mọi ký tự non-space = done (x/X gạch + muted); callout regex
       `/^\[!([^\]]+)\]([+-]?)(?:\s|$)/` + đủ bảng màu/icon §21 + title mặc định + fold mark
 - [x] M18.4 Wikilink đúng luật §7: alias sau `|` ĐẦU, loại `[[` lồng, NBSP→space + NFC;
-      LP label giữ raw `Note#Head` (aria-label = `Note > Head` như Obsidian);
+      LP label giữ raw `Note#Head` (aria-label = `Note > Head` như Shale);
       size param ảnh `![[img|300]]` / `![[img|300x200]]`
 - [x] M18.5 Tag regex chính xác §7 (charset unicode, loại thuần số, cần ≥1 chữ cái);
       pill 2 nửa cm-hashtag-begin/-end
@@ -523,11 +529,11 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       đáy; Enter/Tab/↑↓/Esc qua keymap Prec.highest (lib/suggest.ts)
 - [x] M18.8 Math render KaTeX lazy-load (inline `$..$` + `$$..$$` 1 dòng); code block
       syntax highlight (@codemirror/language-data); GFM base (strikethrough/table/tasklist);
-      checkbox style Obsidian (accent bg, radius 4px, size --font-text-size)
+      checkbox style Shale (accent bg, radius 4px, size --font-text-size)
 - [x] M18.9 Line spacing khớp app.css thật: `.HyperMD-header { padding-top: var(--p-spacing) }`,
       inline-title margin-bottom 0.5em, scroller line-height var(--line-height-normal)
 - [x] M18.10 Đợt sửa theo 11 lỗi người dùng báo (đối chiếu side-by-side với app):
-      (1) HighlightStyle riêng (lib/highlight.ts) màu token theo palette Obsidian — hết màu đỏ
+      (1) HighlightStyle riêng (lib/highlight.ts) màu token theo palette Shale — hết màu đỏ
       escape/bracket lạ từ defaultHighlightStyle; (2) Embed thật: `![[note]]` transclusion render
       qua api.resolve + renderMarkdown (NoteEmbedWidget, depth ≤3), ảnh/file thiếu → box
       "could not be found"; (3) indent guide dọc cho list lồng (cm-indent mỗi đơn vị tab/4-space);
@@ -545,7 +551,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `markdown-embed-title` (tên file) + fix khoảng trắng thừa (reset `white-space: normal`
       trong widget — pre-wrap của cm-content biến \n giữa các block HTML thành dòng trống);
       (5) Reading mode đồng bộ Live: task custom state `[/] [-] [>]`… thành checkbox
-      (remark plugin `remarkObsidianTasks`, data-task, chỉ gạch x/X), li bỏ bullet,
+      (remark plugin `remarkShaleTasks`, data-task, chỉ gạch x/X), li bỏ bullet,
       Properties hiện list value dạng pill (tags/aliases)
 - [x] M18.13 Reading mode đồng bộ hoàn toàn với Live (theo phản hồi "Reading khác Live"):
       tách lib/callouts.ts dùng chung; pipeline remark thêm: remark-breaks (newline = <br>, §7),
@@ -561,7 +567,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       compartment `EditorView.editable(false)` + `EditorState.readOnly` + StateField
       `livePreviewReadonly` tắt mọi reveal-syntax-theo-caret (touches/lineActive/htmlBlock/
       mermaid/calloutFold); CSS `.is-reading-mode` ẩn affordance edit (table handles, property
-      add/del, contenteditable) — checkbox và link vẫn bấm được như Obsidian. Hai chế độ giờ
+      add/del, contenteditable) — checkbox và link vẫn bấm được như Shale. Hai chế độ giờ
       đồng nhất theo cấu trúc, không thể lệch. (Pipeline remark của Preview vẫn dùng cho
       split-pane source + public share.)
 - [ ] M18.11 Tương lai: MathJax thay KaTeX (glyph parity tuyệt đối), heading/block mode
@@ -601,8 +607,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 
 ---
 
-## Phase 21 — Pane ⋯ menu parity Obsidian (theo yêu cầu người dùng, PRD 0.6)
-- [x] M21.1 Menu ⋯ dựng lại theo cấu trúc Obsidian Desktop: nhóm Backlinks in document →
+## Phase 21 — Pane ⋯ menu parity Shale (theo yêu cầu người dùng, PRD 0.6)
+- [x] M21.1 Menu ⋯ dựng lại theo cấu trúc Shale Desktop: nhóm Backlinks in document →
       Split/Open in new window → Rename/Move/Make a copy/Bookmark/Add file property/Export to PDF →
       Find → Copy path/Version history/Open linked view → Reveal in navigation/Share → tabs → Delete
 - [x] M21.2 Find/Replace trong note: tích hợp `@codemirror/search` (search panel top, ⌘F/⌘⇧F/⌘G);
@@ -610,7 +616,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - [x] M21.3 Reveal file in navigation: `store.revealInTree` mở rộng folder tổ tiên + mở panel Files,
       FileTree nghe event `wo-reveal-file` → scrollIntoView + flash highlight 1.2s (data-path lookup)
 - [x] M21.4 Add file property: KHÔNG dùng prompt — `triggerAddProperty(view)` kích hoạt đúng nút
-      "+ Add property" của Properties widget (focus ô key + mở dropdown gợi ý key như Obsidian); tạo
+      "+ Add property" của Properties widget (focus ô key + mở dropdown gợi ý key như Shale); tạo
       block `---` rỗng nếu note chưa có frontmatter rồi poll tới khi widget mount; menu chuyển Live trước.
       Fix kèm trong widget: (a) dropdown giá trị list/tags bị treo sau khi chọn (dd mount trên theme
       wrapper, không bị widget rebuild gỡ → `choose()` luôn `cleanup()` trước `mutate()`); (b) menu
@@ -627,7 +633,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 ---
 
 ## Phase 22 — Folder picker "Move file to…" + context menu Bookmarks/Recent (theo yêu cầu người dùng)
-- [x] M22.1 Modal folder-picker kiểu Obsidian suggester (`FolderPicker.tsx`): gõ lọc folder, ↑↓
+- [x] M22.1 Modal folder-picker kiểu Shale suggester (`FolderPicker.tsx`): gõ lọc folder, ↑↓
       điều hướng, ↵ move vào folder chọn, ⇧↵ tạo folder mới theo tên gõ rồi move, esc đóng; footer
       gợi ý phím. Driven bởi `store.movePath`/`setMovePath`. Thay `prompt()` cũ ở menu ⋯ (Workspace)
       và menu chuột phải file tree (FileTree). Lọc bỏ folder hiện tại + chính nó/con khi move folder.
@@ -692,16 +698,16 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `Workspace.tsx` (render CanvasView khi path `.canvas`, không phải folder/graph). CSS `.canvas-*`.
 - [x] M25.6 Tạo canvas mới: store `newCanvas(dir)` (Untitled.canvas né trùng, body `{"nodes":[],"edges":[]}`);
       "New canvas" vào context menu FileTree (file/folder/root) + command palette. Typecheck web sạch.
-- [x] M25.7 **Marquee select (Shift+kéo) + alignment snap (parity Obsidian, reverse-engineer asar):** kéo trái
+- [x] M25.7 **Marquee select (Shift+kéo) + alignment snap (parity Shale, reverse-engineer asar):** kéo trái
       trên nền = **pan** (giữ theo ý người dùng — bỏ thử nghiệm marquee-mặc-định), **Shift+kéo = marquee chọn**;
       pan cũng qua Space/giữa/phải-kéo, touch 1-ngón pan. Kéo node: snap cạnh/tâm vào các node khác (`snapMove`
       trong canvas.ts, port `getSnapping/O3/P3`,
       điểm snap = 4 góc + tâm, dist = `ceil(15/scale)`), vẽ **guide line** (`.canvas-snaps`); Alt (⌃ trên mac) tắt
       snap; Shift khi kéo = khoá trục. Verify CDP: marquee chọn 5 node, guide hiện khi căn rồi mất khi thả.
-- [x] M25.8 **Phím tắt format trong text card** (mirror `obsidianKeymap`): ⌘B/I/K(add link)/L(task)/`⌘/`(comment)
+- [x] M25.8 **Phím tắt format trong text card** (mirror `shaleKeymap`): ⌘B/I/K(add link)/L(task)/`⌘/`(comment)
       trên textarea; `toggleWrap` bật/tắt marker. **Text alignment**: `TextNode.textAlign` (left/center/right) —
       nút trong selection menu (khi chọn text node) + submenu "Align" trong menu chuột phải; áp CSS cho cả textarea
-      lẫn body render. (Mở rộng ngoài JSON Canvas spec — Obsidian thật bỏ qua field này.)
+      lẫn body render. (Mở rộng ngoài JSON Canvas spec — Shale thật bỏ qua field này.)
 - [x] M25.9 **Fix UX theo phản hồi:** (1) mũi tên edge to hơn (marker 14×14, refX 11). (2) menu chuột phải card
       mở **đúng tại con trỏ** + `position:fixed` + đo kích thước rồi dịch vào trong màn hình (không tràn).
 
@@ -724,11 +730,11 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       caption row; visible menu labels removed. F10/actions, drag area and themes retained.
       Types/bundles pass; interactive validation intentionally deferred to the user.
 - [x] M27.1 Workspace `desktop/` (Electron shell). `src/main.ts`: single-instance lock; chọn vault lần đầu
-      (dialog, default `~/Documents/WebObsidianVault`); `DATA_DIR`/config/logs trong `userData`; **spawn server
+      (dialog, default `~/Documents/ShaleVault`); `DATA_DIR`/config/logs trong `userData`; **spawn server
       hiện có như tiến trình con** qua `ELECTRON_RUN_AS_NODE` bind `127.0.0.1` + cổng trống ngẫu nhiên; chờ
       `/healthz`; `BrowserWindow` load `http://127.0.0.1:<port>`; menu File (Switch Vault / Open Vault·Data·Logs),
       Edit/View/Window/Help; mở external link ra browser hệ thống; kill server khi quit. `src/preload.ts` tối giản.
-- [x] M27.2 Auto-login liền mạch: sinh mật khẩu ngẫu nhiên/máy (lưu `userData`), truyền `WEBOBSIDIAN_PASSWORD`
+- [x] M27.2 Auto-login liền mạch: sinh mật khẩu ngẫu nhiên/máy (lưu `userData`), truyền `SHALE_PASSWORD`
       (override); login qua Electron `net`, lấy JWT từ `Set-Cookie`, đổi pass mặc định→secret bằng Bearer để
       tắt `mustChangePassword`, rồi **seed cookie JWT vào `session.defaultSession`** → cửa sổ vào thẳng app, không
       hỏi password. Verify: data dir fresh → `login` trả `mustChangePassword:false`, `userPasswordHash` đã set.
@@ -739,7 +745,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - [x] M27.4 electron-builder config (trong `desktop/package.json`): `extraResources` map `.gen/server`→
       `resources/server`; targets macOS `dmg`+`zip` (arm64/x64), Windows `nsis`+`portable` (x64/arm64/ia32),
       Linux `AppImage`+`deb` (x64/arm64); icon từ `assets/logo.png`→`buildResources/icon.png` (1024²);
-      `electronVersion` pin 33.4.11 (workspace hoist). Verify: `electron-builder --dir` đóng gói `WebObsidian.app`,
+      `electronVersion` pin 33.4.11 (workspace hoist). Verify: `electron-builder --dir` đóng gói `Shale.app`,
       chạy bản packaged → server boot từ `resources/server/dist/index.mjs`, healthz/login OK.
 - [x] M27.5 CI: `.github/workflows/release.yml` trigger tag `v*` (+ manual), matrix macOS/Windows/Ubuntu, mỗi
       runner `npm ci` → `npm run build` → `npm --workspace desktop run dist:publish` (electron-builder publish
@@ -795,12 +801,12 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - 2026-11-05 (PRD 1.31): 源码展开灰色与 TeX 定界符。新增 source-syntax/callout 浏览器用例与 math、format 单元用例均通过;单元 523/524(已知大小写改名用例);elements 4、render.spec 2、theme-render 1、math-transition 1(macOS 上 Control+z 不是撤销)失败，改动前同样失败。桌面 0.1.58。
 - 2026-11-05 (PRD 1.30): MCP 说明笔记。新增 mcpPreferences 服务、`/api/settings/mcp`、`/api/operations/instructions`、设置页 MCP 分区;get_context 返回 `standing_instructions`;stdio 与 HTTP MCP 连接说明列出链接。新增单元 3 个通过,全量 519/520(已知大小写用例),server/web typecheck 与 build 通过。
 - 2026-11-05: 用户选定 callout 样式(conclusion 改为 circle-arrow-right + 8,145,178);桌面 0.1.55 本机构建安装,`/healthz` 200;用 Vault 真实 Theme.css 在渲染页核对 proof/think/tactic/todo 及三种新类型的颜色图标,标题位置不变。
-- 2026-11-05 (PRD 1.29): 自定义 Callout。新增 `calloutStyles.ts`,原生 Callout 按 Obsidian 约定从 CSS 读取颜色和图标,标题不再写死 slot 颜色;引入 lucide 1.69.0(懒加载);内置 definition/premise/conclusion。web typecheck、build 通过;新增 callout-styles 浏览器用例通过;elements/theme-render 中 5 个用例失败,改动前基线同样失败;单元 516/517(同上已知大小写用例)。
-- 2026-11-05 (PRD 1.28): MCP 新增 `obsidian_find_targets`(复用 `suggestContentTargets`,加类型过滤,带编号公式可按 TeX 查找;`id` 模式检查占用),提议修改用 `checkContentIds` 拒绝新增的重复/错位/已被他处使用的类型 ID,新增未解析引用返回 warnings;说明鼓励语义 ID。catalog schema 升至 5。单元 516/517(唯一失败为 macOS 大小写不敏感文件系统上已有的大小写改名用例,原代码同样失败)、server/web typecheck 通过。
-- 2026-11-05: Mac(arm64,Apple Silicon)从 5dd940e 源码本地构建 0.1.53(`electron-builder --mac dir --arm64`,ad-hoc 签名),替换 `/Applications/WebObsidian.app`(原 0.1.37);重启后 `/healthz` 200,首次启动 healthy 12.6s。随后构建 arm64/x64 dmg/zip 与 latest-mac.yml 补传到 v0.1.53 Release。Node 26 下 `extract-zip` 解压 tunnel 时 Promise 不 resolve(只解出部分文件),需按 `bundle-tunnel.mjs` 步骤用系统 `unzip` 补齐;见 AGENTS.md。
+- 2026-11-05 (PRD 1.29): 自定义 Callout。新增 `calloutStyles.ts`,原生 Callout 按 Shale 约定从 CSS 读取颜色和图标,标题不再写死 slot 颜色;引入 lucide 1.69.0(懒加载);内置 definition/premise/conclusion。web typecheck、build 通过;新增 callout-styles 浏览器用例通过;elements/theme-render 中 5 个用例失败,改动前基线同样失败;单元 516/517(同上已知大小写用例)。
+- 2026-11-05 (PRD 1.28): MCP 新增 `shale_find_targets`(复用 `suggestContentTargets`,加类型过滤,带编号公式可按 TeX 查找;`id` 模式检查占用),提议修改用 `checkContentIds` 拒绝新增的重复/错位/已被他处使用的类型 ID,新增未解析引用返回 warnings;说明鼓励语义 ID。catalog schema 升至 5。单元 516/517(唯一失败为 macOS 大小写不敏感文件系统上已有的大小写改名用例,原代码同样失败)、server/web typecheck 通过。
+- 2026-11-05: Mac(arm64,Apple Silicon)从 5dd940e 源码本地构建 0.1.53(`electron-builder --mac dir --arm64`,ad-hoc 签名),替换 `/Applications/Shale.app`(原 0.1.37);重启后 `/healthz` 200,首次启动 healthy 12.6s。随后构建 arm64/x64 dmg/zip 与 latest-mac.yml 补传到 v0.1.53 Release。Node 26 下 `extract-zip` 解压 tunnel 时 Promise 不 resolve(只解出部分文件),需按 `bundle-tunnel.mjs` 步骤用系统 `unzip` 补齐;见 AGENTS.md。
 - 2026-11-02 (PRD 1.27): 公式/表格/代码块(含 Mermaid、HTML 预览)/Callout/HTML 块悬停显示 剪贴板(`![[^id]]`)/link(`[[^id]]`)/`</>` 按钮组,与命令面板共用 `copyContentReference`;内容身份新增 `table-`/`html-`(块后空一行),种类名单收敛到 `CONTENT_TARGET_NAMESPACES`。按钮组放在新模块 blockControls.ts,避免 store→fragmentNavigation→sourceControls 导入环。core 123/123、单元 513/514(唯一失败为已知 fileSyncGit 超时)、typecheck、Edge render 新增 5/5,全量 358/363 中 3 个 Mermaid 用例因图标 SVG 被计数而修正选择器后通过,其余 2 个单独与重复运行通过。未打包/安装。
 - 2026-11-02: 启动提速——搜索索引缓存增量恢复(只重新解析 stamp 变化的笔记,无变化不重写,有变化延后 30s 保存),catalog 先发布、全文索引在监听后后台加载(加载期间编辑排队回放,搜索等待);STEM 副本实测监听 缓存命中 3.7-3.9s(原 7-11s)、改 10 篇 3.8s(原全量约 24s)。单元 514/514;桌面 0.1.52 已安装到 OMEN,真实 STEM 首次启动 healthy 6.8s。
-- 2026-11-02: 紧挨着写的独立公式 `$$a$$$$b$$` 拆成两个公式(与 Obsidian 一致):`$$` 只在第一个未转义的 `$$` 处闭合,刚闭合公式的 `$` 不再阻止下一个公式开始;此前第二个公式不被识别,渲染错位、无法编号或引用。markdown-core 新增粘连用例,单元 509/509、typecheck 通过;未在应用中目视验收。
+- 2026-11-02: 紧挨着写的独立公式 `$$a$$$$b$$` 拆成两个公式(与 Shale 一致):`$$` 只在第一个未转义的 `$$` 处闭合,刚闭合公式的 `$` 不再阻止下一个公式开始;此前第二个公式不被识别,渲染错位、无法编号或引用。markdown-core 新增粘连用例,单元 509/509、typecheck 通过;未在应用中目视验收。
 - 2026-11-02 (PRD 1.25): sync-server 服务端 Git 备份(第 1 步,未部署):`backup.mjs` 只读快照→提交→LFS→非强制推送,CLI `--backup-once`/`--backup-dry-run`;服务端测试 13/13、打包 2/2;STEM 真实数据 dry-run 对 3b3f1cc 差异 0(6445 文件/5573 LFS)。待办:ROG 部署(第 2 步)、客户端移除 Git(第 3 步)。
 - 2026-11-02 (PRD 1.24): Git 备份不再提交含令牌的 `sync.jsonc`/`git.jsonc`(写入 `.git/info/exclude`、移出旧索引、冲突分支跳过),本地文件与文件同步不变;fileSyncGit 5/5。
 - 2026-11-02 (PRD 1.23): 代码审查修复——附件上传同名不覆盖(`name N.ext`)、剪贴板 `image.png` 改名 `Pasted image <时间>.png`、multipart 中文文件名 UTF-8;Windows/macOS `.GIT`/`.git.` 路径保护;trash/remove/copy/restore 与保存共用文件写锁;搜索索引达阈值时同步 vacuum、冷启动用 `loadJS` 免二次序列化;移除无调用的 `listMarkdownFiles`。单元 506/506、file-defaults 4/4。
@@ -860,7 +866,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   `.dockerignore` không loại `obsvault` (~6 GB LFS bind-mount) nên `COPY . .` nuốt cả vault → build prod treo ~30 phút;
   thêm `obsvault`/`*.tsbuildinfo`/`desktop/dist|release` → COPY còn ~1.5s. **Đã deploy & verify trên prod**
   (`xnohat.i234.me:8787`): resolve `Agent SLM Business Model.canvas` → đúng canvas thật, bare wikilink & note thiếu không regression.
-- 2026-06-22 (FR-13 — Desktop app Electron đa nền tảng, theo yêu cầu người dùng): bundle WebObsidian thành
+- 2026-06-22 (FR-13 — Desktop app Electron đa nền tảng, theo yêu cầu người dùng): bundle Shale thành
   app cài đặt mac/win/linux (arm64/x64/ia32) tải từ GitHub Release. Thêm workspace `desktop/` là **Electron
   shell** spawn đúng server Express hiện có như tiến trình con (`ELECTRON_RUN_AS_NODE`, `127.0.0.1` + cổng
   ngẫu nhiên) rồi load SPA trong `BrowserWindow` — không đổi 1 dòng server/web code. Mấu chốt đóng gói: server
@@ -871,7 +877,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   AppImage/deb; CI `release.yml` matrix 3 OS publish GitHub Release (draft) khi push tag `v*`. **Verify thật
   trên macOS arm64**: (1) bundle server chạy độc lập → healthz `{ok:true}`, login override OK; (2) chạy Electron
   (unpacked) với config seed → server boot cổng ngẫu nhiên, `userPasswordHash` set, `mustChangePassword:false`,
-  không lỗi; (3) `electron-builder --dir` → `WebObsidian.app`, layout `resources/server/{dist,public}` đúng,
+  không lỗi; (3) `electron-builder --dir` → `Shale.app`, layout `resources/server/{dist,public}` đúng,
   chạy bản packaged → server boot từ resources, healthz/login OK. Typecheck desktop sạch. *Gotcha:* shell có
   `ELECTRON_RUN_AS_NODE=1` (từ crawbot) khiến `require('electron')`→string lúc test → launch test phải
   `env -u ELECTRON_RUN_AS_NODE` (app packaged không bị); electron hoist root node_modules nên phải pin
@@ -881,13 +887,13 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   PixiJS v8 sinh code shader/UBO bằng `new Function()`, bị CSP chặn. Sửa: trong `GraphView.tsx` import
   `pixi.js/unsafe-eval` (module tự cài polyfill không-eval) trước `app.init()`; thêm `declare module` cho
   subpath trong `vite-env.d.ts` (Pixi không export `types` cho subpath này). Typecheck + build pass.
-- 2026-06-19 (FR-2 — Audio/Video embed phát được như Obsidian, theo yêu cầu người dùng): note `.mp4`
+- 2026-06-19 (FR-2 — Audio/Video embed phát được như Shale, theo yêu cầu người dùng): note `.mp4`
   (Trilium export: frontmatter + `![[clip.mp4]]`) trước đây chỉ hiện link xanh, nay render **trình phát
   HTML5 thật**. Sửa 3 đường render — Live Preview (`MediaWidget` trong `livePreview.ts`, là view đang
   dùng cho cả Reading read-only), Reading/transclusion/canvas (`markdown.ts`), public share SSR
   (`renderhtml.ts`); cả 3 thêm `<video>/<audio>/<source>` vào allowlist `rehype-sanitize` (nếu không
   sanitizer xoá tag). Mở thẳng file media từ tree → player (`Workspace.tsx`, như ảnh). Bộ extension khớp
-  Obsidian (video `mp4/webm/ogv/mov/mkv`, audio `mp3/wav/m4a/3gp/flac/ogg/oga/opus`) gom về
+  Shale (video `mp4/webm/ogv/mov/mkv`, audio `mp3/wav/m4a/3gp/flac/ogg/oga/opus`) gom về
   `web/lib/media.ts` + `server/services/mime.ts`; size param `![[clip.mp4|W]]` đặt width video.
   **Mấu chốt:** route serve binary (`GET /api/files/content` + raw share) đổi từ `readFileBuffer`→`res.send`
   (đọc cả file vào RAM, không seek) sang **stream + HTTP Range** (`services/httpfile.ts` →
@@ -902,16 +908,16 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   `ContextMenu` gắn listener `window 'click'` để đóng khi click ra ngoài; với click trái, sau khi React commit effect,
   cú click vẫn đang bong-bóng tới `window` → listener bắt được → đóng menu. (Menu chuột phải không dính vì sự kiện
   `contextmenu` không phát ra `click`.) Fix: gắn listener đóng ở **tick kế tiếp** (`setTimeout(…, 0)`) trong
-  `web/src/components/ContextMenu.tsx`. Verify: click nút Sort → menu hiện đủ 6 mục (đúng như Obsidian app: File name
+  `web/src/components/ContextMenu.tsx`. Verify: click nút Sort → menu hiện đủ 6 mục (đúng như Shale app: File name
   A→Z/Z→A, Modified new→old/old→new, Created new→old/old→new) → chọn "File name (Z to A)" → file đảo thứ tự (folder vẫn nhóm trước).
   **(2) Kéo-thả di chuyển file không ăn:** chỉ **hàng folder** mới nhận drop; thả file lên một **file khác** hoặc vào
   **vùng con của folder đang mở** thì sự kiện drop bong-bóng lên root handler → no-op (file gốc) hoặc chuyển nhầm về vault root.
   Fix: hàng file cũng là drop target (`onDragOver/onDragLeave/onDrop` + class `drop-target`), thả lên file = chuyển vào
-  **thư mục cha của file đó** (đúng hành vi Obsidian) trong `web/src/components/FileTree.tsx`. Verify: kéo file root thả lên
+  **thư mục cha của file đó** (đúng hành vi Shale) trong `web/src/components/FileTree.tsx`. Verify: kéo file root thả lên
   file nằm trong folder Alpha (đang mở) → file chuyển hẳn vào Alpha (trước đó đứng yên).
 - 2026-06-18 (Phase 30 — Canvas nâng cấp tương tác + Canvas public share + chùm fix UX theo phản hồi liên tục):
   **Canvas (M25.7–25.9):** marquee kéo-chọn nhiều node + đường gióng (alignment snap-guides) port từ
-  `getSnapping/O3/P3` của Obsidian asar (snap 4 góc + tâm, dist `ceil(15/scale)`, Alt tắt snap, Shift khoá trục);
+  `getSnapping/O3/P3` của Shale asar (snap 4 góc + tâm, dist `ceil(15/scale)`, Alt tắt snap, Shift khoá trục);
   phím tắt format (⌘B/I/K/L/`⌘/`, `toggleWrap`) + căn lề text (`TextNode.textAlign`, nút selection-menu + submenu).
   **Canvas public share (FR-10 mở rộng):** `server/src/services/rendercanvas.ts` render `.canvas` ra HTML tĩnh
   (node tuyệt đối + edges SVG, text/embed qua `renderNoteHtml`, allowlist ảnh qua `canvasEmbedTargets`); `sharepage.ts`
@@ -929,10 +935,10 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   steady-state đọc cache → 0 syscall; watcher gọi `invalidateStat(rel)` khi file add/change/unlink nên chỉ
   re-stat đúng file đổi. Tránh hẳn vấn đề 27k stat/lần-fetch mà comment cũ cảnh báo. `TreeNode` thêm `ctime`
   (server lấy `birthtimeMs || mtimeMs`). Sort client-side đệ quy per-folder (folder luôn nhóm trước, sort theo
-  tên; file theo tiêu chí chọn) — đúng như Obsidian chỉ sort các item **đang hiện diện** trong panel (collapsed
+  tên; file theo tiêu chí chọn) — đúng như Shale chỉ sort các item **đang hiện diện** trong panel (collapsed
   không render). `treeSort` mở rộng 6 giá trị, persist. Typecheck + build sạch.
-- 2026-06-14 (Phase 28 — File tree header toolbar parity Obsidian theo yêu cầu người dùng): dựng lại header
-  sidebar Files đủ nút như Obsidian: **New note** (icon `square-pen`), **New canvas** (`layout-dashboard`),
+- 2026-06-14 (Phase 28 — File tree header toolbar parity Shale theo yêu cầu người dùng): dựng lại header
+  sidebar Files đủ nút như Shale: **New note** (icon `square-pen`), **New canvas** (`layout-dashboard`),
   **New folder** (`folder-plus`), **Change sort order** (dropdown: File name A→Z / Z→A, có ✓ ở mục đang
   chọn — `treeSort` persisted, sort đệ quy client-side, folder luôn trước), **Auto reveal current file**
   (toggle `autoReveal` persisted — tự expand ancestors + scroll tới file active khi đổi file), **Collapse all /
@@ -954,7 +960,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   mobile). Typecheck + build sạch; bundle chứa selector tap-outside + ngưỡng 350ms.
 - 2026-06-14 (Phase 26 — Ảnh: resize + zoom lightbox theo yêu cầu người dùng): (1) **kéo để resize** ảnh
   nhúng — 2 thanh handle trái/phải hiện khi hover trong Live Preview, kéo đổi rộng (clamp 40..bề rộng content,
-  giữ tỉ lệ height auto) và **ghi lại vào source** dạng size param Obsidian qua `writeImageWidth()`:
+  giữ tỉ lệ height auto) và **ghi lại vào source** dạng size param Shale qua `writeImageWidth()`:
   `![[img|W]]` cho wikilink embed, `![alt|W](url)` cho ảnh markdown (recover vị trí widget qua `posAtDOM` rồi
   re-match token phủ vị trí). (2) **Size param cho ảnh markdown** `![](…)`: alt mang `|W`/`|WxH` nay áp dụng
   width/height ở cả Live (imgRe) lẫn Reading (markdown.ts) — trước chỉ `![[…]]`. (3) **Lightbox zoom**
@@ -997,26 +1003,26 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   bắt đầu drag/capture, không stopPropagation) → để click đi tới Preview.onClick → `openWikilink`; viewport
   vẫn không pan (target nằm trong .canvas-node). Smoke-test: real CDP click link "NoteA" trong card →
   điều hướng `/note/NoteA.md`; không lỗi console. Build sạch.
-- 2026-06-12 (Phase 25o — Canvas "Add link" dropdown search note như Obsidian): "Add link" giờ mở
+- 2026-06-12 (Phase 25o — Canvas "Add link" dropdown search note như Shale): "Add link" giờ mở
   **dropdown search note** (tái dùng style notepicker) tại caret thay vì chỉ bọc `[[]]`. Lưu caret
   (`linkInsertPos`), guard `onBlur` khi dropdown mở (giữ card editing), chọn note → chèn `[[basename]]` tại
   caret rồi refocus; Esc/click nền → đóng + commit. Search lọc theo path; Enter chọn mục đầu; item
   `onMouseDown preventDefault`. Smoke-test: Add link → dropdown liệt kê note (K.canvas/NoteA/Task); gõ "task"
   → lọc còn Task; chọn → chèn `[[Task]]`; không lỗi console. Build sạch.
-- 2026-06-12 (Phase 25n — Canvas text menu: Add link/external lên top-level): theo Obsidian, **Add link**
+- 2026-06-12 (Phase 25n — Canvas text menu: Add link/external lên top-level): theo Shale, **Add link**
   (`[[…]]`) và **Add external link** (`[…](https://)`) là mục cấp 1 đầu menu (không nằm trong Insert) — đã
   chuyển ra top-level + bỏ khỏi submenu Insert. Smoke-test: menu top-level = Add link/Add external link/—/
   Format/Paragraph/Insert/—/Cut/Copy/Paste/Select all; Add link → `[[word]]`; không lỗi console. Build sạch.
 - 2026-06-12 (Phase 25m — Canvas resize dễ hơn theo phản hồi): trước handle giữa-cạnh bị **port nối đè**
-  (z) nên chỉ kéo được 4 góc nhỏ. Giống Obsidian: **4 handle góc rõ** (12px, nền trắng + viền accent, z8
+  (z) nên chỉ kéo được 4 góc nhỏ. Giống Shale: **4 handle góc rõ** (12px, nền trắng + viền accent, z8
   trên port) cho resize chéo + **dải kéo viền cạnh** (`.canvas-edge-resize` n/s/e/w, inset 12px khỏi góc,
   z6 dưới port nên chấm nối giữa cạnh vẫn để nối). Fix resize không lưu (commit dùng `dataRef` trễ 1 frame)
   → tách `resizeRect()` tính từ toạ độ event, commit ở pointerup từ event (robust). Smoke-test: chọn node →
   4 góc + 4 dải cạnh; kéo góc SE +120/+80 → 240×140 → 360×220, autosave đúng; không lỗi console. Typecheck +
   build sạch.
-- 2026-06-12 (Phase 25l — Canvas text-card menu phân cấp clone Obsidian bundle): reverse-engineer
-  `obsidian.asar` i18n lấy đúng cấu trúc editor menu → build menu **phân cấp** (`TextFormatMenu`,
-  submenu mở sang phải khi hover) khớp y Obsidian: **Format›** (Bold/Italic/Strikethrough/Highlight/Code/
+- 2026-06-12 (Phase 25l — Canvas text-card menu phân cấp clone Shale bundle): reverse-engineer
+  `shale.asar` i18n lấy đúng cấu trúc editor menu → build menu **phân cấp** (`TextFormatMenu`,
+  submenu mở sang phải khi hover) khớp y Shale: **Format›** (Bold/Italic/Strikethrough/Highlight/Code/
   Math/Comment/—/Clear formatting), **Paragraph›** (Bullet/Numbered/Task list/—/Heading 1-6/Body/—/Quote),
   **Insert›** (Add link/Add external link/—/Table/Callout/Code block/Math block/Horizontal rule/Footnote),
   —, Cut/Copy/Paste/Select all. Helpers: `setLinePrefix` (thay prefix heading/list/quote đầu dòng),
@@ -1024,7 +1030,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   preventDefault). Smoke-test: right-click card "hello world" → menu 3 submenu + clipboard; Paragraph›Heading
   2 → `## hello world`, blur render `<h2>`, không lỗi console. Typecheck + build sạch.
 - 2026-06-12 (Phase 25k — Canvas text-card format menu theo phản hồi): right-click **bên trong text card
-  đang edit** → menu định dạng markdown như Obsidian: Bold/Italic/Strikethrough/Highlight/Code (bọc selection
+  đang edit** → menu định dạng markdown như Shale: Bold/Italic/Strikethrough/Highlight/Code (bọc selection
   `**`/`*`/`~~`/`==`/`` ` ``), Heading/Bullet list/Quote/Checkbox (prefix đầu dòng), Link/Wikilink. Menu
   `onMouseDown=preventDefault` để textarea **không blur** (giữ focus + selection); `applyFormat` chỉnh
   `textarea.value` trực tiếp (uncontrolled, blur commit). Đóng menu khi click nền / blur. Smoke-test: edit
@@ -1039,9 +1045,9 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   Remove. Thêm `selRef` (selection luôn mới) để callback menu/handler thao tác đúng selection (fix stale khi
   right-click node chưa chọn). Smoke-test: node màu có viền 3px + nền tint; menu hiện đủ mục; Duplicate 2→3
   node, autosave đúng; không lỗi console. Typecheck + build sạch.
-- 2026-06-12 (Phase 25i — Canvas color picker chuẩn + custom theo Obsidian): palette màu giờ gồm **default
+- 2026-06-12 (Phase 25i — Canvas color picker chuẩn + custom theo Shale): palette màu giờ gồm **default
   (xám) + 6 màu preset + nút custom (vòng cầu vồng)** bọc `<input type=color>` để chọn màu tuỳ ý (lưu hex
-  vào `color` — JSON Canvas hỗ trợ, Obsidian đọc được). Swatch đang chọn có **ring accent** (so khớp màu của
+  vào `color` — JSON Canvas hỗ trợ, Shale đọc được). Swatch đang chọn có **ring accent** (so khớp màu của
   node/edge đang chọn; hex → ring ở nút custom). Smoke-test: mở palette thấy 8 swatch + input color, ring ở
   "Color 2" (node màu 2); set custom `#1e90ff` → ghi đúng `color:"#1e90ff"`, card đổi màu xanh; không lỗi
   console. Typecheck + build sạch.
@@ -1051,11 +1057,11 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   ngay ở pointerdown → click/dblclick bị retarget về `.canvas-view` nên node `onDoubleClick` (edit) không
   chạy, handler nền tạo card mới. Fix: **capture lazy** — chỉ `setPointerCapture` ở lần move thật đầu tiên
   (mode 'move'), không capture ở pointerdown. Giữ nguyên double-click nền tạo node tại điểm click (như
-  Obsidian app). Smoke-test: double-click card → edit, nodeCount giữ 1; double-click nền → tạo card mới +
+  Shale app). Smoke-test: double-click card → edit, nodeCount giữ 1; double-click nền → tạo card mới +
   edit; label border=none; nền trắng; không lỗi console. Typecheck + build sạch.
-- 2026-06-12 (Phase 25g — Canvas connect-to-anchor parity, reverse-engineer Obsidian): user phản ánh kéo
+- 2026-06-12 (Phase 25g — Canvas connect-to-anchor parity, reverse-engineer Shale): user phản ánh kéo
   từ anchor sang node khác "chỉ hiện đường gạch đứt". Test xác nhận edge VẪN tạo được, nhưng thiếu UX: node
-  đích không hiện anchor + line không snap. Reverse-engineer `app.css`: Obsidian có trạng thái canvas
+  đích không hiện anchor + line không snap. Reverse-engineer `app.css`: Shale có trạng thái canvas
   **`is-connecting`** → mọi node hiện `canvas-node-connection-point`, anchor đích sáng lên. Clone: thêm state
   `connecting` (bật khi begin connect/reconnect) → **mọi node hiện 4 anchor** khi đang kéo; move tính
   `nearestSide` của node đích → preview line **snap vào anchor** đó + anchor đó nhận class `.active` (sáng +
@@ -1065,7 +1071,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - 2026-06-12 (Phase 25f — Canvas bidirectional arrow + kéo endpoint reconnect theo phản hồi): (1) **mũi
   tên 2 đầu không hiện**: marker `orient="auto"` làm arrowhead đầu `from` quay sai chiều + nằm khuất dưới
   node → đổi `orient="auto-start-reverse"` (chuẩn SVG cho line 2 đầu) → bidirectional hiện mũi tên cả 2 đầu.
-  (2) **kéo đầu mũi tên ra được** như Obsidian: edge đang chọn hiện 2 chấm endpoint (circle, vector-effect
+  (2) **kéo đầu mũi tên ra được** như Shale: edge đang chọn hiện 2 chấm endpoint (circle, vector-effect
   non-scaling-stroke); kéo endpoint → thả lên node khác = **reconnect** (đổi from/to-Node + nearest side);
   thả ra vùng trống = menu **Add card / Add note from vault** tạo node mới tại điểm thả và nối luôn (card vào
   edit ngay; note mở picker qua `pendingConnect`). Preview đường kéo realtime. Refactor pointerup connect/
@@ -1073,8 +1079,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   clamp trong viewport. Smoke-test: zoom-fit thấy mũi tên 2 đầu; kéo endpoint→Other reconnect (toNode=c);
   kéo ra trống→menu→Add card tạo node nối (4 nodes, edge.toNode=node mới), autosave đúng; không lỗi console.
   Typecheck + build sạch.
-- 2026-06-12 (Phase 25e — Canvas arrow-direction dropdown khớp Obsidian): nút hướng mũi tên trước bấm
-  cycle → đổi thành **dropdown 3 lựa chọn** y như Obsidian: **Nondirectional** (— không mũi tên),
+- 2026-06-12 (Phase 25e — Canvas arrow-direction dropdown khớp Shale): nút hướng mũi tên trước bấm
+  cycle → đổi thành **dropdown 3 lựa chọn** y như Shale: **Nondirectional** (— không mũi tên),
   **Unidirectional** (→ mũi tên đầu `to`), **Bidirectional** (⇄ 2 đầu), có dấu ✓ ở mục hiện tại; icon nút
   toolbar đổi theo trạng thái. Thêm icon `minus`. CSS `.canvas-dir-menu/.canvas-dir-item`. Smoke-test: chọn
   edge → mở dropdown thấy 3 mục + ✓ Unidirectional; chọn Bidirectional → 2 marker arrow, dropdown đóng,
@@ -1083,14 +1089,14 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   trước dùng Bézier t=0.5 (lệch) → đổi sang **điểm giữa theo arc-length** (`bezierArcMidpoint`, sample 24
   đoạn, đi nửa độ dài cung); foreignObject 200×32 + wrapper flex center → chip nằm chính giữa trên đường
   cong (verify distToLine=0). (2) thêm nút **Remove label (X)** trong edge menu khi edge có label (khớp
-  Obsidian: trash·palette·zoom·⇄·X·pencil). (3) nút hướng mũi tên đổi icon **⇄ (arrow-left-right)**; toggle
+  Shale: trash·palette·zoom·⇄·X·pencil). (3) nút hướng mũi tên đổi icon **⇄ (arrow-left-right)**; toggle
   cho ra cả 2 đầu mũi tên (verify marker-start+end). Click label = chọn edge, double-click = sửa. Smoke-test:
   label center=0px lệch, direction→bidirectional, remove label ẩn nút + xoá label, autosave đúng, không lỗi
   console. Typecheck + build sạch.
-- 2026-06-12 (Phase 25c — Canvas parity sâu, reverse-engineer Obsidian app theo yêu cầu): extract
-  `obsidian.asar` (`app.css`/`i18n.js`) lấy đúng vocabulary menu Canvas (`actionRemove`/`actionSetColor`/
+- 2026-06-12 (Phase 25c — Canvas parity sâu, reverse-engineer Shale app theo yêu cầu): extract
+  `shale.asar` (`app.css`/`i18n.js`) lấy đúng vocabulary menu Canvas (`actionRemove`/`actionSetColor`/
   `actionZoomToSelection`/`actionEditLabel`/arrow ends `none|arrow`) + xác nhận 6 màu preset = red/orange/
-  yellow/green/cyan/purple (đã khớp). **(1) Selection menu kiểu Obsidian** nổi trên selection, hoạt động cho
+  yellow/green/cyan/purple (đã khớp). **(1) Selection menu kiểu Shale** nổi trên selection, hoạt động cho
   cả node lẫn **edge** (trước edge không có nút xoá → "ko xoá dc connector"): Remove, Set color (palette mở
   hàng swatch), Zoom to selection; riêng edge thêm **Arrow direction** (cycle toEnd→both→fromEnd→none) và
   **Edit label**. Vị trí menu tính từ bbox selection gồm cả endpoint của edge. **(2) Undo/redo**: stack
@@ -1098,7 +1104,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   thanh zoom (disabled khi rỗng), clear khi đổi file. Thêm icon `palette`+`zoom-in` (Lucide) vào Icon.tsx.
   Smoke-test: chọn edge → menu hiện đủ nút; Remove xoá edge, Undo phục hồi, Redo xoá lại; không lỗi console.
   Typecheck + build web sạch.
-- 2026-06-12 (Phase 25b — Canvas UX theo phản hồi người dùng): (1) thanh **add** giữa-dưới giống Obsidian
+- 2026-06-12 (Phase 25b — Canvas UX theo phản hồi người dùng): (1) thanh **add** giữa-dưới giống Shale
   với 3 nút **Add card / Add card from note / Add image** (tách khỏi cụm zoom góc trái-dưới). "Add card from
   note" mở popup search liệt kê file vault (note + ảnh) → chèn file node tại tâm view; "Add image" mở file
   dialog → `api.upload` → chèn image node. (2) **Kéo nền để pan viewport** (trước phải giữ Space): kéo nền
@@ -1106,8 +1112,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   `setPointerCapture` bọc try/catch (robust với synthetic/inactive pointer). Smoke-test trình duyệt: pan đổi
   transform đúng delta, Add note chèn embed, Add image render image node, autosave ghi đủ text+2 file node,
   không lỗi console. Typecheck + build web sạch.
-- 2026-06-12 (Phase 25 — Canvas FR-12, clone Obsidian Canvas): thêm `web/src/lib/canvas.ts` (đọc/ghi
-  định dạng mở **JSON Canvas** `.canvas`, tab-indent y như Obsidian, parse an toàn về `{nodes:[],edges:[]}`,
+- 2026-06-12 (Phase 25 — Canvas FR-12, clone Shale Canvas): thêm `web/src/lib/canvas.ts` (đọc/ghi
+  định dạng mở **JSON Canvas** `.canvas`, tab-indent y như Shale, parse an toàn về `{nodes:[],edges:[]}`,
   preset 6 màu, hình học edge Bézier theo side + auto-side + nearest-side, bbox/fit) và
   `web/src/components/CanvasView.tsx` (~620 dòng): khung vô hạn pan/zoom (wheel zoom tâm con trỏ, kéo nền/
   space+drag pan), lưới chấm nền co theo zoom; nodes DOM tuyệt đối trong layer transform, edges vẽ SVG (lớp
@@ -1117,7 +1123,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   select, toolbar màu/xóa nổi, Delete/Backspace xóa. Autosave debounce 900ms qua store `content`/`save`
   (`.canvas` đã trong `TEXT_RE`), không thêm API. Wire `Workspace` render CanvasView cho `.canvas`; store
   `newCanvas`; "New canvas" vào context menu FileTree (file/folder/vault root) + command palette. CSS
-  `.canvas-*` trong obsidian.css. Typecheck + build web sạch; smoke-test trình duyệt (vault tạm): render
+  `.canvas-*` trong shale.css. Typecheck + build web sạch; smoke-test trình duyệt (vault tạm): render
   group/edge mũi tên/label/embed note đúng, zoom-to-fit, tạo card + đổi màu, autosave ghi đúng JSON Canvas
   round-trip (giữ nguyên node/edge cũ), không lỗi console. PRD lên 1.0 + FR-12.
 - 2026-06-12 (Security hardening — audit toàn repo): không có secret lộ trong git (history + tracked
@@ -1152,7 +1158,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   đổi thư mục. CSS `.tree-rename`. Typecheck + build web sạch.
 - 2026-06-12 (New note không prompt + tab-bar controls không bị scrollbar che): (1) thêm action
   store `newNote(dir?)` tạo thẳng note "Untitled.md" (tự tăng "Untitled 1/2…" nếu trùng trong
-  folder đích), body rỗng → inline-title hiện tên file như Obsidian, không còn `prompt('Note name')`.
+  folder đích), body rỗng → inline-title hiện tên file như Shale, không còn `prompt('Note name')`.
   Thay mọi điểm gọi: ⌘N (App.tsx), Command palette, tab-bar "+", Sidebar Files header, context menu
   FileTree (New note trong folder → `newNote(node.path)`), FolderView header. Giữ prompt cho New
   folder và auto-create theo tên khi click wikilink chưa tồn tại. (2) Tab-bar: bọc danh sách tab
@@ -1173,7 +1179,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   không thêm vào Recent. Workspace render FolderView khi `isFolderPath(tree, activePath)`, ẩn nút ⋯
   (menu file không áp dụng cho folder). Typecheck + build sạch.
 - 2026-06-12 (Phase 22 — Move file to… + context menu Bookmarks/Recent): tính năng "Move file to…"
-  trước đây là `prompt()` gõ tay đường dẫn — thay bằng modal folder-picker kiểu Obsidian
+  trước đây là `prompt()` gõ tay đường dẫn — thay bằng modal folder-picker kiểu Shale
   (`FolderPicker.tsx`, mount ở App cạnh ContextMenu): gõ lọc folder, ↑↓ chọn, ↵ move, ⇧↵ tạo folder
   mới theo tên gõ rồi move (vault.rename tự tạo thư mục cha), esc đóng. State qua `store.movePath`/
   `setMovePath` (không persist). Menu ⋯ (Workspace) và menu chuột phải file tree (FileTree) giờ chỉ
@@ -1193,7 +1199,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   web sạch; output vào server/public nên chỉ cần reload, không restart server.
 - 2026-06-11 (Fix "Path outside allowed roots" khi Browse vault): folder browser
   (`/api/settings/browse`) chỉ cho đi trong `vault.allowedRoots`, nhưng mặc định roots suy ra từ
-  `sample-vault` nên vault ngoài đó (vd `~/ObsidianVault-Trilium`) bị 403. Sửa gốc: thêm
+  `sample-vault` nên vault ngoài đó (vd `~/ShaleVault-Trilium`) bị 403. Sửa gốc: thêm
   `ensureVaultBrowsable()` (services/settings.ts) tự thêm thư mục cha của vault vào `allowedRoots`
   khi chưa được phủ — gọi lúc lưu vault path (routes/settings.ts) và backfill khi `loadSettings`
   để chữa file cũ. Đã rebuild + restart server, settings tự heal (`allowedRoots` thêm `/Users/xnohat`).
@@ -1204,7 +1210,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   (6048 docs). Typecheck server sạch.
 - 2026-06-11 (M2.5 — Đổi mật khẩu + pass mặc định + override): mô hình auth mới. Pass đăng nhập
   mặc định `123456` (không cần bước setup); pass đã đổi lưu ở `auth.userPasswordHash` (rỗng = mặc
-  định). `auth.passwordHash` (settings.json, sửa tay) và env `WEBOBSIDIAN_PASSWORD` giờ là pass
+  định). `auth.passwordHash` (settings.json, sửa tay) và env `SHALE_PASSWORD` giờ là pass
   override khôi phục, login luôn chấp nhận. Server: `checkPassword` kiểm tra pass hiệu dụng + 2 nguồn
   override (`auth.ts`); endpoint `POST /auth/change-password` (requireAuth, verify pass cũ); bootstrap
   không seed pass nữa; `redactSettings` trả `hasCustomPassword`/`hasOverridePassword`. Migration trong
@@ -1222,12 +1228,12 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   stack dọc + input full-width (override inline width 260/120), version-history list xếp trên preview,
   share dialog full-width; safe-area top cho nav/head. Build web sạch (7.4s).
 - 2026-06-11 (Commit message mô tả): commit vault tự sinh title nêu rõ note nào đổi thay vì
-  "WebObsidian auto-sync" chung chung. `describeChanges(StatusResult)` gom file theo Added/Modified/
+  "Shale auto-sync" chung chung. `describeChanges(StatusResult)` gom file theo Added/Modified/
   Deleted/Renamed → subject 1 dòng (`Add <note>` / `Sync N notes (3 new, 2 edited): a, b, c +X more`)
   + body liệt kê từng path (cap 100). `commitAll()` dùng subject tự sinh khi không có message tay;
   bỏ message generic ở autosync/auto-commit-on-save/nút Commit. Phục vụ cả Version History UI.
 - 2026-06-11 (Phase 21 — Pane ⋯ menu parity): bổ sung tính năng menu 3-chấm góc phải note cho khớp
-  Obsidian app (theo yêu cầu người dùng). Mới: **Find/Replace** trong note (`@codemirror/search`,
+  Shale app (theo yêu cầu người dùng). Mới: **Find/Replace** trong note (`@codemirror/search`,
   panel top, item "Find…" → `editorFind()`); **Reveal file in navigation** (`store.revealInTree`
   mở folder tổ tiên + scrollIntoView + flash, FileTree nghe `wo-reveal-file`, row có `data-path`);
   **Add file property** (chèn key rỗng vào frontmatter YAML, tạo block nếu chưa có); **Export to PDF**
@@ -1235,16 +1241,16 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   (server `git.log`/`git.showFile` + routes `/api/git/log|/show`, modal `VersionHistory.tsx` list
   commit + preview + Restore); **Open in new window** (`window.open(/note/<path>)`); **Backlinks in
   document** + **Open linked view** submenu (→ `setRightPanel`). Menu dựng lại theo thứ tự nhóm của
-  Obsidian Desktop. Bỏ qua "Reveal in Finder"/"Open in default app" (desktop-only, không hợp web).
+  Shale Desktop. Bỏ qua "Reveal in Finder"/"Open in default app" (desktop-only, không hợp web).
   Typecheck sạch cả 2 workspace. PRD bump 0.6 (FR-2/FR-4).
 - 2026-06-11 (Deploy hardening cho open-source self-host): rà soát các điểm gãy khi deploy lên VPS
   sạch (gặp thực tế khi deploy lên Synology NAS). (1) `docker-compose.yml` hardcode `./sample-vault`
   + port → người tự host phải sửa file tracked, và mỗi lần redeploy clobber. Fix: chuyển sang
-  `${VAULT_HOST_PATH:-./sample-vault}` / `${HTTP_BIND}:${HTTP_PORT}` / `${WEBOBSIDIAN_WATCH}`, tham số
+  `${VAULT_HOST_PATH:-./sample-vault}` / `${HTTP_BIND}:${HTTP_PORT}` / `${SHALE_WATCH}`, tham số
   để ở `.env` (git-ignored) → redeploy không mất cấu hình. (2) Watcher `ENOSPC`: VPS sạch
   `fs.inotify.max_user_watches=8192` < số file vault lớn → native watch chết. Fix: tách `startWatcher()`,
   thêm `.on('error')`, đụng `ENOSPC/EMFILE` thì tự `close()` + restart ở chế độ `usePolling`, log hướng
-  dẫn nâng sysctl; env `WEBOBSIDIAN_WATCH=polling` ép polling từ đầu. (3) `.env.example` viết lại theo
+  dẫn nâng sysctl; env `SHALE_WATCH=polling` ép polling từ đầu. (3) `.env.example` viết lại theo
   luồng docker thật. (4) healthcheck `start_period=90s` cho index vault lớn lần đầu. README thêm mục
   "Deploy to a VPS" + lệnh sysctl. PRD ↑0.6, FR-9 mở rộng. typecheck server pass.
 - 2026-06-15 (Git Sync fix — `index.lock` wedge / "phế hoàn toàn"): bug Git Sync chết hẳn → log lặp
@@ -1256,7 +1262,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   (1) **`withGitLock`** — 1 async queue toàn cục, mọi op ghi (status/pull/push/commitAll/init/clone/sync)
   đi qua, không bao giờ overlap; op lỗi không "đầu độc" queue. Tách hàm public (wrap khoá) khỏi `*Impl`
   (chạy trong khoá, gọi nhau trực tiếp để khỏi deadlock). (2) **`clearStaleLocks`** ở đầu mỗi op — xoá
-  `index.lock`/`HEAD.lock`/`config.lock` nếu mtime cũ ≥15s (đủ rộng để không giật lock của Obsidian-git
+  `index.lock`/`HEAD.lock`/`config.lock` nếu mtime cũ ≥15s (đủ rộng để không giật lock của Shale-git
   ngoài đang chạy, đủ nhanh để tự lành sau crash). (3) **`timeout.block: 120s`** cho simple-git để op
   mạng chết không treo queue mãi. Prod (Synology): tìm thấy `index.lock` 0 byte, mtime cũ ~10h →
   xoá → `git status` chạy lại → `/api/git/sync` = `{ok:true, [Committed, Pulled, Pushed]}`. Deploy bản
@@ -1273,7 +1279,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   --allow-unrelated-histories` nối lịch sử + restore 2.646 file chỉ-có-remote, local thắng khi trùng).
   Verify: `/api/git/sync` → `{ok:true, [Committed, Pulled, Pushed]}`, HEAD==origin/main, 0 file mất ở
   cả 2 phía. Backup refs `backup/pre-union-{local,remote}` trong vault (xóa được sau khi yên tâm).
-- 2026-06-11 (Phase 19 — Mobile UI): làm mobile-friendly cho smartphone cảm ứng (tham chiếu Obsidian
+- 2026-06-11 (Phase 19 — Mobile UI): làm mobile-friendly cho smartphone cảm ứng (tham chiếu Shale
   Mobile). `useIsMobile` (matchMedia 768px) + state cục bộ `mobileDrawer` (KHÔNG persist/broadcast →
   không đụng uistate sync desktop). CSS `@media ≤768px`: workspace full-width, ribbon+sidebar trái và
   right sidebar thành drawer overlay trượt (translateX) + backdrop mờ; hamburger (☰) trên tab-bar +
@@ -1298,14 +1304,14 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   indented code guide, embed note title/khoảng trắng) + đồng bộ Reading mode với Live
   (task custom states, bullet, properties pill). Verify cả 2 chế độ bằng screenshot.
 - 2026-06-11: Phase 18 đợt 2 — sửa 11 lỗi render người dùng báo khi đối chiếu note "Markdown Test"
-  side-by-side với Obsidian app (M18.10): highlight style riêng hết màu đỏ escape; embed note
+  side-by-side với Shale app (M18.10): highlight style riêng hết màu đỏ escape; embed note
   transclusion thật + box "could not be found"; indent guides; quote lồng nhiều thanh; checkbox
   trong callout; callout fold +/- hoạt động (gập mặc định với -, toggle bằng chevron); code block
-  màu palette Obsidian + nhãn ngôn ngữ; display math $$ render (KaTeX); HR hết margin thừa;
+  màu palette Shale + nhãn ngôn ngữ; display math $$ render (KaTeX); HR hết margin thừa;
   inline-HTML line + mermaid render thật (lazy); block comment %% xám toàn khối. Thêm deps:
   katex, mermaid, @codemirror/language-data (đều lazy-load chunk riêng). Verify từng mục bằng
   screenshot Chrome trên vault thật; typecheck + build sạch.
-- 2026-06-10: Phase 18 — sao chép markdown editor Obsidian Desktop theo docs/obsidian-desktop-internals.md.
+- 2026-06-10: Phase 18 — sao chép markdown editor Shale Desktop theo docs/shale-desktop-internals.md.
   CSS token verbatim (accent HSL + ramp + heading sizes + bold-modifier 200 + callout RGB slots);
   DOM class chuẩn HyperMD-*/cm-*; LP thêm highlight/comment/math(KaTeX)/footref/blockid/HR/
   ẩn fence + escape; callout đủ 14 slot màu + icon lucide + title mặc định; wikilink luật §7
@@ -1313,11 +1319,11 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   hotkeys §4 (Mod+B/I/K/L/D, Mod+/, Mod+E, Alt+Enter, list continuation); suggester [[ + #
   với fuzzy scoring port nguyên công thức §9; line spacing đối chiếu app.css thật
   (heading padding-top --p-spacing, inline-title 0.5em). Verify Chrome vault thật side-by-side
-  với Obsidian app: heading/highlight/tag pill/callout/task/code/footnote/math/suggester khớp;
+  với Shale app: heading/highlight/tag pill/callout/task/code/footnote/math/suggester khớp;
   typecheck + build sạch; note test đã xoá.
 - 2026-06-03: Khởi tạo PRD.md, IMPLEMENTATION_PLAN.md, CLAUDE.md.
 - 2026-06-03: Hoàn tất Phase 0–10. Backend (auth, vault, QMD search, links/graph, git+LFS,
-  API gate, plugins) + frontend Obsidian-like (ribbon/sidebar/tabs/editor/reading/search/
+  API gate, plugins) + frontend Shale-like (ribbon/sidebar/tabs/editor/reading/search/
   backlinks/outline/graph/settings/command-palette). Build web+server sạch, typecheck pass.
 - 2026-06-03: Smoke test pass — login, file tree, full-text + fielded search, backlinks,
   tags, agent API (list/read/write/append/search, 401 no-key, 403 sai scope), SPA served,
@@ -1328,8 +1334,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   git auto-commit-on-save, code-split bundle.
 - 2026-06-04: Phase 13 — đại tu UI theo phản hồi: bộ icon Lucide flat thay emoji, default Light
   theme, file tree chevron-only, vault footer, status bar góc phải, "Linked mentions". Screenshot
-  đối chiếu ảnh Obsidian thật: editor light + properties block + linked mentions khớp.
-- 2026-06-04: Resolve attachment/ảnh kiểu Obsidian: thêm file index toàn vault (basename→path,
+  đối chiếu ảnh Shale thật: editor light + properties block + linked mentions khớp.
+- 2026-06-04: Resolve attachment/ảnh kiểu Shale: thêm file index toàn vault (basename→path,
   shortest-path); route /content fallback theo basename khi path không khớp. Image generic theo
   protocol — URL trình duyệt load được (http(s)/data/blob/file) load thẳng, còn lại (path tương đối
   hoặc bất kỳ scheme nào) resolve theo basename qua file index. Áp cho cả Live preview lẫn Reading.
@@ -1342,58 +1348,58 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - 2026-06-04: Viết lại Graph view: canvas 2D + d3-force (Barnes-Hut), pan/zoom, hover/zoom mới hiện
   label, click mở note, mặc định ẩn orphan (689/5929 node có liên kết) + toggle. Hết lag. Sửa layout
   full-height (theme wrapper) + status bar neo vào đáy workspace (không đè right sidebar).
-- 2026-06-04: Trỏ WebObsidian vào vault Obsidian thật `/Users/xnohat/ObsidianVault-Trilium`
+- 2026-06-04: Trỏ Shale vào vault Shale thật `/Users/xnohat/ShaleVault-Trilium`
   (5928 md, 27k files, 5.5GB). Ẩn dotfiles trong tree, folder mặc định thu gọn, con trỏ khởi tạo
-  sau frontmatter, Properties render YAML list thành pill. Screenshot khớp ảnh Obsidian thật.
+  sau frontmatter, Properties render YAML list thành pill. Screenshot khớp ảnh Shale thật.
 - 2026-06-04: Phase 14 — viết lại Live Preview thành WYSIWYG thật (heading/bold/italic/code/tag/
   callout render, ẩn syntax, chỉ lộ token tại con trỏ; sửa lỗi oneDark trên light). Thêm menu
   chuột phải editor (Format/Paragraph/Insert submenu + clipboard + search), mở rộng menu file tree,
   menu reading view. Screenshot xác nhận: bold render đậm khi con trỏ ở đoạn khác, submenu Format hiện đúng.
-- 2026-06-04: Sửa render Markdown lệch Obsidian: (1) syntax Obsidian/wikilink/embed nằm trong inline
+- 2026-06-04: Sửa render Markdown lệch Shale: (1) syntax Shale/wikilink/embed nằm trong inline
   code/code block (vd `` `![[file]]` ``) bị biến thành link — nay giữ literal ở cả Live (skip regex khi
   trùng node InlineCode/FencedCode/CodeBlock từ syntaxTree) lẫn Reading (stash code span trước khi
   preprocess, restore sau). (2) Bảng Markdown chưa render ở Live — thêm scanTables + TableWidget qua
   StateField `tableField` (block widget như frontmatter), inline render trong cell (code/bold/italic/
   link), lộ raw khi con trỏ trong bảng; plugin skip dòng thuộc bảng đã render để tránh chồng decoration.
   Verify: typecheck + build sạch, scanTables nhận đúng bảng README (header Type/Count, 10 dòng).
-- 2026-06-05: Live Preview khớp Obsidian thêm: (1) external link http(s) có icon ↗ (SVG lucide) +
+- 2026-06-05: Live Preview khớp Shale thêm: (1) external link http(s) có icon ↗ (SVG lucide) +
   gạch dưới; internal link/wikilink gạch dưới; link widget `inline-block` để text dính sau `]]` vẫn
-  wrap được như Obsidian. (2) List: thu gọn khoảng trắng thừa sau marker (`-   Item`→`• Item`,
+  wrap được như Shale. (2) List: thu gọn khoảng trắng thừa sau marker (`-   Item`→`• Item`,
   `1.  x`→`1. x`). (3) Blockquote dùng màu chữ normal (trước bị muted). (4) Render HTML block thô
   (bảng CKEditor/Trilium `<table>`) qua StateField `htmlBlockField` + sanitize (bỏ script/on*/js: URL),
   click link trong HTML mở external/internal; plugin skip dòng trong HTML block đã render. Verify bằng
   Chrome DevTools trên vault thật: icon ↗ + gạch dưới link, list 1-space, blockquote chữ đậm, bảng HTML
-  "Điểm Mạnh/Điểm Yếu" render kèm bullet + link tiktok/Google. Lưu ý: app Obsidian đang mở trên cùng
-  vault tự convert vài bảng HTML→markdown và xoá file scratch giữa session — không phải do WebObsidian
+  "Điểm Mạnh/Điểm Yếu" render kèm bullet + link tiktok/Google. Lưu ý: app Shale đang mở trên cùng
+  vault tự convert vài bảng HTML→markdown và xoá file scratch giữa session — không phải do Shale
   (server read/write nguyên văn, code chỉ thêm decoration).
 - 2026-06-05: Tinh chỉnh theo phản hồi: (1) Bảng markdown render `<br>` trong cell thành xuống dòng
-  (appendInline thêm token `<br>`), header căn trái + valign top + style theo Obsidian table CSS vars
+  (appendInline thêm token `<br>`), header căn trái + valign top + style theo Shale table CSS vars
   (cả Live lẫn Reading). (2) Blockquote: viền trái màu tím `--interactive-accent` + padding-left 24px;
   fix bug padding bị CodeMirror `.cm-line` override bằng selector chuyên biệt `.cm-line.cm-blockquote`
   (tương tự `.cm-callout`) → chữ không còn dính vào viền. Verify Chrome DevTools: br=3 trong cell, th
   căn trái, blockquote border rgb(120,82,238) + padding 24px. Phải restart server 2 lần (minisearch
   vacuuming crash + OOM khi reindex lúc reload) — bug có sẵn, không liên quan thay đổi này.
-- 2026-06-05: Table editor tương tác kiểu Obsidian (TableWidget viết lại). Cell click-to-edit
+- 2026-06-05: Table editor tương tác kiểu Shale (TableWidget viết lại). Cell click-to-edit
   (contenteditable lồng trong widget, focus hiện raw, blur/Enter commit; Escape huỷ), mỗi thao tác
   re-serialize model → replace range nguồn → tableField rebuild (DOM luôn đồng bộ). Hover hiện nút
   +column (cạnh phải) / +row (đáy). Chuột phải cell mở menu format (inject openContextMenu của store qua
   setLivePreviewMenuHandler): insert column trái/phải, insert row trên/dưới, move column/row, align
   column trái/giữa/phải (submenu), delete column/row. Bảng giờ LUÔN render widget (bỏ reveal-raw khi
-  chọn) giống Obsidian — sửa nội dung qua cell, sửa raw qua Source mode. Verify Chrome DevTools trên
+  chọn) giống Shale — sửa nội dung qua cell, sửa raw qua Source mode. Verify Chrome DevTools trên
   note "Test Table": edit cell ghi đúng GFM ra file, +column 4→5, context menu đủ mục, delete column 5→4.
-- 2026-06-05: Inline title (tên note) kiểu Obsidian hiện đầu thân note ở Live (block widget `inlineTitleField`
+- 2026-06-05: Inline title (tên note) kiểu Shale hiện đầu thân note ở Live (block widget `inlineTitleField`
   ở pos 0, title bơm qua `setNoteTitle` từ Editor) lẫn Reading (Preview prepend `.inline-title`). Dedup:
   bỏ qua nếu note mở đầu bằng `# <tên>` trùng title (note Trilium lặp tiêu đề thành heading) → không hiện 2
   lần. Verify: "Test Table" (không heading) hiện title; "Trilium System Notes" (có `# Trilium System Notes`)
   KHÔNG hiện inline title (chỉ còn heading).
-- 2026-06-05: Property editor tương tác kiểu Obsidian (FrontmatterWidget viết lại). Header "Properties",
+- 2026-06-05: Property editor tương tác kiểu Shale (FrontmatterWidget viết lại). Header "Properties",
   mỗi prop: icon theo kiểu (text=T / list=≣ / date=🗓 / number=# / checkbox=☑), key + value
   contenteditable (Enter/blur commit), list (tags/aliases/[...]) hiện pill có nút × xoá + nút "+" thêm
   item, nút × xoá prop khi hover, "+ Add property". Mỗi thao tác parse→serialize YAML→replace block
-  frontmatter [0,blockEnd]. Frontmatter giờ LUÔN render widget (bỏ reveal-raw) giống Obsidian. Có quoting
+  frontmatter [0,blockEnd]. Frontmatter giờ LUÔN render widget (bỏ reveal-raw) giống Shale. Có quoting
   YAML khi value chứa ký tự đặc biệt. Verify Chrome DevTools: README hiện title/created icon đúng, Add
   property ghi `property:` ra file rồi xoá sạch, Trilium System Notes hiện aliases dạng pill + add.
-- 2026-06-05: Property name suggester (dropdown) kiểu Obsidian khi Add property. Server: QmdEngine
+- 2026-06-05: Property name suggester (dropdown) kiểu Shale khi Add property. Server: QmdEngine
   gom frontmatter key→type toàn vault (`propMeta` map, persist/restore cùng index), endpoint
   `GET /api/properties` trả {key,type,count} sort theo count; `inferPropType` phân loại
   text/list/number/checkbox/date/datetime, core props (tags/aliases/cssclasses) luôn = list và luôn
@@ -1406,21 +1412,21 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   TreeIterator.dive khi discard/replace) ở newIndex + loadJSON; thêm guard process uncaughtException/
   unhandledRejection (log, không chết). (2) Table handle: thanh chọn cột (mép trên th) + hàng (mép trái
   ô đầu) — hover highlight cả cột/hàng (.cm-cell-hl), click mở menu format đúng phạm vi. (3) Property
-  type registry kiểu Obsidian: service đọc/ghi `.obsidian/types.json` (format {types:{key:type}},
+  type registry kiểu Shale: service đọc/ghi `.shale/types.json` (format {types:{key:type}},
   text/multitext/number/checkbox/date/datetime/tags/aliases) + route GET/POST `/api/property-types`;
   web inject registry, chuột phải key/icon → menu "Property type" (6 kiểu, ✓ kiểu hiện tại) + Copy value
   + Remove; đổi kiểu persist types.json, nếu đổi list-ness thì convert YAML scalar↔list rồi commit, còn
   lại đổi icon tại chỗ. Verify Chrome DevTools: menu hiện đủ + ✓ Date&time cho created; đổi title→List ghi
   types.json {"title":"multitext"} + YAML thành list, revert→Text sạch; handle highlight 3 ô + mở menu.
-- 2026-06-05: Value input theo property type (như Obsidian). `makeScalarField(dt,value)` dựng control
+- 2026-06-05: Value input theo property type (như Shale). `makeScalarField(dt,value)` dựng control
   đúng kiểu: text=span contenteditable, number=`<input type=number>`, checkbox=`<input type=checkbox>`,
   date=`<input type=date>`, datetime=`<input type=datetime-local>`. Mỗi field giữ `dataset.raw` =
   giá trị YAML chuẩn (readProps đọc raw → field không đụng tới không bị ghi đè, vd timestamp
   `…:48.273Z` giữ nguyên khi chỉ hiện `19:23`). Đổi kiểu scalar↔scalar swap control tại chỗ (fix: trước
-  chỉ đổi icon). Verify Chrome DevTools: created→datetime picker (raw giữ giây/Z), dateNote (Obsidian set
+  chỉ đổi icon). Verify Chrome DevTools: created→datetime picker (raw giữ giây/Z), dateNote (Shale set
   datetime trong types.json) cũng ra datetime picker — interop 2 chiều; cycle dateNote qua
   number/checkbox/date/text/datetime input đổi đúng; README sạch, types.json khớp.
-- 2026-06-05: List property (tags…) sửa/thêm value kiểu Obsidian. Pill giờ contenteditable (click sửa,
+- 2026-06-05: List property (tags…) sửa/thêm value kiểu Shale. Pill giờ contenteditable (click sửa,
   blur commit) + nút × xoá; nút "+" mở ô gõ + dropdown gợi ý value (tag vault qua `setLivePreviewTagProvider`
   → /api/tags, 1302 tag), lọc realtime, chọn hoặc Enter để thêm. Bỏ cap 12 ở Add-property suggester (giờ
   hiện hết ~72 key, cuộn được) — sửa khiếu nại "props ít". Dropdown value dùng position:fixed append body,
@@ -1428,9 +1434,9 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   văng sang phải). flushActive trong mutate để không mất edit dở khi có thao tác khác. Verify Chrome
   DevTools: gap 0px, dropdown thẳng dưới input, lọc "linu"→linux/linuxjournal, chọn→`tags: - linux` ra
   file, sửa pill linux→linuxedit persist, xoá sạch; Add-property dropdown 72 mục.
-- 2026-06-05: Graph view chuyển từ modal độc lập → mở trong workspace tab như Obsidian (sentinel
+- 2026-06-05: Graph view chuyển từ modal độc lập → mở trong workspace tab như Shale (sentinel
   path `graph://view`, render trong Workspace khi activePath là graph; setGraph/openGraph thêm-hoặc-
-  kích-hoạt tab, lưu cùng workspace state). Thêm panel Filters overlay kiểu Obsidian (collapse từng
+  kích-hoạt tab, lưu cùng workspace state). Thêm panel Filters overlay kiểu Shale (collapse từng
   section): Filters (search files, Tags/Attachments/Existing files only/Orphans toggle), Groups
   (New group: màu + query → tô node khớp), Display (Arrows, Text fade, Node size, Link thickness,
   Animate), Forces (Center/Repel/Link/Link distance slider 0..1 map sang d3-force). Backend mở rộng
@@ -1449,19 +1455,19 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   vault thật: /api/graph trả 22718 node kèm kind+tags (3085 node có tag), bật Tags → tagsOn=true, KHÔNG
   lỗi/không crash, orphan 2533→1213 (note nối vào tag node). typecheck + build web+server sạch.
 - 2026-06-05: Fix hiệu năng — server ghim ~88% CPU liên tục + Files panel kẹt "Loading...". 3 nguyên
-  nhân O(toàn vault) chạy lặp: (1) chokidar KHÔNG ignore `.obsidian` → app Obsidian mở cùng vault ghi
+  nhân O(toàn vault) chạy lặp: (1) chokidar KHÔNG ignore `.shale` → app Shale mở cùng vault ghi
   workspace.json/state liên tục → mỗi event broadcast `fs` → client refetch cả tree. (2) `listTree`
   `fs.stat()` từng file → 27k syscall mỗi lần fetch tree (UI không dùng size/mtime). (3) onChange + API
   reindex gọi `buildLinkGraph()` đọc+parse lại toàn bộ 5938 note mỗi lần 1 file đổi. Sửa: ignore
-  `.obsidian` trong watcher; bỏ `fs.stat` trong listTree (chỉ dùng dirent); thêm
+  `.shale` trong watcher; bỏ `fs.stat` trong listTree (chỉ dùng dirent); thêm
   `updateLinkGraphForFile(rel, removed)` cập nhật graph TĂNG TIẾN 1 file (watcher onChange + reindex
   của PUT content/rename/delete đều dùng; agent + /api/reindex vẫn full vì hiếm). Verify CDP trên vault
   thật: CPU 88%→0% idle, /api/files/ ~190ms, Files panel hết "Loading" (38 row). RSS ~1.1GB ổn định
   (MiniSearch + index, không tăng). typecheck + build server sạch.
-- 2026-06-05: Graph nâng chất lượng + tương tác theo phản hồi (so Obsidian). (1) Click TAG node →
+- 2026-06-05: Graph nâng chất lượng + tương tác theo phản hồi (so Shale). (1) Click TAG node →
   search notes: store thêm `searchFor(q)` (set leftPanel=search + searchQuery), SearchPanel adopt
   searchQuery; GraphView onUp: note→openFile, tag→`searchFor('tag:'+name)`. Verify API: tag:license→50
-  hits (note đầu "12min Lifetime License" khớp Obsidian), tag:Android→40. (2) Zoom mượt: bỏ React
+  hits (note đầu "12min Lifetime License" khớp Shale), tag:Android→40. (2) Zoom mượt: bỏ React
   onWheel (passive, preventDefault bị bỏ qua) → native listener {passive:false}, scale liên tục
   `exp(-deltaY*speed)` thay vì bước cố định 1.1×; ctrlKey=pinch amplify. (3) Đồ hoạ sắc nét hơn: node
   radius đổi sang sqrt `(1.5+√deg*0.9)*(0.4+size)` (hết blob khổng lồ), thêm viền nền quanh node tách
@@ -1471,7 +1477,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   mạnh theo √deg, link dài hơn (67→100), distanceMax 480→1400, center nhẹ hơn, collide theo bán kính
   thật → graph nở thoáng, hết "hairball". (2) Line mảnh lại + đậm màu (đổi sang --text-faint, alpha
   ~0.7). (3) Label fade theo zoom (hub hiện trước, note nhỏ chỉ hiện khi zoom gần) thay vì hiện hết.
-- 2026-06-05: Đổi renderer graph từ canvas-2D (CPU) sang **PixiJS WebGL (GPU)** như Obsidian (user
+- 2026-06-05: Đổi renderer graph từ canvas-2D (CPU) sang **PixiJS WebGL (GPU)** như Shale (user
   chọn). Pixi v8 dynamic-import (chunk 246KB gzip, chỉ tải khi mở graph; bundle chính vẫn ~40KB).
   Kiến trúc: node = Sprite (texture tròn dùng chung, tint theo màu/nhóm, scale theo bán kính), edges =
   Graphics, label = lớp Text screen-space riêng (pool ≤400, halo nền, fade theo zoom). Pan/zoom = biến
@@ -1480,10 +1486,10 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   nguyên d3-force + panel Filters/Forces + click tag→search. Verify CDP vault thật: WebGL context sống
   (không lost), 0 lỗi console, scene rebuild đúng khi đổi filter (tags off→1258 node), screenshot xác
   nhận vẽ node/edge/label sắc nét. typecheck + build web sạch.
-- 2026-06-06: Tinh chỉnh graph WebGL khớp Obsidian (qua nhiều vòng screenshot CDP): (1) Node size:
+- 2026-06-06: Tinh chỉnh graph WebGL khớp Shale (qua nhiều vòng screenshot CDP): (1) Node size:
   sqrt CÓ CAP `(3+min(√deg,11))*(0.45+size)` → hub tag chỉ ~3.5× note (trước ~9×, blob khổng lồ),
   note có base nhìn rõ. (2) Label: ngưỡng theo bán kính màn hình hạ thấp + **greedy tránh chồng**
-  (sort hover→deg, bỏ label nào đè label đã đặt, tối đa 220) → label sạch như Obsidian, hiện đúng tầm
+  (sort hover→deg, bỏ label nào đè label đã đặt, tối đa 220) → label sạch như Shale, hiện đúng tầm
   zoom thay vì hiện muộn/đè nhau. (3) Auto-fit theo VÙNG LÕI (median center + percentile 82% bán kính,
   bỏ outlier cụm orphan bay xa) → mức zoom mặc định hợp lý, không co graph thành chấm giữa màn hình;
   fit định kỳ khi đang dàn, dừng khi user pan/zoom. (4) Edge giữ ĐỘ DÀY CỐ ĐỊNH trên màn hình
@@ -1493,11 +1499,11 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - 2026-06-06: Label theo phản hồi "hiện muộn + mờ": hạ ngưỡng rMin (1.1−fade) → label hiện ngay ở mức
   zoom fit mặc định; font 11→13 + fontWeight 600 + màu --text-normal (đậm/đen) + halo width 4 + ramp
   alpha nhanh → hết mờ. Verify CDP: ở cả mức fit lẫn zoom +2, label đậm-đen-to, không chồng (greedy
-  vẫn tránh đè), hiện đầy đủ tag + tên note như Obsidian.
-- 2026-06-06: Label fade mượt theo zoom như Obsidian: nới vùng ramp alpha (over ~4.5px bán kính màn
+  vẫn tránh đè), hiện đầy đủ tag + tên note như Shale.
+- 2026-06-06: Label fade mượt theo zoom như Shale: nới vùng ramp alpha (over ~4.5px bán kính màn
   hình) → label hiện mờ ở zoom xa rồi từ từ rõ dần khi zoom vào, hub rõ trước, note nhỏ rõ sau. Verify
   CDP: mức fit label mờ/đa cấp opacity, zoom +4 label rõ-đậm hoàn toàn.
-- 2026-06-10: Navigation back/forward kiểu Obsidian (M9.10). Store thêm history stack (`history`/
+- 2026-06-10: Navigation back/forward kiểu Shale (M9.10). Store thêm history stack (`history`/
   `histIndex`, cap 100) + `goBack`/`goForward`; openFile/openGraph push entry qua `pushHistory` (cắt
   nhánh forward, bỏ qua khi đang replay nhờ cờ `navByHistory`). View-header giờ render cho MỌI view
   (trước chỉ markdown) với 2 nút ←/→ góc trái, disabled+mờ khi hết chỗ lùi/tới; Graph view cũng có
@@ -1555,13 +1561,13 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   React PublicNote (SSR thay thế), vite proxy thêm /share. Verify curl: locked → noindex + không leak,
   mở khoá → đủ meta + content + img + CSS inline, id sai → 404 noindex; Chrome context cô lập: form
   unlock sai báo lỗi, đúng → reload ra note y hệt Reading view. Typecheck + build sạch.
-- 2026-06-10: Graph view — sửa layout lệch xa Obsidian (đồ thị bị tãi thành sợi, cụm rời bay
+- 2026-06-10: Graph view — sửa layout lệch xa Shale (đồ thị bị tãi thành sợi, cụm rời bay
   tứ tán, hub tag thành "bồ công anh" gai): (1) thay `forceCenter` (chỉ tịnh tiến trọng tâm,
   không hút) bằng gravity thật `forceX`+`forceY` map theo slider Center force; (2) link strength
   chuyển sang adaptive kiểu d3 mặc định `slider/min(deg)` để cụm quanh hub nén thành đĩa đặc;
   (3) cap hệ số repel theo bậc (hub ~2× leaf thay vì ~8×) + distanceMax 900; (4) khởi tạo vị trí
   bằng xoắn ốc phyllotaxis thay vì cả 5.4k node trên một vòng tròn r=250; (5) link distance mặc
-  định 100→50, alphaDecay 0.02; (6) node tag đổi màu xanh lá kiểu Obsidian. Verify Chrome trên
+  định 100→50, alphaDecay 0.02; (6) node tag đổi màu xanh lá kiểu Shale. Verify Chrome trên
   vault thật 5.9k note: đồ thị tụ thành khối cầu liên kết với tag xanh phân bố đều, label/zoom
   ổn, console sạch. Typecheck + build sạch.
 - 2026-06-10: Phase 17 (PRD 0.3) — pane menu (⋯) + đại tu Right sidebar theo phản hồi "thiếu menu
@@ -1570,11 +1576,11 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   path/Delete + Close tab/Close other tabs; Graph = Copy screenshot (extract Pixi stage → PNG
   composite nền theme → clipboard; cần render lại vì WebGL không preserveDrawingBuffer) + Close
   tab. (2) Split pane 2 hướng: `splitDirection` right/down persist trong uistate, `.editor-area.
-  split-down` flex-column. (3) Right sidebar thành tab strip icon kiểu Obsidian: Backlinks
+  split-down` flex-column. (3) Right sidebar thành tab strip icon kiểu Shale: Backlinks
   (Linked mentions + **Unlinked mentions**) · Outgoing links (resolved/unresolved, lọc attachment
   khỏi unresolved để không tạo nhầm note .md) · Tags (tái dùng TagsPanel, click → search tag:x
   đúng query) · Outline; `rightPanel` persist + sync. (4) Server: `/api/search/matches` thêm
-  `phrase:true` → match cả cụm (unlinked mentions chính xác như Obsidian thay vì OR từng từ —
+  `phrase:true` → match cả cụm (unlinked mentions chính xác như Shale thay vì OR từng từ —
   verify curl: phrase=0 hit vs word-based=1679 trên cùng note). Icon mới: more-horizontal/rows/
   list/arrow-up-right/camera. Verify CDP trên vault thật: menu ⋯ note đủ 11 mục, Split down ra
   pane dưới có header+close, Copy screenshot → clipboard chứa image/png, tab strip đổi panel,
@@ -1582,49 +1588,49 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
   phục sau reload. Typecheck + build web+server sạch; restart server dist mới. Lưu ý môi trường:
   client cũ (bundle trước) của user đang mở /graph liên tục đẩy uistate ghi đè khi test — không
   phải bug code mới.
-- 2026-06-10: Graph view — đồng bộ slider với đơn vị/mặc định gốc của Obsidian app: Text fade
+- 2026-06-10: Graph view — đồng bộ slider với đơn vị/mặc định gốc của Shale app: Text fade
   -3..3=0, Node size 0.1..5=1, Link thickness 0.1..5=1, Center force 0..1=0.52, Repel force
   0..20=10, Link force 0..1=1, Link distance 30..500=250 (map nội bộ về tham số d3 đã calibrate
   để mặc định cho ra layout như bản tune). Panel Filters mặc định collapsed — chỉ hiện cog icon
-  như Obsidian. Migration: graphSettings cũ (thang 0..1) persist server-side được detect qua
+  như Shale. Migration: graphSettings cũ (thang 0..1) persist server-side được detect qua
   linkDistance ≤ 1 → reset display/forces về mặc định mới, giữ filters/groups. Verify Chrome:
   panel đóng + cog, mở panel slider đúng min/max/value, layout giữ khối cầu. Typecheck + build sạch.
-- 2026-06-10: Graph view — port CHÍNH XÁC physics của Obsidian app bằng cách reverse-engineer
-  obsidian.asar cài trên máy (sim.js = d3-force chạy trong worker + WASM, app.js = panel/renderer):
+- 2026-06-10: Graph view — port CHÍNH XÁC physics của Shale app bằng cách reverse-engineer
+  shale.asar cài trên máy (sim.js = d3-force chạy trong worker + WASM, app.js = panel/renderer):
   charge = -repelSlider³ (mặc định 10 → -1000, distanceMin 30, theta .9, KHÔNG distanceMax);
   link distance = slider nguyên gốc (250); link strength = slider × 1/min(deg) (adaptive d3);
   gravity forceX/Y với strength = MJ easing (0.01^(1-e)-0.01)/0.99 → 0.52 ⇒ 0.1; collide bán kính
   cố định 60 strength 0.5; alphaDecay 1-0.001^(1/300); velocityDecay 0.4. Node radius theo
-  getSize() của Obsidian: nodeSize × clamp(3√(deg+1), 8, 30). Cạnh vẽ độ dày cố định theo màn hình
+  getSize() của Shale: nodeSize × clamp(3√(deg+1), 8, 30). Cạnh vẽ độ dày cố định theo màn hình
   (lineSizeMult/scale) màu nhạt; node note màu xám (không phải accent). Kết quả: đồ thị co thành
   hình cầu một khối như app. Verify Chrome vault 5.9k note + typecheck/build sạch.
-- 2026-06-10: Graph view — hoàn tất parity render với Obsidian app (đào tiếp renderer trong
-  app.js): (1) node vẽ theo luật nodeScale = √(1/zoom) của Obsidian — bán kính màn hình =
+- 2026-06-10: Graph view — hoàn tất parity render với Shale app (đào tiếp renderer trong
+  app.js): (1) node vẽ theo luật nodeScale = √(1/zoom) của Shale — bán kính màn hình =
   getSize()·√k nên zoom out node vẫn to gần chạm nhau thành đĩa tổ ong đặc, cạnh chìm phía sau
   (trước đó node co tuyến tính theo zoom → teo mất, chỉ còn thấy cạnh thành chùm "pháo hoa");
   (2) label dùng fade toàn cục textAlpha = clamp(log₂(zoom) − textFade, 0, 1) như app (mặc định:
   bắt đầu hiện sau zoom 1×, rõ hẳn ở 2×) thay vì ngưỡng theo bán kính từng node; (3) hit-test
   hover/click + mũi tên + nhân scale hover đồng bộ theo bán kính màn hình mới. Không copy code
-  Obsidian — chỉ trích hằng số/công thức và viết lại trên d3-force (BSD). Verify Chrome side-by-side
+  Shale — chỉ trích hằng số/công thức và viết lại trên d3-force (BSD). Verify Chrome side-by-side
   với app trên cùng vault: khối cầu cụm đặc tương đồng. Typecheck + build sạch.
-- 2026-06-10: Reverse engineering toàn diện Obsidian Desktop 1.12.7 (extract obsidian.asar:
+- 2026-06-10: Reverse engineering toàn diện Shale Desktop 1.12.7 (extract shale.asar:
   app.js 3.6MB, app.css 588KB, main.js, worker.js, sim.js) bằng 4 agent song song. Ghi tri thức
-  vào docs/obsidian-desktop-internals.md (22 mục): regex chính xác Markdown dialect (wikilink/
-  callout/tag/block-id/footnote), luật link resolution 6 bước, schema đầy đủ .obsidian/* +
+  vào docs/shale-desktop-internals.md (22 mục): regex chính xác Markdown dialect (wikilink/
+  callout/tag/block-id/footnote), luật link resolution 6 bước, schema đầy đủ .shale/* +
   workspace.json + graph.json + .canvas + .base, grammar search operators, thuật toán fuzzy có
   công thức điểm, hằng số d3-force graph (velocityDecay 0.6, repel −slider³, slider curve),
   cơ chế Live Preview/reading view (DOMPurify config, embed depth ≤5), 196 command id + hotkey
   mặc định, registry 31 core plugins, toàn bộ CSS design tokens 2 theme + DOM class + bảng
   14 nhóm callout. Dùng làm tài liệu gốc khi clone tính năng về sau.
-- 2026-06-10: Graph view — sao chép hành vi viewport của Obsidian app: khởi tạo scale = 1 theo
+- 2026-06-10: Graph view — sao chép hành vi viewport của Shale app: khởi tạo scale = 1 theo
   DEVICE pixel (CSS k = 1/devicePixelRatio), tâm spawn đặt giữa khung, KHÔNG auto zoom-to-fit
   (bỏ fitView chạy theo tick — chính nó làm mức zoom hai bên lệch nhau nên cùng một node thấy
   mật độ/khoảng cách khác nhau); node spawn "big bang" từ đĩa phyllotaxis nhỏ ở tâm và nở ra
-  như app. Bật lại Orphans trong uistate đã lưu (mặc định Obsidian = on; 2.289 orphan lấp đầy
+  như app. Bật lại Orphans trong uistate đã lưu (mặc định Shale = on; 2.289 orphan lấp đầy
   khoảng trống giữa các cụm — thiếu chúng nên trước đó nhìn "rỗng" hơn app). Sau sửa: cùng mức
   zoom, khoảng cách node/cỡ node trùng app vì physics + luật render + viewport đều giống nhau.
   Verify Chrome zoom vào hub #FRT so với app. Typecheck + build sạch.
-- 2026-06-10 (tiếp): Graph view — hoàn tất parity zoom/spacing/typography với Obsidian app
+- 2026-06-10 (tiếp): Graph view — hoàn tất parity zoom/spacing/typography với Shale app
   (đào tiếp app.js + đọc toàn bộ sim.js): (1) mọi luật scale chuyển sang DEVICE pixel như app
   (bán kính node màn hình = getSize·√scale_device → trên Retina node nhỏ lại √dpr, khoảng cách
   cụm khớp app); (2) wheel zoom đúng công thức app: target ×= 1.5^(−ΔY/120), clamp [1/128, 8],
@@ -1642,7 +1648,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 - 2026-06-11: Phase 20 (PRD 0.5) — Graph "Find node": ô search nổi góc trên-trái canvas, keyword
   match trên node đang hiển thị (label/path, AND mọi từ, rank tag-first>prefix>label>path+degree, top 50,
   kind tô màu tag xanh/attachment vàng/unresolved mờ + path phụ); click/Enter → flyTo: camera
-  lerp pan+zoom 15%/frame (chung nhịp updateZoom Obsidian) về node ở scale ≥2, setHover highlight
+  lerp pan+zoom 15%/frame (chung nhịp updateZoom Shale) về node ở scale ≥2, setHover highlight
   accent + dim không-liên-kết tới khi di chuột; wheel/drag hủy fly; Esc/clear đóng list. Verify
   CDP vault thật: gõ "docker" 50 kết quả đúng rank, click bay tới node centered scale 2.0, query
   tự xoá, console sạch. Typecheck + build sạch. PRD bump 0.5 (FR-2).

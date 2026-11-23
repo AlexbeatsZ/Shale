@@ -224,11 +224,11 @@ test('cold tooltip keeps explicit pending and visible error without an old formu
 test('plugin renderMath rejects finishRenderMath without an orphan rejection', async ({ page }, info) => {
   await open(page);
   await page.evaluate(async () => {
-    const { obsidianModule } = await import('/src/lib/obsidian/runtime.ts');
+    const { shaleModule } = await import('/src/lib/shale/runtime.ts');
     (window as any).surfaceGate.blocked = true;
-    const host = obsidianModule.renderMath('z+39', false);
+    const host = shaleModule.renderMath('z+39', false);
     host.id = 'surface-plugin'; document.body.appendChild(host);
-    (window as any).surfaceFinish = obsidianModule.finishRenderMath().then(() => 'resolved', (error: Error) => error.message);
+    (window as any).surfaceFinish = shaleModule.finishRenderMath().then(() => 'resolved', (error: Error) => error.message);
   });
   await expect.poll(() => page.evaluate(() => (window as any).surfaceGate.entered)).toBeGreaterThan(0);
   const pending = await page.locator('#surface-plugin').textContent();
@@ -240,12 +240,12 @@ test('plugin renderMath rejects finishRenderMath without an orphan rejection', a
   expect(unhandled).toEqual([]);
   await expect(page.locator('#surface-plugin')).toContainText('无法渲染公式');
   expect(pending).toContain('正在渲染');
-  expect(await page.evaluate(async () => { const { obsidianModule } = await import('/src/lib/obsidian/runtime.ts'); await obsidianModule.finishRenderMath(); return true; })).toBe(true);
+  expect(await page.evaluate(async () => { const { shaleModule } = await import('/src/lib/shale/runtime.ts'); await shaleModule.finishRenderMath(); return true; })).toBe(true);
   await page.evaluate(async () => {
-    const { obsidianModule } = await import('/src/lib/obsidian/runtime.ts');
+    const { shaleModule } = await import('/src/lib/shale/runtime.ts');
     (window as any).surfaceGate.fail = false;
-    const host = obsidianModule.renderMath('z+40', false); host.id = 'surface-plugin-recovery'; document.body.append(host);
-    await obsidianModule.finishRenderMath();
+    const host = shaleModule.renderMath('z+40', false); host.id = 'surface-plugin-recovery'; document.body.append(host);
+    await shaleModule.finishRenderMath();
   });
   await expect(page.locator('#surface-plugin-recovery > mjx-container')).toHaveCount(1);
   await expect(page.locator('#surface-plugin-recovery')).not.toHaveAttribute('aria-busy');

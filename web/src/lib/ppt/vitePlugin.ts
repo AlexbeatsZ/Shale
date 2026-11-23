@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 export function presentationLicenses(): Plugin {
   const require = createRequire(import.meta.url);
   return {
-    name: 'webobsidian-presentation-licenses',
+    name: 'shale-presentation-licenses',
     generateBundle() {
       for (const [name, filename] of [['@web-ppt/core', 'LICENSE'], ['fflate', 'LICENSE']] as const) {
         const root = dirname(require.resolve(name + '/package.json'));

@@ -3,7 +3,7 @@ import { countColumn, EditorSelection, type ChangeSpec } from '@codemirror/state
 import { insertNewlineContinueMarkup, deleteMarkupBackward } from '@codemirror/lang-markdown';
 import { getIndentUnit, indentString, indentUnit } from '@codemirror/language';
 import { syntaxModel } from './syntaxModel';
-import { mathRegions, extractMetadata, footnotes, footnoteFragment } from '@webobsidian/markdown-core';
+import { mathRegions, extractMetadata, footnotes, footnoteFragment } from '@shale/markdown-core';
 import { followRenderedLink } from './fragmentNavigation';
 import { markdownListFold, markdownListLine } from './listLayout';
 
@@ -120,7 +120,7 @@ export const markdownListKeymap: KeyBinding[] = [
 ];
 
 /**
- * Obsidian editor commands & default hotkeys (docs §4).
+ * Shale editor commands & default hotkeys (docs §4).
  * Format toggle pairs: bold `**`, italic `*`, code `` ` ``, highlight `==`,
  * strikethrough `~~`, comment `%%`, math `$`.
  */
@@ -251,7 +251,7 @@ export function followLink(view: EditorView, _open?: (target: string) => void): 
   return false;
 }
 
-export interface ObsidianKeymapHandlers {
+export interface ShaleKeymapHandlers {
   openLink: (target: string) => void;
   /** markdown:toggle-preview (Mod+E) */
   togglePreview?: () => void;
@@ -260,7 +260,7 @@ export interface ObsidianKeymapHandlers {
 }
 
 /** Named commands belong to CommandManager; only structural editing stays here. */
-export function obsidianKeymap(_h: ObsidianKeymapHandlers): KeyBinding[] {
+export function shaleKeymap(_h: ShaleKeymapHandlers): KeyBinding[] {
   return [
     // Native marker continuation plus exact indentation for unmarked list text.
     { key: 'Enter', run: continueMarkdown },

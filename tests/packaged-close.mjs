@@ -14,7 +14,7 @@ assert(physicalDesktop.toLowerCase().startsWith(tempRoot.toLowerCase() + path.se
 await fs.access(entry);
 await fs.access(path.join(desktop, '.gen/server/dist/index.mjs'));
 const output = process.env.PACKAGED_CLOSE_OUTPUT ? path.resolve(process.env.PACKAGED_CLOSE_OUTPUT)
-  : await fs.mkdtemp(path.join(tempRoot, 'webobsidian-close-'));
+  : await fs.mkdtemp(path.join(tempRoot, 'shale-close-'));
 await fs.mkdir(output, { recursive: true });
 assert((await fs.realpath(output)).toLowerCase().startsWith(tempRoot.toLowerCase() + path.sep), 'Keep all Electron profiles and evidence inside Temp/.agents');
 const require = createRequire(import.meta.url);
@@ -63,7 +63,7 @@ require(${JSON.stringify(entry)});
   await fs.writeFile(bootstrap, bootstrapSource);
   const environment = { ...process.env };
   delete environment.ELECTRON_RUN_AS_NODE;
-  delete environment.WEBOBSIDIAN_INITIAL_VAULT;
+  delete environment.SHALE_INITIAL_VAULT;
   let application, nativeProcess, page, releaseSave;
   let mode = 'gate';
   let capturedSave;

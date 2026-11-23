@@ -2,7 +2,7 @@ import { findNodeAtLocation, parseTree, printParseErrorCode, type Node, type Par
 import type { CompiledAddition, CompiledMenuConfig, MenuAddition, MenuCondition, MenuConfig, MenuContext, MenuDiagnostic } from './types';
 
 export const MENU_CONFIG_ROOT = 'menu.jsonc';
-export const MENU_CONFIG_DIRECTORY = '.obsidian/webobsidian/menus/';
+export const MENU_CONFIG_DIRECTORY = '.shale/menus/';
 export const MENU_CONFIG_MAX_FILES = 32;
 export const MENU_CONFIG_MAX_BYTES = 1024 * 1024;
 type KeyPath = (string | number)[];

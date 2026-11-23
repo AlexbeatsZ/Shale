@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mergeReview } from '@webobsidian/markdown-core';
+import { mergeReview } from '@shale/markdown-core';
 import { decodeText, describeChange, splitLines } from './syncMerge.js';
 
 describe('sync text helpers', () => {

@@ -15,8 +15,11 @@ export function buildInputMethod(platform = process.platform, arch = process.arc
     execFileSync('xcrun', ['swiftc', '-O', '-target', `${arch}-apple-macos11.0`,
       path.join(desktop, 'native/macos/main.swift'), path.join(desktop, 'native/macos/TSMUtils.swift'), '-o', binary], { stdio: 'inherit' });
     execFileSync('/usr/bin/codesign', ['--force', '--sign', 'Local Development Code Signing',
-      '--identifier', 'com.xnohat.webobsidian.input-method', '--timestamp=none', binary], { stdio: 'inherit' });
+      '--identifier', 'io.github.alexbeatsz.shale.input-method', '--timestamp=none', binary], { stdio: 'inherit' });
     execFileSync('/usr/bin/codesign', ['-d', '-r-', binary], { stdio: 'inherit' });
+    const migration = path.join(output, 'migrate-keychain');
+    execFileSync('xcrun', ['swiftc', '-O', '-target', `${arch}-apple-macos11.0`, path.join(desktop, 'native/macos/migrate-keychain.swift'), '-o', migration], { stdio: 'inherit' });
+    execFileSync('/usr/bin/codesign', ['--force', '--sign', 'Local Development Code Signing', '--identifier', 'io.github.alexbeatsz.shale.key-migration', '--timestamp=none', migration], { stdio: 'inherit' });
   } else {
     const args = ['/nologo', '/EHsc', '/std:c++17', '/O2', '/MT', path.join(desktop, 'native/windows/main.cpp'),
       `/Fe:${path.join(output, 'im-select.exe')}`, `/Fo:${path.join(output, 'im-select.obj')}`, 'user32.lib', 'imm32.lib'];

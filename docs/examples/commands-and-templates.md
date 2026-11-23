@@ -1,7 +1,7 @@
 # User commands and templates
 
 Settings → 用户指令与模板 saves definitions in the current Vault's
-`.obsidian/webobsidian/automation.jsonc`. No user command runs when merely loading
+`.shale/automation.jsonc`. No user command runs when merely loading
 the file. Use trusted code, with the same app access as native JS blocks.
 
 ```jsonc

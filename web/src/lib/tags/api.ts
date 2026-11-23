@@ -1,7 +1,7 @@
 import { request } from '../api';
 import type { FileUpdateResult } from '../../../../server/src/contracts';
 import { useStore } from '../store';
-import type { TagApplyResult, TagPreview, TagPreviewRequest, TagSummary, TagPreferences } from '@webobsidian/markdown-core';
+import type { TagApplyResult, TagPreview, TagPreviewRequest, TagSummary, TagPreferences } from '@shale/markdown-core';
 
 export const tagsApi = {
   summary: (signal?: AbortSignal) => request<{ tags: TagSummary[]; preferences: TagPreferences }>('/api/tags', { signal }),

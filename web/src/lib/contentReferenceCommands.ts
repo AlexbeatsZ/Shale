@@ -1,4 +1,4 @@
-import { createContentTarget, type ContentTarget, type SourceSpan } from '@webobsidian/markdown-core';
+import { createContentTarget, type ContentTarget, type SourceSpan } from '@shale/markdown-core';
 import type { EditorView } from '@codemirror/view';
 import { getActiveEditor } from './activeEditor';
 import { contextOf } from './renderContext';

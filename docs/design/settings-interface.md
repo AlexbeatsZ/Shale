@@ -41,10 +41,10 @@ existing close button.
 
 ## Visual contract (2026-10-23)
 
-Follow the supplied Obsidian references: compact title strip, searchable left
+Follow the supplied Shale references: compact title strip, searchable left
 navigation grouped into options and native features, and ordinary rows with names
 and descriptions at left and controls at right. Search and Hotkeys are separate
-pages. About identifies AlexbeatsZ/webobsidian, AlexbeatsZ and the upstream fork.
+pages. About identifies AlexbeatsZ/shale, AlexbeatsZ and the upstream fork.
 Account, API-key, public-sharing and plugin-install pages and their internal
 implementations are removed. Installed plugins retain the existing enable API;
 plugin-owned settings tabs retain their display/hide/container lifecycle.
@@ -63,7 +63,7 @@ No editor selection/input subscriptions are added.
 
 ### Shared buttons (2026-10-28)
 
-The existing obsidian.css button block owns ordinary native settings controls,
+The existing shale.css button block owns ordinary native settings controls,
 the plugin ButtonComponent adapter (.btn) and the native file picker's
 ::file-selector-button. They share UI typography, 28px minimum height, padding,
 border and radius; file inputs retain the real browser picker, filename, keyboard
@@ -125,7 +125,7 @@ own formula invalidation; no additional resize observer or renderer is introduce
 
 User CSS remains possible, but an explicitly scoped custom override can still
 supersede inherited document variables. These preferences do not promise exact
-visual parity with every Obsidian theme or change monospace font glyph metrics.
+visual parity with every Shale theme or change monospace font glyph metrics.
 
 Settings exposes ordinary toggles, file paths, external open, copy-path and reload.
 ConfigurationFile is the shared visual row, consuming desktop.openVaultPath. It
@@ -135,9 +135,9 @@ an error. Explicit create actions use the existing feature save services and
 exclusive-create/revision semantics; opening never creates or replaces a file.
 
 - WritingSettings calls updateWriting/refreshWriting. Advanced LaTeX, snippets,
-  custom regexes and formatter arrays live in .obsidian/webobsidian/writing.jsonc.
+  custom regexes and formatter arrays live in .shale/writing.jsonc.
   Missing native configuration uses native defaults, without reading old app or
-  plugin settings. Snippets default to .obsidian/webobsidian/snippets; an absent
+  plugin settings. Snippets default to .shale/snippets; an absent
   directory is empty and is not created on read. Existing explicit source paths
   and inline definitions in writing.jsonc remain authoritative.
 - MathSettings keeps package toggles through updateWriting. Macros, preamble and
@@ -179,7 +179,7 @@ own native feature page. No placeholder page or parallel preference store exists
 
 Appearance includes the actual Vault CSS list, filter, toggles, external folder
 open and refresh. It uses the one original enabledCssSnippets list in
-.obsidian/appearance.json, the existing Vault IO revision protection and the
+.shale/appearance.json, the existing Vault IO revision protection and the
 Plugins/runtime stylesheet lifetime. See css-snippets.md. Settings has no embedded
 CSS editor, and does not rewrite snippet source files.
 

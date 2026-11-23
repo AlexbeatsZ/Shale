@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { getSettings, updateSettings } from './settings.js';
 
-/** Read legacy configuration only; never alter the original Obsidian plugin or hotkeys. */
+/** Read legacy configuration only; never alter the original Shale plugin or hotkeys. */
 export async function migrateSearchSettings() {
   const settings = await getSettings();
   if (settings.search.chinese.migration) return;
@@ -10,7 +10,7 @@ export async function migrateSearchSettings() {
   const read = async (file: string) => {
     try {
       return JSON.parse(
-        (await fs.readFile(path.join(root, '.obsidian', file), 'utf8')).replace(/^\uFEFF/, ''),
+        (await fs.readFile(path.join(root, '.shale', file), 'utf8')).replace(/^\uFEFF/, ''),
       );
     } catch (error: any) {
       if (error.code === 'ENOENT') return null;

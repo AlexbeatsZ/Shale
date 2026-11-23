@@ -212,7 +212,7 @@ export class AttachmentCleanupService {
         directories.set(dir, new Set(contents.filter((e) => !ignored(dir ? dir + '/' + e.name : e.name)).map((e) => e.name)));
         for (const entry of contents) {
           const p = dir ? dir + '/' + entry.name : entry.name;
-          if (ignored(p) || p === '.obsidian') continue;
+          if (ignored(p) || p === '.shale') continue;
           if (entry.name.startsWith('.') && !entry.isSymbolicLink() && !SOURCE_EXTENSIONS.has(extOf(p))) {
             protectedItems.push({ path: p, reason: '私有隐藏数据，非候选' });
             issue(p, 'hidden-data', '私有隐藏数据已保护，不推断其未声明依赖', false); continue;
@@ -235,7 +235,7 @@ export class AttachmentCleanupService {
           if (entry.isSymbolicLink()) { issue(p, 'config-link', '配置包含符号链接'); continue; }
           if (entry.isDirectory()) { await scanConfig(p); continue; }
           if (!entry.isFile()) { issue(p, 'config-type', '未知配置文件类型'); continue; }
-          if (under(p, '.obsidian/plugins')) {
+          if (under(p, '.shale/plugins')) {
             const parts = p.split('/'), pluginId = parts[2], local = parts.slice(3).join('/');
             protectedItems.push({ path: p, reason: '插件资源或数据，永不作为候选' });
             // Presence/implementation assets are not evidence of data dependencies.
@@ -247,11 +247,11 @@ export class AttachmentCleanupService {
           else { protectedItems.push({ path: p, reason: '未知配置格式' }); issue(p, 'unknown-config', '未知配置已保护；未解析其私有内部依赖', false); }
         }
       } catch (error) {
-        if (dir === '.obsidian' && (error as NodeJS.ErrnoException).code === 'ENOENT') return;
+        if (dir === '.shale' && (error as NodeJS.ErrnoException).code === 'ENOENT') return;
         issue(dir, 'config-read', errorMessage(error));
       }
     };
-    await scanConfig('.obsidian');
+    await scanConfig('.shale');
     let scannedSources = 0;
     // Sequential bounded reads keep maintenance I/O outside input/menu hot paths.
     for (const p of sources) {

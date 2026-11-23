@@ -1,9 +1,9 @@
 // Personal views adapted from Interactive JS 0.1.0. Copyright (c) 2026 Meta, MIT.
-import type { TFile, TFolder } from '../obsidian/vault';
+import type { TFile, TFolder } from '../shale/vault';
 import type { JavascriptRun } from './lifetime';
-import { createEl } from '../obsidian/dom';
+import { createEl } from '../shale/dom';
 import { parseLegacyFolderRuleData } from '../tags/importFolderRules';
-import { blockContainers, extractMetadata, BODY_HEADING_LEVEL } from '@webobsidian/markdown-core';
+import { blockContainers, extractMetadata, BODY_HEADING_LEVEL } from '@shale/markdown-core';
 type WidgetHost = Pick<JavascriptRun, 'app' | 'container' | 'context' | 'sourcePath' | 'note' | 'watch' | 'watchDirectory' | 'renderMarkdown' | 'targetContext'>;
 const collator = new Intl.Collator('zh-Hans-CN', { numeric: true, sensitivity: 'base' });
 export interface UptimerOptions {

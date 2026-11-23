@@ -9,7 +9,7 @@ type HostMessage = Reply | { type: 'theme'; theme: 'light' | 'dark' } | { type: 
 
 /** This module is built into a standalone script with no host imports. */
 function connect(event: MessageEvent) {
-  if (event.source !== parent || event.data?.type !== 'webobsidian-widget' || event.ports.length !== 1) return;
+  if (event.source !== parent || event.data?.type !== 'shale-widget' || event.ports.length !== 1) return;
   window.removeEventListener('message', connect);
   const port = event.ports[0];
   const source = String(event.data.source);
@@ -97,7 +97,7 @@ function connect(event: MessageEvent) {
   try {
     const execute = compileJavascript(source,
       ['container', 'sourcePath', 'component', 'echarts', 'chart', 'ui', 'widgets', 'watch', 'onCleanup', 'renderMarkdown', 'signal'],
-      'webobsidian-chart/' + encodeURIComponent(sourcePath));
+      'shale-chart/' + encodeURIComponent(sourcePath));
     void execute(container, sourcePath, component, echarts,
       (option: EChartsOption, options?: ChartOptions) => chart(container, onCleanup, option, options),
       createUI(container, onCleanup, controller.signal, measure), widgets,

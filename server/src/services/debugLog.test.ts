@@ -7,7 +7,7 @@ import { DebugLog } from './debugLog';
 let root: string;
 beforeEach(async () => {
   const base = path.join(os.tmpdir(), '.agents'); await fs.mkdir(base, { recursive: true });
-  root = await fs.mkdtemp(path.join(base, 'webobsidian-debug-test-'));
+  root = await fs.mkdtemp(path.join(base, 'shale-debug-test-'));
 });
 afterEach(async () => { await fs.rm(root, { recursive: true, force: true }); });
 test('read and clear leave an absent log directory absent', async () => {

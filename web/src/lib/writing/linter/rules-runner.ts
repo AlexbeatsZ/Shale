@@ -16,7 +16,7 @@ import RemoveMultipleBlankLinesOnPaste from './rules/remove-multiple-blank-lines
 import {RuleBuilderBase} from './rules/rule-builder';
 import YamlKeySort from './rules/yaml-key-sort';
 import YamlTimestamp from './rules/yaml-timestamp';
-type ObsidianCommandInterface = any;
+type ShaleCommandInterface = any;
 type CustomReplace = any;
 type LintCommand = any;
 import {getTextInLanguage} from './lang/helpers';
@@ -216,7 +216,7 @@ export class RulesRunner {
     return newText;
   }
 
-  runCustomCommands(lintCommands: LintCommand[], commands: ObsidianCommandInterface) {
+  runCustomCommands(lintCommands: LintCommand[], commands: ShaleCommandInterface) {
     if (this.skipFile) {
       return;
     }

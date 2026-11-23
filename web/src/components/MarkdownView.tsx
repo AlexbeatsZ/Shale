@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import '../styles/equations.css';
-import { codeBlocks, pluginPostProcessing } from '../lib/obsidian/markdown';
+import { codeBlocks, pluginPostProcessing } from '../lib/shale/markdown';
 import { mountMarkdownFragment } from './MarkdownFragment';
 import { Annotation, Compartment, EditorState, Prec } from '@codemirror/state';
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
@@ -27,9 +27,9 @@ import { search, searchKeymap } from '@codemirror/search';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { json } from '@codemirror/lang-json';
 import { indentUnit, syntaxHighlighting } from '@codemirror/language';
-import { analyzeMarkdown, nativeMarkdownSyntax, changesBetween, type DocumentSession, type DocumentSnapshot, type SourceChange, type MarkdownModel, type EditHistoryState } from '@webobsidian/markdown-core';
-import { codeLanguage, obsidianHighlightStyle } from '../lib/highlight';
-import { obsidianKeymap, markdownListKeymap, toggleInline, toggleLineStyle, toggleChecklist, surroundSelection } from '../lib/editorCommands';
+import { analyzeMarkdown, nativeMarkdownSyntax, changesBetween, type DocumentSession, type DocumentSnapshot, type SourceChange, type MarkdownModel, type EditHistoryState } from '@shale/markdown-core';
+import { codeLanguage, shaleHighlightStyle } from '../lib/highlight';
+import { shaleKeymap, markdownListKeymap, toggleInline, toggleLineStyle, toggleChecklist, surroundSelection } from '../lib/editorCommands';
 import { suggesterPlugin } from '../lib/suggest';
 import { syntaxModel, adoptSyntaxModel, documentMetadata, embeddedFormulasField, blockModel, sourceOf } from '../lib/syntaxModel';
 import { inlineHtml } from '../lib/inlineHtml';
@@ -312,7 +312,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
           { key: 'Mod-z', run: () => historyAction(false) },
           { key: 'Mod-Shift-z', run: () => historyAction(true) },
           { key: 'Mod-y', run: () => historyAction(true) },
-          ...obsidianKeymap({
+          ...shaleKeymap({
             openLink: (target) => latest.current.context.openLink(target),
             save: () => latest.current.onSave?.(),
             togglePreview: () => latest.current.onModeChange?.(latest.current.mode === 'reading' ? 'live' : 'reading'),
@@ -324,7 +324,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
         suggesterPlugin,
         mathEditingExtensions,
         ...(p.context.allowPlugins ? [nativeWritingExtensions()] : []),
-        syntaxHighlighting(obsidianHighlightStyle),
+        syntaxHighlighting(shaleHighlightStyle),
         EditorView.lineWrapping,
         livePreviewState.init(() => isMd && p.mode !== 'source'),
         livePreviewReadonly.init(() => p.mode === 'reading'),
@@ -393,7 +393,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
     ] });
   }, [mode, context, showTitle, props.title, snapshot.id, snapshot.locked]);
 
-  const cls = ['cm-host markdown-source-view cm-s-obsidian mod-cm6',
+  const cls = ['cm-host markdown-source-view cm-s-shale mod-cm6',
     layout === 'page' ? 'is-readable-line-width' : 'markdown-embedded-view',
     mode !== 'source' ? 'is-live-preview live-preview' : '',
     mode === 'reading' ? 'is-reading-mode' : ''].join(' ');

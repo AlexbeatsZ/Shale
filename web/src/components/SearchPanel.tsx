@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { api, type SearchHit, type MatchContext, type NoteMatches } from '../lib/api';
 import { useStore } from '../lib/store';
 import { nativeBatchTagMenuItems } from '../lib/tags/actions';
-import { extendFileMenu } from '../lib/obsidian/menus';
+import { extendFileMenu } from '../lib/shale/menus';
 import { menuModifiers } from '../lib/configuredMenus/transform';
 import Icon from './Icon';
 import { MenuList } from './ContextMenu';

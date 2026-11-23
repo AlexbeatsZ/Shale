@@ -4,7 +4,7 @@ import { getMenuConfigurationController } from './controller';
 export async function downloadMenuConfiguration(): Promise<void> {
   const controller = getMenuConfigurationController();
   if (!controller) throw new Error('菜单配置尚未初始化');
-  await host.download(new Blob([controller.exportSources()], { type: 'application/json;charset=utf-8' }), 'webobsidian-menu-config.json');
+  await host.download(new Blob([controller.exportSources()], { type: 'application/json;charset=utf-8' }), 'shale-menu-config.json');
 }
 
 /** Aggregate into nativeCommands; no parallel command registry is installed. */

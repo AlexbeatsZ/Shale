@@ -22,7 +22,7 @@ import moment from 'moment';
 import CodeMirror from 'codemirror';
 import 'codemirror/mode/javascript/javascript';
 import TurndownService from 'turndown';
-import { sanitizeHtmlFragment } from '@webobsidian/markdown-core';
+import { sanitizeHtmlFragment } from '@shale/markdown-core';
 import { api } from '../api';
 import { useStore } from '../store';
 import { mountMarkdownFragment } from '../../components/MarkdownFragment';
@@ -183,7 +183,8 @@ export class Plugin extends events.Component {
   addStatusBarItem() {
     return this.addElement(pluginStatusItems, dom.createDiv({ cls: 'status-bar-item' }));
   }
-  registerObsidianProtocolHandler(action: string, handler: (params: any) => any) {
+  registerObsidianProtocolHandler(action: string, handler: (params: any) => any) { return this.registerShaleProtocolHandler(action, handler); }
+  registerShaleProtocolHandler(action: string, handler: (params: any) => any) {
     this.app.protocolHandlers.set(action, handler);
     this.register(() => this.app.protocolHandlers.delete(action));
   }
@@ -283,7 +284,7 @@ export class App {
   protocolHandlers = new Map<string, Function>();
   cliHandlers = new Map<string, any>();
   loadLocalStorage(key: string) {
-    const value = localStorage.getItem(`obsidian:${this.vault.adapter.basePath}:${key}`);
+    const value = localStorage.getItem(`shale:${this.vault.adapter.basePath}:${key}`);
     if (value === null) return null;
     try {
       return JSON.parse(value);
@@ -292,7 +293,7 @@ export class App {
     }
   }
   saveLocalStorage(key: string, value: any) {
-    localStorage.setItem(`obsidian:${this.vault.adapter.basePath}:${key}`, JSON.stringify(value));
+    localStorage.setItem(`shale:${this.vault.adapter.basePath}:${key}`, JSON.stringify(value));
   }
   keymap = {
     pushScope: (scope: ui.Scope) => {
@@ -394,7 +395,7 @@ function debounce<T extends (...args: any[]) => any>(callback: T, delay = 0, res
   };
   return fn;
 }
-const nativeRequire = (window as any).webobsidianNativeRequire as ((name: string) => any) | undefined;
+const nativeRequire = (window as any).shaleNativeRequire as ((name: string) => any) | undefined;
 export async function requestUrl(input: string | any) {
   const options = typeof input === 'string' ? { url: input } : input;
   const result = await api.pluginRequest(options);
@@ -495,7 +496,7 @@ function renderMath(source: string, display: boolean) {
   });
   return el;
 }
-export const obsidianModule: Record<string, any> = {
+export const shaleModule: Record<string, any> = {
   ...events,
   ...ui,
   ...dom,
@@ -555,7 +556,9 @@ export const obsidianModule: Record<string, any> = {
 };
 const tokenClassNodeProp = new lezerCommon.NodeProp<string>();
 const modules: Record<string, any> = {
-  obsidian: obsidianModule,
+  shale: shaleModule,
+  // External plugin ABI retains its published module name.
+  obsidian: shaleModule,
   moment: moment,
   '@codemirror/state': cmState,
   '@codemirror/view': cmView,
@@ -625,13 +628,13 @@ export async function loadPlugin(id:string,manifest:any){
       if (!response.ok) throw new Error(`Plugin source: HTTP ${response.status}`);
       const code = await response.text(),
         module = { exports: {} as any };
-      const root = sharedApp.vault.adapter.basePath.replace(/\\/g, '/') + `/.obsidian/plugins/${id}`;
+      const root = sharedApp.vault.adapter.basePath.replace(/\\/g, '/') + `/.shale/plugins/${id}`;
       const native = nativeRequire?.('node:module').createRequire(root + '/main.js');
       const require = (name: string) => {
         if (
           native &&
           !(
-            name === 'obsidian' ||
+            name === 'shale' || name === 'obsidian' ||
             name === 'moment' ||
             name.startsWith('@codemirror/') ||
             name.startsWith('@lezer/')
@@ -652,7 +655,7 @@ export async function loadPlugin(id:string,manifest:any){
       )(module, module.exports, require, sharedApp, root, root + '/main.js');
       const Type = module.exports.default ?? module.exports;
       instance = new Type(sharedApp, manifest);
-      if (!(instance instanceof Plugin)) throw new Error('Plugin must extend obsidian.Plugin');
+      if (!(instance instanceof Plugin)) throw new Error('Plugin must extend shale.Plugin');
       if (id === 'local-latex-renderer') {
         // Preserve its data and complete local TeX compiler. Only its duplicated
         // MathJax registration is replaced; do not write an emptied preamble.

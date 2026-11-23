@@ -1,3 +1,4 @@
+import { migrateDesktopProfile } from '../../../scripts/identity-migration.mjs';
 import { InputMethodService } from '../../../desktop/src/inputMethod';
 import { desktopActions } from '../../../desktop/src/bridge';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -23,7 +24,8 @@ function fixture(platform = 'win32') {
     whenReady: () => new Promise<void>(() => {}),
     quit: vi.fn(),
     isPackaged: false,
-    getPath: () => 'C:/fixture/profile',
+    getPath: () => 'C:/fixture/profile', setPath: vi.fn(), setName: vi.fn(), setAppUserModelId: vi.fn(),
+    commandLine: { getSwitchValue: () => 'C:/fixture/profile' },
     getVersion: () => '0.1.67',
   });
   const ipc = Object.assign(new EventEmitter(), { handle: vi.fn() });
@@ -74,8 +76,8 @@ function fixture(platform = 'win32') {
   });
   runInNewContext(compiled + '\nexports.fixture = { createWindow, requestWindowClose, initialize: (launcher, server) => { serverPort = 8787; serverProcess = server; registerDesktopRequests(); mcpLauncher = launcher; } };', {
     exports: moduleExports,
-    require: (id: string) => id === 'electron' ? electron : id === './inputMethod' ? { InputMethodService, inputMethodBackend: () => inputBackend } : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
-    process: { platform, arch: 'x64', execPath: 'WebObsidian' },
+    require: (id: string) => id === '../../scripts/identity-migration.mjs' ? { migrateDesktopProfile } : id === 'electron' ? electron : id === './inputMethod' ? { InputMethodService, inputMethodBackend: () => inputBackend } : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
+    process: { platform, arch: 'x64', execPath: 'Shale' },
     __dirname: fileURLToPath(new URL('../../../desktop/src', import.meta.url)),
     URL, Buffer, setTimeout, clearTimeout, console,
   });
@@ -149,7 +151,7 @@ describe('desktop close coordinator against the production main implementation',
   it('keeps application URLs out of the system browser while delegating external note hyperlinks', () => {
     const host = fixture();
     const open = host.window.webContents.setWindowOpenHandler.mock.calls[0]![0] as unknown as (details: { url: string }) => { action: string };
-    expect(host.window.webContents.setUserAgent).toHaveBeenCalledWith('Electron WebObsidianDesktop');
+    expect(host.window.webContents.setUserAgent).toHaveBeenCalledWith('Electron ShaleDesktop');
     expect(open({ url: 'http://127.0.0.1:8787/note/note.md' })).toEqual({ action: 'deny' });
     expect(host.openExternal).not.toHaveBeenCalled();
     expect(open({ url: 'https://example.com/' })).toEqual({ action: 'deny' });

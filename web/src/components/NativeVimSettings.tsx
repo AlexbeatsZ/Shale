@@ -7,7 +7,7 @@ import type { InputSource } from '../../../desktop/src/inputMethodTypes';
 export default function NativeVimSettings() {
   const settings = useVimSettings();
   const [sources, setSources] = useState<InputSource[]>([]), [error, setError] = useState(''), [busy, setBusy] = useState(false);
-  const bridge = window.webobsidianDesktop?.inputMethod;
+  const bridge = window.shaleDesktop?.inputMethod;
   useEffect(() => {
     void ensureVimSettings();
     let alive = true;

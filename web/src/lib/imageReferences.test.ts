@@ -8,7 +8,7 @@ const fixture = vi.hoisted(() => ({
   listeners: new Set<() => void>(), searchListeners: new Set<() => void>(),
   read: vi.fn(), backlinksRead: vi.fn(),
 }));
-vi.mock('@webobsidian/markdown-core', () => import('../../../packages/markdown-core/src/index'));
+vi.mock('@shale/markdown-core', () => import('../../../packages/markdown-core/src/index'));
 vi.mock('./api', () => ({
   vaultRequestIdentity: async () => 'image-reference-test',
   api: { backlinks: (path: string) => { fixture.backlinksRead(path); return Promise.resolve({ backlinks: fixture.backlinks }); },

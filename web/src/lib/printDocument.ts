@@ -1,7 +1,7 @@
-import type { DocumentSnapshot } from '@webobsidian/markdown-core';
+import type { DocumentSnapshot } from '@shale/markdown-core';
 import { mountMarkdownFragment } from '../components/MarkdownFragment';
 import { nonExecutingContext, type RenderContext } from './renderContext';
-import { RenderLifetime } from './obsidian/renderLifetime';
+import { RenderLifetime } from './shale/renderLifetime';
 
 type PrintOptions = { document?: Document; signal?: AbortSignal; timeoutMs?: number };
 

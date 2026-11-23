@@ -46,7 +46,7 @@ async function git(): Promise<SimpleGit> {
 // running") — and a command killed mid-write leaves that lock behind, which then
 // wedges EVERY later op (the "completely dead" state). Funnelling all mutating
 // ops through one async queue removes the race; clearing a stale lock at the head
-// of each op heals a leftover from a crash or an external Obsidian-git process.
+// of each op heals a leftover from a crash or an external Shale-git process.
 // ---------------------------------------------------------------------------
 let gitQueue: Promise<unknown> = Promise.resolve();
 
@@ -132,10 +132,10 @@ async function backupImpl(message?: string): Promise<{ ok: boolean; log: string[
   const settings = await gitPreferences();
   if (!settings.remote) return { ok: true, log: output };
   const identity = createHash('sha256').update(`${hostname()}:${vaultPathKey(await getVaultRoot())}`).digest('hex').slice(0, 16);
-  const branch = `webobsidian-backups/${identity}`;
+  const branch = `shale-backups/${identity}`;
   try {
     await client.remote(['set-url', 'origin', await authedRemote()]);
-    const conflicts = (await client.raw(['for-each-ref', '--format=%(refname)', 'refs/heads/webobsidian-conflicts/'])).split('\n').filter(Boolean);
+    const conflicts = (await client.raw(['for-each-ref', '--format=%(refname)', 'refs/heads/shale-conflicts/'])).split('\n').filter(Boolean);
     await client.raw(['push', 'origin', `HEAD:refs/heads/${branch}`, ...conflicts.map(reference => `${reference}:${reference}`)]);
     output.push(`备份已推送到 ${branch}`);
     const repositoryBranch = settings.branch || 'main';
@@ -174,7 +174,7 @@ export function recordSyncConflict(root: string, snapshot: ConflictSnapshot): Pr
         }
         const tree = (await isolated.raw(['write-tree'])).trim();
         const commit = (await isolated.raw(['commit-tree', tree, ...(parent ? ['-p', parent] : []), '-m', `sync(conflict): ${snapshot.id} ${side}`])).trim();
-        const branch = `webobsidian-conflicts/${snapshot.id}/${side}`;
+        const branch = `shale-conflicts/${snapshot.id}/${side}`;
         await isolated.raw(['update-ref', `refs/heads/${branch}`, commit, '0'.repeat(commit.length)]);
         branches.push(branch);
       }
@@ -219,8 +219,8 @@ export async function lfsAvailable(): Promise<boolean> {
 
 async function configureIdentity(g: SimpleGit): Promise<void> {
   const s = await gitPreferences();
-  await g.addConfig('user.name', s.authorName || 'WebObsidian');
-  await g.addConfig('user.email', s.authorEmail || 'webobsidian@localhost');
+  await g.addConfig('user.name', s.authorName || 'Shale');
+  await g.addConfig('user.email', s.authorEmail || 'shale@localhost');
 }
 
 /** Write/refresh .gitattributes so LFS patterns are tracked. */
@@ -395,7 +395,7 @@ async function pullImpl(): Promise<string> {
 /**
  * Build a human-readable commit message from what `git add .` staged, so the
  * vault history (and the Version History UI) shows exactly which notes synced
- * instead of a generic "WebObsidian auto-sync". Returns a one-line subject that
+ * instead of a generic "Shale auto-sync". Returns a one-line subject that
  * names the notes plus a body listing every changed path grouped by kind.
  */
 export function describeChanges(st: StatusResult): { subject: string; body: string } {
@@ -501,8 +501,8 @@ export function scheduleAutoCommitOnSave(): void {
 }
 
 /** Auto-resolve conflicts in machine-generated files so multi-device sync converges
- *  without manual intervention: regenerate .gitattributes, keep our copy of Obsidian
- *  UI state (.obsidian/**). Returns true only if ALL conflicts were resolved. */
+ *  without manual intervention: regenerate .gitattributes, keep our copy of Shale
+ *  UI state (.shale/**). Returns true only if ALL conflicts were resolved. */
 async function resolveNoiseConflicts(g: SimpleGit): Promise<boolean> {
   const st = await g.status();
   if (!st.conflicted.length) return true;
@@ -511,7 +511,7 @@ async function resolveNoiseConflicts(g: SimpleGit): Promise<boolean> {
     if (f === '.gitattributes') {
       await ensureLfsAttributes();
       await g.add(['.gitattributes']);
-    } else if (f.startsWith('.obsidian/')) {
+    } else if (f.startsWith('.shale/')) {
       await g.raw(['checkout', '--ours', '--', f]).catch(() => {});
       await g.add([f]);
     } else {

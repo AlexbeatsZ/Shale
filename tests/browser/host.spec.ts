@@ -4,9 +4,9 @@ test.beforeEach(async ({ page }) => { await page.goto('/__render-test'); });
 
 test('native identity and actual Android version are shared with the LaTeX adapter', async ({ page }) => {
   const value = await page.evaluate(async () => {
-    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'WebObsidianAndroid/0.1.67' });
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'ShaleAndroid/0.1.67' });
     const { Platform, appVersion } = await import('/src/lib/platform.ts');
-    const runtime = await import('/src/lib/obsidian/runtime.ts');
+    const runtime = await import('/src/lib/shale/runtime.ts');
     return { version: appVersion(), android: Platform.isAndroidApp, mobile: runtime.Platform.isMobile,
       same: runtime.Platform === Platform, linux: Platform.isLinux };
   });
@@ -16,7 +16,7 @@ test('native identity and actual Android version are shared with the LaTeX adapt
 test('host exports and clipboard share the transferred Android port including cancellation', async ({ page }) => {
   const result = await page.evaluate(async () => {
     const { host } = await import('/src/lib/host.ts');
-    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'WebObsidianAndroid/0.1.67' });
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'ShaleAndroid/0.1.67' });
     const channel = new MessageChannel();
     const actions: string[] = [];
     channel.port1.onmessage = event => {
@@ -25,7 +25,7 @@ test('host exports and clipboard share the transferred Android port including ca
       const value = message.action === 'clipboard-read' ? '中文 😃' : message.input.filename === 'cancel.json' ? false : atob(message.input.base64) === 'fixture';
       channel.port1.postMessage(JSON.stringify({ id: message.id, value }));
     };
-    window.postMessage('webobsidian-host', '*', [channel.port2]);
+    window.postMessage('shale-host', '*', [channel.port2]);
     const text = await host.readClipboardText();
     const saved = await host.download(new Blob(['fixture'], { type: 'application/json' }), 'fixture.json');
     const cancelled = await host.download(new Blob(['fixture']), 'cancel.json');
@@ -50,13 +50,13 @@ test('native Back closes the most recent dialog and unregisters disposed handler
 test('an embedded frame cannot impersonate the Android host port', async ({ page }) => {
   const text = await page.evaluate(async () => {
     const { host } = await import('/src/lib/host.ts');
-    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'WebObsidianAndroid/0.1.69' });
+    Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'ShaleAndroid/0.1.69' });
     const frame = document.createElement('iframe'); frame.sandbox.add('allow-scripts'); document.body.append(frame);
     const forged = new MessageChannel(), native = new MessageChannel();
     forged.port1.onmessage = event => forged.port1.postMessage(JSON.stringify({ id: JSON.parse(event.data).id, value: 'forged' }));
     native.port1.onmessage = event => native.port1.postMessage(JSON.stringify({ id: JSON.parse(event.data).id, value: 'native' }));
-    window.dispatchEvent(new MessageEvent('message', { source: frame.contentWindow, data: 'webobsidian-host', ports: [forged.port2] }));
-    window.postMessage('webobsidian-host', '*', [native.port2]);
+    window.dispatchEvent(new MessageEvent('message', { source: frame.contentWindow, data: 'shale-host', ports: [forged.port2] }));
+    window.postMessage('shale-host', '*', [native.port2]);
     const result = await host.readClipboardText();
     forged.port1.close(); forged.port2.close(); native.port1.close(); frame.remove();
     return result;

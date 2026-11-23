@@ -1,10 +1,10 @@
-import { imageAt, imagePropertyDefinitions, rewriteImageAttribute, type ImageEmbed } from '@webobsidian/markdown-core';
+import { imageAt, imagePropertyDefinitions, rewriteImageAttribute, type ImageEmbed } from '@shale/markdown-core';
 import type { EditorView } from '@codemirror/view';
 import { contextOf } from './renderContext';
 import { sourceOf } from './syntaxModel';
 import type { RenderMenuItem } from './renderContext';
 import { customEmbedProperties } from './embedProperties';
-import { promptInput } from './obsidian/ui';
+import { promptInput } from './shale/ui';
 
 const choiceLabels: Record<string, string> = { left: '左对齐', center: '居中', right: '右对齐', contain: '完整显示', cover: '填充裁切' };
 

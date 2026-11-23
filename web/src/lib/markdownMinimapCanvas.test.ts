@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import { analyzeMarkdown } from '@webobsidian/markdown-core';
+import { analyzeMarkdown } from '@shale/markdown-core';
 import { paintMarkdownMinimap } from './markdownMinimapCanvas';
 
 afterEach(() => vi.unstubAllGlobals());

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { TagPreferences } from '@webobsidian/markdown-core';
-import { emptyFolderTags, normalizeFolderTags } from '@webobsidian/markdown-core';
+import type { TagPreferences } from '@shale/markdown-core';
+import { emptyFolderTags, normalizeFolderTags } from '@shale/markdown-core';
 import { importLegacyFolderRules } from '../lib/tags/importFolderRules';
 import { importFolderTagNote } from '../lib/nativeFeaturePreferences';
 import { openTagOperation } from '../lib/tags/actions';

@@ -4,7 +4,7 @@ import ts from 'typescript';
 
 // Read-only: never executes plugin code or reads private plugin settings.
 export async function inventory(vault) {
-  const config = path.join(vault, '.obsidian');
+  const config = path.join(vault, '.shale');
   const enabled = JSON.parse(
     await fs.readFile(path.join(config, 'community-plugins.json'), 'utf8')
   );
@@ -34,7 +34,7 @@ export async function inventory(vault) {
           ) {
             const name = node.arguments[0].text;
             modules.add(name);
-            if (name === 'obsidian' && ts.isVariableDeclaration(node.parent)) {
+            if (name === 'shale' && ts.isVariableDeclaration(node.parent)) {
               if (ts.isIdentifier(node.parent.name))
                 aliases.add(node.parent.name.text);
               else

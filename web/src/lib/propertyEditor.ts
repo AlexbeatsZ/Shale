@@ -1,4 +1,4 @@
-import { canEditProperties, patchPropertyRows, readPropertyRows, type SourceChange } from '@webobsidian/markdown-core';
+import { canEditProperties, patchPropertyRows, readPropertyRows, type SourceChange } from '@shale/markdown-core';
 import { setIcon } from './icons';
 import type { RenderContext, RenderMenuItem as LpMenuItem } from './renderContext';
 
@@ -23,7 +23,7 @@ interface Prop {
   editable?: boolean; scalarType?: string; forceList?: boolean;
 }
 
-// Tags / cssclasses can't contain spaces (invalid in Obsidian) — collapse runs of
+// Tags / cssclasses can't contain spaces (invalid in Shale) — collapse runs of
 // whitespace to a hyphen and drop a leading '#'. Other list values pass through.
 function sanitizeListValue(key: string, raw: string): string {
   const v = raw.trim();
@@ -31,10 +31,10 @@ function sanitizeListValue(key: string, raw: string): string {
   return v;
 }
 
-/** Parse the YAML subset Obsidian uses for properties. */
+/** Parse the YAML subset Shale uses for properties. */
 const parseFrontmatter = readPropertyRows;
 
-// Obsidian's built-in List properties.
+// Shale's built-in List properties.
 const CORE_LIST_PROPS = new Set(['tags', 'aliases', 'cssclasses']);
 
 // Infer a property's type only when the Vault registry has no explicit type.
@@ -62,7 +62,7 @@ function setPropertyIcon(element: HTMLElement, type: string): void {
   element.title = entry.label;
 }
 
-// Obsidian type id ↔ our display type.
+// Shale type id ↔ our display type.
 const OBS_TO_DT: Record<string, string> = {
   text: 'text',
   multitext: 'list',
@@ -144,7 +144,7 @@ export function createPropertyEditor(yaml: string, ro: boolean, host: PropertyEd
       commit(p);
     };
 
-    // Change a property's type: persist to .obsidian/types.json, then convert the
+    // Change a property's type: persist to .shale/types.json, then convert the
     // note's YAML if list-ness changed (else just refresh the icon in place).
     const setType = async (key: string, dt: string) => {
       try {
@@ -300,7 +300,7 @@ export function createPropertyEditor(yaml: string, ro: boolean, host: PropertyEd
     };
 
     // Add an item to a list property via a typed input + suggestion dropdown
-    // (vault tags for the `tags` property; free text otherwise), like Obsidian.
+    // (vault tags for the `tags` property; free text otherwise), like Shale.
     const startAddItem = async (key: string, idx: number, container: HTMLElement, addBtn: HTMLElement) => {
       addBtn.style.display = 'none';
       const inp = document.createElement('span');
@@ -401,7 +401,7 @@ export function createPropertyEditor(yaml: string, ro: boolean, host: PropertyEd
       k.textContent = p.key;
       editable(k, () => mutate(() => {}));
 
-      // Right-click the key or icon → Property type / Copy / Remove (like Obsidian).
+      // Right-click the key or icon → Property type / Copy / Remove (like Shale).
       const openPropMenu = (e: MouseEvent) => {
         if (ro || p.editable === false) return;
         e.preventDefault();
@@ -498,7 +498,7 @@ export function createPropertyEditor(yaml: string, ro: boolean, host: PropertyEd
     setIcon(addBtn, 'plus');
     addBtn.append('添加属性');
 
-    // Add a property with a name-suggester dropdown (existing vault keys), like Obsidian.
+    // Add a property with a name-suggester dropdown (existing vault keys), like Shale.
     const startAdd = async () => {
       addBtn.style.display = 'none';
       const editorRow = document.createElement('div');

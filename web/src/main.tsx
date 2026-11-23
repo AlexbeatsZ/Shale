@@ -1,7 +1,8 @@
+import './lib/identityMigration';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import './styles/obsidian.css';
+import './styles/shale.css';
 import './styles/plugins.css';
 
 const root = createRoot(document.getElementById('root')!);

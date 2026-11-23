@@ -18,14 +18,14 @@ await fs.writeFile(path.join(vault, 'acceptance.md'), '# Production startup\n\nE
 await fs.writeFile(path.join(vault, 'legacy#title.md'), '# Existing external file\n');
 await fs.writeFile(path.join(vault, 'tag-filter.md'), '---\ntags: [化学/物理, 笔记]\n---\n\n反应记录\n');
 await fs.writeFile(path.join(vault, 'tag-old.md'), '---\ntags: [化学, 笔记, 旧版/归档]\n---\n\n反应记录\n');
-const native = path.join(vault, '.obsidian/webobsidian');
+const native = path.join(vault, '.shale');
 await fs.mkdir(path.join(native, 'blocks'), { recursive: true });
 await fs.mkdir(path.join(native, 'menus'), { recursive: true });
 await fs.mkdir(path.join(native, 'snippets'), { recursive: true });
 await fs.writeFile(path.join(native, 'snippets/acceptance.js'), 'export default [{trigger:"zzfixture", replacement:"SNIPPET-OK", options:"tA"}];\n');
 await fs.writeFile(path.join(native, 'writing.jsonc'), JSON.stringify({
   version: 1, latex: { snippetsEnabled: true, loadSnippetsFromFile: true,
-    snippetsFileLocation: '.obsidian/webobsidian/snippets/acceptance.js' }, linter: {}, hotkeys: {},
+    snippetsFileLocation: '.shale/snippets/acceptance.js' }, linter: {}, hotkeys: {},
 }));
 await fs.writeFile(path.join(native, 'menus/menu.jsonc'), JSON.stringify({ version: 1,
   items: [{ id: 'custom:acceptance', title: 'Acceptance menu', when: { contexts: ['tab'] }, command: 'source' }],
@@ -95,7 +95,7 @@ try {
   const workerHeaders = { 'Sec-Fetch-Dest': 'worker' };
   assert.equal((await fetch(base + '/assets/' + worker, { headers: workerHeaders })).status, 200, 'Native workers can load their bundled script without inheriting the page User-Agent');
   assert.equal((await fetch(base, { headers: workerHeaders })).status, 404, 'A worker destination does not expose application HTML');
-  const nativeHeaders = { 'User-Agent': 'WebObsidianDesktop packaged-renderer-contract' };
+  const nativeHeaders = { 'User-Agent': 'ShaleDesktop packaged-renderer-contract' };
   assert.equal((await fetch(base, { headers: nativeHeaders })).status, 200, 'The native shell can load its bundled renderer');
   assert.equal((await fetch(base + '/note/Home.md', { headers: nativeHeaders })).status, 404, 'Retired note URLs have no SPA fallback');
   page = await browser.newPage({ userAgent: nativeHeaders['User-Agent'] });
@@ -175,7 +175,7 @@ try {
   await page.getByRole('button', { name: '固定保留', exact: true }).click();
   await page.getByRole('button', { name: '取消固定', exact: true }).waitFor();
   const readContext = async () => {
-    const response = await api.post('/api/operations/call', { data: { name: 'obsidian_get_context', arguments: {} } });
+    const response = await api.post('/api/operations/call', { data: { name: 'shale_get_context', arguments: {} } });
     assert.equal(response.status(), 200); return response.json();
   };
   assert.equal((await readContext()).queued_context[0].pinned, true);

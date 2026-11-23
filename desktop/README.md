@@ -1,6 +1,6 @@
-# WebObsidian Desktop (Electron)
+# Shale Desktop (Electron)
 
-Packages WebObsidian as a desktop app for **macOS / Windows / Linux**
+Packages Shale as a desktop app for **macOS / Windows / Linux**
 (Windows: x64 installer; macOS: Apple Silicon arm64 only; Linux: arm64 and x64). It is a thin **Electron shell** around the unchanged
 `server/` (Express) + `web/` (SPA): the shell spawns the server as a child process
 bound to `127.0.0.1` on a random free port and loads it in a `BrowserWindow`.
@@ -11,7 +11,7 @@ the matching prebuilt Electron binary — no cross-compilation, no `node-gyp`.
 
 ## How it works
 
-- **First launch** prompts for a vault folder (default `~/Documents/WebObsidianVault`).
+- **First launch** prompts for a vault folder (default `~/Documents/ShaleVault`).
 - App data (`settings.json`, search index) lives in Electron's per-user `userData` dir.
 - The desktop opens its loopback-only server directly. Account, session, API-key
   and public-sharing code has been removed.
@@ -72,13 +72,13 @@ through these npm scripts so the cleanup hook is applied; direct
 `electron-builder` invocations bypass it. Desktop `dist/` and `.gen/server/`
 are also regenerated from scratch. This cleanup does not touch vaults or app data.
 
-Windows builds produce `WebObsidian-<version>-win-x64-setup.exe`.
+Windows builds produce `Shale-<version>-win-x64-setup.exe`.
 The default Windows target is a per-user NSIS installer for local builds and
 release CI. It allows choosing the installation directory, creates a Start menu
 shortcut but no desktop shortcut, and does not launch the app automatically.
-Installation refuses to continue while WebObsidian is running; it never uses
+Installation refuses to continue while Shale is running; it never uses
 the installer's default process termination behavior. Save and exit first.
-The personal installation directory is `%LOCALAPPDATA%/Programs/WebObsidian`.
+The personal installation directory is `%LOCALAPPDATA%/Programs/Shale`.
 App data and the selected Vault stay outside the installation directory and are
 not deleted by uninstalling. Building a package does not install or launch it.
 
@@ -109,7 +109,7 @@ npm run dist:dir     # fast unpacked build (no installer), for smoke testing
 ## Startup errors
 
 Startup failures report the server log path. On Windows it is
-`%APPDATA%/@webobsidian/desktop/logs/server.log`. A child that exits before its
+`%APPDATA%/Shale/logs/server.log`. A child that exits before its
 health check passes is reported with its exit status, rather than waiting for
 the full startup deadline. Version 0.1.6 allows up to 120 seconds for a live
 server to finish cold Vault indexing before the HTTP listener opens. The log
@@ -119,7 +119,7 @@ Version 0.1.8 displays a loading window while the local server indexes the Vault
 Its Windows portable launcher uses an independent extraction directory per launch,
 so opening the EXE again focuses the existing window without deleting its web
 resources. Test this actual launcher behavior with a disposable profile/Vault:
-`npm run test:desktop-portable -- desktop/release/0.1.8/WebObsidian-0.1.8-win-x64-portable.exe`.
+`npm run test:desktop-portable -- desktop/release/0.1.8/Shale-0.1.8-win-x64-portable.exe`.
 The server still completes its initial index before opening the workspace.
 
 Version 0.1.7 also fixes a native LaTeX configuration initialization cycle that
@@ -137,7 +137,7 @@ relative `require` calls during the build. See
 ## Releasing (GitHub Releases)
 
 For this fork, every new Windows installer delivery must also be published to
-`AlexbeatsZ/webobsidian` as an asset of the matching `v<version>` GitHub Release.
+`AlexbeatsZ/shale` as an asset of the matching `v<version>` GitHub Release.
 This is the default delivery workflow: build in an isolated source directory,
 complete the required build/static checks, then upload the exact delivered EXE.
 Record the build commit and verification boundary in the release notes and check
@@ -148,11 +148,11 @@ existing asset or move an existing tag to silently replace a published build.
 For an already-built installer EXE, publish it without rebuilding:
 
 ```powershell
-gh release create v<version> desktop/release/<version>/WebObsidian-<version>-win-x64-setup.exe --repo AlexbeatsZ/webobsidian --target <build-commit> --title "WebObsidian <version>" --notes-file <release-notes.md> --latest
+gh release create v<version> desktop/release/<version>/Shale-<version>-win-x64-setup.exe --repo AlexbeatsZ/shale --target <build-commit> --title "Shale <version>" --notes-file <release-notes.md> --latest
 ```
 
 If that version already has a release, upload a missing asset with
-`gh release upload v<version> <setup.exe> --repo AlexbeatsZ/webobsidian`.
+`gh release upload v<version> <setup.exe> --repo AlexbeatsZ/shale`.
 The desktop publisher configuration also targets this fork.
 
 The optional CI build workflow is separate from uploading an existing local EXE:

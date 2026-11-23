@@ -26,12 +26,12 @@ describe('built-in Streamable HTTP MCP', () => {
   it('initializes, discovers the shared seven tools and dispatches to this exact instance', async () => {
     const { call } = await app();
     const init = await call('initialize', { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'fixture', version: '1' } });
-    expect(init.result.serverInfo.name).toBe('webobsidian-native');
+    expect(init.result.serverInfo.name).toBe('shale-native');
     const tools = await call('tools/list');
     expect(tools.result.tools).toHaveLength(7);
     expect(tools.result.tools.some((tool: any) => /accept|restore/.test(tool.name))).toBe(false);
-    const read = await call('tools/call', { name: 'obsidian_read_file', arguments: { path: 'fixture.md' } });
-    expect(read.result.structuredContent.fixture).toEqual({ name: 'obsidian_read_file',
+    const read = await call('tools/call', { name: 'shale_read_file', arguments: { path: 'fixture.md' } });
+    expect(read.result.structuredContent.fixture).toEqual({ name: 'shale_read_file',
       arguments: { path: 'fixture.md', start_line: 1, line_count: 200 } });
   });
   it('returns discovery 404 before SPA fallback without advertising OAuth', async () => {

@@ -18,7 +18,7 @@ const test = base.extend<{ backend: { url: string; vault: string } }>({
     await fs.writeFile(path.join(data, 'uistate.json'), JSON.stringify({ tabs: [{ path: 'context.md', title: 'context.md' }], activePath: 'context.md' }));
     const child = spawn(process.execPath, ['--import', 'tsx', 'server/src/index.ts'], { cwd: process.cwd(), windowsHide: true,
       env: { ...process.env, PORT: '0', HOST: '127.0.0.1', DATA_DIR: data, VAULT_PATH: vault, ALLOWED_ROOTS: directory,
-        WEBOBSIDIAN_INITIAL_VAULT: '', NODE_ENV: 'development' }, stdio: ['ignore', 'pipe', 'pipe'] });
+        SHALE_INITIAL_VAULT: '', NODE_ENV: 'development' }, stdio: ['ignore', 'pipe', 'pipe'] });
     let logs = ''; child.stdout!.on('data', chunk => { logs += chunk; }); child.stderr!.on('data', chunk => { logs += chunk; });
     try {
       const endpoint = path.join(data, 'operations-endpoint.json');
@@ -105,7 +105,7 @@ test('an open clean document refreshes native sync only after the workspace leas
   const hub = await createSyncServer({ root: path.join(path.dirname(backend.vault), 'sync-hub'), token });
   try {
     await new Promise<void>(resolve => hub.server.listen(0, '127.0.0.1', resolve));
-    const endpoint = `http://127.0.0.1:${(hub.server.address() as AddressInfo).port}/webobsidian-sync/v1/`;
+    const endpoint = `http://127.0.0.1:${(hub.server.address() as AddressInfo).port}/shale-sync/v1/`;
     const remote = async (resource: string, method = 'GET', body?: string) => {
       const response = await fetch(endpoint + resource, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, ...(body ? { body } : {}) });
       expect(response.ok).toBe(true); return response.json() as Promise<any>;
@@ -155,7 +155,7 @@ test('shortcut and context menu capture exact source coordinates, pinning and on
   await page.getByRole('button', { name: '固定保留' }).click();
   const read = () => page.evaluate(async () => {
     const { request } = await import('/src/lib/api.ts');
-    return request('/api/operations/call', { method: 'POST', body: JSON.stringify({ name: 'obsidian_get_context', arguments: {} }) });
+    return request('/api/operations/call', { method: 'POST', body: JSON.stringify({ name: 'shale_get_context', arguments: {} }) });
   });
   expect((await read()).queued_context[0].pinned).toBe(true);
   await expect(page.locator('.mcp-context-item')).toHaveCount(1);
@@ -237,7 +237,7 @@ test('desktop manual controls do not auto-start, serialize actions and expose fa
     const host = window as any;
     host.mcpCalls = [];
     const state = { available: true, tunnelId: 'tunnel_fixture123', hasKey: true, connected: false, clientConfig: '{}' };
-    host.webobsidianDesktop = {
+    host.shaleDesktop = {
       platform: 'win32', nativePlugins: false, isDesktop: true,
       onBeforeClose: () => () => {}, openVaultPath: async () => {},
       mcp: { inspect: async () => state, copyConfig: async () => {}, configure: async () => state,
@@ -278,7 +278,7 @@ test('built-in MCP works without a project directory and stores only explicit co
     const host = window as any;
     const state = { available: true, tunnelId: '', hasKey: false, connected: false, clientConfig: '{}' };
     host.savedMcp = null; host.copiedMcp = false;
-    host.webobsidianDesktop = { platform: 'darwin',
+    host.shaleDesktop = { platform: 'darwin',
       onBeforeClose: () => () => {},
       mcp: { inspect: async () => state,
         configure: async (input: unknown) => { host.savedMcp = input; return { ...state, tunnelId: 'tunnel_fixture123', hasKey: true }; },
@@ -318,7 +318,7 @@ test('MCP creates a reviewed note with exact bytes, skips templates, then rename
     const { sharedApp } = await import('/src/lib/plugins.ts');
     sharedApp.vault.prepareNewNote = async () => { throw new Error('Unreviewed template must not run'); };
   });
-  const proposed = await noteTool(backend.url, 'obsidian_propose_changes', { request_id: 'create-reviewed', title: '新建测试笔记',
+  const proposed = await noteTool(backend.url, 'shale_propose_changes', { request_id: 'create-reviewed', title: '新建测试笔记',
     operations: [{ kind: 'create', path: 'MCP/新笔记.md', content }] });
   expect(proposed.status).toBe('awaiting_user_review');
   await expect(fs.readFile(path.join(backend.vault, 'MCP/新笔记.md'))).rejects.toMatchObject({ code: 'ENOENT' });
@@ -334,8 +334,8 @@ test('MCP creates a reviewed note with exact bytes, skips templates, then rename
   await expect(dialog.getByRole('status')).toHaveText('已接受');
   expect(await fs.readFile(path.join(backend.vault, 'MCP/新笔记.md'), 'utf8')).toBe(content);
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
-  const current = await noteTool(backend.url, 'obsidian_read_file', { path: 'MCP/新笔记.md' });
-  const renamed = await noteTool(backend.url, 'obsidian_propose_changes', { request_id: 'rename-reviewed', title: '重命名测试笔记',
+  const current = await noteTool(backend.url, 'shale_read_file', { path: 'MCP/新笔记.md' });
+  const renamed = await noteTool(backend.url, 'shale_propose_changes', { request_id: 'rename-reviewed', title: '重命名测试笔记',
     operations: [{ kind: 'rename', path: 'MCP/新笔记.md', to: 'MCP/重命名.md', base_revision: current.revision }] });
   expect(await fs.readFile(path.join(backend.vault, 'MCP/新笔记.md'), 'utf8')).toBe(content);
   // The sidebar list is already in view, so the floating inbox stays hidden.
@@ -347,7 +347,7 @@ test('MCP creates a reviewed note with exact bytes, skips templates, then rename
   await expect(dialog.getByRole('status')).toHaveText('已接受');
   expect(await fs.readFile(path.join(backend.vault, 'MCP/重命名.md'), 'utf8')).toBe(content);
   await expect(fs.readFile(path.join(backend.vault, 'MCP/新笔记.md'))).rejects.toMatchObject({ code: 'ENOENT' });
-  expect(await noteTool(backend.url, 'obsidian_get_change_status', { proposal_id: renamed.proposal_id })).toMatchObject({
+  expect(await noteTool(backend.url, 'shale_get_change_status', { proposal_id: renamed.proposal_id })).toMatchObject({
     operation: { kind: 'rename', status: 'accepted' }, applied_steps: 1 });
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   expect(await page.evaluate(async () => {
@@ -358,17 +358,17 @@ test('MCP creates a reviewed note with exact bytes, skips templates, then rename
 });
 
 test('MCP file review rejects safely and reports a target created after proposal', async ({ page, backend, expectedErrors }) => {
-  const proposed = await noteTool(backend.url, 'obsidian_propose_changes', { request_id: 'reject-created', title: '拒绝新建',
+  const proposed = await noteTool(backend.url, 'shale_propose_changes', { request_id: 'reject-created', title: '拒绝新建',
     operations: [{ kind: 'create', path: 'rejected.md', content: 'Never written' }] });
   await page.getByRole('button', { name: /拒绝新建.*rejected.md/ }).click();
   const dialog = page.getByRole('dialog', { name: '笔记操作审阅' });
   await dialog.getByRole('button', { name: '拒绝', exact: true }).click();
   await expect(dialog.getByRole('status')).toHaveText('已拒绝');
   await expect(fs.readFile(path.join(backend.vault, 'rejected.md'))).rejects.toMatchObject({ code: 'ENOENT' });
-  expect(await noteTool(backend.url, 'obsidian_get_change_status', { proposal_id: proposed.proposal_id })).toMatchObject({ operation: { status: 'rejected' } });
+  expect(await noteTool(backend.url, 'shale_get_change_status', { proposal_id: proposed.proposal_id })).toMatchObject({ operation: { status: 'rejected' } });
   await dialog.getByRole('button', { name: '返回列表', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await noteTool(backend.url, 'obsidian_propose_changes', { request_id: 'collision-created', title: '冲突新建',
+  await noteTool(backend.url, 'shale_propose_changes', { request_id: 'collision-created', title: '冲突新建',
     operations: [{ kind: 'create', path: 'collision.md', content: 'Must not overwrite' }] });
   await fs.writeFile(path.join(backend.vault, 'collision.md'), 'Existing file');
   await page.getByRole('button', { name: /冲突新建.*collision.md/ }).click();
@@ -379,8 +379,8 @@ test('MCP file review rejects safely and reports a target created after proposal
 });
 
 test('MCP rename refuses changed source at local acceptance', async ({ page, backend, expectedErrors }) => {
-  const current = await noteTool(backend.url, 'obsidian_read_file', { path: 'context.md' });
-  await noteTool(backend.url, 'obsidian_propose_changes', { request_id: 'stale-rename', title: '过期重命名',
+  const current = await noteTool(backend.url, 'shale_read_file', { path: 'context.md' });
+  await noteTool(backend.url, 'shale_propose_changes', { request_id: 'stale-rename', title: '过期重命名',
     operations: [{ kind: 'rename', path: 'context.md', to: 'renamed.md', base_revision: current.revision }] });
   await fs.writeFile(path.join(backend.vault, 'context.md'), source + '\nExternal edit\n');
   await page.getByRole('button', { name: /过期重命名.*context.md/ }).click();

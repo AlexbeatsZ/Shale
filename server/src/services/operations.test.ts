@@ -22,13 +22,13 @@ import { operationContract } from '../operations/contract.js';
 import { applyFileInWorkspace, applyInWorkspace } from './operationWorkspace.js';
 import * as vault from './vault.js';
 import { readFileSnapshot } from './vaultFile.js';
-import type { TextProposalInput } from '@webobsidian/markdown-core';
+import type { TextProposalInput } from '@shale/markdown-core';
 
 const base = path.join(os.tmpdir(), '.agents');
 let directory = '', review: NativeReview;
 const raw = '\ufeff# Original\r\n\r\n中文 😀\nTail\r';
 const input = (operation: TextProposalInput['operations'][number], request_id = 'fixture') =>
-  operationContract.obsidian_propose_changes.schema.parse({ request_id, operations: [operation] });
+  operationContract.shale_propose_changes.schema.parse({ request_id, operations: [operation] });
 const create = (file = 'folder/new.md', content = '# New\n') => input({ kind: 'create', path: file, content });
 const rename = async (to = 'renamed.md') => input({ kind: 'rename', path: 'original.md', to, base_revision: (await readFileSnapshot('original.md')).revision });
 const read = (file: string) => fs.readFile(path.join(state.root, file), 'utf8');
@@ -53,7 +53,7 @@ afterEach(async () => {
 it('validates one create/rename/edit and rejects unsupported or mixed operations', () => {
   expect(create().operations[0].kind).toBe('create');
   expect(input({ kind: 'create', path: 'empty.md', content: '' }).operations[0]).toMatchObject({ content: '' });
-  const schema = operationContract.obsidian_propose_changes.schema;
+  const schema = operationContract.shale_propose_changes.schema;
   for (const op of [{ kind: 'trash', path: 'a.md' }, { kind: 'create', path: 'a.md' },
     { kind: 'rename', path: 'a.md', to: 'b.md' }, { kind: 'create', path: 'a.md', content: '', overwrite: true }])
     expect(schema.safeParse({ request_id: 'bad', operations: [op] }).success).toBe(false);
@@ -122,7 +122,7 @@ it('blocks existing create/rename targets and non-note/hidden/traversal paths', 
   await expect(review.propose(await rename('original.md'))).rejects.toThrow(/相同/);
   await fs.mkdir(path.join(state.root, 'directory.md'));
   await expect(review.propose(await rename('directory.md'))).rejects.toThrow(/已存在/);
-  for (const file of ['../escape.md', '.obsidian/config.md', 'a.txt', '/root.md', 'bad?/x.md'])
+  for (const file of ['../escape.md', '.shale/config.md', 'a.txt', '/root.md', 'bad?/x.md'])
     await expect(review.propose(create(file))).rejects.toThrow();
 });
 it('rechecks collisions at acceptance without overwriting any file', async () => {

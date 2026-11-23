@@ -1,5 +1,5 @@
 import type { EditorView } from '@codemirror/view';
-import type { MarkdownModel, SourceSpan } from '@webobsidian/markdown-core';
+import type { MarkdownModel, SourceSpan } from '@shale/markdown-core';
 import { MINIMAP_MAX_HEIGHT, minimapRows, type MinimapRow, type MinimapWidth } from './markdownMinimap';
 
 export function paintMarkdownMinimap(image: HTMLCanvasElement, host: HTMLElement, view: EditorView,

@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 
 const entry = path.resolve(process.argv[2] ?? 'desktop/.gen/server/dist/index.mjs');
-const directory = await fs.mkdtemp('/tmp/.agents/webobsidian-lifecycle-');
+const directory = await fs.mkdtemp('/tmp/.agents/shale-lifecycle-');
 const vault = path.join(directory, 'vault 😃, chosen');
 await fs.mkdir(vault);
 await fs.writeFile(path.join(vault, 'note.md'), '# fixture\n');
@@ -13,7 +13,7 @@ await fs.writeFile(path.join(vault, 'note.md'), '# fixture\n');
 async function start(data, selected = vault, embedded = false) {
   const child = spawn(process.execPath, [entry], {
     env: { ...process.env, PORT: '0', DATA_DIR: data, VAULT_PATH: selected,
-      ALLOWED_ROOTS_JSON: JSON.stringify([directory]), WEBOBSIDIAN_REQUIRE_VAULT: '1', WEBOBSIDIAN_EMBEDDED: embedded ? '1' : '0' },
+      ALLOWED_ROOTS_JSON: JSON.stringify([directory]), SHALE_REQUIRE_VAULT: '1', SHALE_EMBEDDED: embedded ? '1' : '0' },
     stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
   });
   let log = '';

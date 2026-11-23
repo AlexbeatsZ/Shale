@@ -1,7 +1,7 @@
 import { NodeType, Tree } from '@lezer/common';
 import type { EditorState } from '@codemirror/state';
 import { parser } from './mathjax/latex-parser';
-import { mathRegions, type MarkdownModel } from '@webobsidian/markdown-core';
+import { mathRegions, type MarkdownModel } from '@shale/markdown-core';
 import { syntaxModel } from '../../../syntaxModel';
 import { getLatexSuiteConfig } from '../snippets/codemirror/config';
 

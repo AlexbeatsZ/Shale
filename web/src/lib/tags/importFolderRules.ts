@@ -1,6 +1,6 @@
 import { parseTree, getNodeValue, type ParseError, type Node } from 'jsonc-parser';
-import { normalizeFolderTags } from '@webobsidian/markdown-core';
-import type { FolderTagSettings, FolderTagRule } from '@webobsidian/markdown-core';
+import { normalizeFolderTags } from '@shale/markdown-core';
+import type { FolderTagSettings, FolderTagRule } from '@shale/markdown-core';
 
 /** Shared by legacy import and read-only note widgets. Never evaluates source. */
 export function parseLegacyFolderRuleData(source: string): Record<string, unknown> {

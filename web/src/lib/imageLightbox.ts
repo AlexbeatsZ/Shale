@@ -1,5 +1,5 @@
 import { registerBackHandler } from './host';
-import type { ImageParameters } from '@webobsidian/markdown-core';
+import type { ImageParameters } from '@shale/markdown-core';
 import { bindDarkMedia } from './mediaFilter';
 /**
  * Full-screen image viewer (lightbox) — opens on image click in BOTH Live Preview

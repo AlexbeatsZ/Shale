@@ -1,6 +1,6 @@
 import type { EditorState, Text } from '@codemirror/state';
 import type { SearchQuery } from '@codemirror/search';
-import { mathRegions, type MarkdownModel, type SourceSpan } from '@webobsidian/markdown-core';
+import { mathRegions, type MarkdownModel, type SourceSpan } from '@shale/markdown-core';
 import type { NoteMatches } from './api';
 
 export const MINIMAP_MAX_HEIGHT = 2048;

@@ -1,11 +1,12 @@
-# PRD — WebObsidian
+# PRD — Shale
 
 > Product Requirements Document
-> Phiên bản: 1.56 · Cập nhật: 2026-11-22 · Trạng thái: Draft
+> Phiên bản: 1.57 · Cập nhật: 2026-11-23 · Trạng thái: Draft
+> Changelog 1.57 (Shale 完整身份迁移) 仓库、内部包/桥接/MCP、桌面与 Android 应用标识、应用数据和 Vault 根目录统一为 Shale；Vault 配置改为 `.shale/`，同步入口改为 `/shale-sync/v1/`。启动前迁移旧配置与本机路径，保留笔记、认证、用户脚本、布局和同步身份；出现路径冲突时保留两边并停止迁移。原第三方插件模块/ID、来源与许可不伪造改名。设计见 docs/design/identity-migration.md。
 > Changelog 1.56 (Vim 光标颜色) Vim 默认光标沿用普通编辑器的正文灰黑色（深色主题自动转浅），替换插件固定的低对比度配色；设置 › 编辑器 › Vim 可分别调整浅色/深色主题的光标颜色并恢复默认，即时生效且不重置 Vim 模式、选区或输入法状态。插入模式细光标与普通/可视模式块光标共用颜色，块光标保留文字可读性。设计见 docs/design/vim-input-method.md。
 > Changelog 1.55 (原生 Vim 与内置输入法联动) 原生 Markdown 编辑器可开启 Vim；进入普通/可视模式使用指定英文输入源，返回插入模式恢复离开插入模式前的输入法。助手随桌面包构建，无需全局安装；仅当前聚焦编辑器可切换，离开编辑器恢复输入法。保持共享文档历史、片段和保存语义。Android 提供 Vim，系统输入法自动切换仅桌面 macOS/Windows。设计见 docs/design/vim-input-method.md。
 > Changelog 1.54 (原生菜单快捷键归设置管理) 桌面菜单不注册 Electron/macOS 默认快捷键；重新加载、强制重新加载、开发者工具、窗口缩放/全屏/最小化/隐藏/退出等动作进入同一命令目录和快捷键设置，默认未分配。已有用户快捷键与跨平台主修饰键保留；撤销仍为 Ctrl/Command+Z，重做为独立动作。应用可释放的隐藏/最小化/退出组合不再触发自动 Control 回退；仅系统接管的切应用/Spotlight/同应用窗口切换保留回退。按用户要求从 STEM 的移动文件移除多余 Ctrl+Shift+M，Mac 设置入口覆盖为实体 Control+反引号。设计见 docs/design/hotkeys.md。
-> Changelog 1.53 (同文件跨平台快捷键) 快捷键统一存放 `.obsidian/webobsidian/hotkeys.jsonc` 并沿用原生文件同步；通用 Ctrl/Mod 在 macOS 优先解析为 Command，`PhysicalCtrl` 明确表示实体 Control。Windows/Linux/Android 继续使用 Ctrl。允许同一文件按命令设置 Windows 与 Mac 覆盖，设置页并排编辑两端、多组绑定、禁用与继承；已存在的统一文件优先，旧本机与 Obsidian 配置只在首次迁移读取。修复编辑器、剪贴板与原生命令的 Command 默认值；系统保留组合才回退 Control。设计见 docs/design/hotkeys.md。
+> Changelog 1.53 (同文件跨平台快捷键) 快捷键统一存放 `.shale/hotkeys.jsonc` 并沿用原生文件同步；通用 Ctrl/Mod 在 macOS 优先解析为 Command，`PhysicalCtrl` 明确表示实体 Control。Windows/Linux/Android 继续使用 Ctrl。允许同一文件按命令设置 Windows 与 Mac 覆盖，设置页并排编辑两端、多组绑定、禁用与继承；已存在的统一文件优先，旧本机与 Shale 配置只在首次迁移读取。修复编辑器、剪贴板与原生命令的 Command 默认值；系统保留组合才回退 Control。设计见 docs/design/hotkeys.md。
 > Changelog 1.52 (用户脚本更新与卸载) 修复 Electron 33 下 GitHub 更新地址重定向失败；所有脚本、资产和 GM 请求逐跳检查 URL 与权限。卸载脚本直接删除源码、缓存、授权和 GM 数据，不再询问是否保留；加载旧存储时清理已卸载脚本的残留值与身份索引，保留仍安装脚本的数据。标签快速交换只作用于两个单独页面，分屏组内未被拖到的页面保持原位；拖动分屏组的留白/图标不能与单页交换，停留插入仍可整体移动分屏组。设计见 docs/design/browser-userscripts.md、workspace-sidebars.md。
 > Changelog 1.51 (标签排序/交换、分屏分隔线与侧栏吸附) 拖动标签时快速松手与目标交换位置（紫框），在目标上停留约 0.45 秒后目标及其后的标签让出空位并显示被拖标签的虚影，松手插到目标之前；拖到末尾空白处移到最后。分屏组作为一个整体参与排序和交换；普通标签快速放到可见分屏组的组员上仍放入该栏。触控屏长按约 0.35 秒提起标签后拖动，长按不动松手打开标签菜单，提起前移动仍滚动标签栏。两栏之间显示 1px 分隔线：拖动调整比例（设备本地保存），双击/双击触摸交换两页。侧栏拖动宽度时可吸附到左右分屏的分隔线，吸附后随分隔线移动。页面与面板滚动条隐藏，侧栏去掉阴影和半透明。设计见 docs/design/workspace-sidebars.md。
 > Changelog 1.50 (公式补全与标题语法) STEM 的 `mk` / `dm` 展开为 `\(…\)` / `\[…\]`，空公式内可立即使用数学补全。美元定界符继续解析，格式化默认保留两种写法。标题只识别 `#` 系列，正文中的 `---` 仍可用作分隔线，文首 YAML 继续识别。
@@ -27,19 +28,19 @@
 > Changelog 1.34 (嵌入控件): 笔记嵌入去掉“编辑嵌入/完成”文字按钮，改为悬停左上角铅笔进入内容编辑，焦点离开或 Esc 自动退出；右上角“打开链接”旁增加 `</>` 编辑 `![[…]]` 源码。见 docs/design/content-references.md。
 > Changelog 1.33: 虚拟文档移除额外顶部栏，右下角状态栏选择 MD/PDF/配置；MD 章节在连续页面中独立编辑、保存与撤销，JSON 配置有语法高亮及保存校验。文件、文件夹和文档右键可在系统文件管理器中定位。
 > Changelog 1.32 (虚拟文档): 保留真实章节文件，以文件夹隐藏配置声明连续阅读分组；自动首页索引、统一大纲、按需加载 Markdown/PDF，编辑回到真实源文件。见 docs/design/virtual-documents.md。
-> Changelog 1.31 (源码展开灰色、TeX 定界符): 学 Obsidian,实时预览中光标展开的可渲染语法字符统一用 `^id` 同款灰色
+> Changelog 1.31 (源码展开灰色、TeX 定界符): 学 Shale,实时预览中光标展开的可渲染语法字符统一用 `^id` 同款灰色
 > (`--text-faint`),内容保持正文色;Callout 标题展开源码时去掉类型色、粗体、竖线与折叠箭头。公式模型识别 AI 输出常用的
 > `\( … \)`(行内)和 `\[ … \]`(展示)并照常渲染(单行 `\[…\]` 需含 TeX 特征以免误判转义方括号);默认开启的格式化规则
 > 把它们转为 `$…$`/`$$…$$`。见 docs/design/source-reveal.md、native-math.md。
 > Changelog 1.30 (MCP 说明笔记): 用户希望把 Vault 里的笔记语法和规范固定交给 AI。设置 › MCP 可从仓库选择最多 20 篇
-> Markdown 笔记作为说明笔记,列表存在 `.obsidian/webobsidian/mcp.jsonc`。MCP 连接时服务器说明列出它们的链接与路径;
-> 每次 `obsidian_get_context` 附上它们当前保存的全文(`standing_instructions`,单篇 32K、合计 64K 字符,超出标记截断);
+> Markdown 笔记作为说明笔记,列表存在 `.shale/mcp.jsonc`。MCP 连接时服务器说明列出它们的链接与路径;
+> 每次 `shale_get_context` 附上它们当前保存的全文(`standing_instructions`,单篇 32K、合计 64K 字符,超出标记截断);
 > 说明与提议修改工具要求 AI 写入、修改时遵守。
 > Changelog 1.29 (自定义 Callout): 用户要求新增 callout 只需给出名称、颜色和图标,不需要改源码重新构建。原生 Callout 改为按
-> Obsidian 约定读取 `.callout[data-callout="x"]` 上的 `--callout-color`(RGB 三元组或任意 CSS 颜色)和 `--callout-icon`
+> Shale 约定读取 `.callout[data-callout="x"]` 上的 `--callout-color`(RGB 三元组或任意 CSS 颜色)和 `--callout-icon`
 > (Lucide 名称或内联 SVG),应用 CSS、Vault 主题和 CSS 片段按正常层叠顺序生效,改动即时重绘;未声明时回落到内置表。
 > 内置新增 `definition`、`premise`、`conclusion`。
-> Changelog 1.28 (MCP 内容引用): 用户希望 AI 写作时能知道并引用公式等内容的 `^id`。MCP 新增 `obsidian_find_targets`,
+> Changelog 1.28 (MCP 内容引用): 用户希望 AI 写作时能知道并引用公式等内容的 `^id`。MCP 新增 `shale_find_targets`,
 > 按 ID、标签、带编号公式的 TeX 或路径查询全库类型身份,也可检查某个 ID 是否已被占用;提议修改时校验新引入的类型 ID
 > (同笔记重复、挂不到结构、已被其他笔记使用则拒绝),新增的 `[[^id]]` 找不到目标时返回 warnings。鼓励 AI 为新公式起
 > 语义明确的 ID(如 `^eq-mass-energy`),不强制随机 ID;已有公式优先引用或嵌入,而不是复制。
@@ -56,9 +57,9 @@
 > 生成提交(Git 自己判断快照中的 ignore/LFS 规则,LFS 复用同步 blob,core.autocrlf=true 与现有历史一致),接续远程
 > 历史、非强制推送,连接配置永不提交。
 > Changelog 1.24 (连接令牌不进 Git): 用户决定访问令牌只需忽略、不加密。Git 备份不再提交
-> `.obsidian/webobsidian/sync.jsonc` 与 `git.jsonc`(两者可含令牌),写入仓库 `.git/info/exclude` 并把旧版本
+> `.shale/sync.jsonc` 与 `git.jsonc`(两者可含令牌),写入仓库 `.git/info/exclude` 并把旧版本
 > 提交的副本移出索引(本地文件保留),冲突分支同样跳过;文件同步仍在用户设备间复制它们。新克隆需在设置中填写一次连接。
-> Changelog 1.23 (附件上传不覆盖): 上传/粘贴/拖入的附件绝不替换已有文件,同名时按 Obsidian 规则依次使用
+> Changelog 1.23 (附件上传不覆盖): 上传/粘贴/拖入的附件绝不替换已有文件,同名时按 Shale 规则依次使用
 > `name 1.ext`、`name 2.ext`…;剪贴板位图(Chromium 统一命名 `image.png`)改名为 `Pasted image YYYYMMDDHHmmss.png`,
 > 复制来的文件保留原名;multipart 文件名按 UTF-8 解析,中文名不再乱码。
 > Changelog 1.22 (拖入分屏组时交换位置): [A,B],C 时把 C 拖到 B 的栏(或组内 B 的标签)上得到 [A,C],B——
@@ -134,7 +135,7 @@
 > inclusive br source boundaries; local YAML/JSON/table patches; full-document
 > readonly print and capability-scoped share enhancement with SSR fallback.
 > Acceptance and v1 limits: [rendering design](docs/design/rendering-unification.md).
-> Changelog 1.7 (fork direction): rebuild an Obsidian-like application for personal
+> Changelog 1.7 (fork direction): rebuild an Shale-like application for personal
 > customization beyond plugin limitations. Use obsidian-typings as an API reference;
 > prioritize editable core behavior and selective, verified compatibility. See §1.4.
 > Changelog 1.6 (FR-13 — compact desktop title bar): Windows/Linux use a single top row
@@ -142,24 +143,24 @@
 > icon or app-name label. Keep native menu actions and accelerators, a draggable empty area,
 > and light/dark styling. macOS keeps its system menu bar. Browser UI is unchanged.
 > Changelog 1.5 (FR-13 — Desktop app Electron đa nền tảng, theo yêu cầu người dùng): bổ sung **FR-13** —
-> đóng gói WebObsidian thành **app cài đặt** macOS/Windows/Linux (arm64/x64/ia32). Workspace mới `desktop/`
+> đóng gói Shale thành **app cài đặt** macOS/Windows/Linux (arm64/x64/ia32). Workspace mới `desktop/`
 > là **Electron shell** spawn đúng server Express hiện có như tiến trình con (qua `ELECTRON_RUN_AS_NODE`,
 > bind `127.0.0.1` + cổng ngẫu nhiên) và load SPA trong `BrowserWindow`. Server được esbuild bundle thành
 > **1 file `.mjs`** (không native module runtime nên cross-arch chỉ là đổi Electron binary). Lần đầu **chọn
 > vault**, dữ liệu vào `userData`, **auto-login** bằng mật khẩu ngẫu nhiên/máy (không bắt đổi pass). Đóng gói
 > bằng **electron-builder** (dmg/zip · Windows x64 portable · AppImage/deb); CI mới `release.yml` build matrix
 > macOS/Windows/Ubuntu khi push tag `v*` và publish **GitHub Release**. Không đổi server/web code.
-> Changelog 1.4 (FR-2 — Audio/Video embed: phát được như Obsidian, theo yêu cầu người dùng): embed
+> Changelog 1.4 (FR-2 — Audio/Video embed: phát được như Shale, theo yêu cầu người dùng): embed
 > `![[clip.mp4]]` / `![[song.mp3]]` giờ render **trình phát HTML5 thật** (`<video controls>` / `<audio
 > controls>`) ở **cả** Live Preview, Reading view và trang public share — trước đây chỉ hiện link xanh.
 > Mở thẳng file media từ file tree cũng hiện player (như ảnh). Hỗ trợ video: `mp4/webm/ogv/mov/mkv`,
-> audio: `mp3/wav/m4a/3gp/flac/ogg/oga/opus` (khớp bộ extension của Obsidian). Size param `![[clip.mp4|W]]`
+> audio: `mp3/wav/m4a/3gp/flac/ogg/oga/opus` (khớp bộ extension của Shale). Size param `![[clip.mp4|W]]`
 > đặt chiều rộng video. **Quan trọng:** route serve binary (`GET /api/files/content`, raw share) nay
 > **stream + hỗ trợ HTTP Range** (206 Partial Content) nên thanh tua/seek video hoạt động và Safari phát
 > được — thay vì đọc cả file vào RAM. MIME map + bộ extension gom về `server/services/mime.ts` &
 > `web/lib/media.ts`. Không thêm API mới.
-> Changelog 1.3 (FR-1 — File explorer header toolbar parity Obsidian, theo yêu cầu người dùng): header sidebar
-> **Files** bổ sung đủ nút như Obsidian: **New note**, **New canvas**, **New folder**, **Change sort order**
+> Changelog 1.3 (FR-1 — File explorer header toolbar parity Shale, theo yêu cầu người dùng): header sidebar
+> **Files** bổ sung đủ nút như Shale: **New note**, **New canvas**, **New folder**, **Change sort order**
 > (dropdown 6 kiểu: File name A→Z/Z→A, Modified time new↔old, Created time new↔old), **Auto reveal current
 > file** (toggle: tự mở folder cha + cuộn tới file đang xem), **Collapse all / Expand all**. Sort theo thời gian
 > nhanh nhờ **stat cache trong RAM** ở server (`listTree` fill 1 lần, watcher invalidate file đổi → 0 syscall
@@ -167,7 +168,7 @@
 > fix Android Chrome double-tap edit không lưu được text (commit qua doc-level pointerdown + double-tap detect).
 > Changelog 1.2 (FR-2 — Ảnh: resize + zoom, theo yêu cầu người dùng): ảnh nhúng trong note giờ **kéo để
 > resize** (2 thanh handle trái/phải hiện khi hover trong Live Preview) — ghi lại kích thước vào source dưới
-> dạng size param Obsidian: `![[img|W]]` cho wikilink embed, `![alt|W](url)` cho ảnh markdown chuẩn (giữ tỉ lệ,
+> dạng size param Shale: `![[img|W]]` cho wikilink embed, `![alt|W](url)` cho ảnh markdown chuẩn (giữ tỉ lệ,
 > height auto). Size param `|300` / `|300x200` nay áp dụng **cả** ảnh markdown `![](…)` (trước chỉ `![[…]]`),
 > ở cả Live lẫn Reading. **Click ảnh → lightbox toàn màn hình** (cả 2 mode): cuộn chuột/pinch để zoom (theo
 > con trỏ/tâm 2 ngón), kéo/1-ngón để pan, double-click reset, Esc hoặc click nền để đóng. Không thêm API mới.
@@ -178,10 +179,10 @@
 > Settings → Vault & Files. API mới: `GET /api/files/trash`, `POST /api/files/trash/restore`,
 > `DELETE /api/files/trash/item`, `DELETE /api/files/trash`. Restore tự né trùng tên (suffix `.restored-<ts>`)
 > và dọn thư mục rỗng trong `.trash`; mọi thao tác trash đều guard path traversal (chỉ tác động trong `.trash`).
-> Changelog 1.0 (FR-12 — Canvas, theo yêu cầu người dùng): clone tính năng **Canvas** của Obsidian. Khung vẽ
+> Changelog 1.0 (FR-12 — Canvas, theo yêu cầu người dùng): clone tính năng **Canvas** của Shale. Khung vẽ
 > vô hạn (pan/zoom) chứa các node (text markdown, file embed/link tới note hoặc ảnh, link URL, group) và các
 > edge nối cạnh node có mũi tên + nhãn. Đọc/ghi đúng định dạng mở **JSON Canvas** (`.canvas`, tương thích
-> Obsidian). Tạo/di chuyển/resize/đổi màu/xóa node, nối edge bằng kéo từ chấm cạnh, multi-select + marquee,
+> Shale). Tạo/di chuyển/resize/đổi màu/xóa node, nối edge bằng kéo từ chấm cạnh, multi-select + marquee,
 > double-click nền tạo text node, double-click text node để sửa. Autosave debounce như editor (qua store
 > `content`/`save`). Tạo canvas mới: context menu file tree + command palette. Không thêm API mới (dùng
 > `/api/files/content`).
@@ -192,8 +193,8 @@
 > tự đặt tên không trùng (`… copy`/`… copy N`), chặn dán folder vào chính nó/thư mục con, dán Cut vào đúng chỗ cũ là
 > no-op; row bị Cut làm mờ chờ dán; mục **Paste** chỉ hiện khi clipboard có dữ liệu. Right-click vùng trống
 > file tree cũng ra context menu của app (New note / New folder / Paste vào vault root) thay vì menu native trình duyệt.
-> Changelog 0.8 (FR-2/FR-4 — menu ⋯ parity Obsidian theo yêu cầu người dùng): menu **More options (⋯)**
-> dựng lại theo cấu trúc Obsidian Desktop và bổ sung: **Backlinks in document** + **Open linked view**
+> Changelog 0.8 (FR-2/FR-4 — menu ⋯ parity Shale theo yêu cầu người dùng): menu **More options (⋯)**
+> dựng lại theo cấu trúc Shale Desktop và bổ sung: **Backlinks in document** + **Open linked view**
 > (Backlinks/Outgoing links/Outline → mở right panel); **Open in new window** (mở deep-link `/note/<path>`
 > ở tab mới); **Add file property** (chèn property rỗng vào frontmatter YAML); **Find…** trong note
 > (`@codemirror/search`, ⌘F/⌘⇧F/⌘G); **Export to PDF…** (Reading view + `window.print()` qua CSS
@@ -205,7 +206,7 @@
 > tree lẫn menu ⋯ của pane; note đang share public có **icon globe** (màu accent) cạnh tên trong
 > file tree; danh sách share cache trong store (đồng bộ giữa dialog, Settings → Sharing và badge).
 > Changelog 0.6 (FR-9 deploy hardening cho open-source self-host): tham số deploy chuyển hết sang `.env`
-> (`VAULT_HOST_PATH`/`HTTP_BIND`/`HTTP_PORT`/`WEBOBSIDIAN_WATCH`) nên `docker-compose.yml` không bị clobber
+> (`VAULT_HOST_PATH`/`HTTP_BIND`/`HTTP_PORT`/`SHALE_WATCH`) nên `docker-compose.yml` không bị clobber
 > khi redeploy; file watcher tự fallback polling khi đụng inotify limit; healthcheck `start_period=90s`.
 > Changelog 0.5: Graph (FR-2) thêm tìm node theo keywords — ô search nổi trên Graph view, gõ keywords
 > hiện danh sách note/tag khả dĩ (match label/path, tag luôn xếp trước, sau đó prefix > label > path + degree), click
@@ -214,10 +215,10 @@
 > Changelog 0.4: thêm FR-11 (Mobile / responsive UI cho smartphone màn hình cảm ứng) — sidebar trái/phải
 > thành drawer overlay trượt (hamburger + edge-swipe + backdrop), workspace full-width, mobile editing
 > toolbar trên bàn phím (bold/italic/heading/list/checkbox/link/…), touch target ≥44px, safe-area insets.
-> Tham chiếu UX Obsidian Mobile app. Cập nhật NFR khả dụng.
+> Tham chiếu UX Shale Mobile app. Cập nhật NFR khả dụng.
 > Changelog 0.3: mở rộng FR-2 theo phản hồi người dùng — (a) menu "More options" (⋯) trên header mỗi pane
 > (Split right/Split down, Copy screenshot cho Graph, Bookmark, Copy public link, Make a copy, Rename/Move/
-> Copy path/Delete, Close tab/Close others) giống Obsidian; (b) Right sidebar đại tu thành tab strip icon
+> Copy path/Delete, Close tab/Close others) giống Shale; (b) Right sidebar đại tu thành tab strip icon
 > (Backlinks · Outgoing links · Tags · Outline) với Linked mentions + **Unlinked mentions** và **Outgoing
 > links** (resolved/unresolved) — trước đó chỉ có 2 panel cố định.
 > Changelog 0.2: thêm FR-10 (deep-link URL `/note/...` + public share link readonly + trang quản lý share tập trung), API `/api/shares` + `/public/shares`, data model `data/shares.json`.
@@ -226,34 +227,34 @@
 
 ## 1. 概述
 
-**WebObsidian**(本 fork:AlexbeatsZ/webobsidian,源自 xnohat/webobsidian v0.1.1)是一个面向个人使用的
-类 Obsidian 原生应用,支持 Windows/macOS/Linux 桌面端和 Android。应用直接读写本地 Vault 目录中的
+**Shale**(本 fork:AlexbeatsZ/shale,源自 xnohat/shale v0.1.1)是一个面向个人使用的
+类 Shale 原生应用,支持 Windows/macOS/Linux 桌面端和 Android。应用直接读写本地 Vault 目录中的
 Markdown、附件和 Canvas 文件。上游的自托管网页版、登录、公开分享和 Docker 部署已全部退役,
 边界见 [原生应用边界](docs/design/native-only.md) 和 [个人本地运行时](docs/design/personal-local-runtime.md)。
 
 ### 1.1 目标
-- 提供与 Obsidian 桌面版相当的编辑/阅读体验(编辑器、实时预览、双链、图谱、反向链接)。
-- Vault 是本地真实目录,保留现有 Markdown、附件、Canvas 和 `.obsidian/` 数据;
+- 提供与 Shale 桌面版相当的编辑/阅读体验(编辑器、实时预览、双链、图谱、反向链接)。
+- Vault 是本地真实目录,保留现有 Markdown、附件、Canvas 和 `.shale/` 数据;
   配置、主题和插件的兼容程度按 §1.4 单独评估。
 - 原生文件同步(独立 `sync-server/`)负责多设备实时同步,Git(含 LFS)作为定期备份和冲突历史。
 - 运行时只监听本机回环地址,不需要账号或密码;配置使用 JSON/JSONC 文件,不引入数据库引擎。
 - 通过 MCP 让 AI 读取 Vault 上下文、搜索,并以"提议 → 本地审阅 → 接受"的方式修改笔记。
 - 内置中文(拼音)搜索、LaTeX/公式写作、格式化(Linter)等原生能力,替代对应社区插件。
-- 支持加载用户实际使用的 Obsidian 社区插件(已安装的 `.obsidian/plugins/*`)。
+- 支持加载用户实际使用的 Shale 社区插件(已安装的 `.shale/plugins/*`)。
 
 ### 1.2 不在范围内
 - 浏览器版、自托管网页部署、Docker 镜像、公开分享链接和笔记 URL 深链
   (2026-11-01 退役,不再添加浏览器适配)。
 - 账号、密码、会话、API Key 和对外开放的 REST API(2026-10-23 退役)。
-- 多用户实时协作编辑(CRDT);Obsidian Sync/Publish 官方服务。
-- 应用内在线下载/安装社区插件;100% 兼容所有依赖 Obsidian 内部 Electron/Node API 的插件。
+- 多用户实时协作编辑(CRDT);Shale Sync/Publish 官方服务。
+- 应用内在线下载/安装社区插件;100% 兼容所有依赖 Shale 内部 Electron/Node API 的插件。
 
 ### 1.3 目标用户
 - 本 fork 的所有者本人:在自己的桌面和 Android 设备上使用同一个 Vault,并按个人工作流定制核心行为。
 
 ### 1.4 本 fork 的目标与优先级
 
-本项目的目的是重建一个可以满足用户个性化需求的 Obsidian。背景是现有 Obsidian
+本项目的目的是重建一个可以满足用户个性化需求的 Shale。背景是现有 Shale
 插件对宿主行为的修改能力有限，因此本 fork 需要允许直接修改编辑器、工作区、文件管理
 和界面交互。以上目标指导后续需求取舍；前述自托管能力是已有基础。
 
@@ -284,7 +285,7 @@ Markdown、附件和 Canvas 文件。上游的自托管网页版、登录、公�
        │              │              │              │
   应用数据目录      Vault 目录      sync-server     Git 远程仓库
   settings.json    (.md/附件/       (独立发布的     (备份,可选 LFS)
-  索引/日志        .canvas/.obsidian) 同步服务)
+  索引/日志        .canvas/.shale) 同步服务)
 ```
 
 `packages/markdown-core`(Markdown 源码模型、审阅合并)和 `packages/search-core`(中文/拼音搜索)
@@ -306,7 +307,7 @@ Markdown、附件和 Canvas 文件。上游的自托管网页版、登录、公�
 
 ### 2.2 项目目录结构
 ```
-webobsidian/
+shale/
 ├── desktop/        # Electron 壳:窗口、标题栏、路径、MCP 启动器、打包脚本
 ├── android/        # Android 壳:MainActivity、RuntimeHost
 ├── server/         # 本地运行时
@@ -342,7 +343,7 @@ webobsidian/
   trùng tên thì dùng `name 1.ext`, `name 2.ext`… (createOnly); ảnh clipboard `image.png` đổi thành
   `Pasted image YYYYMMDDHHmmss.png`; tên file multipart giải mã UTF-8.
 - Watch filesystem (chokidar) để phản ánh thay đổi ngoài (git pull, sửa trực tiếp).
-- Tương thích cấu trúc `.obsidian/` (config, plugins, themes).
+- Tương thích cấu trúc `.shale/` (config, plugins, themes).
 
 ### FR-2 · Editor & rendering
 - CodeMirror 6: syntax highlight Markdown, keybindings cơ bản.
@@ -352,7 +353,7 @@ webobsidian/
 - **Callout 自定义**:新类型只需一条 CSS 规则 `.callout[data-callout="x"] { --callout-color: r, g, b; --callout-icon: lucide-name; }`,
   可写在 Vault 主题/CSS 片段中,无需重新构建(见 docs/design/callout-styles.md)。
 - **Ảnh nhúng — resize & zoom**: kéo handle 2 cạnh (trái/phải) trên ảnh trong Live Preview để đổi rộng,
-  ghi lại vào source dạng size param Obsidian `![[img|W]]` / `![alt|W](url)` (giữ tỉ lệ, height auto).
+  ghi lại vào source dạng size param Shale `![[img|W]]` / `![alt|W](url)` (giữ tỉ lệ, height auto).
   Size param `|W` / `|WxH` áp dụng cho **cả** `![[…]]` và ảnh markdown `![](…)`, ở Live lẫn Reading.
   Click ảnh → **lightbox toàn màn hình**: wheel/pinch zoom (theo con trỏ/tâm), kéo/1-ngón pan,
   double-click reset, Esc/click nền đóng (xem §22 mobile: pinch-zoom ảnh trong reading).
@@ -362,11 +363,11 @@ webobsidian/
   Binary serve qua HTTP Range (206) để seek/Safari hoạt động; MIME + extension: `services/mime.ts` /
   `lib/media.ts`.
 - Backlinks panel, outline, tag pane.
-- Right sidebar dạng **tab strip icon** (giống Obsidian): Backlinks · Outgoing links · Tags · Outline.
+- Right sidebar dạng **tab strip icon** (giống Shale): Backlinks · Outgoing links · Tags · Outline.
   - Backlinks: "Linked mentions" (đếm + danh sách) **và** "Unlinked mentions" (note nhắc tên note hiện tại
     bằng plain text mà chưa link — tìm qua QMD search, loại trừ note đã link).
   - Outgoing links: mọi wikilink trong note hiện tại, phân biệt resolved/unresolved, click để mở/tạo.
-- Menu **More options (⋯)** trên header mỗi pane (note lẫn Graph view), dựng theo cấu trúc Obsidian Desktop:
+- Menu **More options (⋯)** trên header mỗi pane (note lẫn Graph view), dựng theo cấu trúc Shale Desktop:
   - Note: Backlinks in document, Split right / Split down, Open in new window, Rename / Move file to / Make a
     copy, Bookmark, Add file property, Export to PDF…, Find…, Copy path, Open version history, Open linked view
     (Backlinks / Outgoing links / Outline), Reveal file in navigation, Close tab / Close other tabs, Delete.
@@ -414,9 +415,9 @@ webobsidian/
 - 设计见 [原生文件同步与 Git 备份](docs/design/file-sync.md)。
 - **文件同步**:原生 HTTPS 传输负责实时同步 Markdown、Canvas 和附件,服务端是独立发布的
   `sync-server/`(`sync-server-v*` 标签,不影响桌面/移动版本号)。每个 Vault 的开关、有序地址列表、
-  令牌和间隔保存在 `.obsidian/webobsidian/sync.jsonc`;每轮从第一个可用地址开始,认证/身份/回滚/冲突
+  令牌和间隔保存在 `.shale/sync.jsonc`;每轮从第一个可用地址开始,认证/身份/回滚/冲突
   错误直接停止,不静默切换数据源。公网连接要求校验证书的 HTTPS,HTTP 仅允许私有/回环地址。
-- **Git 备份**:Git 只做定期备份和冲突历史,配置在每个 Vault 的 `.obsidian/webobsidian/git.jsonc`
+- **Git 备份**:Git 只做定期备份和冲突历史,配置在每个 Vault 的 `.shale/git.jsonc`
   (远程、分支、凭据、间隔、LFS 规则);备份会显式包含 `sync.jsonc`,克隆私有 Vault 仓库即可恢复同步配置。
 - **单文件历史版本**:`git log`/`git show` 列出触及该文件的提交,可预览并恢复某个版本。
 - 冲突:检测并提示用户,不自动合并覆盖数据。
@@ -424,7 +425,7 @@ webobsidian/
 ### FR-5 · 配置(JSON/JSONC 文件)
 - 应用级设置保存在应用数据目录的 `settings.json`(原子写入,zod 校验),包括 Vault 路径与删除方式、
   文件/附件默认位置、搜索(中文/拼音)、快捷键、原生功能开关、写作设置等。
-- 每个 Vault 的原生配置集中在 `.obsidian/webobsidian/`:`sync.jsonc`、`git.jsonc`、`writing.jsonc`、
+- 每个 Vault 的原生配置集中在 `.shale/`:`sync.jsonc`、`git.jsonc`、`writing.jsonc`、
   `math.jsonc`、`automation.jsonc`、`menus/`、`blocks/`、`snippets/` 等。
 - 不自动迁移或改写正在使用的 Vault;保留原始插件数据和未知配置。
 
@@ -446,9 +447,9 @@ webobsidian/
 - 中文/拼音:见 FR-15;只内置简体字读音表(繁体词典已于 1.17 删除)。
 
 ### FR-8 · Community plugins
-- Chỉ dùng plugin đã có trong Vault (không tải/cài trực tuyến). Đọc danh sách plugin từ `.obsidian/plugins/*` (manifest.json, main.js).
+- Chỉ dùng plugin đã có trong Vault (không tải/cài trực tuyến). Đọc danh sách plugin từ `.shale/plugins/*` (manifest.json, main.js).
 - Plugin loader evaluates trusted CommonJS `main.js` against the host API; this is not a security sandbox. Native Node modules require explicit desktop trust.
-- Read and update vault `.obsidian/community-plugins.json`; keep each plugin's `data.json`; runtime enable/disable cleans registrations.
+- Read and update vault `.shale/community-plugins.json`; keep each plugin's `data.json`; runtime enable/disable cleans registrations.
 - Detailed APIs, existing-plugin versions, verification status and unsupported internals: [plugin compatibility](docs/design/plugin-compatibility.md).
 
 ### FR-9 · Android 应用(取代原 Docker 部署)
@@ -469,7 +470,7 @@ webobsidian/
 
 ### FR-11 · Mobile / responsive UI (smartphone cảm ứng)
 Mục tiêu: trải nghiệm **đọc note** và **soạn thảo note** thuận tiện trên điện thoại màn hình cảm ứng,
-tham chiếu UX Obsidian Mobile. Kích hoạt theo breakpoint (`max-width: 768px`) — không phải app riêng,
+tham chiếu UX Shale Mobile. Kích hoạt theo breakpoint (`max-width: 768px`) — không phải app riêng,
 cùng một codebase React.
 本节布局由 Android 应用(FR-9)和窄窗口桌面端使用,不面向手机浏览器。
 - **Layout drawer**: ribbon + sidebar trái và right sidebar trở thành **drawer overlay** trượt đè lên
@@ -525,7 +526,7 @@ cùng một codebase React.
 - 设计见 [原生功能](docs/design/native-features.md) 及其链接的子文档。
 - **标签**:层级标签面板、批量重命名/合并、标签页(Tag Page)、按文件夹自动打标签规则。
 - **附件清理**:预览未被引用的附件,用户明确勾选并重新校验后移入回收站,可恢复。
-- **自定义菜单**:每个 Vault 用 JSONC 声明右键菜单(`.obsidian/webobsidian/menus/`)。
+- **自定义菜单**:每个 Vault 用 JSONC 声明右键菜单(`.shale/menus/`)。
 - **命令与快捷键**:命令面板、可自定义快捷键、用户命令、模板、标题级别命令。
 - **块与脚本**:可执行的 JavaScript 代码块(含图表/组件)、查询块、块效果、图表(diagrams)、callout 列表。
 - **外观**:CSS 片段、主题、字体;新建文件和附件的默认位置;正文首个标题作为笔记标题。
@@ -586,13 +587,13 @@ WS     /ws             # 文件变更、索引更新等通知
 - **应用数据目录**(每台设备):`settings.json`、搜索/文件索引、同步检查点和收发日志、缓存、日志。
   `settings.json` 主要分组:`vault`(路径、`allowedRoots`、`trash`、`deleteMode`、文件/附件默认位置)、
   `search`(中文/拼音、选择器选项)、`hotkeys`、`nativeFeatures`(标签、附件清理等)、`writing`。
-- **Vault 内**:Markdown、附件、`.canvas`(JSON Canvas)、`.trash/`、`.obsidian/`(原有配置与插件)、
-  `.obsidian/webobsidian/`(本 fork 的原生配置,见 FR-5)。
+- **Vault 内**:Markdown、附件、`.canvas`(JSON Canvas)、`.trash/`、`.shale/`(原有配置与插件)、
+  `.shale/`(本 fork 的原生配置,见 FR-5)。
 
 ---
 
 ## 7. 风险与决策
-- **插件兼容**:很多插件依赖 Obsidian 内部 API → 只保证用户实际使用的子集;缺失接口软失败并记录警告。
+- **插件兼容**:很多插件依赖 Shale 内部 API → 只保证用户实际使用的子集;缺失接口软失败并记录警告。
   常用插件(LaTeX Suite、Linter、Fuzzy Chinese Pinyin、用户脚本等)优先改为原生实现或明确屏蔽。
 - **机密**:同步令牌和 Git 凭据保存在 Vault 配置或本地凭据中,禁止进入日志。
 - **大文件**:Git 备份需配置 LFS;实时同步由原生文件传输承担。

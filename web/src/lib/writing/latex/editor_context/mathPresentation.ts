@@ -1,5 +1,5 @@
 import type { EditorState } from '@codemirror/state';
-import { mathBodyOffset, mathRegions, type MathRegion, type SourceSpan } from '@webobsidian/markdown-core';
+import { mathBodyOffset, mathRegions, type MathRegion, type SourceSpan } from '@shale/markdown-core';
 import { compositionSelection } from '../../../editorSelection';
 import { livePreviewReadonly, livePreviewState } from '../../../renderState';
 import { forceRendered, sourceIsOpen } from '../../../sourceControls';

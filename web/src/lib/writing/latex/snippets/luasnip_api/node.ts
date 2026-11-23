@@ -1,5 +1,5 @@
 // @ts-nocheck -- adapted upstream rule implementation; native boundaries are type checked.
-import { compileReplacement, expandReplacement } from "@webobsidian/markdown-core";
+import { compileReplacement, expandReplacement } from "@shale/markdown-core";
 import { VISUAL_SNIPPET_MAGIC_SELECTION_PLACEHOLDER } from "../snippets"
 import type { TabstopSpec } from "../tabstop"
 

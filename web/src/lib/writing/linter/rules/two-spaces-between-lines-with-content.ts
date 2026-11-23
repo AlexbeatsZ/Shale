@@ -18,7 +18,7 @@ export default class TwoSpacesBetweenLinesWithContent extends RuleBuilder<TwoSpa
       nameKey: 'rules.two-spaces-between-lines-with-content.name',
       descriptionKey: 'rules.two-spaces-between-lines-with-content.description',
       type: RuleType.CONTENT,
-      ruleIgnoreTypes: [IgnoreTypes.obsidianMultiLineComments, IgnoreTypes.yaml, IgnoreTypes.table],
+      ruleIgnoreTypes: [IgnoreTypes.shaleMultiLineComments, IgnoreTypes.yaml, IgnoreTypes.table],
     });
   }
   get OptionsClass(): new () => TwoSpacesBetweenLinesWithContentOptions {

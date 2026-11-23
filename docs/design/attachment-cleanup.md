@@ -34,7 +34,7 @@ must remain unavailable. An empty/fake safety adapter is not a supported mode.
 
 ## Legacy implementation and migration
 
-Read-only source baseline: local Obsidian Plus 1.3.1,
+Read-only source baseline: local Shale Plus 1.3.1,
 `src/unused-images/core.ts`, `src/unused-images/module.ts` and its `AGENTS.md`.
 Its focused unused-image module has a fixed image extension list, resolved-link
 cache plus text/frontmatter/Canvas fallbacks, `.trash` only, sequential moves and
@@ -44,7 +44,7 @@ retains its conservative discovery principle, broadens beyond images and adds
 the preview/lease/revalidation boundary.
 
 The coordinator suppresses `oz-clear-unused-images` and only the `unusedImages`
-module in Obsidian Plus. Other Plus modules remain active as appropriate. Map
+module in Shale Plus. Other Plus modules remain active as appropriate. Map
 `oz-clear-unused-images:clear-unused-images` and
 `obsidian-plus:clear-unused-images` to the new native command. Existing plugin
 files/settings are preserved, including explicitly configured exclusions; native
@@ -79,7 +79,7 @@ in excluded directories still participate in reference discovery. There is no
 | HTML | Quoted/unquoted `src`, `href`, `poster`, object `data`, `xlink:href`, `data-src`, `data-href`, quoted `srcset`; shared entity decoding. Complex/unquoted srcset blocks execution. |
 | CSS | `url(...)`, quoted `@import`, quoted and ordinary escaped punctuation; unsupported hex escapes, continuation, image-set or malformed URL expressions block execution. |
 | Canvas | Strict JSON root with nodes/edges arrays; standard text/file/link/group nodes. File nodes, text-node Markdown and nested strings participate. Unknown/malformed nodes block execution. |
-| Core `.obsidian` config | Explicit on-demand read because the catalog omits hidden config. JSON/YAML/CSS/text strings contribute positive evidence. Unknown opaque config formats are protected/reported; parse/read failures in supported formats block execution. |
+| Core `.shale` config | Explicit on-demand read because the catalog omits hidden config. JSON/YAML/CSS/text strings contribute positive evidence. Unknown opaque config formats are protected/reported; parse/read failures in supported formats block execution. |
 | Plugin resources | All plugin files are protected. Standard `main.js` and `manifest.json` are implementation assets, not candidates; `styles.css` contributes CSS references. Plugin presence alone does not forbid cleanup. |
 | Plugin data | Protect every plugin file; collect explicit text/JSON evidence. Built-in schema readers cover ten current configurations. Unknown/opaque data is protected/reported without inventing dependencies on all candidates. Actual unbounded dynamic expressions still block execution. Optional host readers supplement supported formats. |
 | Dynamic resource targets | A target with a fixed suffix protects all candidates of that extension. An unbounded target blocks execution. TeX image macros/search directories protect image/PDF extensions. |

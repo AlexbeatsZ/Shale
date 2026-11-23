@@ -7,7 +7,7 @@ import { renderContext } from '../../../renderContext';
 import { decorationInputsChanged } from '../../../decorationDependencies';
 import { mathPreview, mathPreviewTex, PREVIEW_HIGHLIGHT_CLASS as HIGHLIGHT_CLASS } from '../editor_context/mathPresentation';
 import { getLatexSuiteConfig } from '../snippets/codemirror/config';
-import { cmDarkClass, cmLightClass } from './obsidian_utils';
+import { cmDarkClass, cmLightClass } from './shale_utils';
 import { mathSyntaxHighlighting } from './math_highlight';
 
 interface MathTooltip { equation: string; from: number; to: number; definitions: readonly string[]; sourcePath?: string; tooltip: Tooltip }

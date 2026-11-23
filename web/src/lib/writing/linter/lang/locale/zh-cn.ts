@@ -182,7 +182,7 @@ export default {
       },
       'additional-file-extensions': {
         'name': '额外文件扩展名',
-        'description': '除 md 外要参与 Lint 的文件扩展名。例如 mdx 或 svx。不要包含开头的点号。<b>注意：无论添加何种扩展名，只有 Obsidian 视为 Markdown 的文件（无论是原生或通过其他插件）才会被 Lint。</b>',
+        'description': '除 md 外要参与 Lint 的文件扩展名。例如 mdx 或 svx。不要包含开头的点号。<b>注意：无论添加何种扩展名，只有 Shale 视为 Markdown 的文件（无论是原生或通过其他插件）才会被 Lint。</b>',
         'extension-placeholder': '例如：mdx',
         'add-input-button-text': '添加扩展名',
         'delete-tooltip': '删除',
@@ -238,11 +238,11 @@ export default {
     'custom-command': {
       // custom-command-option.ts
       'name': '自定义命令',
-      'description': '自定义命令是在 Linter 完成格式化后运行的 Obsidian 命令。这意味着 Obsidian 命令会在 YAML 时间戳修改之后运行，因此它们可能会导致在下次运行 Linter 时触发 YAML 时间戳修改。一个 Obsidian 命令只能选择一次。',
-      'warning': '选择命令时，请确保使用鼠标或按回车键选择该选项，其他选择方法可能不起作用。只有 Obsidian 命令或空字符串会被保存',
+      'description': '自定义命令是在 Linter 完成格式化后运行的 Shale 命令。这意味着 Shale 命令会在 YAML 时间戳修改之后运行，因此它们可能会导致在下次运行 Linter 时触发 YAML 时间戳修改。一个 Shale 命令只能选择一次。',
+      'warning': '选择命令时，请确保使用鼠标或按回车键选择该选项，其他选择方法可能不起作用。只有 Shale 命令或空字符串会被保存',
 
       'add-input-button-text': '添加新命令',
-      'command-search-placeholder-text': 'Obsidian 命令',
+      'command-search-placeholder-text': 'Shale 命令',
       'move-up-tooltip': '上移',
       'move-down-tooltip': '下移',
       'delete-tooltip': '删除',
@@ -457,7 +457,7 @@ export default {
     // format-yaml-array.ts
     'format-yaml-array': {
       'name': '格式化 YAML 数组',
-      'description': '允许将常规 YAML 数组格式化为多行或单行，并允许部分数组(<code>tags</code>, <code>aliases</code>) 保留 Obsidian 原有的 YAML 格式。请注意，单字符串转换为单行，如果存在多个条目，则会变为单行数组。对于单字符串转换为多行，情况也是如此，只是它变成了多行数组',
+      'description': '允许将常规 YAML 数组格式化为多行或单行，并允许部分数组(<code>tags</code>, <code>aliases</code>) 保留 Shale 原有的 YAML 格式。请注意，单字符串转换为单行，如果存在多个条目，则会变为单行数组。对于单字符串转换为多行，情况也是如此，只是它变成了多行数组',
       'alias-key': {
         'name': '格式化 YAML aliases',
         'description': '打开 YAML aliases 部分的格式设置。不应与规则<code>YAML 标题别名</code>同时启用，因为它们可能不会很好地协同工作，或者它们可能有不同的格式样式选择，从而导致意外结果',
@@ -961,7 +961,7 @@ export default {
     // yaml-timestamp.ts
     'file system': '系统',
     'frontmatter': 'YAML Front-matter',
-    'user or Linter edits': 'Obsidian',
+    'user or Linter edits': 'Shale',
     // quote-style.ts
     '\'\'': '\'\'', // leave as is
     '‘’': '‘’', // leave as is

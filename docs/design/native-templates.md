@@ -34,12 +34,12 @@ Implementation order:
 | Prompt and selection dialogs | Existing Modal/SuggestModal, shared Promise helpers. |
 | Date formatting | Existing moment dependency. |
 | Template cursor groups/history | Existing native writing tabstop state and source transaction; command results are literal data, never recompiled as snippet syntax. |
-| Preferences and Vault identity checks | Vault-local `.obsidian/webobsidian/automation.jsonc`, using `vaultConfiguration.ts` shared with menus and other native configurations; existing authenticated router. |
+| Preferences and Vault identity checks | Vault-local `.shale/automation.jsonc`, using `vaultConfiguration.ts` shared with menus and other native configurations; existing authenticated router. |
 | New-file triggers | Initiating client's Vault.create, before the initial write; only empty Markdown notes and explicit folder rules. No create-event watcher, so other clients never duplicate script execution. |
 
 The command Interface is `register`, `canExecute`, `execute` and compatibility
 `executeCommandById`. The template Interface is render/insert; palette and
-Obsidian templates are Adapters at that Seam. Deleting these Modules would send
+Shale templates are Adapters at that Seam. Deleting these Modules would send
 async result handling and stale-target checks back into several callers, so they
 provide Depth and Locality. Per-variable helper Modules would add no Leverage.
 

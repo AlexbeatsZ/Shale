@@ -53,7 +53,7 @@ test('default Vim cursors follow the ordinary text color in light and dark theme
 test('cursor colors update per theme without resetting Vim mode, selection, history or input-method lease', async ({ page }) => {
   await page.addInitScript(() => {
     (window as any).vimRequests = [];
-    (window as any).webobsidianDesktop = { inputMethod: { supported: true,
+    (window as any).shaleDesktop = { inputMethod: { supported: true,
       update: async (request: unknown) => { (window as any).vimRequests.push(request); }, list: async () => [] } };
   });
   const view = await editor(page);
@@ -121,7 +121,7 @@ test('Normal motions/delete, Insert, Visual and native undo/redo share one histo
 test('rapid native mode requests preserve focus ownership and release on blur/disable', async ({ page }) => {
   await page.addInitScript(() => {
     (window as any).vimRequests = [];
-    (window as any).webobsidianDesktop = { inputMethod: { supported: true,
+    (window as any).shaleDesktop = { inputMethod: { supported: true,
       update: async (request: unknown) => { (window as any).vimRequests.push(request); }, list: async () => [] } };
   });
   const view = await editor(page);

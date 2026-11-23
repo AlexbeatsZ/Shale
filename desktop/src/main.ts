@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+import { migrateDesktopProfile } from '../../scripts/identity-migration.mjs';
 import { InputMethodService, inputMethodBackend } from './inputMethod';
 import { performDesktopAction } from './nativeActions';
 import { app, BrowserWindow, Menu, dialog, ipcMain, shell, safeStorage, clipboard, type IpcMainEvent, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron';
@@ -20,6 +22,12 @@ import { type DesktopCommand } from './bridge';
 //   <userData>/desktop-config.json  — startup Vault hint and trusted-plugin option
 //   <userData>/server-data/         — the server's DATA_DIR (settings.json, index)
 //   <userData>/logs/server.log      — server child stdout/stderr (debugging)
+app.setName('Shale');
+const customProfile = app.commandLine.getSwitchValue('user-data-dir');
+app.setPath('userData', customProfile ? path.resolve(customProfile) : migrateDesktopProfile(app.getPath('appData')));
+app.setPath('sessionData', app.getPath('userData'));
+if (process.platform === 'win32') app.setAppUserModelId('io.github.alexbeatsz.shale');
+
 const CONFIG_FILE = () => path.join(app.getPath('userData'), 'desktop-config.json');
 const DATA_DIR = () => path.join(app.getPath('userData'), 'server-data');
 const LOG_FILE = () => path.join(app.getPath('userData'), 'logs', 'server.log');
@@ -156,8 +164,8 @@ async function startServer(cfg: DesktopConfig): Promise<void> {
     env: {
       ...process.env, ELECTRON_RUN_AS_NODE: '1', NODE_ENV: 'production',
       DATA_DIR: DATA_DIR(), VAULT_PATH: cfg.vaultPath,
-      WEBOBSIDIAN_INITIAL_VAULT: initialVaultChoice,
-      WEBOBSIDIAN_REQUIRE_VAULT: '1',
+      SHALE_INITIAL_VAULT: initialVaultChoice,
+      SHALE_REQUIRE_VAULT: '1',
       ALLOWED_ROOTS_JSON: JSON.stringify([os.homedir(), cfg.vaultPath].filter(Boolean)),
       PATH: augmentedPath(),
     },
@@ -230,17 +238,17 @@ function createWindow(starting = false): void {
     }),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      // Native Obsidian plugins have the same machine access as the user.
+      // Native Shale plugins have the same machine access as the user.
       // Keep the restricted host by default; trust is a per-install choice.
       contextIsolation: !desktopConfig?.trustedPlugins,
       nodeIntegration: !!desktopConfig?.trustedPlugins,
       nodeIntegrationInSubFrames: false,
       sandbox: !desktopConfig?.trustedPlugins,
       webviewTag: true,
-      additionalArguments: [`--webobsidian-version=${app.getVersion()}`, ...(desktopConfig?.trustedPlugins ? [`--webobsidian-native-vault=${encodeURIComponent(desktopConfig.vaultPath ?? '')}`] : [])],
+      additionalArguments: [`--shale-version=${app.getVersion()}`, ...(desktopConfig?.trustedPlugins ? [`--shale-native-vault=${encodeURIComponent(desktopConfig.vaultPath ?? '')}`] : [])],
     },
   });
-  mainWindow.webContents.setUserAgent(`${mainWindow.webContents.getUserAgent()} WebObsidianDesktop`);
+  mainWindow.webContents.setUserAgent(`${mainWindow.webContents.getUserAgent()} ShaleDesktop`);
   configureWebViewer(mainWindow.webContents, () => serverPort, guest => userscripts?.attach(guest));
 
   // Retain menu access behind F10, without a visible menu row or native accelerators.
@@ -383,8 +391,8 @@ function buildMenu(): void {
       role: 'help',
       submenu: [
         {
-          label: "GitHub 上的 WebObsidian",
-          click: () => shell.openExternal('https://github.com/AlexbeatsZ/webobsidian'),
+          label: "GitHub 上的 Shale",
+          click: () => shell.openExternal('https://github.com/AlexbeatsZ/shale'),
         },
       ],
     },
@@ -536,6 +544,14 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     try {
+      if (app.isPackaged && process.platform === 'darwin') {
+        const marker = path.join(app.getPath('userData'), 'keychain-migrated-v1');
+        try { await fs.access(marker); } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+          execFileSync(path.join(process.resourcesPath, 'input-method', 'migrate-keychain'), [app.getPath('exe')], { encoding: 'utf8' });
+          await fs.writeFile(marker, 'Shale', { mode: 0o600 });
+        }
+      }
       if (!app.isPackaged && process.platform === 'darwin') app.dock?.setIcon(DEVELOPMENT_ICON);
       const cfg = await ensureVault(await readConfig());
       if (!cfg) { app.quit(); return; }

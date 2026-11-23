@@ -5,7 +5,7 @@ import { useStore } from '../lib/store';
 import { pruneDescendants } from '../lib/tree';
 
 /**
- * Obsidian's "Move file to…" folder suggester: type to filter folders, ↑↓ to
+ * Shale's "Move file to…" folder suggester: type to filter folders, ↑↓ to
  * navigate, ↵ to move into the highlighted folder, shift+↵ to create the typed
  * folder and move there, esc to dismiss. Driven by store.movePath.
  */

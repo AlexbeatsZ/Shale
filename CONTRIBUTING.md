@@ -1,6 +1,6 @@
-# Contributing to WebObsidian
+# Contributing to Shale
 
-Thanks for your interest in improving WebObsidian! This project is a native personal application,
+Thanks for your interest in improving Shale! This project is a native personal application,
 and design-driven — please read the few rules below before opening a PR.
 
 ## Ground rules (from [CLAUDE.md](CLAUDE.md))

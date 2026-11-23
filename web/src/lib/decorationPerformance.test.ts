@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { performance } from 'node:perf_hooks';
 import { Compartment, EditorSelection, EditorState } from '@codemirror/state';
-import { analyzeMarkdown, equationContext } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, equationContext } from '@shale/markdown-core';
 import { renderContext, type RenderContext } from './renderContext';
 import { syntaxModel, blockModel } from './syntaxModel';
 import { compositionSelection } from './editorSelection';

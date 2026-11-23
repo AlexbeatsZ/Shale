@@ -12,11 +12,11 @@ import {
   formatYamlArrayValue,
   initYAML,
   formatYAML,
-  OBSIDIAN_TAG_KEYS,
+  SHALE_TAG_KEYS,
   NormalArrayFormats,
   SpecialArrayFormats,
   TagSpecificArrayFormats,
-  OBSIDIAN_TAG_KEY_PLURAL,
+  SHALE_TAG_KEY_PLURAL,
   QuoteCharacter,
 } from '../utils/yaml';
 
@@ -66,9 +66,9 @@ export default class MoveTagsToYaml extends RuleBuilder<MoveTagsToYamlOptions> {
       text = text.replace('---\n', '').replace('---', '');
 
       let tagValue: string[] = [];
-      let existingTagKey = OBSIDIAN_TAG_KEY_PLURAL;
+      let existingTagKey = SHALE_TAG_KEY_PLURAL;
 
-      for (const tagKey of OBSIDIAN_TAG_KEYS) {
+      for (const tagKey of SHALE_TAG_KEYS) {
         const tempTagValue = getYamlSectionValue(text, tagKey);
         if (tempTagValue != null) {
           tagValue = convertTagValueToStringOrStringArray(splitValueIfSingleOrMultilineArray(tempTagValue));

@@ -43,14 +43,14 @@
   --radius-m: 8px;
   --radius-l: 12px;
   --transition: 100ms ease-out;
-  /* Accent system (default Obsidian purple) */
+  /* Accent system (default Shale purple) */
   --accent-h: 258;
   --accent-s: 88%;
   --accent-l: 66%;
   --color-accent: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
 }
 
-/* ---------- Obsidian light (default) ---------- */
+/* ---------- Shale light (default) ---------- */
 :root,
 .theme-light {
   --document-surface: #fafafa;
@@ -149,7 +149,7 @@
   --shadow: 0px 1.8px 7.3px rgba(0, 0, 0, 0.071), 0px 6.3px 24.7px rgba(0, 0, 0, 0.112), 0px 15px 30px rgba(0, 0, 0, 0.1);
 }
 
-/* ---------- Obsidian dark ---------- */
+/* ---------- Shale dark ---------- */
 .theme-dark {
   --bold-modifier: 300;
   --document-surface: #252525;
@@ -585,23 +585,23 @@ body.wo-row-resizing { cursor: row-resize; user-select: none; }
 
 /* Heading gutter belongs to the first text line, independent of block padding
    and source marker visibility. No line pseudo-element competes with snippets. */
-.cm-s-obsidian .cm-line[data-native-heading-gutter]::before { content: none !important; }
-.cm-s-obsidian .cm-heading-controls { vertical-align: top; }
-.cm-s-obsidian .cm-heading-label { position: absolute; right: 22px; top: 0; height: 100%; display: flex; align-items: center; font: normal 0.6rem/1.5 var(--font-ui); white-space: nowrap; color: var(--text-muted); pointer-events: none; }
-.cm-s-obsidian .cm-heading-controls .cm-list-fold { right: 4px; width: 14px; }
-/* ---- Obsidian editor typography (cm-s-obsidian, §19/§20) ---- */
+.cm-s-shale .cm-line[data-native-heading-gutter]::before { content: none !important; }
+.cm-s-shale .cm-heading-controls { vertical-align: top; }
+.cm-s-shale .cm-heading-label { position: absolute; right: 22px; top: 0; height: 100%; display: flex; align-items: center; font: normal 0.6rem/1.5 var(--font-ui); white-space: nowrap; color: var(--text-muted); pointer-events: none; }
+.cm-s-shale .cm-heading-controls .cm-list-fold { right: 4px; width: 14px; }
+/* ---- Shale editor typography (cm-s-shale, §19/§20) ---- */
 /* Live Preview block spacing: heading lines carry padding-top = --p-spacing (1rem) */
-.cm-s-obsidian .cm-line.HyperMD-header { line-height: var(--line-height-tight); padding-top: var(--p-spacing); }
-.cm-s-obsidian .cm-scroller { font-family: var(--font-text); line-height: var(--line-height-normal); }
-.cm-s-obsidian .HyperMD-header-1 { font-size: var(--h1-size); font-weight: var(--h1-weight); letter-spacing: -0.015em; }
-.cm-s-obsidian .HyperMD-header-2 { font-size: var(--h2-size); font-weight: var(--h2-weight); letter-spacing: -0.011em; }
-.cm-s-obsidian .HyperMD-header-3 { font-size: var(--h3-size); font-weight: var(--h3-weight); letter-spacing: -0.008em; }
-.cm-s-obsidian .HyperMD-header-4 { font-size: var(--h4-size); font-weight: var(--h4-weight); letter-spacing: -0.005em; }
-.cm-s-obsidian .HyperMD-header-5 { font-size: var(--h5-size); font-weight: var(--h5-weight); letter-spacing: -0.002em; }
-.cm-s-obsidian .HyperMD-header-6 { font-size: var(--h6-size); font-weight: var(--h6-weight); }
+.cm-s-shale .cm-line.HyperMD-header { line-height: var(--line-height-tight); padding-top: var(--p-spacing); }
+.cm-s-shale .cm-scroller { font-family: var(--font-text); line-height: var(--line-height-normal); }
+.cm-s-shale .HyperMD-header-1 { font-size: var(--h1-size); font-weight: var(--h1-weight); letter-spacing: -0.015em; }
+.cm-s-shale .HyperMD-header-2 { font-size: var(--h2-size); font-weight: var(--h2-weight); letter-spacing: -0.011em; }
+.cm-s-shale .HyperMD-header-3 { font-size: var(--h3-size); font-weight: var(--h3-weight); letter-spacing: -0.008em; }
+.cm-s-shale .HyperMD-header-4 { font-size: var(--h4-size); font-weight: var(--h4-weight); letter-spacing: -0.005em; }
+.cm-s-shale .HyperMD-header-5 { font-size: var(--h5-size); font-weight: var(--h5-weight); letter-spacing: -0.002em; }
+.cm-s-shale .HyperMD-header-6 { font-size: var(--h6-size); font-weight: var(--h6-weight); }
 /* Body-local titles replace the old > **title**: body size, bold, neutral 3px rule.
    Padding participates in CodeMirror measurement; no inter-line margins. */
-.cm-s-obsidian .cm-line.cm-body-heading, .markdown-preview .body-heading {
+.cm-s-shale .cm-line.cm-body-heading, .markdown-preview .body-heading {
   --cm-prefix-base-padding: 24px;
   border-left: 3px solid var(--text-normal); padding: 2px 24px;
   color: var(--text-normal); font-size: 1em;
@@ -610,40 +610,40 @@ body.wo-row-resizing { cursor: row-resize; user-select: none; }
 }
 .markdown-preview .body-heading { margin: .8em 0; }
 .markdown-preview .body-heading > p { margin: 0; }
-.cm-s-obsidian .cm-strong { font-weight: calc(var(--font-weight) + var(--bold-modifier)); }
-.cm-s-obsidian .cm-formatting-header { color: var(--text-faint); }
-.cm-s-obsidian .cm-formatting { color: var(--text-faint); }
+.cm-s-shale .cm-strong { font-weight: calc(var(--font-weight) + var(--bold-modifier)); }
+.cm-s-shale .cm-formatting-header { color: var(--text-faint); }
+.cm-s-shale .cm-formatting { color: var(--text-faint); }
 /* Revealed renderable syntax uses the ^id colour throughout, including syntax-
    highlighted tokens nested inside it (HTML tags, task boxes). */
-.cm-s-obsidian .cm-formatting * { color: inherit; }
-.cm-s-obsidian .cm-line .cm-tex-delimiter { color: var(--text-faint); }
-.cm-s-obsidian .cm-highlight { background: var(--text-highlight-bg); }
-.cm-s-obsidian .cm-comment { color: var(--text-faint); }
+.cm-s-shale .cm-formatting * { color: inherit; }
+.cm-s-shale .cm-line .cm-tex-delimiter { color: var(--text-faint); }
+.cm-s-shale .cm-highlight { background: var(--text-highlight-bg); }
+.cm-s-shale .cm-comment { color: var(--text-faint); }
 /* Raw TeX uses the surrounding font metrics; italic MathJax_Main has a
    different baseline/leading and expands otherwise ordinary text lines. */
-.cm-s-obsidian .cm-math { color: var(--text-muted); }
-.cm-s-obsidian .cm-footref { color: var(--text-accent); font-size: var(--font-smallest); vertical-align: super; }
-.cm-s-obsidian .cm-blockid { color: var(--text-faint); font-size: var(--font-smaller); }
-.cm-s-obsidian .cm-url { color: var(--text-accent); text-decoration: underline; }
+.cm-s-shale .cm-math { color: var(--text-muted); }
+.cm-s-shale .cm-footref { color: var(--text-accent); font-size: var(--font-smallest); vertical-align: super; }
+.cm-s-shale .cm-blockid { color: var(--text-faint); font-size: var(--font-smaller); }
+.cm-s-shale .cm-url { color: var(--text-accent); text-decoration: underline; }
 /* Tag pill: bg accent@10%, radius 2em, padding 0.25em 0.65em (split begin/end halves) */
-.cm-s-obsidian .cm-hashtag { background: var(--tag-bg); color: var(--text-accent); font-size: var(--font-smaller); }
-.cm-s-obsidian .cm-hashtag-begin { border-radius: 2em 0 0 2em; padding: 0.25em 0 0.25em 0.65em; }
-.cm-s-obsidian .cm-hashtag-end { border-radius: 0 2em 2em 0; padding: 0.25em 0.65em 0.25em 0; }
+.cm-s-shale .cm-hashtag { background: var(--tag-bg); color: var(--text-accent); font-size: var(--font-smaller); }
+.cm-s-shale .cm-hashtag-begin { border-radius: 2em 0 0 2em; padding: 0.25em 0 0.25em 0.65em; }
+.cm-s-shale .cm-hashtag-end { border-radius: 0 2em 2em 0; padding: 0.25em 0.65em 0.25em 0; }
 /* Done tasks: line-through + muted (core CSS styles only x/X, §7) */
-.cm-s-obsidian .cm-line.HyperMD-task-line[data-task="x"],
-.cm-s-obsidian .cm-line.HyperMD-task-line[data-task="X"] { text-decoration: line-through; color: var(--text-muted); }
-/* Obsidian-style checkbox: size = font-text-size, radius 4px, checked = accent (§19) */
-.cm-s-obsidian .cm-task-checkbox, .markdown-preview input[type="checkbox"] {
+.cm-s-shale .cm-line.HyperMD-task-line[data-task="x"],
+.cm-s-shale .cm-line.HyperMD-task-line[data-task="X"] { text-decoration: line-through; color: var(--text-muted); }
+/* Shale-style checkbox: size = font-text-size, radius 4px, checked = accent (§19) */
+.cm-s-shale .cm-task-checkbox, .markdown-preview input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
   width: var(--font-text-size); height: var(--font-text-size);
   border: 1px solid var(--background-modifier-border-hover); border-radius: 4px;
   background: var(--background-primary); position: relative; vertical-align: middle;
   margin: 0 6px 2px 0; cursor: pointer; flex-shrink: 0;
 }
-.cm-s-obsidian .cm-task-checkbox:checked, .markdown-preview input[type="checkbox"]:checked {
+.cm-s-shale .cm-task-checkbox:checked, .markdown-preview input[type="checkbox"]:checked {
   background: var(--interactive-accent); border-color: var(--interactive-accent);
 }
-.cm-s-obsidian .cm-task-checkbox:checked::after, .markdown-preview input[type="checkbox"]:checked::after {
+.cm-s-shale .cm-task-checkbox:checked::after, .markdown-preview input[type="checkbox"]:checked::after {
   content: ''; position: absolute; left: 4.5px; top: 1.5px; width: 4px; height: 8px;
   border: solid var(--text-on-accent); border-width: 0 2px 2px 0; transform: rotate(45deg);
 }
@@ -662,24 +662,24 @@ body.wo-row-resizing { cursor: row-resize; user-select: none; }
 .cm-math-rendered mjx-container[jax="SVG"] { max-width: 100%; }
 .cm-math-rendered.math-block mjx-container[jax="SVG"] { max-width: none; }
 /* Code block: mono font on every code line; bg + inner padding only on fenced
-   blocks (HyperMD-codeblock-bg) — indented code has no bg, like Obsidian. */
-.cm-s-obsidian .cm-line.HyperMD-codeblock { font-family: var(--font-mono); font-size: var(--font-smaller); }
-.cm-s-obsidian .cm-line.HyperMD-codeblock-bg { background: var(--document-surface); padding-left: 16px; padding-right: 16px; }
-.cm-s-obsidian .cm-line.HyperMD-codeblock-begin { border-radius: var(--radius-s) var(--radius-s) 0 0; padding-top: 8px; }
-.cm-s-obsidian .cm-line.HyperMD-codeblock-end { border-radius: 0 0 var(--radius-s) var(--radius-s); padding-bottom: 8px; }
+   blocks (HyperMD-codeblock-bg) — indented code has no bg, like Shale. */
+.cm-s-shale .cm-line.HyperMD-codeblock { font-family: var(--font-mono); font-size: var(--font-smaller); }
+.cm-s-shale .cm-line.HyperMD-codeblock-bg { background: var(--document-surface); padding-left: 16px; padding-right: 16px; }
+.cm-s-shale .cm-line.HyperMD-codeblock-begin { border-radius: var(--radius-s) var(--radius-s) 0 0; padding-top: 8px; }
+.cm-s-shale .cm-line.HyperMD-codeblock-end { border-radius: 0 0 var(--radius-s) var(--radius-s); padding-bottom: 8px; }
 /* HR — keep within the normal line box (no extra margins) */
-.cm-s-obsidian .cm-hr-widget { display: inline-block; width: 100%; vertical-align: middle; }
-.cm-s-obsidian .cm-hr-widget hr { border: 0; border-top: 1px solid var(--background-modifier-border); margin: 0; }
+.cm-s-shale .cm-hr-widget { display: inline-block; width: 100%; vertical-align: middle; }
+.cm-s-shale .cm-hr-widget hr { border: 0; border-top: 1px solid var(--background-modifier-border); margin: 0; }
 /* Code block language flair (top-right of the first line) */
-.cm-s-obsidian .cm-line.HyperMD-codeblock-begin[data-lang]::after {
+.cm-s-shale .cm-line.HyperMD-codeblock-begin[data-lang]::after {
   content: attr(data-lang); float: right; color: var(--text-faint);
   font-size: var(--font-ui-smaller); font-family: var(--font-ui); text-transform: capitalize;
 }
-/* List indentation guides (one per indent unit) — same mechanism as Obsidian:
+/* List indentation guides (one per indent unit) — same mechanism as Shale:
    absolutely positioned 1px rule spanning the full line height at a bullet's center. */
-.cm-s-obsidian .cm-line { position: relative; }
-.cm-s-obsidian .cm-indent { display: inline-block; }
-.cm-s-obsidian .cm-indent::before {
+.cm-s-shale .cm-line { position: relative; }
+.cm-s-shale .cm-indent { display: inline-block; }
+.cm-s-shale .cm-indent::before {
   content: '\200B'; display: block; width: 1px; color: transparent;
   border-right: 1px solid rgba(var(--mono-rgb-100), 0.12);
   position: absolute; top: 0; bottom: 0; margin-inline-start: 0.275em;
@@ -730,7 +730,7 @@ body.wo-row-resizing { cursor: row-resize; user-select: none; }
 /* One intrinsic icon/text pair: native title text wraps inside its own column. */
 .cm-callout-heading { display: inline-flex; align-items: center; vertical-align: top;
   flex: 0 1 auto; min-width: 0; max-width: 100%; }
-.cm-s-obsidian .md-callout-title > .cm-line:has(> .cm-callout-heading) {
+.cm-s-shale .md-callout-title > .cm-line:has(> .cm-callout-heading) {
   display: flex; align-items: flex-start; padding-left: 0; text-indent: 0;
 }
 .md-callout-title > .cm-line > .cm-quote-prefix { flex: none; }
@@ -1015,7 +1015,7 @@ body.wo-row-resizing { cursor: row-resize; user-select: none; }
 .callout[data-callout='bug'] { --callout-color: var(--callout-bug); }
 .callout[data-callout='example'] { --callout-color: var(--callout-example); }
 .callout[data-callout='quote'], .callout[data-callout='cite'] { --callout-color: var(--callout-quote); }
-/* New callout types need only this Obsidian contract (calloutStyles.ts): a color
+/* New callout types need only this Shale contract (calloutStyles.ts): a color
    (`r, g, b` or any CSS color) and a Lucide name or inline <svg>. Vault snippets
    use the same rule to add or override types without rebuilding. */
 .callout[data-callout='definition'] { --callout-color: 99, 102, 241; --callout-icon: lucide-book-open; }
@@ -1186,7 +1186,7 @@ div.section-head { cursor: default; }
 .outline-item { padding: 3px 10px; font-size: 13px; cursor: pointer; color: var(--text-muted); border-radius: var(--radius-s); }
 .outline-item:hover { color: var(--text-normal); background: var(--bg-modifier-hover); }
 
-/* Status bar — anchored to the bottom-right of the editor pane (like Obsidian) */
+/* Status bar — anchored to the bottom-right of the editor pane (like Shale) */
 .status-bar {
   position: absolute; right: 0; bottom: 0; height: var(--statusbar-height); display: flex; align-items: center; gap: 14px;
   padding: 0 14px; background: var(--bg-primary); border-top: 1px solid var(--bg-modifier-border);
@@ -1456,7 +1456,7 @@ div.section-head { cursor: default; }
 .cm-wikilink { color: var(--text-accent); cursor: pointer; }
 .cm-wikilink:hover { text-decoration: underline; }
 
-/* Graph (lives inside a workspace tab, like Obsidian) */
+/* Graph (lives inside a workspace tab, like Shale) */
 .graph-view { display: flex; flex-direction: column; flex: 1; min-height: 0; height: 100%; }
 .graph-canvas-wrap { position: relative; flex: 1; overflow: hidden; background: var(--bg-primary); }
 .graph-canvas-wrap canvas { display: block; }
@@ -1494,7 +1494,7 @@ div.section-head { cursor: default; }
 .graph-slider { display: flex; flex-direction: column; gap: 4px; }
 .graph-slider input[type=range] { width: 100%; accent-color: var(--interactive-accent); cursor: pointer; }
 
-/* toggle switch (Obsidian-style pill) */
+/* toggle switch (Shale-style pill) */
 .graph-switch { position: relative; width: 34px; height: 18px; border-radius: 10px; border: 0;
   background: var(--bg-modifier-border); cursor: pointer; flex-shrink: 0; transition: background .15s; padding: 0; }
 .graph-switch.on { background: var(--interactive-accent); }
@@ -1818,7 +1818,7 @@ html[data-desktop-titlebar] .app.mobile .drawer-backdrop { top: 32px; }
 .theme-light .cm-host .chem-cell svg { filter: invert(100%) hue-rotate(180deg) contrast(1.3); }
 .cm-image-wrap.is-resizing { user-select: none; }
 .cm-image-wrap.is-resizing img.cm-embed-image { cursor: ew-resize; }
-/* Left/right edge bars — appear on hover, drag to set width (Obsidian-style). */
+/* Left/right edge bars — appear on hover, drag to set width (Shale-style). */
 .cm-image-resize {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: 7px; height: 48px; max-height: 60%;

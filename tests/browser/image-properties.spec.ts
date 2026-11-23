@@ -168,7 +168,7 @@ test('Vault CSS properties appear in the same menu and reload their visual defin
   await expect(image).toHaveCSS('outline-color', 'rgb(120, 80, 210)');
   customCss = '.embed-property-framed > img { outline: 4px solid rgb(20, 160, 90); filter: brightness(0.8); }';
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('vault-configuration-changed', {
-    detail: { path: '.obsidian/webobsidian/embeds.css' },
+    detail: { path: '.shale/embeds.css' },
   })));
   await expect(image).toHaveCSS('outline-color', 'rgb(20, 160, 90)');
   await expect(image).toHaveCSS('outline-width', '4px');
@@ -290,7 +290,7 @@ test('personal exTable source spans give identical image cells independent numbe
   await page.evaluate(async () => {
     const load = (name: string) => import(name);
     const [effects, runtime] = await Promise.all([
-      load('/src/lib/blocks/runtime.ts'), load('/src/lib/obsidian/runtime.ts'),
+      load('/src/lib/blocks/runtime.ts'), load('/src/lib/shale/runtime.ts'),
     ]);
     (window as any).imagePropertiesFixture.stopBlocks = effects.installBlockEffects(runtime.sharedApp);
   });

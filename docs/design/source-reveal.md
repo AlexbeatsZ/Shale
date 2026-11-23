@@ -2,12 +2,12 @@
 
 ## 规则(2026-11-05 用户要求)
 
-学 Obsidian:实时预览里能被渲染、但因为光标在上面而显示为源码的语法字符，统一用
+学 Shale:实时预览里能被渲染、但因为光标在上面而显示为源码的语法字符，统一用
 `^id`(`.cm-blockid`)同款的 `var(--text-faint)` 灰色;语法所包裹的、渲染后仍会显示的
 内容保持正文颜色。光标离开后重新渲染，灰色标记随之消失。
 
 统一的类名是 `cm-formatting cm-formatting-<kind>`,CSS 只有一处:
-`.cm-s-obsidian .cm-formatting { color: var(--text-faint) }`,并让其中嵌套的语法高亮
+`.cm-s-shale .cm-formatting { color: var(--text-faint) }`,并让其中嵌套的语法高亮
 (HTML 标签、任务框的 ͼ 类)继承这个颜色。各处只在“光标展开”时加标记，显式打开的
 源码区域(`</>`)和源码模式不加。
 
@@ -26,7 +26,7 @@
 | `> [!tip]` | `>`、`[!tip]`(含折叠号与分隔空格) | 自定义标题 | livePreview callout |
 | `$` `$$` `\(` `\[` | 定界符(`.cm-tex-delimiter`) | 公式内部保留 LaTeX 高亮 | math_highlight + CSS |
 
-`#tag` 在 Obsidian 实时预览里展开时仍是标签样式，这里也保持紫色标签，不算“可渲染的源码”。
+`#tag` 在 Shale 实时预览里展开时仍是标签样式，这里也保持紫色标签，不算“可渲染的源码”。
 
 ## Callout 标题源码态
 

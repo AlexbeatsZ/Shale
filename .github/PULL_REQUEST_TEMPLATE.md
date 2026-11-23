@@ -1,4 +1,4 @@
-<!-- Thanks for contributing to WebObsidian! -->
+<!-- Thanks for contributing to Shale! -->
 
 ## Summary
 

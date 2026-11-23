@@ -9,7 +9,7 @@ import { build } from 'esbuild';
 import { migrateLinterReplacements } from '../../packages/markdown-core/src/legacyReplacement';
 
 const fixtureCode = `
-const {Plugin,PluginSettingTab,Setting,MarkdownRenderChild} = require('obsidian');
+const {Plugin,PluginSettingTab,Setting,MarkdownRenderChild} = require('shale');
 const {EditorView} = require('@codemirror/view');
 module.exports = class extends Plugin {
  async onload() {
@@ -138,7 +138,7 @@ test('real command, settings, metadata, CM extension, fenced renderer and unload
   await page.evaluate(() => {
     const h = (window as any).pluginHarness;
     const ed = h.sharedApp.workspace.getActiveViewOfType(
-      h.obsidianModule.MarkdownView
+      h.shaleModule.MarkdownView
     ).editor;
     ed.setCursor(2, 0);
     h.runPluginCommand('fixture:append');
@@ -196,13 +196,13 @@ test('real command, settings, metadata, CM extension, fenced renderer and unload
 
 test('current original plugins load against the host', async ({ page }) => {
   test.skip(
-    !process.env.OBSIDIAN_PLUGIN_VAULTS,
-    'Set OBSIDIAN_PLUGIN_VAULTS to read-only source vaults for original-plugin acceptance'
+    !process.env.SHALE_PLUGIN_VAULTS,
+    'Set SHALE_PLUGIN_VAULTS to read-only source vaults for original-plugin acceptance'
   );
   test.setTimeout(120000);
   const inventory: any[] = [];
-  for (const vault of process.env.OBSIDIAN_PLUGIN_VAULTS!.split(';')) {
-    const dir = path.join(vault, '.obsidian'),
+  for (const vault of process.env.SHALE_PLUGIN_VAULTS!.split(';')) {
+    const dir = path.join(vault, '.shale'),
       ids = JSON.parse(
         await fs.readFile(path.join(dir, 'community-plugins.json'), 'utf8')
       );
@@ -316,7 +316,7 @@ test('current original plugins load against the host', async ({ page }) => {
     await page.evaluate(() => {
       const h = (window as any).pluginHarness,
         ed = h.sharedApp.workspace.getActiveViewOfType(
-          h.obsidianModule.MarkdownView
+          h.shaleModule.MarkdownView
         ).editor;
       const last = ed.lastLine();
       ed.replaceRange('\n', { line: last, ch: ed.getLine(last).length });
@@ -365,7 +365,7 @@ test('current original plugins load against the host', async ({ page }) => {
 
 test('native original plugins use isolated Node filesystem and MCP runtime', async ({ baseURL }) => {
   test.skip(
-    !process.env.OBSIDIAN_PLUGIN_VAULTS,
+    !process.env.SHALE_PLUGIN_VAULTS,
     'Original native plugin sources are opt-in'
   );
   test.setTimeout(120000);
@@ -394,7 +394,7 @@ test('native original plugins use isolated Node filesystem and MCP runtime', asy
   const main = path.join(temp, 'main.cjs');
   await fs.writeFile(
     main,
-    `const {app,BrowserWindow,ipcMain}=require('electron');app.setPath('userData',${JSON.stringify(path.join(temp, 'profile'))});app.whenReady().then(()=>{ipcMain.handle('desktop:menu-items',()=>[]);const win=new BrowserWindow({show:false,webPreferences:{preload:${JSON.stringify(path.join(temp, 'preload.cjs'))},contextIsolation:false,nodeIntegration:true,sandbox:false,additionalArguments:[${JSON.stringify('--webobsidian-native-vault=' + encodeURIComponent(vault))}]}});win.loadURL('about:blank')});app.on('window-all-closed',()=>app.quit());`
+    `const {app,BrowserWindow,ipcMain}=require('electron');app.setPath('userData',${JSON.stringify(path.join(temp, 'profile'))});app.whenReady().then(()=>{ipcMain.handle('desktop:menu-items',()=>[]);const win=new BrowserWindow({show:false,webPreferences:{preload:${JSON.stringify(path.join(temp, 'preload.cjs'))},contextIsolation:false,nodeIntegration:true,sandbox:false,additionalArguments:[${JSON.stringify('--shale-native-vault=' + encodeURIComponent(vault))}]}});win.loadURL('about:blank')});app.on('window-all-closed',()=>app.quit());`
   );
   const app = await electron.launch({
     executablePath: require('electron'),
@@ -412,7 +412,7 @@ test('native original plugins use isolated Node filesystem and MCP runtime', asy
       ({ vault, project }) => {
         if (location.origin !== 'null')
           localStorage.setItem(
-            `obsidian:${vault}:obsidian-context-mcp.project`,
+            `shale:${vault}:obsidian-context-mcp.project`,
             JSON.stringify(project)
           );
       },
@@ -420,13 +420,13 @@ test('native original plugins use isolated Node filesystem and MCP runtime', asy
     );
     const entries = [],
       data: Record<string, any> = {};
-    const source = process.env.OBSIDIAN_PLUGIN_VAULTS!.split(';').at(-1)!;
+    const source = process.env.SHALE_PLUGIN_VAULTS!.split(';').at(-1)!;
     for (const id of [
       'templater-obsidian',
       'local-latex-renderer',
       'obsidian-context-mcp',
     ]) {
-      const dir = path.join(source, '.obsidian/plugins', id),
+      const dir = path.join(source, '.shale/plugins', id),
         manifest = JSON.parse(
           await fs.readFile(path.join(dir, 'manifest.json'), 'utf8')
         );
@@ -438,7 +438,7 @@ test('native original plugins use isolated Node filesystem and MCP runtime', asy
       if (id === 'local-latex-renderer')
         data[id] = {
           mathJaxPreamble: '',
-          cacheFolder: '.obsidian/plugins/local-latex-renderer/cache',
+          cacheFolder: '.shale/plugins/local-latex-renderer/cache',
         };
     }
     await setup(page, entries, '# Fixture\n\nplain', data, {}, baseURL);
@@ -472,7 +472,7 @@ test('native original plugins use isolated Node filesystem and MCP runtime', asy
         authorization: 'Bearer ' + endpoint.token,
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ name: 'obsidian_get_context', arguments: {} }),
+      body: JSON.stringify({ name: 'shale_get_context', arguments: {} }),
     });
     expect(response.ok).toBe(true);
     const context = await response.json();

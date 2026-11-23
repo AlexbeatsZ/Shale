@@ -37,7 +37,7 @@ static std::string utf8(JNIEnv* env, jstring value) {
 }
 
 extern "C" JNIEXPORT jint JNICALL
-Java_io_github_alexbeatsz_webobsidian_RuntimeHost_startNode(JNIEnv* env, jclass, jobjectArray arguments, jobjectArray variables, jstring directory, jstring logPath) {
+Java_io_github_alexbeatsz_shale_RuntimeHost_startNode(JNIEnv* env, jclass, jobjectArray arguments, jobjectArray variables, jstring directory, jstring logPath) {
     for (jsize i = 0; i < env->GetArrayLength(variables); ++i) {
         auto value = static_cast<jstring>(env->GetObjectArrayElement(variables, i));
         const auto entry = utf8(env, value);

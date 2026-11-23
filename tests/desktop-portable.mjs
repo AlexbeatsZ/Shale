@@ -13,7 +13,7 @@ assert.equal(process.platform, 'win32', 'This acceptance run requires Windows');
 const executable = path.resolve(process.argv[2] ?? '');
 assert(process.argv[2]?.endsWith('.exe'), 'Pass the generated Windows portable EXE');
 await fs.access(executable);
-const fixture = await fs.mkdtemp(path.join(os.tmpdir(), '.agents/webobsidian-portable-'));
+const fixture = await fs.mkdtemp(path.join(os.tmpdir(), '.agents/shale-portable-'));
 const profile = path.join(fixture, 'profile'), vault = path.join(fixture, 'vault');
 await fs.mkdir(profile); await fs.mkdir(vault);
 await fs.writeFile(path.join(vault, 'portable-acceptance.md'), '# Portable acceptance\n\nDisposable note.\n');
@@ -55,7 +55,7 @@ try {
   const processJson = execFileSync('powershell.exe', ['-NoProfile', '-Command',
     `Get-CimInstance Win32_Process -Filter 'ParentProcessId=${launchers[0].pid}' | Select-Object -ExpandProperty ExecutablePath | ConvertTo-Json`], { encoding: 'utf8', windowsHide: true });
   const children = JSON.parse(processJson);
-  const appExe = (Array.isArray(children) ? children : [children]).find(p => p?.endsWith('WebObsidian.exe'));
+  const appExe = (Array.isArray(children) ? children : [children]).find(p => p?.endsWith('Shale.exe'));
   assert(appExe, 'The portable must launch its extracted Electron executable');
   extractedIndex = path.join(path.dirname(appExe), 'resources/server/public/index.html');
   await fs.access(extractedIndex);

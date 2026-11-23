@@ -18,7 +18,7 @@ import { openLightbox } from './imageLightbox';
 import { imageMenuItems, imageSourceEdit } from './imageMenu';
 import { bindDarkMedia } from './mediaFilter';
 import { resolveImageReference, subscribeImageReferences } from './imageReferences';
-import { imageAt, imageCaption, imageEmbeds, imageReferenceText, isImageTarget, isTableCellRange, parseImageParameters, wikiLinkParts, type ImageEmbed } from '@webobsidian/markdown-core';
+import { imageAt, imageCaption, imageEmbeds, imageReferenceText, isImageTarget, isTableCellRange, parseImageParameters, wikiLinkParts, type ImageEmbed } from '@shale/markdown-core';
 import { applyImagePresentation, presentHtmlImages, markdownImageAt } from './imagePresentation';
 import { VIDEO_EXT_RE, AUDIO_EXT_RE } from './media';
 import { syntaxModel, blockModel, equationsOf, documentMetadata, embeddedFormulasField, setEmbeddedFormulas, sourceOf } from './syntaxModel';
@@ -27,7 +27,7 @@ import { sourceButton, sourceIsOpen, sourceOwns, forceRendered } from './sourceC
 import { blockControls, knownReferenceButtons, referenceButtons } from './blockControls';
 import { livePreviewState, livePreviewReadonly, setLivePreviewEnabled, setLivePreviewReadonly } from './renderState';
 export { livePreviewState, livePreviewReadonly, setLivePreviewEnabled, setLivePreviewReadonly } from './renderState';
-import { BODY_HEADING_NODE, BODY_HEADING_LEVEL, bodyHeadingParts, changeTable, editTableCell, type SourceChange, type TableModel, type TableOperation, type MathRegion, type SourceSpan, stripQuotePrefix, sourceLinePrefix, caretTouches, sanitizeHtmlFragment as sanitizeHtml } from '@webobsidian/markdown-core';
+import { BODY_HEADING_NODE, BODY_HEADING_LEVEL, bodyHeadingParts, changeTable, editTableCell, type SourceChange, type TableModel, type TableOperation, type MathRegion, type SourceSpan, stripQuotePrefix, sourceLinePrefix, caretTouches, sanitizeHtmlFragment as sanitizeHtml } from '@shale/markdown-core';
 import { contextOf, renderContext, type RenderMenuItem as LpMenuItem } from './renderContext';
 import { followRenderedLink, revealNavigation, linkIntent } from './fragmentNavigation';
 import { bindRenderedLink } from './linkPreview';
@@ -36,11 +36,11 @@ import { editorMathRegions, mathSourceVisible, mathPreview, mathPreviewTex } fro
 import { decorationInputsChanged } from './decorationDependencies';
 import { blockEffectOwns } from './blocks/model';
 import { sourceBlockReplacement, sourceBlockPresentation } from './blockLayout';
-import { RenderLifetime } from './obsidian/renderLifetime';
-import { equationLabel, equationReferenceText, equationReferenceName, equationTarget, equationAt, equationOccurrenceBefore, embeddedFormulas, embedEquationContext, wikiDestination, parseLinkTarget, isGlobalContentTarget, contentTargets, type Equation, type EquationContext, type EquationOccurrence, type MarkdownModel } from '@webobsidian/markdown-core';
+import { RenderLifetime } from './shale/renderLifetime';
+import { equationLabel, equationReferenceText, equationReferenceName, equationTarget, equationAt, equationOccurrenceBefore, embeddedFormulas, embedEquationContext, wikiDestination, parseLinkTarget, isGlobalContentTarget, contentTargets, type Equation, type EquationContext, type EquationOccurrence, type MarkdownModel } from '@shale/markdown-core';
 
 /**
- * Live Preview for CodeMirror 6 — an Obsidian-style WYSIWYG editing mode.
+ * Live Preview for CodeMirror 6 — an Shale-style WYSIWYG editing mode.
  *
  * Formatting is *rendered* (bold is bold, italic italic, code monospaced, headings
  * sized, links/embeds/checkboxes become widgets) while the raw Markdown syntax is
@@ -50,7 +50,7 @@ import { equationLabel, equationReferenceText, equationReferenceName, equationTa
  */
 
 /**
- * Start Obsidian's "Add file property" flow: focus a new property-key field in
+ * Start Shale's "Add file property" flow: focus a new property-key field in
  * the Properties widget and open the key suggester dropdown — the same UI the
  * widget's own "+ Add property" button drives. If the note has no frontmatter
  * yet, an empty block is created first so the widget (and its button) renders.
@@ -89,7 +89,7 @@ class WikilinkWidget extends WidgetType {
     const mount = equationLinkMounts.get(dom); equationLinkMounts.delete(dom);
     mount?.controller.abort(); mount?.stop?.();
   }
-  /** `aria` = default display text, set when an alias overrides it (like Obsidian).
+  /** `aria` = default display text, set when an alias overrides it (like Shale).
    * `local` = nearest preceding explicit formula instance in this note; it decides the shown number. */
   constructor(readonly target: string, readonly label: string, readonly embed: boolean, readonly aria: string | undefined, readonly alias: string | null, readonly sourceLength: number, readonly sourcePath?: string, readonly local?: EquationOccurrence) {
     super();
@@ -231,7 +231,7 @@ const pointX = (e: MouseEvent | TouchEvent): number =>
 const imageMounts = new WeakMap<HTMLElement, RenderLifetime>();
 class ImageWidget extends WidgetType {
   destroy(dom: HTMLElement) { const lifetime = imageMounts.get(dom); imageMounts.delete(dom); lifetime?.unload(); }
-  /** `width`/`height` from the Obsidian size param `![[img|300]]` / `![[img|300x200]]`. */
+  /** `width`/`height` from the Shale size param `![[img|300]]` / `![[img|300x200]]`. */
   constructor(readonly src: string, readonly alt: string, readonly width?: number, readonly height?: number, readonly ro = false, readonly target = src, readonly image?: ImageEmbed) {
     super();
   }
@@ -257,7 +257,7 @@ class ImageWidget extends WidgetType {
       img.height = this.height;
       img.style.height = this.height + 'px';
     }
-    // Missing attachment → Obsidian-style "could not be found" box.
+    // Missing attachment → Shale-style "could not be found" box.
     img.addEventListener('error', () => {
       cancelResize?.();
       img.remove();
@@ -353,7 +353,7 @@ class MediaWidget extends WidgetType {
     el.preload = 'metadata';
     el.className = this.kind === 'video' ? 'cm-embed-video media-embed' : 'cm-embed-audio media-embed';
     if (this.kind === 'video' && this.width) (el as HTMLVideoElement).width = this.width;
-    // Missing attachment → Obsidian-style "could not be found" box.
+    // Missing attachment → Shale-style "could not be found" box.
     el.onerror = () => {
       el.remove();
       const miss = document.createElement('span');
@@ -611,7 +611,7 @@ class HrWidget extends WidgetType {
   }
 }
 
-/* ---------------- note embeds (transclusion, like Obsidian ![[note]]) ---------------- */
+/* ---------------- note embeds (transclusion, like Shale ![[note]]) ---------------- */
 
 function embedNotFound(el: HTMLElement, target: string) {
   el.classList.add('cm-embed-missing');
@@ -808,7 +808,7 @@ class NoteEmbedWidget extends WidgetType {
   }
 }
 
-/* ---------------- mermaid (lazy, like Obsidian) ---------------- */
+/* ---------------- mermaid (lazy, like Shale) ---------------- */
 
 let mermaidSeq = 0;
 const mermaidMounts = new WeakMap<HTMLElement, { update: (widget: MermaidWidget) => void; destroy: () => void }>();
@@ -1347,7 +1347,7 @@ class BulletWidget extends WidgetType {
 /* ---------------- raw HTML blocks ---------------- */
 
 // Strip scripts/handlers/dangerous URLs from raw note HTML before rendering it
-// inline (Obsidian renders embedded HTML, e.g. CKEditor/Trilium tables, the same).
+// inline (Shale renders embedded HTML, e.g. CKEditor/Trilium tables, the same).
 class HtmlBlockWidget extends WidgetType {
   destroy(dom: HTMLElement) { const lifetime = imageMounts.get(dom); imageMounts.delete(dom); lifetime?.unload(); }
   /** `referenceable` marks a real HTML block; whole-line inline HTML has no `html-` identity. */
@@ -1410,7 +1410,7 @@ class FrontmatterWidget extends WidgetType {
 
 /* ---------------- helpers ---------------- */
 
-// Obsidian line/span classes (§20): HyperMD-header-N lines, cm-header-N spans.
+// Shale line/span classes (§20): HyperMD-header-N lines, cm-header-N spans.
 const HEADING_LEVEL: Record<string, number> = {
   ATXHeading1: 1, ATXHeading2: 2, ATXHeading3: 3,
   ATXHeading4: 4, ATXHeading5: 5, ATXHeading6: 6,
@@ -1424,7 +1424,7 @@ const EMPHASIS_CLASS: Record<string, string> = {
 };
 
 const hidden = Decoration.replace({});
-/** Renderable syntax shown as source (caret on it) uses the faint ^id colour, like Obsidian. */
+/** Renderable syntax shown as source (caret on it) uses the faint ^id colour, like Shale. */
 const sourceSyntax = (kind: string) => Decoration.mark({ class: 'cm-formatting cm-formatting-' + kind });
 
 function attachmentUrl(target: string, view: EditorView): string {
@@ -1532,9 +1532,9 @@ function buildDecorations(view: EditorView): DecorationSet {
           return false;
         }
 
-        // Code block lines: HyperMD-codeblock(-begin/-end) like Obsidian.
+        // Code block lines: HyperMD-codeblock(-begin/-end) like Shale.
         // Indented code (4 spaces): mono font, NO background — just the indent
-        // guide on the leading unit, like Obsidian.
+        // guide on the leading unit, like Shale.
         if (name === 'CodeBlock') {
           const first = doc.lineAt(node.from).number;
           const last = doc.lineAt(Math.min(node.to, doc.length)).number;
@@ -1906,7 +1906,7 @@ function buildDecorations(view: EditorView): DecorationSet {
           pushReplace(s, e, Decoration.replace({ widget: new ImageWidget(attachmentUrl(parameters.target, view), alias ?? '',
             parameters.width, parameters.height, readonly, href, image) }));
         } else if (isEmbed && (VIDEO_EXT_RE.test(href) || AUDIO_EXT_RE.test(href))) {
-          // `![[clip.mp4]]` / `![[song.mp3]]` → native HTML5 player like Obsidian.
+          // `![[clip.mp4]]` / `![[song.mp3]]` → native HTML5 player like Shale.
           const kind = VIDEO_EXT_RE.test(href) ? 'video' : 'audio';
           // width param (video only): last `|` segment `300` / `300x200`
           let w: number | undefined;
@@ -1917,13 +1917,13 @@ function buildDecorations(view: EditorView): DecorationSet {
           }
           pushReplace(s, e, Decoration.replace({ widget: new MediaWidget(attachmentUrl(href, view), href, kind, w) }));
         } else if (isEmbed && (/\.(?:md|markdown)$/i.test(href.split('#')[0]) || !/\.[a-z0-9]{1,5}$/i.test(href.split('#')[0]))) {
-          // `![[note]]` (no binary extension) → real transclusion like Obsidian.
+          // `![[note]]` (no binary extension) → real transclusion like Shale.
           const formulas = equationsOf(view.state);
           const instances = formulas.occurrences.filter(occurrence => occurrence.embed && occurrence.from === formulas.from + s);
           pushReplace(s, e, Decoration.replace({ widget: new NoteEmbedWidget(href, e - s, instances) }));
         } else {
           // LP shows the raw target text (`Note#Head`); the `Note > Head` display
-          // form is reading-view behaviour and goes into aria-label like Obsidian.
+          // form is reading-view behaviour and goes into aria-label like Shale.
           const destination = parseLinkTarget(href), referenceName = equationReferenceName(destination.fragment);
           const equation = referenceName !== undefined && !destination.path && !isGlobalContentTarget(href) ? equationTarget(equationsOf(view.state), destination.fragment) : undefined;
           const formulas = referenceName !== undefined ? equationsOf(view.state) : undefined;
@@ -1974,7 +1974,7 @@ function buildDecorations(view: EditorView): DecorationSet {
         .replace(/!\[\[[^\]]+\]\]/g, '').trim() === '';
       if (imageOnly && hasRenderedImage && !lineActive(line.from)) all.push(Decoration.line({ class: 'cm-image-row' }).range(line.from));
 
-      // Markdown escapes `\.` `\*` … — conceal the backslash like Obsidian LP
+      // Markdown escapes `\.` `\*` … — conceal the backslash like Shale LP
       // (e.g. Trilium/turndown exports escape `2\.` to avoid list parsing).
       // MUST run LAST: pushReplace's overlap guard would otherwise block math/
       // link widgets whose range contains an escape (e.g. `\,` inside $$…$$).
@@ -2005,7 +2005,7 @@ function buildFrontmatter(state: EditorState): DecorationSet {
   const end = fm[0].length;
   const blockEnd = text[end - 1] === '\n' ? end - 1 : end;
   if (sourceIsOpen(state, { from: 0, to: blockEnd })) return Decoration.none;
-  // Always show the interactive Properties editor (like Obsidian); editing happens
+  // Always show the interactive Properties editor (like Shale); editing happens
   // in the widget, so the caret no longer reveals raw YAML in Live mode.
   const ro = state.field(livePreviewReadonly, false) ?? false;
   return Decoration.set([
@@ -2013,7 +2013,7 @@ function buildFrontmatter(state: EditorState): DecorationSet {
   ]);
 }
 
-/* ---------------- inline title (note filename, Obsidian-style) ---------------- */
+/* ---------------- inline title (note filename, Shale-style) ---------------- */
 
 export const setNoteTitle = StateEffect.define<string>();
 
@@ -2031,7 +2031,7 @@ function inlineTitleText(state: EditorState): string {
   if (!title) return '';
   if (state.facet(renderContext).renameTitle) return title;
   // Skip when the note already opens with an H1 equal to the title — the Trilium
-  // export repeats the title as a heading, and Obsidian would otherwise show it twice.
+  // export repeats the title as a heading, and Shale would otherwise show it twice.
   const head = state.doc.sliceString(0, Math.min(state.doc.length, 2000));
   const noFm = head.replace(/^---\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n?/, '');
   const firstLine = noFm.split(/\r?\n/).find((l) => l.trim() !== '');
@@ -2136,7 +2136,7 @@ function buildTables(state: EditorState): DecorationSet {
   const referenceKey = tables.some(t => t.key.includes('[[')) ? JSON.stringify(
     [equations.equations.map(e => [e.id, e.number, e.ambiguous, e.tex]), equations.occurrences.map(o => [o.id, o.number, o.embed]),
       imageEmbeds(model).map(image => [image.from, image.to, image.target, image.number, image.alias])]) : '';
-  // Like Obsidian, tables are ALWAYS shown as the interactive widget (never as raw
+  // Like Shale, tables are ALWAYS shown as the interactive widget (never as raw
   // pipes) — editing happens in-cell, so the selection no longer reveals raw.
   const ranges: Range<Decoration>[] = tables.map((t) =>
     sourceBlockReplacement(state, t, new TableWidget(t, ro, JSON.stringify([
@@ -2218,7 +2218,7 @@ export const livePreviewPlugin = ViewPlugin.fromClass(
 );
 
 export const livePreviewTheme = EditorView.baseTheme({
-  // Heading sizes/weights come from the stylesheet (.cm-s-obsidian .HyperMD-header-N,
+  // Heading sizes/weights come from the stylesheet (.cm-s-shale .HyperMD-header-N,
   // §19 tokens). The theme only strips CodeMirror's default heading underline.
   '.cm-h1, .cm-h2, .cm-h3, .cm-h4, .cm-h5, .cm-h6': { textDecoration: 'none' },
   '.cm-h1 span, .cm-h2 span, .cm-h3 span, .cm-h4 span, .cm-h5 span, .cm-h6 span': {
@@ -2246,9 +2246,9 @@ export const livePreviewTheme = EditorView.baseTheme({
     fontSize: 'var(--font-smaller)',
   },
   '.cm-bullet, .cm-list-number': { color: 'var(--text-faint)' },
-  // Links: accent-coloured and underlined like Obsidian. `inline-block` gives the
+  // Links: accent-coloured and underlined like Shale. `inline-block` gives the
   // browser a soft-wrap opportunity after the widget, so text glued to `]]` in the
-  // source (e.g. `]]and`) can still wrap onto the next line as it does in Obsidian.
+  // source (e.g. `]]and`) can still wrap onto the next line as it does in Shale.
   '.cm-wikilink, .cm-md-link': {
     color: 'var(--text-accent)',
     cursor: 'pointer',
@@ -2271,7 +2271,7 @@ export const livePreviewTheme = EditorView.baseTheme({
   },
   '.cm-task-checkbox': { verticalAlign: 'middle', marginRight: '4px', cursor: 'pointer' },
   '.cm-properties': { margin: '4px 0 18px' },
-  // Markdown tables — mirror Obsidian's table CSS variables
+  // Markdown tables — mirror Shale's table CSS variables
   // (https://docs.obsidian.md/Reference/CSS+variables/Editor/Table): 1px border,
   // left-aligned + top-valigned cells, semibold header with a subtle background.
   '.cm-table': { borderCollapse: 'collapse', margin: '0', width: 'auto' },
@@ -2284,7 +2284,7 @@ export const livePreviewTheme = EditorView.baseTheme({
     position: 'relative',
   },
   '.cm-table th': { fontWeight: '600', background: 'var(--bg-secondary)' },
-  // Interactive table editor (Obsidian-style): click-to-edit cells + hover controls.
+  // Interactive table editor (Shale-style): click-to-edit cells + hover controls.
   '.cm-cell-edit': { outline: 'none', cursor: 'text', minWidth: '1em' },
   '.cm-cell-edit:focus-within': { boxShadow: 'inset 0 0 0 2px var(--interactive-accent)' },
   '.cm-table-addcol, .cm-table-addrow': {

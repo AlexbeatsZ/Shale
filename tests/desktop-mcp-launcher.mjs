@@ -35,13 +35,13 @@ try {
   const panel = page.getByLabel('MCP 连接', { exact: true });
   await expect(panel.getByRole('button', { name: '连接', exact: true })).toBeEnabled();
   await expect(panel.getByRole('button', { name: '选择项目', exact: true })).toHaveCount(0);
-  assert.equal(await page.evaluate(() => window.webobsidianDesktop.mcp.selectProject), undefined);
-  const state = await page.evaluate(() => window.webobsidianDesktop.mcp.inspect());
+  assert.equal(await page.evaluate(() => window.shaleDesktop.mcp.selectProject), undefined);
+  const state = await page.evaluate(() => window.shaleDesktop.mcp.inspect());
   assert.equal(state.available, true);
-  const stdioConfig = JSON.parse(state.clientConfig).mcpServers.webobsidian;
+  const stdioConfig = JSON.parse(state.clientConfig).mcpServers.shale;
   assert.equal(stdioConfig.command, executable);
   assert.deepEqual(stdioConfig.args, [path.join(resources, 'server', 'dist', 'mcp.cjs')]);
-  const toolNames = ['obsidian_find_targets', 'obsidian_get_change_status', 'obsidian_get_context', 'obsidian_list_files', 'obsidian_propose_changes', 'obsidian_read_file', 'obsidian_search'];
+  const toolNames = ['shale_find_targets', 'shale_get_change_status', 'shale_get_context', 'shale_list_files', 'shale_propose_changes', 'shale_read_file', 'shale_search'];
   for (const transport of [
     new StreamableHTTPClientTransport(new URL('/mcp', page.url())),
     new StdioClientTransport({ ...stdioConfig, env: { ...process.env, ...stdioConfig.env, PATH: path.join(fixture, 'no-node-on-path') },
@@ -50,11 +50,11 @@ try {
     const client = new Client({ name: 'bundled-acceptance', version: '1' }); clients.push(client);
     await client.connect(transport);
     assert.deepEqual((await client.listTools()).tools.map(tool => tool.name).sort(), toolNames);
-    const result = await client.callTool({ name: 'obsidian_read_file', arguments: { path: 'fixture.md' } });
+    const result = await client.callTool({ name: 'shale_read_file', arguments: { path: 'fixture.md' } });
     assert(!result.isError, JSON.stringify(result));
     const read = JSON.parse(result.content[0].text);
     assert.equal(read.content, original);
-    const proposalResult = await client.callTool({ name: 'obsidian_propose_changes', arguments: {
+    const proposalResult = await client.callTool({ name: 'shale_propose_changes', arguments: {
       request_id: `builtin-${clients.length}`, title: 'Built-in proposal acceptance',
       operations: [{ kind: 'edit', path: 'fixture.md', base_revision: read.revision,
         edits: [{ from: { line: 3, ch: 0 }, to: { line: 3, ch: 10 }, expected_text: 'Disposable', replacement: 'Reviewed' }] }],

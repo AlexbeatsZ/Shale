@@ -3,7 +3,7 @@ import { getActiveEditor, fmtInsert, fmtIndent, fmtOutdent, fmtUndo, fmtRedo, ed
 import { toggleInline, toggleChecklist, insertLink, followLink, deleteParagraph, toggleLineStyle, surroundSelection } from './editorCommands';
 import { contextOf } from './renderContext';
 import type { EditorView } from '@codemirror/view';
-import { footnotes } from '@webobsidian/markdown-core';
+import { footnotes } from '@shale/markdown-core';
 import { syntaxModel } from './syntaxModel';
 
 const edit = (id: string, title: string, run: (view: EditorView) => unknown, key?: string): NativeCommand => ({

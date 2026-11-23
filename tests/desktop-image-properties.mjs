@@ -17,7 +17,7 @@ const vault = path.join(fixture, 'vault'), profile = path.join(fixture, 'profile
 const evidence = path.resolve(process.env.IMAGE_PROPERTIES_OUTPUT ?? path.join(fixture, 'evidence'));
 await Promise.all([fs.mkdir(vault), fs.mkdir(profile), fs.mkdir(evidence, { recursive: true })]);
 
-const sourceVault = path.resolve(process.env.IMAGE_PROPERTIES_SOURCE_VAULT ?? '/Users/meta/Documents/Obsidian/STEM');
+const sourceVault = path.resolve(process.env.IMAGE_PROPERTIES_SOURCE_VAULT ?? '/Users/meta/Documents/Shale/STEM');
 const originals = new Map();
 const copySource = async relative => {
   const source = path.join(sourceVault, relative), destination = path.join(vault, relative);
@@ -26,10 +26,10 @@ const copySource = async relative => {
   await fs.writeFile(destination, bytes);
   return bytes;
 };
-await Promise.all(['Theme', 'Hider'].map(name => copySource(path.join('.obsidian', 'snippets', `${name}.css`))));
-await fs.writeFile(path.join(vault, '.obsidian', 'appearance.json'), JSON.stringify({ enabledCssSnippets: ['Theme', 'Hider'] }, null, 2));
+await Promise.all(['Theme', 'Hider'].map(name => copySource(path.join('.shale', 'snippets', `${name}.css`))));
+await fs.writeFile(path.join(vault, '.shale', 'appearance.json'), JSON.stringify({ enabledCssSnippets: ['Theme', 'Hider'] }, null, 2));
 const blockFiles = ['blocks.jsonc', 'merged-table.js', 'list-table.js', 'tables.css'];
-await Promise.all(blockFiles.map(filename => copySource(path.join('.obsidian', 'webobsidian', 'blocks', filename))));
+await Promise.all(blockFiles.map(filename => copySource(path.join('.shale', 'shale', 'blocks', filename))));
 
 const sourceNote = path.join(sourceVault, '02笔记', '化学', '物理化学', '物理化学 07固态.md');
 const sourceNoteBytes = await fs.readFile(sourceNote); originals.set(sourceNote, sourceNoteBytes);
@@ -44,7 +44,7 @@ assert.equal(new Set(latticeImages.map(image => image.filename)).size, 14);
 for (const image of latticeImages) {
   assert.equal(path.basename(image.filename), image.filename);
   const bytes = await copySource(path.join('08附件', 'SVG-Wiki', image.filename));
-  assert(bytes.toString('utf8').includes('webobsidian-wiki-palette-v1'), `${image.filename} must contain the converted source palette`);
+  assert(bytes.toString('utf8').includes('shale-wiki-palette-v1'), `${image.filename} must contain the converted source palette`);
 }
 const latticeName = 'Native Bravais lattice.md';
 // Keep the original table directive and header alongside the seven requested body rows.
@@ -66,8 +66,8 @@ const initialNote = '# Figure section\n\n'
   + '![[my-dark-Wiki.png|Original pixels#width=120]]\n\n'
   + 'Native body text for wheel zoom.\n\nend';
 await fs.writeFile(path.join(vault, noteName), initialNote);
-await fs.mkdir(path.join(vault, '.obsidian', 'webobsidian'), { recursive: true });
-await fs.writeFile(path.join(vault, '.obsidian', 'webobsidian', 'embeds.css'),
+await fs.mkdir(path.join(vault, '.shale', 'shale'), { recursive: true });
+await fs.writeFile(path.join(vault, '.shale', 'shale', 'embeds.css'),
   '.embed-property-framed > img { outline: 3px solid rgb(120, 80, 210); }\n');
 const pdf = makePdfFixture({ pages: 8 });
 await fs.writeFile(path.join(vault, 'Native standalone.pdf'), pdf);
@@ -116,7 +116,7 @@ try {
     await appearance();
     await page.getByRole('combobox', { name: '基础颜色', exact: true }).selectOption(value);
     await expect(page.locator('.settings-content [role="status"]')).toHaveText('已保存');
-    await expect(page.locator('body')).toHaveClass(new RegExp(value === 'obsidian-light' ? 'theme-light' : 'theme-dark'));
+    await expect(page.locator('body')).toHaveClass(new RegExp(value === 'shale-light' ? 'theme-light' : 'theme-dark'));
     await page.getByRole('button', { name: '关闭设置', exact: true }).click();
   };
   const wheel = async (locator, deltaY, holdControlMs = 0) => {
@@ -141,7 +141,7 @@ try {
     await expect(stylesheet).toHaveCount(1);
     await expect.poll(() => stylesheet.evaluate(link => Boolean(link.sheet?.cssRules.length))).toBe(true);
   }
-  await setTheme('obsidian-light');
+  await setTheme('shale-light');
   const main = page.locator('.main-pane'), first = main.locator('[data-image-number="1-1"]');
   await expect(first.locator('img')).toBeVisible();
   await expect(main.locator('.cm-image-caption')).toHaveText(['图1-1 Native alias', '图1-2 Original pixels']);
@@ -151,7 +151,7 @@ try {
   await appearance();
   const fontSwitch = page.getByRole('checkbox', { name: 'Ctrl＋滚轮调整正文字号', exact: true });
   await expect(fontSwitch).not.toBeChecked();
-  await page.getByRole('combobox', { name: '基础颜色', exact: true }).selectOption('obsidian-dark');
+  await page.getByRole('combobox', { name: '基础颜色', exact: true }).selectOption('shale-dark');
   await expect(page.locator('.settings-content [role="status"]')).toHaveText('已保存');
   await page.getByRole('button', { name: '关闭设置', exact: true }).click();
   await expect(first.locator('img')).toHaveCSS('filter', /invert\([\d.]+\) hue-rotate\(180deg\)/);
@@ -256,13 +256,13 @@ try {
   await page.screenshot({ path: path.join(evidence, 'native-bravais-lattice-dark.png') });
   await latticeTable.locator('[data-image-number="1-14"] > img').scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(evidence, 'native-bravais-lattice-dark-bottom.png') });
-  await setTheme('obsidian-light');
+  await setTheme('shale-light');
   for (const image of await latticeTable.locator('.cm-image-wrap > img').all()) await expect(image).toHaveCSS('filter', 'none');
   await headerRows.first().scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(evidence, 'native-bravais-lattice-light.png') });
   await latticeTable.locator('[data-image-number="1-14"] > img').scrollIntoViewIfNeeded();
   await page.screenshot({ path: path.join(evidence, 'native-bravais-lattice-light-bottom.png') });
-  await setTheme('obsidian-dark');
+  await setTheme('shale-dark');
 
   await open('Native standalone.pdf');
   const pdfPage = main.locator('[data-page-number="1"]');
@@ -379,7 +379,7 @@ try {
   assert.deepEqual(rendererErrors, []);
   const version = await application.evaluate(({ app }) => app.getVersion());
   const result = { version, executablePath, numberedCaptions: true, referenceAliasRules: true,
-    currentVaultSnippets: ['Theme', 'Hider'], initialFilterTheme: 'obsidian-light', cleanedCssPreservesPdfToolbar: true,
+    currentVaultSnippets: ['Theme', 'Hider'], initialFilterTheme: 'shale-light', cleanedCssPreservesPdfToolbar: true,
     sourceLatticeTable: { sourceNote, lines: [163, 169], blockFiles, nativeBlockEffect: true,
       images: 14, columns: latticeColumns, mergedHeaders: latticeHeaders, geometry: latticeGeometry },
     sourceVaultUnchanged: true,

@@ -16,7 +16,7 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL, viewport: { width: 1480, height: 780 },
-    userAgent: 'WebObsidianDesktop renderer-contract',
+    userAgent: 'ShaleDesktop renderer-contract',
     launchOptions: { executablePath: process.env.RENDER_TEST_BROWSER },
     trace: 'retain-on-failure',
   },

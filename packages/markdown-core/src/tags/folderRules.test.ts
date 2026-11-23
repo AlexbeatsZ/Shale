@@ -38,7 +38,7 @@ describe('folder tag rules', () => {
     expect(plan.raw).toContain('_资料/AI');
   });
   it('rejects traversal, hidden folders and invalid tags', () => {
-    for (const folder of ['../outside', '/absolute', '.obsidian', 'a//b', 'C:/outside'])
+    for (const folder of ['../outside', '/absolute', '.shale', 'a//b', 'C:/outside'])
       expect(() => normalizeFolderTags({ ...settings, rules: [{ folder, tags: ['tag'], recursive: true }] })).toThrow();
     expect(() => normalizeFolderTags({ ...settings, rules: [{ folder: 'a', tags: ['123'], recursive: true }] })).toThrow();
   });

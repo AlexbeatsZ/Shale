@@ -13,7 +13,7 @@ import { clearSnippetQueue } from "./snippets/codemirror/snippet_queue_state_fie
 import { isComposing } from "./utils/editor_utils";
 import { autoDelete$ } from "./editor_extensions/autoDelete$";
 import type { GroupedSnippets, LatexSuiteCMSettings } from "./settings/settings";
-import { getFilePathFromState, notice } from "./editor_extensions/obsidian_utils";
+import { getFilePathFromState, notice } from "./editor_extensions/shale_utils";
 import { EditorState, StateField } from "@codemirror/state";
 import { serializeSnippetLike, type Snippet } from "./snippets/snippets";
 

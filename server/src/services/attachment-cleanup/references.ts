@@ -1,4 +1,4 @@
-import { analyzeMarkdown, decodeHtmlEntity, extractMetadata, parseYamlSource } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, decodeHtmlEntity, extractMetadata, parseYamlSource } from '@shale/markdown-core';
 import type { CleanupIssue } from './types.js';
 
 export interface Reference { target: string; relative: boolean }

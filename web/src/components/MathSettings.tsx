@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { defaultMathConfiguration, mathPackages } from '@webobsidian/markdown-core';
+import { defaultMathConfiguration, mathPackages } from '@shale/markdown-core';
 import { updateWriting, useWriting } from '../lib/writing/config';
 import { SettingGroup, SettingRow } from './SettingRow';
 import ConfigurationFile from './ConfigurationFile';
@@ -9,7 +9,7 @@ export default function MathSettings() {
   const math = settings.math ?? defaultMathConfiguration();
   const [busy, setBusy] = useState(false);
   return <SettingGroup title="MathJax 宏包与自定义命令">
-    <ConfigurationFile path=".obsidian/webobsidian/math.jsonc" desc="在外部编辑导言区和宏包选项；保存后自动加载。" />
+    <ConfigurationFile path=".shale/math.jsonc" desc="在外部编辑导言区和宏包选项；保存后自动加载。" />
     <fieldset disabled={busy || !settings.mathSource}>
       {settings.mathSource && !settings.mathSource.exists && <SettingRow name="创建数学配置" desc="将当前宏包和导言区配置保存到仓库。"><button onClick={() => {
         setBusy(true); void updateWriting({ math }).catch(() => {}).finally(() => setBusy(false));

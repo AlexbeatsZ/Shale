@@ -7,7 +7,7 @@ are specified in [folder tag rules](folder-tag-rules.md).
 
 ## Scope and source inventory
 
-This module replaces only the `multiTag` and `tagWrangler` children of Obsidian
+This module replaces only the `multiTag` and `tagWrangler` children of Shale
 Plus. The checked disposable Vault copy contains Plus **1.3.1**, both flags true,
 and no standalone `multiTag`/`tagWrangler` settings object. The source inventory
 was read from the local Plus repository's `src/multi-tag`, `src/tag-wrangler`,
@@ -47,7 +47,7 @@ actual migration and user workflow acceptance are pending.
 | Tag Page open/create | Opens through existing store `openFile`/`openToSide`. No page opens automatically if several files declare the same tag: a chooser lists them. New page writes `aliases: ["#tag"]` and uses exclusive creation. | Suggested filename is visible/editable; the native dialog does not emulate plugin event-based page factories or automatic rename focus. Existing files cannot be overwritten. |
 | Alt-click / hover | TagsPanel supports Alt-click and delayed readonly Markdown preview. Shared actions also expose these behaviors for inline/reading/property tag callbacks. | Hover activates only for exactly one saved page. It uses existing document/fragment services, disables plugins/HTML execution and disposes on leave. |
 | Tag text drag / hierarchy drop | TagsPanel drags `text/plain` plus a native MIME tag value. Drop suggests `destination/leaf`, then opens the same rename preview. | Self/descendant cycles are rejected; drop never writes immediately. Generic DOM interception is not installed. |
-| Sibling collapse / expand | Native tree menu applies folding to siblings of the clicked tag. | State belongs to the panel, not old Obsidian DOM classes. |
+| Sibling collapse / expand | Native tree menu applies folding to siblings of the clicked tag. | State belongs to the panel, not old Shale DOM classes. |
 | Reading / property / editor context menus | Shared menu actions carry stable `tags.*` IDs and context kind `tag-menu`; coordinator-owned RenderContext callbacks use these exports. | Readonly options omit rename/create; public shares retain their scoped service boundary. No CM-owned text DOM mutation. |
 | Smart Random Note / obsolete menu fallback | Excluded as in the consolidated Plus source. | No integration is claimed. |
 

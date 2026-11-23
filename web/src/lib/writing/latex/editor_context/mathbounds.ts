@@ -1,7 +1,7 @@
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import type { EditorState } from '@codemirror/state';
 import type { SyntaxNode } from '@lezer/common';
-import { mathRegions, formulaAt, type MathRegion } from '@webobsidian/markdown-core';
+import { mathRegions, formulaAt, type MathRegion } from '@shale/markdown-core';
 import { syntaxModel } from '../../../syntaxModel';
 import { getLatexSuiteConfig } from '../snippets/codemirror/config';
 import { formulaTree } from '../parser/language';

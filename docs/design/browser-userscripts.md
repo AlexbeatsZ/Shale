@@ -10,7 +10,7 @@
 ## 依据与实际脚本
 
 只读核对本机 `obsidian-webviewer-userscripts` 的 AGENTS、设计及源码，以及
-`.local/test-vault/.obsidian/plugins/webviewer-userscripts/data.json`。当前副本有四条：
+`.local/test-vault/.shale/plugins/webviewer-userscripts/data.json`。当前副本有四条：
 
 | 脚本 | 版本 | 实际依赖 / 静态覆盖 |
 | --- | --- | --- |
@@ -99,7 +99,7 @@ GM 使用 guest 的 session；anonymous 请求不发 cookies。脚本/更新下�
   导出当前源码或待审批源码的查看副本，绑定 revision / candidateId，过期请求拒绝。
   返回路径并通过系统文本关联打开，使用 `.user.js.txt` 后缀避免当作 OS 脚本执行。
 
-源码副本仅在明确打开时生成于系统临时目录 `.agents/webobsidian-userscripts-*`，
+源码副本仅在明确打开时生成于系统临时目录 `.agents/shale-userscripts-*`，
 逐次使用随机文件名，不覆盖编辑中的副本；不监听、不自动导回、不参与执行。
 切库/退出在已启动的管理操作结束后清理该 store 的临时目录。外部编辑若要保留，
 应另存并通过既有文件导入；同身份候选仍走 prepareBundle、权限审阅与审批，ID、

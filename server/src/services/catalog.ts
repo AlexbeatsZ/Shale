@@ -1,5 +1,5 @@
-import { TargetIndex, isGlobalContentTarget, parseLinkTarget, type ResolvedTarget } from '@webobsidian/markdown-core';
-import type { CatalogEntry } from '@webobsidian/search-core';
+import { TargetIndex, isGlobalContentTarget, parseLinkTarget, type ResolvedTarget } from '@shale/markdown-core';
+import type { CatalogEntry } from '@shale/search-core';
 import type { ParsedNote } from './markdown.js';
 
 export interface NoteRecord extends CatalogEntry {

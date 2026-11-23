@@ -2,12 +2,12 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { SourceDocument, reviewHunks, materializeReview, rebaseReview, mergeReview, isGlobalContentTarget, validContentTargetId,
-  operationNames, type OperationName, type TextProposalInput, type ReviewProposal, type ReviewHunk } from '@webobsidian/markdown-core';
+  operationNames, type OperationName, type TextProposalInput, type ReviewProposal, type ReviewHunk } from '@shale/markdown-core';
 import { config } from '../config.js';
 import { operationContract } from '../operations/contract.js';
 import * as vault from './vault.js';
 import { getVaultRoot, resolveInVault, isTextFile, readFileSnapshot, sameVaultFile } from './vaultFile.js';
-import { fileTitleError } from '@webobsidian/search-core';
+import { fileTitleError } from '@shale/search-core';
 import { catalog } from './catalog.js';
 import { parseNote } from './markdown.js';
 import { qmd } from './search.js';
@@ -80,7 +80,7 @@ export function checkContentIds(file: string, before: string, after: string): st
     if (defined.has(id)) return [];
     const resolved = catalog.resolve(link);
     if (resolved.status === 'resolved' && resolved.path !== file) return [];
-    return [`[[${link}]] ${resolved.status === 'ambiguous' ? '对应多个目标' : '找不到目标'}；请用 obsidian_find_targets 查询实际 ID`];
+    return [`[[${link}]] ${resolved.status === 'ambiguous' ? '对应多个目标' : '找不到目标'}；请用 shale_find_targets 查询实际 ID`];
   });
 }
 
@@ -377,7 +377,7 @@ export async function mcpInstructionNotes(withContent: boolean): Promise<Instruc
   }
   return notes;
 }
-const STANDING_NOTICE = 'The user selected these Vault notes as standing instructions (Settings › MCP). Follow them whenever you write, edit, rename or propose note changes, unless the user explicitly asks otherwise. Truncated notes can be read in full with obsidian_read_file.';
+const STANDING_NOTICE = 'The user selected these Vault notes as standing instructions (Settings › MCP). Follow them whenever you write, edit, rename or propose note changes, unless the user explicitly asks otherwise. Truncated notes can be read in full with shale_read_file.';
 async function withStandingInstructions<T extends object>(result: T): Promise<T> {
   const notes = await mcpInstructionNotes(true);
   return notes.length ? { ...result, standing_instructions: { notice: STANDING_NOTICE, notes } } : result;
@@ -388,7 +388,7 @@ export async function callOperation(name: OperationName, raw: unknown): Promise<
   const args = operationContract[name].schema.parse(raw ?? {}) as any;
   const root = await getVaultRoot(), vaultId = hash(root);
   switch (name) {
-    case 'obsidian_list_files': {
+    case 'shale_list_files': {
       const prefix = visible(args.path, true);
       const files = [...catalog.entries.values()].filter(f => f.kind === 'file' && !f.path.split('/').some(p => p.startsWith('.')) && under(f.path, prefix)
         && (args.type === 'all' || (args.type === 'markdown' ? /\.(md|markdown)$/i.test(f.path) : args.type === 'text' ? isTextFile(f.path) : !isTextFile(f.path))))
@@ -396,12 +396,12 @@ export async function callOperation(name: OperationName, raw: unknown): Promise<
       return { vault: vaultId, files: files.slice(args.offset, args.offset + args.limit), total: files.length,
         next_offset: args.offset + args.limit < files.length ? args.offset + args.limit : null };
     }
-    case 'obsidian_search': {
+    case 'shale_search': {
       const prefix = visible(args.path, true);
       return { vault: vaultId, scope: 'saved-markdown-index', query: args.query,
         results: (await qmd.search(args.query, 0, args.mode)).filter(f => under(f.path, prefix)).slice(0, args.max_results) };
     }
-    case 'obsidian_read_file': {
+    case 'shale_read_file': {
       const file = visible(args.path);
       if (!isTextFile(file)) {
         const stat = await fs.stat(await resolveInVault(file));
@@ -416,7 +416,7 @@ export async function callOperation(name: OperationName, raw: unknown): Promise<
         total_lines: lines.length, partial_line: partial, truncated: partial || args.start_line - 1 + args.line_count < lines.length,
         next_line: partial ? args.start_line : args.start_line + Math.min(args.line_count, lines.length - args.start_line + 1) };
     }
-    case 'obsidian_get_context': {
+    case 'shale_get_context': {
       const queued = await mcpContext.list();
       if (queued.vault !== vaultId) fail('Vault 已切换，请重新读取上下文');
       if (queued.items.length) return withStandingInstructions({ vault: vaultId, captured_at: new Date().toISOString(), queued_context: queued.items,
@@ -435,7 +435,7 @@ export async function callOperation(name: OperationName, raw: unknown): Promise<
         nearby_text: lines.slice(Math.max(0, line - args.nearby_lines - 1), line + args.nearby_lines).join('\n').slice(0, 32768),
         open_notes: active.open, recent_notes: active.recent, linked_notes: catalog.notes.get(file)?.links.slice(0, 30) ?? [] });
     }
-    case 'obsidian_find_targets': {
+    case 'shale_find_targets': {
       if (args.id !== undefined) {
         const id = String(args.id).replace(/^\^/, ''), resolved = catalog.resolve('^' + id);
         if (!validContentTargetId(id)) fail('ID 需以 heading-/eq-/code-/callout-/table-/html-/range- 开头，后接字母、数字或 -', 400);
@@ -447,7 +447,7 @@ export async function callOperation(name: OperationName, raw: unknown): Promise<
       return { vault: vaultId, scope: 'saved-index', query: args.query,
         results: catalog.suggestContentTargets(args.query, args.limit, file, kind).map(target => ({ ...target, link: `[[^${target.id}]]`, embed: `![[^${target.id}]]` })) };
     }
-    case 'obsidian_propose_changes': return nativeReview.propose(args);
-    case 'obsidian_get_change_status': return nativeReview.status(args.proposal_id);
+    case 'shale_propose_changes': return nativeReview.propose(args);
+    case 'shale_get_change_status': return nativeReview.status(args.proposal_id);
   }
 }

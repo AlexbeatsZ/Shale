@@ -1,7 +1,7 @@
 import { Component, useMemo, useSyncExternalStore, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { DocumentSession } from '@webobsidian/markdown-core';
-import { equationContext } from '@webobsidian/markdown-core';
+import { DocumentSession } from '@shale/markdown-core';
+import { equationContext } from '@shale/markdown-core';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { EmbedProjection } from '../lib/embedProjection';

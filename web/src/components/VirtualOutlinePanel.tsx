@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { extractMetadata } from '@webobsidian/markdown-core';
+import { extractMetadata } from '@shale/markdown-core';
 import { documents } from '../lib/documents';
 import type { VirtualReadingSession } from '../lib/virtualReading';
 import type { PdfOutlineEntry } from '../lib/pdf/types';

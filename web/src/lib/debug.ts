@@ -137,5 +137,5 @@ export async function exportDebug() {
   const header = JSON.stringify({ type: 'export', time: new Date().toISOString(), session, dropped: status.dropped, unsaved: buffer.length, error: status.error }) + '\n';
   const tail = buffer.map(row => JSON.stringify(row.event) + '\n').join('');
   await host.download(new Blob([header, text, tail], { type: 'application/x-ndjson;charset=utf-8' }),
-    `webobsidian-debug-${new Date().toISOString().replace(/[:.]/g, '-')}.jsonl`);
+    `shale-debug-${new Date().toISOString().replace(/[:.]/g, '-')}.jsonl`);
 }

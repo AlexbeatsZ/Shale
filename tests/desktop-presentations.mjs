@@ -46,7 +46,7 @@ try {
   };
   await command('打开设置');
   await page.getByRole('button', { name: '外观', exact: true }).click();
-  await page.getByRole('combobox', { name: '基础颜色', exact: true }).selectOption('obsidian-dark');
+  await page.getByRole('combobox', { name: '基础颜色', exact: true }).selectOption('shale-dark');
   await expect(page.locator('.settings-content [role="status"]')).toHaveText('已保存');
   await page.getByRole('button', { name: '关闭设置', exact: true }).click();
   await open('Slides.PPTX');

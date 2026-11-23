@@ -23,7 +23,7 @@ interface GNode {
   kind: NodeKind;
   tags: string[];
   deg: number;
-  fade?: number; // Obsidian's fadeAlpha: dims to 0.2 when another node is hovered
+  fade?: number; // Shale's fadeAlpha: dims to 0.2 when another node is hovered
   x?: number;
   y?: number;
   vx?: number;
@@ -64,13 +64,13 @@ interface PixiCtx {
 
 const TEXR = 32; // radius of the shared circle texture (sprites are scaled from this)
 
-// --- force mapping: EXACT port of Obsidian's graph physics ------------------
-// Reverse-engineered from the installed app (obsidian.asar → sim.js worker +
-// app.js panel). Obsidian runs stock d3-force with: forceX/forceY gravity,
+// --- force mapping: EXACT port of Shale's graph physics ------------------
+// Reverse-engineered from the installed app (shale.asar → sim.js worker +
+// app.js panel). Shale runs stock d3-force with: forceX/forceY gravity,
 // forceManyBody(-slider³, distanceMin 30, theta .9, NO distanceMax), forceLink
 // (distance = slider, strength = slider × d3's adaptive 1/min(degree)), and
 // forceCollide(radius 60 const, strength .5). Same slider scales & defaults.
-// Center slider → strength via Obsidian's MJ(e, .01) easing: 0.52 → 0.1.
+// Center slider → strength via Shale's MJ(e, .01) easing: 0.52 → 0.1.
 const easeStrength = (e: number, t = 0.01) => (Math.pow(t, 1 - e) - t) / (1 - t);
 const charge = (s: GraphSettings) => -Math.pow(s.repelForce, 3); // default 10 → -1000
 const linkDist = (s: GraphSettings) => s.linkDistance; // default 250 (world units)
@@ -78,10 +78,10 @@ const centerStr = (s: GraphSettings) => easeStrength(s.centerForce); // default 
 const chargeStrength = (s: GraphSettings) => (_n: GNode) => charge(s);
 const linkStrength = (s: GraphSettings) => (l: GLink) =>
   s.linkForce / Math.min((l.source as GNode).deg || 1, (l.target as GNode).deg || 1);
-// Obsidian's node sizing: getSize() = nodeSizeMult × clamp(3·√(deg+1), 8, 30).
+// Shale's node sizing: getSize() = nodeSizeMult × clamp(3·√(deg+1), 8, 30).
 const nodeRadius = (n: GNode, s: GraphSettings) =>
   s.nodeSize * Math.max(8, Math.min(3 * Math.sqrt(n.deg + 1), 30));
-// Obsidian's renderer works in DEVICE pixels: scale 1 = 1 world unit per device
+// Shale's renderer works in DEVICE pixels: scale 1 = 1 world unit per device
 // px, and nodeScale = √(1/scale) so the on-screen radius is getSize()·√scale
 // DEVICE px. Our camera k is in CSS px, so the device scale is e = k·dpr and
 // anything following the √zoom law maps to CSS px via √(k/dpr).
@@ -92,16 +92,16 @@ const screenRadius = (n: GNode, s: GraphSettings, k: number) =>
   nodeRadius(n, s) * renderScale(k);
 const spriteScale = (n: GNode, s: GraphSettings, k: number) =>
   screenRadius(n, s, k) / (TEXR * Math.max(1e-6, k)); // world-units scale for the sprite
-// Obsidian's zoom clamp (device scale) and node dim level for hover fade.
+// Shale's zoom clamp (device scale) and node dim level for hover fade.
 const SCALE_MIN = 1 / 128;
 const SCALE_MAX = 8;
 const FADE_DIM = 0.2;
 
 /**
- * Graph view — WebGL-rendered via PixiJS (like Obsidian's PixiJS graph), with the
+ * Graph view — WebGL-rendered via PixiJS (like Shale's PixiJS graph), with the
  * d3-force layout running on the main thread. Pan/zoom is a GPU camera transform
  * (no geometry rebuild), so it stays smooth at thousands of nodes. The Filters
- * panel mirrors Obsidian: Tags / Attachments / Existing-only / Orphans, color
+ * panel mirrors Shale: Tags / Attachments / Existing-only / Orphans, color
  * Groups, Display sliders and Forces.
  */
 export default function GraphView({ navigationId }: { navigationId?: string }) {
@@ -120,7 +120,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
   const pixi = useRef<PixiCtx | null>(null);
   const mod = useRef<typeof import('pixi.js') | null>(null);
   const cam = useRef({ x: 0, y: 0, k: 1 });
-  // Obsidian's smooth zoom: wheel sets targetScale (device px), the render loop
+  // Shale's smooth zoom: wheel sets targetScale (device px), the render loop
   // lerps scale 15% toward it per frame, anchored at the cursor when zooming in
   // and at the viewport center when zooming out.
   const zoomTarget = useRef(1);
@@ -170,7 +170,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     return scored.slice(0, 50).map((x) => x.n);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jumpQ, sceneVersion]);
-  const [panelOpen, setPanelOpen] = useState(false); // Obsidian default: collapsed, cog only
+  const [panelOpen, setPanelOpen] = useState(false); // Shale default: collapsed, cog only
   const [stats, setStats] = useState({ total: 0, shown: 0, orphans: 0 });
   const [buildError, setBuildError] = useState<string | null>(null);
 
@@ -195,7 +195,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
       textStrong: toInt('--text-normal', 0x222222),
       attach: 0xe0a008,
       unresolved: toInt('--text-faint', 0xaaaaaa),
-      tag: 0x3aa757, // Obsidian-like green for tag nodes
+      tag: 0x3aa757, // Shale-like green for tag nodes
       bg: toInt('--bg-primary', 0xffffff),
     };
   };
@@ -219,7 +219,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     if (n.kind === 'attachment') return cols.attach;
     if (n.kind === 'unresolved') return cols.unresolved;
     if (n.kind === 'tag') return cols.tag;
-    return cols.text; // Obsidian draws plain notes gray, not accent-colored
+    return cols.text; // Shale draws plain notes gray, not accent-colored
   };
 
   // ---- rendering (camera transform + on-demand repaint) -------------------
@@ -232,7 +232,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     });
   };
 
-  // One step of Obsidian's updateZoom(): lerp the scale 15% toward targetScale
+  // One step of Shale's updateZoom(): lerp the scale 15% toward targetScale
   // around the zoom anchor. Returns true while the animation is still running.
   const stepZoom = (): boolean => {
     const v = cam.current;
@@ -255,7 +255,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
   };
 
   // Fly-to-node animation: ease the scale toward zoomTarget and the pan toward
-  // centering the node, with the same 15%/frame lerp as Obsidian's updateZoom.
+  // centering the node, with the same 15%/frame lerp as Shale's updateZoom.
   const stepFly = (): boolean => {
     const n = flyNode.current;
     if (!n) return false;
@@ -282,7 +282,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     return !done;
   };
 
-  // Obsidian's hover fade: nodes not linked to the highlighted node ease toward
+  // Shale's hover fade: nodes not linked to the highlighted node ease toward
   // alpha 0.2 (mQ lerp, 90% retained per frame). Returns true while animating.
   const stepFade = (): boolean => {
     const h = hover.current;
@@ -319,7 +319,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     p.world.scale.set(k);
     if (fullDirty.current) updatePositions();
     // edges are drawn in world space at a constant DEVICE-pixel thickness; node
-    // sprites follow Obsidian's √zoom law — both need a refresh on layout
+    // sprites follow Shale's √zoom law — both need a refresh on layout
     // change, zoom change, or when the hover highlight moves.
     if (fullDirty.current || k !== lastEdgeK.current || edgesDirty.current) {
       drawEdges();
@@ -369,7 +369,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     const k = cam.current.k || 1;
     const h = hover.current;
     const g = p.edges;
-    // Obsidian draws edges at lineSizeMult / scale in world space — i.e. a
+    // Shale draws edges at lineSizeMult / scale in world space — i.e. a
     // constant lineSizeMult DEVICE pixels on screen — in a faint theme gray.
     // When a node is hovered, its edges switch to the highlight color and all
     // others dim like the unrelated nodes do.
@@ -402,7 +402,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     const ag = p.arrows;
     ag.clear();
     if (s.arrows) {
-      // Obsidian: arrow sprite scale = 2√(lineSizeMult)/scale (world units) and
+      // Shale: arrow sprite scale = 2√(lineSizeMult)/scale (world units) and
       // its alpha fades out with clamp(2·(scale − 0.3), 0, 1) as you zoom away.
       const e = devScale(k);
       const arrowAlpha = 0.6 * Math.max(0, Math.min(1, 2 * (e - 0.3)));
@@ -429,7 +429,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     const p = pixi.current!;
     let t = p.labels[i];
     if (!t) {
-      // Obsidian's node label style: fontSize 14 (+ getSize()/4 applied via the
+      // Shale's node label style: fontSize 14 (+ getSize()/4 applied via the
       // per-node scale), default weight, no outline, resolution 2.
       t = new mod.current!.Text({
         text: '',
@@ -460,7 +460,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     const e = devScale(k);
     const rs = renderScale(k);
     const dpr = dprNow();
-    // Obsidian's global text fade (device scale!): textAlpha =
+    // Shale's global text fade (device scale!): textAlpha =
     // clamp(log2(scale) + 1 − fade, 0, 1) — all labels share one zoom-driven
     // alpha, further multiplied by each node's hover-fade; hover is always 1.
     const textAlpha = Math.max(0, Math.min(1, Math.log2(e) + 1 - s.textFade));
@@ -491,7 +491,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
         (t as unknown as { _hv?: boolean })._hv = isH;
         t.style.fill = isH ? p.cols.accentHover : p.cols.textStrong;
       }
-      // Obsidian: labels live in world space with scale = nodeScale and font
+      // Shale: labels live in world space with scale = nodeScale and font
       // size 14 + getSize()/4, i.e. they shrink with √zoom exactly like nodes;
       // a hovered label never shrinks below 1 device pixel per font unit.
       const r = nodeRadius(n, s);
@@ -547,7 +547,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     }
   };
 
-  // Obsidian's initial viewport: scale 1 in DEVICE pixels (no zoom-to-fit), the
+  // Shale's initial viewport: scale 1 in DEVICE pixels (no zoom-to-fit), the
   // spawn point centered — the graph blooms outward past the edges and the user
   // pans/zooms from there. In CSS pixels that's k = 1/devicePixelRatio.
   const resetCamera = () => {
@@ -556,7 +556,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     const H = wrap?.clientHeight || 600;
     const k = 1 / dprNow();
     cam.current = { k, x: (W / 2) * (1 - k), y: (H / 2) * (1 - k) };
-    zoomTarget.current = 1; // device scale, like Obsidian's scale = targetScale = 1
+    zoomTarget.current = 1; // device scale, like Shale's scale = targetScale = 1
     zoomAnchor.current = null;
   };
 
@@ -792,7 +792,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
       const W = wrap.clientWidth || 900;
       const H = wrap.clientHeight || 600;
 
-      // Obsidian spawns every node at the origin and lets the sim "big-bang"
+      // Shale spawns every node at the origin and lets the sim "big-bang"
       // outward at fixed zoom. A tiny phyllotaxis disc at the center reproduces
       // that bloom without degenerate coincident points.
       nodeList.forEach((n, i) => {
@@ -802,7 +802,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
         n.y = H / 2 + Math.sin(a) * r;
       });
 
-      // Obsidian's exact simulation (sim.js): d3-force with these params.
+      // Shale's exact simulation (sim.js): d3-force with these params.
       simRef.current?.stop();
       sim = forceSimulation<GNode>(nodeList)
         .force('charge', forceManyBody<GNode>().strength(chargeStrength(s)).theta(0.9).distanceMin(30))
@@ -848,7 +848,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
     (sim.force('link') as ReturnType<typeof forceLink<GNode, GLink>> | undefined)?.distance(linkDist(s)).strength(linkStrength(s));
     (sim.force('x') as ReturnType<typeof forceX<GNode>> | undefined)?.strength(centerStr(s));
     (sim.force('y') as ReturnType<typeof forceY<GNode>> | undefined)?.strength(centerStr(s));
-    sim.alpha(0.3).restart(); // Obsidian posts alpha .3 on force changes
+    sim.alpha(0.3).restart(); // Shale posts alpha .3 on force changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings.repelForce, settings.linkForce, settings.linkDistance, settings.centerForce]);
 
@@ -875,7 +875,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // Obsidian's onWheel: targetScale ×= 1.5^(−ΔY/120) clamped to [1/128, 8]
+    // Shale's onWheel: targetScale ×= 1.5^(−ΔY/120) clamped to [1/128, 8]
     // (device scale); zooming IN anchors at the cursor, zooming OUT at the
     // viewport center. The actual scale eases toward the target in stepZoom().
     const onWheel = (e: WheelEvent) => {
@@ -1065,7 +1065,7 @@ export default function GraphView({ navigationId }: { navigationId?: string }) {
 }
 
 // ----------------------------------------------------------------------------
-// Filter panel (Obsidian parity)
+// Filter panel (Shale parity)
 // ----------------------------------------------------------------------------
 
 const GROUP_COLORS = ['#e0a008', '#13a8cd', '#3aa757', '#e5534b', '#9b6dff', '#e668c0'];

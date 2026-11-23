@@ -11,7 +11,7 @@ import {
   handleKeydown,
 } from './latex/latex_suite';
 import { snippetExtensions } from './latex/snippets/codemirror/extensions';
-import { notice } from './latex/editor_extensions/obsidian_utils';
+import { notice } from './latex/editor_extensions/shale_utils';
 import {
   colorPairedBracketsPluginLowestPrec,
   highlightCursorBracketsExtension,

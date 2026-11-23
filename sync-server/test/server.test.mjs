@@ -7,10 +7,10 @@ import { randomUUID } from 'node:crypto';
 import { createSyncServer } from '../server.mjs';
 import { validPath, validateManifest } from '../protocol.mjs';
 import { addFileSyncRoute } from '../shared-gateway.mjs';
-import { routeWebObsidian } from '../gateway-route.mjs';
+import { routeShale } from '../gateway-route.mjs';
 import { fixture, token, operation, commit, digest } from './fixtures.mjs';
 
-test('retains strict WebObsidian request, token and path policy', async t => {
+test('retains strict Shale request, token and path policy', async t => {
   const data = await fixture(t);
   for (const value of ['short', 'a'.repeat(513), '空'.repeat(32), 'a'.repeat(32) + '\n']) {
     const root = path.join(data.directory, randomUUID());
@@ -36,11 +36,11 @@ test('retains strict WebObsidian request, token and path policy', async t => {
   assert.equal(fragmented, 400);
   assert.equal((await hub.request('../v2/manifest')).status, 404);
   const manifest = await (await hub.request('manifest')).json();
-  for (const name of ['../a', '.git/config', '.obsidian/workspace.json', 'A/CON.txt', 'a\\b', 'node_modules/x', 'x.tmp']) {
+  for (const name of ['../a', '.git/config', '.shale/workspace.json', 'A/CON.txt', 'a\\b', 'node_modules/x', 'x.tmp']) {
     assert.equal(validPath(name), false);
     assert.equal((await commit(hub, operation(manifest.workspaceId, [{ path: name, hash: null, expectedVersion: 0 }]))).status, 400);
   }
-  for (const name of ['笔记.md', '.obsidian/webobsidian/sync.jsonc', 'Attachments/a.bin']) assert.equal(validPath(name), true);
+  for (const name of ['笔记.md', '.shale/sync.jsonc', 'Attachments/a.bin']) assert.equal(validPath(name), true);
   assert.throws(() => validateManifest({ ...manifest, revision: 1, files: {
     a: { hash: digest('a'), version: 1 }, 'a/child.md': { hash: digest('b'), version: 1 },
   } }));
@@ -114,9 +114,9 @@ test('preserves shared-gateway exports, handler order and dedicated route bounda
   const base = `http://127.0.0.1:${gateway.server.address().port}`;
   assert.equal(await (await fetch(base + '/dayweave')).text(), 'dayweave');
   assert.equal(await (await fetch(base + '/mojian')).text(), 'mojian');
-  assert.equal((await fetch(base + '/webobsidian-sync/v1/manifest?query=1')).status, 404);
+  assert.equal((await fetch(base + '/shale-sync/v1/manifest?query=1')).status, 404);
   assert.equal(original, 1); assert.equal(mojian, 1);
-  assert.equal(typeof routeWebObsidian, 'function');
+  assert.equal(typeof routeShale, 'function');
   const unexpected = { server: http.createServer() };
   assert.throws(() => addFileSyncRoute(unexpected, () => false), /Unexpected/);
 });

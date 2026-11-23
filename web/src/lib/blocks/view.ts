@@ -1,6 +1,6 @@
 import { RangeSet, StateField, type Range, type EditorState, type Transaction } from '@codemirror/state';
 import { BlockWrapper, Decoration, EditorView, ViewPlugin, WidgetType, type DecorationSet } from '@codemirror/view';
-import { blockEffectList, imageEmbeds, tableModels, type SourceSpan, type MarkdownModel } from '@webobsidian/markdown-core';
+import { blockEffectList, imageEmbeds, tableModels, type SourceSpan, type MarkdownModel } from '@shale/markdown-core';
 import { equationsOf, sourceOf, syntaxModel } from '../syntaxModel';
 import { imageMenuItems } from '../imageMenu';
 import { contextOf, renderContext, nonExecutingContext } from '../renderContext';

@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { contentTargets, DocumentSession, type DocumentSnapshot } from '@webobsidian/markdown-core';
+import { contentTargets, DocumentSession, type DocumentSnapshot } from '@shale/markdown-core';
 
 const fixture = vi.hoisted(() => ({
   sessions: new Map<string, DocumentSession>(),

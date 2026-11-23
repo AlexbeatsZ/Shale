@@ -7,7 +7,7 @@ import { conceal, type ConcealCachedEquations } from "./conceal_fns";
 import { debounce } from "../../host";
 import { livePreviewState } from "../../../renderState";
 import { tempKeyPress } from "../snippets/snippet_management";
-import { createElement } from "./obsidian_utils";
+import { createElement } from "./shale_utils";
 import { getLatexSuiteConfig } from "../snippets/codemirror/config";
 
 export type Replacement = {
@@ -266,7 +266,7 @@ class Conceal implements PluginValue {
  destroy() { this.delayedReveal.cancel(); }
 	// Stateful ViewPlugin: you should avoid one in general, but here
 	// the approach based on StateField and updateListener conflicts with
-	// obsidian's internal logic and causes weird rendering.
+	// shale's internal logic and causes weird rendering.
 	concealments: Concealment[];
 	decorations: DecorationSet;
 	atomicRanges: RangeSet<RangeValue>;

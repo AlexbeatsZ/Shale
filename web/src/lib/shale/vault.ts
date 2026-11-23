@@ -6,7 +6,7 @@ import {
   analyzeMarkdown,
   blockContainers,
   type MarkdownModel,
-} from '@webobsidian/markdown-core';
+} from '@shale/markdown-core';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { Events } from './events';
 import type { FileStat } from '../tree';
@@ -105,7 +105,7 @@ export class FileSystemAdapter {
   }
 }
 export class Vault extends Events {
-  configDir = '.obsidian';
+  configDir = '.shale';
   adapter = new FileSystemAdapter(this);
   fileMap: Record<string, TAbstractFile> = {};
   private root = new TFolder('', '');
@@ -117,7 +117,7 @@ export class Vault extends Events {
     this.fileMap[''] = this.root;
   }
   getName() {
-    return useStore.getState().tree?.name ?? 'WebObsidian';
+    return useStore.getState().tree?.name ?? 'Shale';
   }
   getRoot() {
     return this.root;

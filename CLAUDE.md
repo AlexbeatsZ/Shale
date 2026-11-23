@@ -1,7 +1,7 @@
-# CLAUDE.md — Hướng dẫn làm việc cho Claude Code trên dự án WebObsidian
+# CLAUDE.md — Hướng dẫn làm việc cho Claude Code trên dự án Shale
 
 ## Bối cảnh
-WebObsidian is a native desktop/Android application. The `web/` directory is
+Shale is a native desktop/Android application. The `web/` directory is
 its internal native renderer. The browser product and Web deployment were
 retired on 2026-11-01. The desktop application provides an embedded WebViewer
 with userscript file/URL import and scheduled update checks. Preserve these

@@ -1,5 +1,5 @@
 import { StateEffect, StateField } from '@codemirror/state';
-import { analyzeMarkdown, updateMarkdown, extractMetadata, blockContainers, mathRegions, tableModels, equationContext, type EmbeddedFormula, type EmbeddedFormulas, type MarkdownModel, type Metadata, type MathRegion, type MathBlock } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, updateMarkdown, extractMetadata, blockContainers, mathRegions, tableModels, equationContext, type EmbeddedFormula, type EmbeddedFormulas, type MarkdownModel, type Metadata, type MathRegion, type MathBlock } from '@shale/markdown-core';
 import type { EditorState, Text } from '@codemirror/state';
 import { renderContext } from './renderContext';
 

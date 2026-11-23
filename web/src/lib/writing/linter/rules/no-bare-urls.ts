@@ -172,10 +172,10 @@ export default class NoBareUrls extends RuleBuilder<NoBareUrlsOptions> {
       new ExampleBuilder({// accounts for https://github.com/platers/obsidian-linter/issues/776
         description: 'Puts angle brackets around URIs when `No Bare URIs` is enabled',
         before: dedent`
-          obsidian://show-plugin?id=cycle-in-sidebar
+          shale://show-plugin?id=cycle-in-sidebar
         `,
         after: dedent`
-          <obsidian://show-plugin?id=cycle-in-sidebar>
+          <shale://show-plugin?id=cycle-in-sidebar>
         `,
         options: {
           noBareURIs: true,

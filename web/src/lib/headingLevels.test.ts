@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeMarkdown, DocumentSession, SourceDocument } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, DocumentSession, SourceDocument } from '@shale/markdown-core';
 import { planHeadingLevels } from './headingLevels';
 
 // Prepared regression source only; do not execute under the static-only boundary.

@@ -1,7 +1,7 @@
 import { RangeSet, StateEffect, StateField, type Extension, type EditorState } from '@codemirror/state';
 import { BlockWrapper, Decoration, EditorView, ViewPlugin } from '@codemirror/view';
 import { foldedRanges, unfoldEffect } from '@codemirror/language';
-import { fragmentRange, parseLinkTarget, type SourceSpan } from '@webobsidian/markdown-core';
+import { fragmentRange, parseLinkTarget, type SourceSpan } from '@shale/markdown-core';
 import { syntaxModel, sourceOf } from './syntaxModel';
 import { contextOf } from './renderContext';
 import { renderSourceRegion } from './sourceControls';

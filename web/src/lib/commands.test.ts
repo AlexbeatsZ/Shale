@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditorState } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import type { App } from './obsidian/runtime';
+import type { App } from './shale/runtime';
 
 // Prepared regression source only; no application, Vault or DOM is started.
 const host = vi.hoisted(() => ({
@@ -15,8 +15,8 @@ vi.mock('./activeEditor', () => ({ getActiveEditor: () => host.active,
 vi.mock('./renderContext', () => ({ contextOf: (view: object) => ({ sourcePath: host.paths.get(view) ?? '' }) }));
 vi.mock('./documents', () => ({ documents: { get: (path: string) => host.sessions.get(path) } }));
 vi.mock('./store', () => ({ useStore: { getState: () => ({ ...host.state, currentPath: () => host.state.activePath }) } }));
-vi.mock('./obsidian/editor', () => ({ Editor: class { constructor(public cm: EditorView) {} } }));
-vi.mock('./obsidian/workspace', () => ({ MarkdownView: class {} }));
+vi.mock('./shale/editor', () => ({ Editor: class { constructor(public cm: EditorView) {} } }));
+vi.mock('./shale/workspace', () => ({ MarkdownView: class {} }));
 
 import { CommandManager, commandContext, type Command, type CommandContext } from './commands';
 

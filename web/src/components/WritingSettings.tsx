@@ -24,7 +24,7 @@ export default function WritingSettings({ formatting = false }: { formatting?: b
     <h2>{formatting ? '文档格式化' : '公式与片段'}</h2>
     {error && <p role="alert">{error}</p>}
     <SettingGroup>
-      <ConfigurationFile path=".obsidian/webobsidian/writing.jsonc" desc={formatting
+      <ConfigurationFile path=".shale/writing.jsonc" desc={formatting
         ? '自定义正则、忽略路径和高级规则在配置文件中编辑。'
         : '高级公式与片段配置在此文件中编辑。'}>
         <button type="button" title="重新加载配置与规则" onClick={() => {
@@ -76,7 +76,7 @@ export default function WritingSettings({ formatting = false }: { formatting?: b
         {raw.loadSnippetsFromFile && raw.snippetsFileLocation === NATIVE_SNIPPETS_DIRECTORY && <SettingRow name="空片段文件">
           <button disabled={!settings.source} onClick={() => {
             void request('/api/writing/snippets', { method: 'POST', body: JSON.stringify({ vault: settings.source!.vault }) })
-              .then(async () => { await refreshWriting(true); await window.webobsidianDesktop?.openVaultPath(NATIVE_SNIPPETS_DIRECTORY + '/snippets.js'); })
+              .then(async () => { await refreshWriting(true); await window.shaleDesktop?.openVaultPath(NATIVE_SNIPPETS_DIRECTORY + '/snippets.js'); })
               .catch(cause => useStore.getState().notify(String(cause)));
           }}>创建并打开</button>
         </SettingRow>}

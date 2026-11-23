@@ -1,6 +1,6 @@
 import { StateEffect, type EditorState } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
-import { blockEffectTargets, type BlockEffectTarget, type MarkdownModel, type SourceSpan } from '@webobsidian/markdown-core';
+import { blockEffectTargets, type BlockEffectTarget, type MarkdownModel, type SourceSpan } from '@shale/markdown-core';
 import { syntaxModel } from '../syntaxModel';
 import { renderContext } from '../renderContext';
 import { livePreviewState } from '../renderState';

@@ -1,5 +1,5 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import type { DocumentSession, DocumentSnapshot } from '@webobsidian/markdown-core';
+import type { DocumentSession, DocumentSnapshot } from '@shale/markdown-core';
 import { documents } from './documents';
 
 const empty: DocumentSnapshot = Object.freeze({ id: '', version: 0, text: '', raw: '', revision: undefined,

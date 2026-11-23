@@ -1,4 +1,4 @@
-import { imageCaption, imageName, parseImageParameters, type ImageEmbed, type MarkdownModel, type SourceSpan } from '@webobsidian/markdown-core';
+import { imageCaption, imageName, parseImageParameters, type ImageEmbed, type MarkdownModel, type SourceSpan } from '@shale/markdown-core';
 import { bindDarkMedia } from './mediaFilter';
 
 interface MarkdownImage extends SourceSpan { alt: string; altTo: number; target: string }

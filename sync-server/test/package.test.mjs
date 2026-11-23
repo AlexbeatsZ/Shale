@@ -10,13 +10,13 @@ import { once } from 'node:events';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const metadata = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
-const output = path.resolve(process.env.WEBOBSIDIAN_SYNC_PACKAGE_DIR ?? path.join(root, 'release', metadata.version));
+const output = path.resolve(process.env.SHALE_SYNC_PACKAGE_DIR ?? path.join(root, 'release', metadata.version));
 
 for (const extension of ['zip', 'tar.gz']) {
   test(`extracted ${extension} runs outside checkout with bundled core and no installation`, async t => {
     const parent = path.join(os.tmpdir(), '.agents'); await mkdir(parent, { recursive: true });
-    const temporary = await mkdtemp(path.join(parent, 'webobsidian-extracted-server-'));
-    const folder = `webobsidian-sync-server-${metadata.version}`;
+    const temporary = await mkdtemp(path.join(parent, 'shale-extracted-server-'));
+    const folder = `shale-sync-server-${metadata.version}`;
     let child;
     let restarted;
     t.after(async () => {
@@ -24,7 +24,7 @@ for (const extension of ['zip', 'tar.gz']) {
         const exited = once(child, 'exit'); child.kill(); await exited;
       }
       await restarted?.close();
-      if (path.dirname(temporary) !== parent || !path.basename(temporary).startsWith('webobsidian-extracted-server-')) throw new Error('Unsafe extraction fixture');
+      if (path.dirname(temporary) !== parent || !path.basename(temporary).startsWith('shale-extracted-server-')) throw new Error('Unsafe extraction fixture');
       await rm(temporary, { recursive: true, force: true, maxRetries: 3 });
     });
     if (extension === 'zip' && process.platform !== 'win32') {
@@ -53,7 +53,7 @@ for (const extension of ['zip', 'tar.gz']) {
     const ready = new Promise((resolve, reject) => {
       const onData = chunk => {
         logs += chunk;
-        const match = logs.match(/listening on (127\.0\.0\.1:\d+\/webobsidian-sync\/v1)/);
+        const match = logs.match(/listening on (127\.0\.0\.1:\d+\/shale-sync\/v1)/);
         if (match) resolve('http://' + match[1] + '/');
       };
       child.stdout.on('data', onData); child.stderr.on('data', onData);
@@ -79,7 +79,7 @@ for (const extension of ['zip', 'tar.gz']) {
     const { createSyncServer } = await import(pathToFileURL(entry).href);
     restarted = await createSyncServer({ root: path.join(temporary, 'data'), token });
     await new Promise(resolve => restarted.server.listen(0, '127.0.0.1', resolve));
-    const replay = await fetch(`http://127.0.0.1:${restarted.server.address().port}/webobsidian-sync/v1/commit`, {
+    const replay = await fetch(`http://127.0.0.1:${restarted.server.address().port}/shale-sync/v1/commit`, {
       method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify(operation),
     });
     assert.equal(replay.status, 200); assert.equal((await replay.json()).revision, 1);

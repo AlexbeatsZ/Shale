@@ -5,7 +5,7 @@ vi.mock('./activeEditor', () => ({ getActiveEditor: () => null }));
 import { desktopActionCommands, runDesktopAction } from './desktopActions';
 beforeEach(() => {
   state.save.mockReset(); state.action.mockReset();
-  vi.stubGlobal('window', { webobsidianDesktop: { platform: 'darwin', runAction: state.action } });
+  vi.stubGlobal('window', { shaleDesktop: { platform: 'darwin', runAction: state.action } });
 });
 afterEach(() => vi.unstubAllGlobals());
 it('waits for document and workspace persistence before reloading', async () => {

@@ -1,11 +1,11 @@
 import { host } from './host';
 import { EditorSelection, Prec, type Extension } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
-import { analyzeMarkdown, contentTargets, extractMetadata, isGlobalContentTarget, parseLinkTarget, type MarkdownModel, type SourceSpan } from '@webobsidian/markdown-core';
+import { analyzeMarkdown, contentTargets, extractMetadata, isGlobalContentTarget, parseLinkTarget, type MarkdownModel, type SourceSpan } from '@shale/markdown-core';
 import { syntaxModel } from './syntaxModel';
 import { writingOperation } from './writing/editing';
 
-export const CONTENT_CLIPBOARD_MIME = 'application/x-webobsidian-content+json';
+export const CONTENT_CLIPBOARD_MIME = 'application/x-shale-content+json';
 const browserMime = `web ${CONTENT_CLIPBOARD_MIME}`;
 interface Payload {
   version: 1;

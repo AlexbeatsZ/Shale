@@ -227,7 +227,7 @@ try {
   await expect(page.getByRole('alert')).toHaveText('请输入有效的 HTTP(S) 网页地址');
   await open(origin);
   await expect.poll(() => evaluateGuest('document.title')).toBe('Fixture /');
-  assert.deepEqual(await evaluateGuest('[typeof require, typeof process, typeof webobsidianDesktop, window.opener === null]'),
+  assert.deepEqual(await evaluateGuest('[typeof require, typeof process, typeof shaleDesktop, window.opener === null]'),
     ['undefined', 'undefined', 'undefined', true]);
   assert.equal(await evaluateGuest(`fetch(${JSON.stringify(new URL('/healthz', page.url()).href)}, { mode: 'no-cors' }).then(() => true, () => false)`), false);
   await evaluateGuest('document.querySelector("a").click()');
@@ -278,7 +278,7 @@ try {
     name: 'local.user.js', mimeType: 'text/javascript', buffer: Buffer.from(source('File fixture', '1.0.0')),
   });
   await expect(script('File fixture')).toBeVisible();
-  const request = (action, payload) => page.evaluate(({ action, payload }) => window.webobsidianDesktop.userscripts.request(action, payload), { action, payload });
+  const request = (action, payload) => page.evaluate(({ action, payload }) => window.shaleDesktop.userscripts.request(action, payload), { action, payload });
   const fileId = (await request('list')).scripts.find(script => script.metadata.name === 'File fixture').id;
   await request('set-values', { id: fileId, values: { fixture: 'erase on uninstall' } });
   await script('File fixture').getByRole('button', { name: '卸载', exact: true }).click();

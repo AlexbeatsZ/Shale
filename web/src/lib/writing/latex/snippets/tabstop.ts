@@ -2,7 +2,7 @@
 import { ChangeDesc, EditorSelection, SelectionRange } from "@codemirror/state";
 import { Decoration, type DecorationSet, EditorView, WidgetType } from "@codemirror/view";
 import { resetCursorBlink } from "../utils/editor_utils";
-import { createElement } from "../editor_extensions/obsidian_utils";
+import { createElement } from "../editor_extensions/shale_utils";
 import { FIELD_MARKER_CLASS } from "./codemirror/tabstops_state_field";
 
 const LATEX_SUITE_TABSTOP_DECO_CLASS = "latex-suite-snippet-placeholder";

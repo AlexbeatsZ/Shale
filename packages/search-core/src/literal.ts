@@ -1,6 +1,6 @@
 /**
- * Fuzzy search — port of Obsidian's prepareQuery/fuzzySearch behaviour
- * (docs/obsidian-desktop-internals.md §9) so suggester ranking matches.
+ * Fuzzy search — port of Shale's prepareQuery/fuzzySearch behaviour
+ * (docs/shale-desktop-internals.md §9) so suggester ranking matches.
  *
  * Score: 0 is perfect, more negative is worse:
  *   score = −max(0, numRanges − 1)        // fragmentation

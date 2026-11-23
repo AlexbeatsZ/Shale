@@ -1,9 +1,9 @@
 {
-  "name": "@webobsidian/sync-server",
-  "version": "0.2.0",
+  "name": "@shale/sync-server",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Standalone WebObsidian file synchronization server",
+  "description": "Standalone Shale file synchronization server",
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test test/server.test.mjs test/cli.test.mjs test/backup.test.mjs",

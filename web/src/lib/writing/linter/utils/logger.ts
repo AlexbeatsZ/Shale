@@ -2,7 +2,7 @@
 import log from 'loglevel';
 import {getTextInLanguage} from '../lang/helpers';
 
-const logPrefix: string = '[Obsidian Linter]';
+const logPrefix: string = '[Shale Linter]';
 const timingInfo = new Map<string, number>();
 let collectLogs = false;
 

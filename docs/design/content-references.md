@@ -82,7 +82,7 @@ Callout 的按钮与标题行的公式 `</>` 共用同一个控件。代码块�
 
 ## AI 引用(MCP)
 
-AI 通过 `obsidian_find_targets` 查询真实 ID 后写 `[[^id]]`/`![[^id]]`,不猜 ID。新公式可直接写语义 ID
+AI 通过 `shale_find_targets` 查询真实 ID 后写 `[[^id]]`/`![[^id]]`,不猜 ID。新公式可直接写语义 ID
 (`$$ ^eq-mass-energy`),无需随机串;提议修改时服务端校验新 ID 全库唯一且挂在对应结构上。详见 native-mcp.md。
 
 ## 验证边界

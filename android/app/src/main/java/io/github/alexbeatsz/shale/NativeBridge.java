@@ -1,4 +1,4 @@
-package io.github.alexbeatsz.webobsidian;
+package io.github.alexbeatsz.shale;
 
 import android.app.Activity;
 import android.content.ClipboardManager;
@@ -59,7 +59,7 @@ final class NativeBridge {
                 }
             }
         });
-        view.postWebMessage(new WebMessage("webobsidian-host", new WebMessagePort[] { ports[1] }), Uri.parse(origin));
+        view.postWebMessage(new WebMessage("shale-host", new WebMessagePort[] { ports[1] }), Uri.parse(origin));
     }
 
     void completeExport(int result, Intent data) {
@@ -76,7 +76,7 @@ final class NativeBridge {
                 output.flush();
                 activity.runOnUiThread(() -> { exportBytes = null; reply(source, id, true, null); });
             } catch (Exception error) { activity.runOnUiThread(() -> { exportBytes = null; reply(source, id, null, error.getMessage()); }); }
-        }, "WebObsidian-Export").start();
+        }, "Shale-Export").start();
     }
 
     private void reply(WebMessagePort source, int id, Object value, String error) {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { extractMetadata } from '@webobsidian/markdown-core';
+import { extractMetadata } from '@shale/markdown-core';
 import { useStore } from '../lib/store';
 import { api, type NoteMatches } from '../lib/api';
 import { sharedApp } from '../lib/plugins';

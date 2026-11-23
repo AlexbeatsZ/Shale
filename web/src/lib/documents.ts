@@ -1,4 +1,4 @@
-import { DocumentSession, type DocumentSnapshot } from '@webobsidian/markdown-core';
+import { DocumentSession, type DocumentSnapshot } from '@shale/markdown-core';
 import { api } from './api';
 import { WorkspaceDocumentSession } from './tags/folderSession';
 

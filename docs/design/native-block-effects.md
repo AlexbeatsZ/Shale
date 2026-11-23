@@ -35,7 +35,7 @@ This is a deliberately partial query implementation: one search word, tag includ
 exclude filters (including descendants), and a relative `path:` token. Path searches
 retain the application's existing tokenization/fuzzy/prefix semantics; the UI says
 so. Multiword, phrase, OR/grouping, regex and property searches are explicitly
-unsupported rather than silently executed with different meanings. Full Obsidian
+unsupported rather than silently executed with different meanings. Full Shale
 query compatibility remains open. Broad matches must be capped with a visible
 truncation notice, not synchronously expanded into an unbounded DOM.
 
@@ -66,8 +66,8 @@ the source ranges and quote prefixes remain in the shared model.
 
 1. Reuse the command/template Module's `vaultConfiguration.ts` for UTF-8 JSONC and
    relative asset reads, Vault identity, path confinement and revision handling.
-   Blocks live in `.obsidian/webobsidian/blocks/blocks.jsonc`. Automation lives in
-   `.obsidian/webobsidian/automation.jsonc`; menu files keep their existing folder.
+   Blocks live in `.shale/blocks/blocks.jsonc`. Automation lives in
+   `.shale/automation.jsonc`; menu files keep their existing folder.
 2. Extend the one Lezer grammar with a standalone marker node. Derive its next
    sibling and parent/source ranges from the existing immutable MarkdownModel;
    cache discovery and list hierarchy there. Exclude code, YAML, math/comments.

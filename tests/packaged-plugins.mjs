@@ -32,7 +32,7 @@ for (const [target, source] of [
 const temp = await fs.mkdtemp(path.join(base, 'meta-obsidian-plugin-package-')),
   vault = path.join(temp, 'vault'),
   data = path.join(temp, 'data');
-const pluginDir = path.join(vault, '.obsidian/plugins/fixture');
+const pluginDir = path.join(vault, '.shale/plugins/fixture');
 await fs.mkdir(pluginDir, { recursive: true });
 await fs.mkdir(data);
 await fs.writeFile(
@@ -40,7 +40,7 @@ await fs.writeFile(
   '# Plugin acceptance\n\nplain\n\n```fixture\nhello\n```\n\nend'
 );
 await fs.writeFile(
-  path.join(vault, '.obsidian/community-plugins.json'),
+  path.join(vault, '.shale/community-plugins.json'),
   '["fixture"]'
 );
 await fs.writeFile(
@@ -49,7 +49,7 @@ await fs.writeFile(
 );
 await fs.writeFile(
   path.join(pluginDir, 'main.js'),
-  `const {Plugin}=require('obsidian');module.exports=class extends Plugin {async onload(){const data=await this.loadData();const el=document.createElement('div');el.id='plugin-loaded';el.textContent=data?.value||'initial';document.body.append(el);this.register(()=>el.remove());this.addCommand({id:'persist',name:'Persist fixture',callback:()=>this.saveData({value:'persisted'})});this.registerMarkdownCodeBlockProcessor('fixture',(source,el)=>el.textContent='RESULT:'+source.trim());this.addCommand({id:'edit',name:'Edit fixture',editorCallback:ed=>ed.replaceSelection('PLUGIN')});}}`
+  `const {Plugin}=require('shale');module.exports=class extends Plugin {async onload(){const data=await this.loadData();const el=document.createElement('div');el.id='plugin-loaded';el.textContent=data?.value||'initial';document.body.append(el);this.register(()=>el.remove());this.addCommand({id:'persist',name:'Persist fixture',callback:()=>this.saveData({value:'persisted'})});this.registerMarkdownCodeBlockProcessor('fixture',(source,el)=>el.textContent='RESULT:'+source.trim());this.addCommand({id:'edit',name:'Edit fixture',editorCallback:ed=>ed.replaceSelection('PLUGIN')});}}`
 );
 await fs.writeFile(
   path.join(data, 'uistate.json'),
@@ -105,7 +105,7 @@ try {
       'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
     headless: true,
   });
-  const page = await browser.newPage({ userAgent: 'WebObsidianDesktop plugin-renderer-contract' });
+  const page = await browser.newPage({ userAgent: 'ShaleDesktop plugin-renderer-contract' });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.route('**/favicon.ico', (r) => r.fulfill({ status: 204 }));
@@ -144,7 +144,7 @@ try {
   assert.deepEqual(
     JSON.parse(
       await fs.readFile(
-        path.join(vault, '.obsidian/community-plugins.json'),
+        path.join(vault, '.shale/community-plugins.json'),
         'utf8'
       )
     ),

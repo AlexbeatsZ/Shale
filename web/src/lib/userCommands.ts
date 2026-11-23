@@ -1,7 +1,7 @@
 import moment from 'moment';
-import type { App } from './obsidian/runtime';
+import type { App } from './shale/runtime';
 import { compileJavascript } from './javascript/execute';
-import { promptInput, chooseInput } from './obsidian/ui';
+import { promptInput, chooseInput } from './shale/ui';
 import { type Command, type CommandContext } from './commands';
 import { request } from './api';
 import type { AutomationSettings } from '../../../server/src/contracts/automation';
@@ -12,7 +12,7 @@ export const readAutomation = () => request<AutomationConfiguration>('/api/nativ
 export const importAutomation = (source: VaultConfigurationSource) => request<AutomationConfiguration>('/api/native-features/automation/import', { method: 'POST', body: JSON.stringify(source) });
 import { useStore } from './store';
 import { Templates } from './templates';
-import { normalizePath } from './obsidian/vault';
+import { normalizePath } from './shale/vault';
 
 const objectArgs = (value: unknown): Record<string, unknown> => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('指令参数必须是对象');
@@ -111,7 +111,7 @@ export class Automation {
       const existing = this.loaded.get(definition.id);
       if (existing?.source === source) { result.set(definition.id, existing); continue; }
       const execute = compileJavascript(definition.code,
-        ['app', 'args', 'context', 'signal', 'onCleanup', 'prompt', 'choose', 'execute'], `webobsidian-command/${encodeURIComponent(definition.id)}`);
+        ['app', 'args', 'context', 'signal', 'onCleanup', 'prompt', 'choose', 'execute'], `shale-command/${encodeURIComponent(definition.id)}`);
       const abort = new AbortController();
       const command: Command = { id: definition.id, name: definition.name, run: async (args, context) => {
         const controller = new AbortController(), cleanups: (() => void)[] = [];

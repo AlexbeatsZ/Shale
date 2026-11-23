@@ -50,7 +50,7 @@ export default function App() {
   const toast = useStore((s) => s.toast);
   const [ui, setUi] = useState<UiSettings>(defaultUiSettings);
   const [fontPreview, setFontPreview] = useState<number | null>(null);
-  const theme = ui.theme === 'obsidian-dark' ? 'theme-dark' : 'theme-light';
+  const theme = ui.theme === 'shale-dark' ? 'theme-dark' : 'theme-light';
 
   useEffect(() => {
     let active = true, changed = false;
@@ -156,7 +156,7 @@ export default function App() {
           stopMenus();
           stopMenus = initializeNativeMenus();
           window.dispatchEvent(new Event('vault-changed'));
-          void window.webobsidianDesktop?.userscripts?.request('list').catch(console.error);
+          void window.shaleDesktop?.userscripts?.request('list').catch(console.error);
           void readNativeFeatures().then(value => { attachmentDialogHost.initialOptions = value.attachments; }).catch(console.error);
           loadTree();
           notifyIndexChanged();
@@ -166,9 +166,9 @@ export default function App() {
         } else if (msg.type === 'automation-changed') {
           void sharedApp.automation.reload().catch(error => useStore.getState().notify(String(error)));
         } else if (msg.type === 'vault-configuration-changed') {
-          if (msg.path === '.obsidian/webobsidian/hotkeys.jsonc') void refreshHotkeys();
+          if (msg.path === '.shale/hotkeys.jsonc') void refreshHotkeys();
           writingFileChanged(msg.path);
-          if (msg.path === '.obsidian/webobsidian/automation.jsonc')
+          if (msg.path === '.shale/automation.jsonc')
             void sharedApp.automation.reload().catch(error => useStore.getState().notify(String(error)));
           window.dispatchEvent(new CustomEvent('vault-configuration-changed', { detail: { path: msg.path, event: msg.event } }));
         } else if (msg.type === 'index') {
@@ -273,20 +273,20 @@ export default function App() {
       event.preventDefault();
     };
     const serverStopped = () => useStore.getState().notify('本地服务已停止，请重新启动应用。当前未保存的编辑仍保留在页面中。', 0);
-    window.addEventListener('webobsidian-back', back);
-    window.addEventListener('webobsidian-server-stopped', serverStopped);
+    window.addEventListener('shale-back', back);
+    window.addEventListener('shale-server-stopped', serverStopped);
     const hidden = () => { if (document.visibilityState === 'hidden') save(); };
     window.addEventListener('desktop-command', command);
-    window.addEventListener('webobsidian-background', save);
+    window.addEventListener('shale-background', save);
     window.addEventListener('pagehide', save);
     window.addEventListener('beforeunload', beforeUnload);
     window.addEventListener('desktop-close-cancelled', cancelClose);
     document.addEventListener('visibilitychange', hidden);
     return () => {
-      window.removeEventListener('webobsidian-back', back);
-      window.removeEventListener('webobsidian-server-stopped', serverStopped);
+      window.removeEventListener('shale-back', back);
+      window.removeEventListener('shale-server-stopped', serverStopped);
       window.removeEventListener('desktop-command', command);
-      window.removeEventListener('webobsidian-background', save);
+      window.removeEventListener('shale-background', save);
       window.removeEventListener('pagehide', save);
       window.removeEventListener('beforeunload', beforeUnload);
       window.removeEventListener('desktop-close-cancelled', cancelClose);
@@ -302,7 +302,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePath]);
 
-  // Mobile: edge-swipe to open/close the drawers (Obsidian Mobile gesture).
+  // Mobile: edge-swipe to open/close the drawers (Shale Mobile gesture).
   useEffect(() => {
     if (!isMobile) return;
     let gesture: { id: number; x: number; y: number; time: number; open: 'left' | 'right' | null; edge: 'left' | 'right' | null; horizontal: boolean } | undefined;

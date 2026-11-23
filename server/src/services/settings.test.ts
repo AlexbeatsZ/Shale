@@ -36,12 +36,12 @@ afterEach(async () => {
 describe('document appearance in existing UI settings', () => {
   it('loads older settings with compatible document defaults without rewriting the file', async () => {
     const initial = await settings.getSettings();
-    const legacy = { ...initial, ui: { theme: 'obsidian-dark', defaultView: 'reading' } };
+    const legacy = { ...initial, ui: { theme: 'shale-dark', defaultView: 'reading' } };
     const original = JSON.stringify(legacy);
     await fs.writeFile(filename, original);
     vi.resetModules();
     settings = await import('./settings');
-    expect((await settings.getSettings()).ui).toMatchObject({ fontTextSize: 18, fileLineWidth: 700, theme: 'obsidian-dark', defaultView: 'reading' });
+    expect((await settings.getSettings()).ui).toMatchObject({ fontTextSize: 18, fileLineWidth: 700, theme: 'shale-dark', defaultView: 'reading' });
     expect(await fs.readFile(filename, 'utf8')).toBe(original);
   });
 
@@ -60,10 +60,10 @@ describe('document appearance in existing UI settings', () => {
     await settings.getSettings();
     await Promise.all([
       settings.updateSettings(draft => { draft.ui.fontTextSize = 24; }),
-      settings.updateSettings(draft => { draft.ui.fileLineWidth = 1100; draft.ui.theme = 'obsidian-dark'; }),
+      settings.updateSettings(draft => { draft.ui.fileLineWidth = 1100; draft.ui.theme = 'shale-dark'; }),
     ]);
     const persisted = JSON.parse(await fs.readFile(filename, 'utf8'));
-    expect(persisted.ui).toMatchObject({ fontTextSize: 24, fileLineWidth: 1100, theme: 'obsidian-dark', defaultView: 'live' });
+    expect(persisted.ui).toMatchObject({ fontTextSize: 24, fileLineWidth: 1100, theme: 'shale-dark', defaultView: 'live' });
     vi.resetModules(); settings = await import('./settings');
     expect((await settings.loadSettings()).ui).toEqual(persisted.ui);
   });

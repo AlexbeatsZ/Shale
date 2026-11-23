@@ -1,6 +1,6 @@
 import { getTextInLanguage } from './lang/helpers';
 
-/** Rule metadata only. React owns settings; no Obsidian widgets or plugin state. */
+/** Rule metadata only. React owns settings; no Shale widgets or plugin state. */
 export class Option {
   ruleAlias = '';
   hidden = false;

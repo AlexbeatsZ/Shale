@@ -7,7 +7,7 @@ service own text/history and rendering. No original plugin instance is loaded.
 `latex/` adapts artisticat1/obsidian-latex-suite tag **1.14.0** (MIT), retaining
 snippet semantics, TeX grammar, bracket/conceal algorithms and defaults. It
 replaces whole-document/background parsing with the host Markdown model and
-formula-local trees, replaces Obsidian services with direct host calls, removes
+formula-local trees, replaces Shale services with direct host calls, removes
 upstream Vim/matrix/Excalidraw integration (native Vim is owned by nativeVim.ts), and attaches tabstop restoration to session
 history. The original license is in `latex/LICENSE`.
 
@@ -17,7 +17,7 @@ the same LaTeX template compiler as snippets; legacy escaping is converted once
 by the server importer and is absent from the runtime rule runner.
 The positional AST vocabulary is adapted from the host model; there is no mdast
 Markdown parser or independent parser cache. Option objects contain metadata,
-not Obsidian widgets. The dictionary loads only when correction is enabled.
+not Shale widgets. The dictionary loads only when correction is enabled.
 The original license is in `linter/LICENSE`.
 
 Upstream algorithms were written with different compiler settings; legacy files

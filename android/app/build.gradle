@@ -10,11 +10,11 @@ def tabletSigning = new Properties()
 if (tabletSigningFile.exists()) tabletSigningFile.withInputStream { tabletSigning.load(it) }
 
 android {
-    namespace 'io.github.alexbeatsz.webobsidian'
+    namespace 'io.github.alexbeatsz.shale'
     compileSdk 35
     ndkVersion '28.2.13676358'
     defaultConfig {
-        applicationId 'io.github.alexbeatsz.webobsidian'
+        applicationId 'io.github.alexbeatsz.shale'
         minSdk 30
         targetSdk 35
         versionCode androidVersion.versionCode.toInteger()

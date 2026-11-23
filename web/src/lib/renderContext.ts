@@ -1,7 +1,7 @@
 import { Facet } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 import type { MenuContext } from './configuredMenus/types';
-import type { DocumentSession, EquationContext, FragmentRange, MarkdownModel } from '@webobsidian/markdown-core';
+import type { DocumentSession, EquationContext, FragmentRange, MarkdownModel } from '@shale/markdown-core';
 import type { LinkIntent, NavigationLocation } from './fragmentNavigation';
 
 export interface RenderMenuItem {

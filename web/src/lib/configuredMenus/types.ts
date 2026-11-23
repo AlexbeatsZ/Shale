@@ -1,6 +1,6 @@
 import type { ContextMenuItem } from '../store';
 
-/** The existing menu model, with metadata also retained by the Obsidian adapter. */
+/** The existing menu model, with metadata also retained by the Shale adapter. */
 export interface ConfiguredMenuItem extends Omit<ContextMenuItem, 'submenu' | 'onClick'> {
   id?: string;
   disabled?: boolean;

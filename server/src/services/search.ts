@@ -4,7 +4,7 @@ import { getSettings } from './settings.js';
 import { INDEX_FILE, config, runtimeCapabilities } from '../config.js';
 import { readFileText } from './vaultFile.js';
 import { catalog as activeCatalog, VaultCatalog, CORE_LIST_PROPS, CATALOG_SCHEMA_VERSION } from './catalog.js';
-import { matchesTagFilters } from '@webobsidian/search-core';
+import { matchesTagFilters } from '@shale/search-core';
 import {
   findText,
   phoneticTokens,
@@ -13,9 +13,9 @@ import {
   SEARCH_VERSION,
   parseSearchQuery,
   type SearchOptions,
-} from '@webobsidian/search-core';
+} from '@shale/search-core';
 import { parseNote, type ParsedNote } from './markdown.js';
-import { SourceDocument } from '@webobsidian/markdown-core';
+import { SourceDocument } from '@shale/markdown-core';
 import type { SearchHit, MatchContext, NoteMatches } from '../contracts.js';
 import type { SearchCache } from './vaultindex.js';
 export type { SearchHit, MatchContext, NoteMatches } from '../contracts.js';
@@ -24,7 +24,7 @@ export type { SearchHit, MatchContext, NoteMatches } from '../contracts.js';
 export const supportsSearchCache = () => runtimeCapabilities.searchCache;
 
 /**
- * QMD — the WebObsidian search engine.
+ * QMD — the Shale search engine.
  * A thin, opinionated layer over MiniSearch giving fielded, fuzzy, prefix and
  * boolean queries over the vault's markdown, with incremental updates and a
  * persisted on-disk index for fast cold starts. (PRD FR-7)
@@ -249,7 +249,7 @@ export class QmdEngine {
   }
 
   /** Read a note's body and extract every occurrence of `terms`, grouped into
-   *  context windows (Obsidian-style per-note match list). Reads from disk so
+   *  context windows (Shale-style per-note match list). Reads from disk so
    *  it's called lazily for the notes actually rendered. */
   async matchesFor(
     rel: string,
@@ -356,7 +356,7 @@ export class QmdEngine {
   allProperties(): { key: string; type: string; count: number }[] {
     const count = new Map<string, number>();
     const types = new Map<string, Map<string, number>>();
-    // Always offer Obsidian's built-in List properties, even if unused yet.
+    // Always offer Shale's built-in List properties, even if unused yet.
     for (const k of CORE_LIST_PROPS) {
       count.set(k, 0);
       types.set(k, new Map([['list', 1]]));

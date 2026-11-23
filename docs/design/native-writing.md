@@ -5,7 +5,7 @@
 LaTeX Suite 1.14.0 and Linter 1.31.2 supply the behavior baseline. Snippets,
 formula input/presentation and document formatting are native features, sharing
 the existing document session, source changes, syntax model and MathJax service.
-Do not load the original plugins as well. Preserve their files and Obsidian
+Do not load the original plugins as well. Preserve their files and Shale
 enablement. Preserve upstream MIT attribution for adapted source.
 
 Keep the native snippet directory or an explicitly configured source authoritative.
@@ -306,7 +306,7 @@ is claimed, and no new desktop executable was built.
 ## 2026-10-23 configuration file settings
 
 Advanced writing settings now use the current Vault's
-`.obsidian/webobsidian/writing.jsonc` through the existing VaultConfiguration IO.
+`.shale/writing.jsonc` through the existing VaultConfiguration IO.
 The file owns version/migration/latex/linter/hotkeys; `/api/writing` returns its
 source/revision along with the existing effective math profile. Missing native
 files use native defaults; the former app/plugin fallback has been removed.
@@ -327,7 +327,7 @@ This batch has source/diff review only, without types/build/tests/runtime.
 
 ## Native snippet directory (2026-10-23 follow-up)
 
-The application owns `.obsidian/webobsidian/snippets/` under its existing native
+The application owns `.shale/snippets/` under its existing native
 configuration root. The default source is this directory, with zero snippets when
 it is absent. Startup neither creates the directory nor copies upstream examples
 or the user's old personal library. The unused upstream example corpus was removed.

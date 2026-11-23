@@ -110,7 +110,7 @@ That follow-up used source/Git diff inspection only.
 
 ## Ownership and dependency direction
 
-- The existing `obsidian/markdown.ts` code-block host owns selection, decoration,
+- The existing `shale/markdown.ts` code-block host owns selection, decoration,
   mounting, source controls and destruction for native and plugin processors.
   Native registration has a predicate so ordinary JS never takes a replacement
   or a second highlighting path. One registry, no second parser or watcher.

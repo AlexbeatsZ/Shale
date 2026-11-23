@@ -75,13 +75,13 @@ export default class YamlTitle extends RuleBuilder<YamlTitleOptions> {
       new ExampleBuilder({
         description: 'Adds a header with the title from heading when `mode = \'First H1 or Filename if H1 Missing\'`.',
         before: dedent`
-          # Obsidian
+          # Shale
         `,
         after: dedent`
           ---
-          title: Obsidian
+          title: Shale
           ---
-          # Obsidian
+          # Shale
         `,
         options: {
           fileName: 'Filename',

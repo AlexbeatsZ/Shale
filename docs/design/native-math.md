@@ -21,15 +21,15 @@ and typesets completed TeX. Do not merge these parsers or derive source from DOM
 ## User configuration
 
 `/api/writing` includes the effective math configuration and its Vault JSONC
-source/revision. The source is `.obsidian/webobsidian/math.jsonc`. The existing
+source/revision. The source is `.shale/math.jsonc`. The existing
 Vault-configuration/text-file implementation supplies JSONC handling, create-only
 writes, compare-and-swap revisions, path confinement and Vault identity checks.
 No second settings store, file watcher or command manager is added.
-The existing watcher traverses only `.obsidian/webobsidian` within the otherwise
-ignored Obsidian directory. Its `vault-configuration-changed` notification bypasses
+The existing watcher traverses only `.shale` within the otherwise
+ignored Shale directory. Its `vault-configuration-changed` notification bypasses
 note indexing and tree refresh, and is available to other native configuration
 consumers. Preamble files outside hidden directories use existing file events;
-hidden preambles should live under `.obsidian/webobsidian` for automatic refresh.
+hidden preambles should live under `.shale` for automatic refresh.
 
 The source contains package choices/options, one Vault-relative preamble path
 and optional inline TeX definitions. File definitions run first, inline definitions
@@ -92,7 +92,7 @@ presentation data, so a plain paragraph edit does not rebuild every table.
 
 A display formula closes at the first unescaped `$$` outside TeX braces. A dollar
 that just closed a formula does not block the next opener, so back-to-back
-`$$a$$$$b$$` is two formulas, matching Obsidian. The empty snippet `$$$$` at an
+`$$a$$$$b$$` is two formulas, matching Shale. The empty snippet `$$$$` at an
 opener stays one empty display. Notes should still put each display formula on
 its own line; only a standalone closing line can carry an `^eq-` ID.
 

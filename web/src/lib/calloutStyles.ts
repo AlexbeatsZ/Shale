@@ -4,7 +4,7 @@ import { iconPaths } from './icons';
 import { refreshBlockViews } from './blocks/model';
 
 /**
- * Callout color/icon resolved through the Obsidian CSS contract:
+ * Callout color/icon resolved through the Shale CSS contract:
  *
  *   .callout[data-callout="definition"] { --callout-color: 139, 92, 246; --callout-icon: lucide-book-open; }
  *
@@ -68,7 +68,7 @@ function resolve(type: string): CalloutStyle {
   return { color: color ?? base.color, icon: icon ?? base.icon };
 }
 
-/** Accepts Obsidian's `r, g, b` triplet and any CSS color (`rgb(...)`, `#hex`, names). */
+/** Accepts Shale's `r, g, b` triplet and any CSS color (`rgb(...)`, `#hex`, names). */
 export function rgbTriplet(value: string): string | undefined {
   const v = value.trim();
   if (!v) return undefined;

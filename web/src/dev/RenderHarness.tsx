@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { DocumentSession, analyzeMarkdown, fragmentRange, parseLinkTarget, isGlobalContentTarget, contentTargets, type SourceChange } from '@webobsidian/markdown-core';
+import { DocumentSession, analyzeMarkdown, fragmentRange, parseLinkTarget, isGlobalContentTarget, contentTargets, type SourceChange } from '@shale/markdown-core';
 import { EditorView } from '@codemirror/view';
 import { useStore } from '../lib/store';
 import { preparePrintDocument } from '../lib/printDocument';
@@ -12,7 +12,7 @@ import { configureDebug } from '../lib/debug';
 import { StateEffect } from '@codemirror/state';
 import { ViewPlugin } from '@codemirror/view';
 import { navigateTo, captureLocation, type NavigationRequest, type NavigationLocation } from '../lib/fragmentNavigation';
-import { equationContext } from '@webobsidian/markdown-core';
+import { equationContext } from '@shale/markdown-core';
 import Editor from '../components/Editor';
 import RightSidebar from '../components/RightSidebar';
 

@@ -41,7 +41,7 @@ Markdown 图片使用相同属性格式。
 
 ## 自定义属性
 
-在 Vault 的 `.obsidian/webobsidian/embeds.css` 中定义 `.embed-property-NAME`。
+在 Vault 的 `.shale/embeds.css` 中定义 `.embed-property-NAME`。
 应用会加载此文件，并把发现的名称加入图片属性菜单。保存文件后自动更新。
 
 ```css

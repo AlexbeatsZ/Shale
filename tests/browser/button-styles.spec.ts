@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
     const load = (path: string) => import(path);
     const [React, ReactDOM, { ButtonComponent, SearchComponent }, { default: TagOperationsHost }, { ItemView }] = await Promise.all([
       load('/node_modules/.vite/deps/react.js'), load('/node_modules/.vite/deps/react-dom_client.js'),
-      load('/src/lib/obsidian/ui.ts'), load('/src/components/TagOperationsHost.tsx'), load('/src/lib/obsidian/workspace.ts'),
+      load('/src/lib/shale/ui.ts'), load('/src/components/TagOperationsHost.tsx'), load('/src/lib/shale/workspace.ts'),
     ]);
     document.getElementById('root')!.hidden = true;
     const host = document.createElement('div');
@@ -78,7 +78,7 @@ test('secondary/primary/warning buttons share focus and disabled handling withou
 test('ordinary prompt and tag dialog actions reuse the same button family', async ({ page }) => {
   await page.evaluate(async () => {
     const load = (path: string) => import(path);
-    const { promptInput } = await load('/src/lib/obsidian/ui.ts');
+    const { promptInput } = await load('/src/lib/shale/ui.ts');
     void promptInput({}, 'Fixture prompt', '').catch(() => {});
   });
   await expect(page.getByRole('button', { name: '确定', exact: true })).toHaveClass(/\bbtn\b/);

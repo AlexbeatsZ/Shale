@@ -1,6 +1,6 @@
 // @ts-nocheck -- adapted upstream rule implementation; native boundaries are type checked.
 import * as v from "valibot"
-import { mathBaseArguments } from '@webobsidian/markdown-core';
+import { mathBaseArguments } from '@shale/markdown-core';
 const MacroArgsSchema = v.object({
 	name: v.string(),
 	arguments: v.optional(v.array(v.number())),
@@ -50,7 +50,7 @@ export type MathlessMacroArgs = v.InferOutput<typeof mathlessArgsSchema>;
  */
 const mathFonts = [
 	"label", // labels don't work properly in mathjax. See https://physics.meta.stackexchange.com/questions/5396/using-labels-with-mathjax,
-	// but labels can't be overwritten and everytime the equation is changed the label gets recompiled and the reference is lost till obsidian reloads itself.
+	// but labels can't be overwritten and everytime the equation is changed the label gets recompiled and the reference is lost till shale reloads itself.
 	"ref", // math is allowed for some reason
 	"eqref", // math is allowed for some reason
 	"operatorname",

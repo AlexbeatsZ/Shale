@@ -1,10 +1,10 @@
 import { ViewPlugin, type EditorView, type ViewUpdate } from '@codemirror/view';
-import { equationContext, extractMetadata, footnotes, footnoteFragment, fragmentRange, isGlobalContentTarget, parseLinkTarget } from '@webobsidian/markdown-core';
+import { equationContext, extractMetadata, footnotes, footnoteFragment, fragmentRange, isGlobalContentTarget, parseLinkTarget } from '@shale/markdown-core';
 import { contextOf, nonExecutingContext, renderContext, type RenderContext } from './renderContext';
 import { followRenderedLink, linkIntent } from './fragmentNavigation';
 import { syntaxModel, sourceOf } from './syntaxModel';
 import { livePreviewReadonly } from './renderState';
-import { RenderLifetime } from './obsidian/renderLifetime';
+import { RenderLifetime } from './shale/renderLifetime';
 
 export function bindRenderedLink(anchor: HTMLAnchorElement, view: EditorView, target: string, footnote = false) {
   anchor.href = target; anchor.dataset.previewLink = target;
@@ -30,7 +30,7 @@ export function mountLinkPreview(host: HTMLElement, context: RenderContext, targ
   const body = document.createElement('div'); body.className = 'cm-link-preview-body';
   host.append(title, body); body.textContent = '加载预览…';
   lifetime.register(() => { pending?.unload(); active?.unload(); delete body.dataset.renderPending; });
-  const mount = (source: string, from: number, model: ReturnType<typeof import('@webobsidian/markdown-core')['analyzeMarkdown']>, scoped: RenderContext) => {
+  const mount = (source: string, from: number, model: ReturnType<typeof import('@shale/markdown-core')['analyzeMarkdown']>, scoped: RenderContext) => {
     if (lifetime.signal.aborted) return;
     pending?.unload();
     const render = new RenderLifetime(); void render.load(); pending = render;

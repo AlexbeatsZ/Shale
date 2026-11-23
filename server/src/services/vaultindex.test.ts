@@ -46,7 +46,7 @@ it('rebuilds searchable Android notes without loading or overwriting the desktop
   const cacheFile = path.join(state.root, '.cache', 'qmd-index.json');
   const previous = await fs.readFile(cacheFile, 'utf8');
 
-  vi.stubEnv('WEBOBSIDIAN_PLATFORM', 'android');
+  vi.stubEnv('SHALE_PLATFORM', 'android');
   await write('a.md', 'delta body');
   state.parsed = [];
   expect(await loadSearchCache()).toBeUndefined();

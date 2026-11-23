@@ -16,7 +16,7 @@ export default class ParagraphBlankLines extends RuleBuilder<ParagraphBlankLines
       nameKey: 'rules.paragraph-blank-lines.name',
       descriptionKey: 'rules.paragraph-blank-lines.description',
       type: RuleType.SPACING,
-      ruleIgnoreTypes: [IgnoreTypes.obsidianMultiLineComments, IgnoreTypes.yaml, IgnoreTypes.table],
+      ruleIgnoreTypes: [IgnoreTypes.shaleMultiLineComments, IgnoreTypes.yaml, IgnoreTypes.table],
     });
   }
   get OptionsClass(): new () => ParagraphBlankLinesOptions {

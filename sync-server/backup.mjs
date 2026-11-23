@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir, stat, link, copyFile, rm, open, rename, readdir } from 'node:fs/promises';
 
 // Connection files carry access tokens; they never enter Git history.
-const CREDENTIAL_PATHS = new Set(['.obsidian/webobsidian/sync.jsonc', '.obsidian/webobsidian/git.jsonc']);
+const CREDENTIAL_PATHS = new Set(['.shale/sync.jsonc', '.shale/git.jsonc', '.obsidian/webobsidian/sync.jsonc', '.obsidian/webobsidian/git.jsonc']);
 const RULE_FILE = /(?:^|\/)\.git(?:ignore|attributes)$/;
 const LIST_LIMIT = 50;
 
@@ -12,7 +12,7 @@ const invalid = message => Object.assign(new Error(message), { code: 'invalid_ba
 
 export function parseBackupOptions(value, dataRoot) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw invalid('Invalid backup configuration');
-  const { repository, remote, branch = 'main', intervalSec = 600, authorName = 'WebObsidian Sync', authorEmail = 'sync@localhost' } = value;
+  const { repository, remote, branch = 'main', intervalSec = 600, authorName = 'Shale Sync', authorEmail = 'sync@localhost' } = value;
   if (typeof repository !== 'string' || !path.isAbsolute(repository)) throw invalid('backup.repository must be an absolute path');
   const repo = path.resolve(repository), data = path.resolve(dataRoot);
   if (repo === data || repo.startsWith(data + path.sep) || data.startsWith(repo + path.sep)) throw invalid('backup.repository must be outside dataDir');
@@ -50,7 +50,7 @@ async function exists(file) {
 }
 
 async function lock(gitDir) {
-  const file = path.join(gitDir, 'webobsidian-backup.lock');
+  const file = path.join(gitDir, 'shale-backup.lock');
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       const handle = await open(file, 'wx');
@@ -149,10 +149,10 @@ export async function runBackup({ dataRoot, options, dryRun = false }) {
   await ensureRepository(options);
   const gitDir = path.join(repository, '.git');
   const release = await lock(gitDir);
-  const index = path.join(gitDir, `webobsidian-backup-${process.pid}.index`);
-  const scratch = path.join(gitDir, `webobsidian-backup-${process.pid}`);
+  const index = path.join(gitDir, `shale-backup-${process.pid}.index`);
+  const scratch = path.join(gitDir, `shale-backup-${process.pid}`);
   try {
-    const cacheFile = path.join(gitDir, 'webobsidian-backup.json');
+    const cacheFile = path.join(gitDir, 'shale-backup.json');
     const cache = JSON.parse(await readFile(cacheFile, 'utf8').catch(() => '{}'));
     cache.blobs ??= {}; cache.sizes ??= {};
     const manifest = await readManifest(dataRoot);
@@ -272,8 +272,8 @@ export function startBackupSchedule({ dataRoot, options, log = console }) {
       if (closed) return;
       try {
         const result = await runBackup({ dataRoot, options });
-        if (result.status !== 'unchanged') log.log(`WebObsidian sync backup ${result.status}: revision ${result.revision}`);
-      } catch (error) { log.error('WebObsidian sync backup failed:', error.message); }
+        if (result.status !== 'unchanged') log.log(`Shale sync backup ${result.status}: revision ${result.revision}`);
+      } catch (error) { log.error('Shale sync backup failed:', error.message); }
     });
   };
   const first = setTimeout(tick, 30_000), timer = setInterval(tick, options.intervalSec * 1000);

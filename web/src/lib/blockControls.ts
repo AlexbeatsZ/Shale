@@ -1,5 +1,5 @@
 import type { EditorView } from '@codemirror/view';
-import type { ContentTarget, SourceSpan } from '@webobsidian/markdown-core';
+import type { ContentTarget, SourceSpan } from '@shale/markdown-core';
 import { setIcon } from './icons';
 import { contextOf } from './renderContext';
 import { copyContentReference, copyKnownReference } from './contentReferenceCommands';

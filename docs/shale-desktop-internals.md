@@ -1,14 +1,14 @@
-# Obsidian Desktop 1.12.7 — Tri thức Reverse Engineering
+# Shale Desktop 1.12.7 — Tri thức Reverse Engineering
 
-> **Mục đích:** Tài liệu này ghi lại kết quả reverse engineering Obsidian Desktop App (bản 1.12.7, macOS)
-> để WebObsidian có thể **sao chép chính xác** hành vi, format dữ liệu, và giao diện của Obsidian.
+> **Mục đích:** Tài liệu này ghi lại kết quả reverse engineering Shale Desktop App (bản 1.12.7, macOS)
+> để Shale có thể **sao chép chính xác** hành vi, format dữ liệu, và giao diện của Shale.
 > Mọi regex, giá trị mặc định, schema JSON, công thức bên dưới đều được **trích xuất verbatim từ code thật**
 > (asar đã extract), không phải từ tài liệu công khai.
 >
-> **Nguồn:** `/Applications/Obsidian.app/Contents/Resources/obsidian.asar` extract bằng
+> **Nguồn:** `/Applications/Shale.app/Contents/Resources/shale.asar` extract bằng
 > `npx @electron/asar extract` → `app.js` (3.6MB renderer), `app.css` (588KB), `main.js` (60KB Electron main),
 > `worker.js` (239KB Metadata Cache Worker), `sim.js` (Graph physics worker), `starter.js` (vault chooser),
-> cùng vault thật `~/ObsidianVault-Trilium/.obsidian/`.
+> cùng vault thật `~/ShaleVault-Trilium/.shale/`.
 >
 > **Thư viện đi kèm (lib/):** CodeMirror 6 (bundled trong app.js; lib/codemirror là CM5 chỉ cho sandbox/legacy),
 > PixiJS (graph render), Mermaid, MathJax (tex-chtml-full), Prism (syntax highlight), PDF.js, moment,
@@ -18,11 +18,11 @@
 
 ## Mục lục
 
-1. [Electron shell, vault registry, obsidian:// protocol](#1-electron-shell)
+1. [Electron shell, vault registry, shale:// protocol](#1-electron-shell)
 2. [Object model lõi & hệ thống event](#2-object-model)
 3. [Registry core plugins & view types](#3-core-plugins)
 4. [Commands & hotkeys mặc định](#4-commands--hotkeys)
-5. [Schema settings (.obsidian/) — đầy đủ](#5-settings-schema)
+5. [Schema settings (.shale/) — đầy đủ](#5-settings-schema)
 6. [Format workspace.json](#6-workspacejson)
 7. [Markdown dialect — regex chính xác](#7-markdown-dialect)
 8. [Link resolution & MetadataCache](#8-link-resolution--metadatacache)
@@ -61,7 +61,7 @@ new BrowserWindow({
 })
 ```
 
-- App load qua custom protocol `app://obsidian.md/index.html` (serve file từ asar, hỗ trợ Range,
+- App load qua custom protocol `app://shale.md/index.html` (serve file từ asar, hỗ trợ Range,
   `X-Frame-Options: DENY`); một origin random thứ hai `app://<36 hex ngẫu nhiên>/` serve file local tùy ý
   (tài nguyên vault).
 - Trạng thái cửa sổ mỗi vault lưu ở `<userData>/<vaultId>.json`: `{x, y, width, height, isMaximized, devTools, zoom}`
@@ -69,7 +69,7 @@ new BrowserWindow({
 - Vault chooser (starter): frameless 800×650, không resize, bg `#1e1e1e`. Help window: 600×680.
 - Khởi động: mở mọi vault có `open: true` trong registry; nếu không có thì hiện starter.
 
-### Vault registry — `<userData>/obsidian.json`
+### Vault registry — `<userData>/shale.json`
 
 ```jsonc
 {
@@ -85,18 +85,18 @@ new BrowserWindow({
 - `open: true` khi vault đang có cửa sổ (xóa khi đóng, trừ lúc quit) — dùng để khôi phục khi launch.
 - Lookup vault theo id **hoặc** basename thư mục (không phân biệt hoa thường).
 
-### Protocol `obsidian://`
+### Protocol `shale://`
 
 Parse phía main process, payload tiêm vào renderer qua `window.OBS_ACT` (gọi nếu là function,
 gán nếu chưa — SPA pick up lúc boot). Web clone có thể tái dùng contract này nguyên vẹn.
 
 | URL | Action |
 |---|---|
-| `obsidian:///abs/path` | `{action:"open", path}` → tìm vault chứa path |
-| `obsidian://vault/<tênHoặcId>/<file...>` | `{action:"open", vault, file}` |
-| `obsidian://<action>?k=v&...#hash` | `{action, ...query, hash}` (param không giá trị → `"true"`) |
+| `shale:///abs/path` | `{action:"open", path}` → tìm vault chứa path |
+| `shale://vault/<tênHoặcId>/<file...>` | `{action:"open", vault, file}` |
+| `shale://<action>?k=v&...#hash` | `{action, ...query, hash}` (param không giá trị → `"true"`) |
 
-Handler phía renderer (Map `protocolHandlers`, mở rộng được qua `registerObsidianProtocolHandler`):
+Handler phía renderer (Map `protocolHandlers`, mở rộng được qua `registerShaleProtocolHandler`):
 - **`open`** — file + subpath qua `getFirstLinkpathDest`, param `paneType`
 - **`search`** — `query` → global-search
 - **`new`** — params `file`/`name`, `content` | `clipboard`, `append`/`prepend`/`overwrite`, `silent`, `paneType`; tự tạo folder
@@ -109,7 +109,7 @@ Handler phía renderer (Map `protocolHandlers`, mở rộng được qua `regist
 `is-dev, version, file-url, print-to-pdf, vault, vault-list, vault-remove, vault-move, vault-open,
 vault-message, starter, help, sandbox, context-menu, request-url (proxy net.request), open-url,
 trash (shell.trashItem), set-menu/render-menu, create-browser-session`, cùng CLI server qua local socket
-(lệnh `obsidian` CLI, gated bởi setting `cli`).
+(lệnh `shale` CLI, gated bởi setting `cli`).
 
 ---
 
@@ -132,7 +132,7 @@ internal plugins → `internalPlugins.enable()` → community plugins → `works
 
 ### Vault + DataAdapter
 
-- `fileMap: {path → TAbstractFile}` (TFile / TFolder), root `""`/`"/"`; `configDir` mặc định `".obsidian"`
+- `fileMap: {path → TAbstractFile}` (TFile / TFolder), root `""`/`"/"`; `configDir` mặc định `".shale"`
   (đổi được, phải bắt đầu bằng `.`; tên thay thế lưu localStorage `<appId>-config`).
 - Watcher thô của adapter → Vault map sự kiện: `folder-created`/`file-created` → `create`, `modified` → `modify`,
   `file-removed`/`folder-removed` → `delete`, `renamed` → `rename(file, oldPath)`, `closed` (mất thư mục vault),
@@ -300,7 +300,7 @@ Extension không đăng ký → mở bằng app mặc định của OS (trừ kh
 Cặp ký tự toggle định dạng: bold `**` (alt `__`), italic `*` (alt `_`), code `` ` ``, highlight `==`,
 strikethrough `~~`, comment `%%`, math `$`.
 
-Hotkey tùy biến: `.obsidian/hotkeys.json` — `{ "<command-id>": [{ "modifiers": ["Mod"], "key": "F" }] }`;
+Hotkey tùy biến: `.shale/hotkeys.json` — `{ "<command-id>": [{ "modifiers": ["Mod"], "key": "F" }] }`;
 **mảng rỗng `[]` = gỡ hotkey mặc định**.
 
 ---
@@ -315,8 +315,8 @@ còn lại vào **`app.json`**. **Chỉ ghi key khác default** (vault mới ⇒
 | key | type | default | ý nghĩa |
 |---|---|---|---|
 | `accentColor` | string | `""` | hex; rỗng = tím mặc định |
-| `theme` | string | `"system"` | `"system"` \| `"obsidian"` (dark) \| `"moonstone"` (light) |
-| `cssTheme` | string | `""` | tên thư mục theme trong `.obsidian/themes/` |
+| `theme` | string | `"system"` | `"system"` \| `"shale"` (dark) \| `"moonstone"` (light) |
+| `cssTheme` | string | `""` | tên thư mục theme trong `.shale/themes/` |
 | `enabledCssSnippets` | string[] | `[]` | tên file (không `.css`) trong `snippets/` |
 | `showViewHeader` | bool | `true` | |
 | `showRibbon` | bool | `true` | |
@@ -365,7 +365,7 @@ còn lại vào **`app.json`**. **Chỉ ghi key khác default** (vault mới ⇒
 | `pdfExportSettings` | object | `{pageSize:"Letter",landscape:false,margin:"0",downscalePercent:100}` | |
 | `uriCallbacks` | bool | `false` | cho phép `hook-get-address` |
 
-### Toàn bộ file trong `.obsidian/`
+### Toàn bộ file trong `.shale/`
 
 | File | Schema |
 |---|---|
@@ -487,7 +487,7 @@ strikethrough, highlight, headers, blockquotes, indentedCode, lists, hr, blockId
   array→`multitext`; khác→`unknown`.
 - Format hiển thị datetime chấp nhận: `YYYY-MM-DD[T]HH:mm:ss`, `YYYY-MM-DD[T]HH:mm`,
   `YYYY-MM-DD HH:mm:ss`, `YYYY-MM-DD HH:mm`.
-- Type người dùng gán lưu `.obsidian/types.json` (watch + hot reload).
+- Type người dùng gán lưu `.shale/types.json` (watch + hot reload).
 
 ### Inline khác
 
@@ -575,7 +575,7 @@ heading sau phải sâu hơn heading trước; trả `{type:"heading", current, 
 - **CodeMirror 6** bundled trong app.js (`@codemirror/state|view|language|commands|search|autocomplete|collab|lint`,
   `@lezer/*`) — module map expose cho plugin.
 - Markdown trong editor **không phải** Lezer-markdown mà là **HyperMD stream mode** adapt vào CM6.
-- Root editor: class `markdown-source-view cm-s-obsidian mod-cm6` + `is-live-preview` khi LP bật.
+- Root editor: class `markdown-source-view cm-s-shale mod-cm6` + `is-live-preview` khi LP bật.
 
 ### Live Preview — cơ chế
 
@@ -838,7 +838,7 @@ Side thiếu được tự tính từ vị trí tương đối 2 node.
 - Group kéo theo node bên trong; label group searchable.
 - Text node → "Convert to file" thành node file `.md`.
 - **Viewport (zoom/pan) không nằm trong file** — lưu localStorage `canvas-<filepath>` per vault.
-- Settings plugin `.obsidian/canvas.json`: `{snapToObjects:true, snapToGrid:true}`.
+- Settings plugin `.shale/canvas.json`: `{snapToObjects:true, snapToGrid:true}`.
 - Text node được index cho global search.
 
 ---
@@ -912,7 +912,7 @@ View đang active là ephemeral (workspace), không lưu vào file.
 - **File recovery**: IndexedDB **`<appId>-backup`** v1, store `backups` (autoIncrement,
   index `path`, `ts`), record `{path, ts, data}`. Trigger khi vault `modify`, `file-open`, `create`;
   resave timer 60s, cleanup mỗi giờ (option: interval phút + retention ngày). UI diff snapshot.
-- **Watch ngoài**: `fs.watch` đệ quy (+ watch ẩn cho configDir); `.obsidian/*.json` đổi → hot-reload.
+- **Watch ngoài**: `fs.watch` đệ quy (+ watch ẩn cho configDir); `.shale/*.json` đổi → hot-reload.
 
 ---
 
@@ -1181,7 +1181,7 @@ Root split: leaf bg `--background-primary`; sidebar: bg `--background-secondary`
 
 - **Edit**: `.markdown-source-view.mod-cm6` (+`.is-live-preview`, `.is-readable-line-width`, `.is-folding`)
   → CM6: `.cm-editor > .cm-scroller > .cm-sizer > .cm-contentContainer > .cm-content > .cm-line`;
-  theme class `.cm-s-obsidian`.
+  theme class `.cm-s-shale`.
   - Line classes: `HyperMD-header(-1..6)`, `HyperMD-list-line`, `HyperMD-quote`,
     `HyperMD-codeblock(-begin/-end/-bg)`, `HyperMD-task-line[data-task]`, `HyperMD-table-row`,
     `HyperMD-footnote`, `HyperMD-hr`
@@ -1271,7 +1271,7 @@ Khi sao chép một tính năng, đối chiếu các điểm "dễ sai" sau:
 6. **Canvas**: làm tròn int x/y/w/h; luật bỏ field default (`fromEnd:"none"`, `toEnd:"arrow"`,
    `backgroundStyle:"cover"`); giữ key lạ round-trip — cần cho byte-identical.
 7. **Settings**: chỉ ghi key khác default; tách app/appearance đúng whitelist; hot-reload khi file
-   `.obsidian/*.json` đổi từ ngoài.
+   `.shale/*.json` đổi từ ngoài.
 8. **CSS**: token trên `body`, palette trên `.theme-light/.theme-dark`; bold = font-weight + 200;
    callout color = RGB triplet; tab active dùng trick góc cong ngược; tooltip màu chữ hardcode.
 9. **Embed depth ≤ 5**; mọi HTML render qua DOMPurify với config §7.

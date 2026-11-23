@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SourceDocument } from '../source.js';
 import { DocumentSession } from '../session.js';
 import { planTagSource, transformTag, validateCapturedTagChanges } from './source.js';
-import { matchesTagFilters, normalizeStoredTags, parseTagFilters, tagPageAliases, withTagFilter } from '@webobsidian/search-core';
+import { matchesTagFilters, normalizeStoredTags, parseTagFilters, tagPageAliases, withTagFilter } from '@shale/search-core';
 import { readTagSourceNames } from './values.js';
 
 // Source-only fixtures; no actual Vault is read or modified.

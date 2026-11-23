@@ -8,7 +8,7 @@ const base = path.join(os.tmpdir(), '.agents');
 await fs.mkdir(base, { recursive: true });
 const fixture = await fs.mkdtemp(path.join(base, 'shale-native-shortcuts-'));
 const vault = path.join(fixture, 'vault'), profile = path.join(fixture, 'profile');
-await fs.mkdir(path.join(vault, '.obsidian/webobsidian'), { recursive: true }); await fs.mkdir(profile);
+await fs.mkdir(path.join(vault, '.shale'), { recursive: true }); await fs.mkdir(profile);
 await fs.writeFile(path.join(vault, 'Note.md'), 'original text\n');
 const configuration = { version: 1, bindings: {
   commands: [{ modifiers: ['Ctrl'], key: 'R' }],
@@ -16,7 +16,7 @@ const configuration = { version: 1, bindings: {
   'toggle-source': [{ modifiers: ['Ctrl'], key: 'Q' }],
   'app:toggle-left-sidebar': [{ modifiers: ['Ctrl', 'Shift'], key: 'Z' }],
 }, platforms: { mac: { settings: [{ modifiers: ['PhysicalCtrl'], key: '`' }] } }, imported: [], migration: 'native fixture' };
-const filename = path.join(vault, '.obsidian/webobsidian/hotkeys.jsonc');
+const filename = path.join(vault, '.shale/hotkeys.jsonc');
 await fs.writeFile(filename, JSON.stringify(configuration));
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: false }));
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
@@ -89,10 +89,10 @@ try {
   await page.getByRole('button', { name: '关闭设置', exact: true }).click();
   await expect(page.locator('.settings-modal')).toHaveCount(0);
   await content.click();
-  assert.equal(await page.evaluate(() => typeof window.webobsidianDesktop.runAction), 'function');
-  await page.evaluate(() => window.webobsidianDesktop.runAction('app:zoom-in'));
+  assert.equal(await page.evaluate(() => typeof window.shaleDesktop.runAction), 'function');
+  await page.evaluate(() => window.shaleDesktop.runAction('app:zoom-in'));
   assert.equal(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.getZoomLevel()), 0.5);
-  await page.evaluate(() => window.webobsidianDesktop.runAction('app:reset-zoom'));
+  await page.evaluate(() => window.shaleDesktop.runAction('app:reset-zoom'));
   await app.evaluate(({ BrowserWindow }) => { globalThis.__testInputs = []; BrowserWindow.getAllWindows()[0].webContents.on('before-input-event', (_event, input) => globalThis.__testInputs.push(input)); });
   const navigation = page.waitForEvent('framenavigated', { predicate: frame => frame === page.mainFrame(), timeout: 8000 });
   void navigation.catch(() => {});
@@ -110,7 +110,7 @@ try {
   await page.waitForLoadState('domcontentloaded');
   await expect(page.locator('.workspace .main-pane .cm-content')).toContainText('edit');
   assert.equal(await page.evaluate(() => window.__noReloadFixture), undefined);
-  await assert.rejects(() => page.evaluate(() => window.webobsidianDesktop.runAction('unrecognized-action')));
+  await assert.rejects(() => page.evaluate(() => window.shaleDesktop.runAction('unrecognized-action')));
   console.log('PASS no native menu accelerators; user Command R/M/Q, undo vs sidebar/redo, Control-backtick, unassigned native actions, configured reload, saved content and IPC allowlist');
 } finally {
   if (app) {

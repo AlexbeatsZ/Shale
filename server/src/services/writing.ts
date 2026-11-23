@@ -1,4 +1,4 @@
-import { REPLACEMENT_SYNTAX } from '@webobsidian/markdown-core';
+import { REPLACEMENT_SYNTAX } from '@shale/markdown-core';
 import { readMathConfiguration } from './mathSettings.js';
 import { applyEdits, modify } from 'jsonc-parser';
 import { z } from 'zod';

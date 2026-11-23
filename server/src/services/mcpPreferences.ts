@@ -6,7 +6,7 @@ import { parseConfiguration, readVaultConfiguration, writeVaultConfiguration, ty
  * Stored with the Vault so every device and file-sync peer shares the same rules.
  */
 export const MCP_CONFIGURATION = 'mcp.jsonc';
-export const MCP_CONFIGURATION_PATH = `.obsidian/webobsidian/${MCP_CONFIGURATION}`;
+export const MCP_CONFIGURATION_PATH = `.shale/${MCP_CONFIGURATION}`;
 export const MAX_INSTRUCTION_NOTES = 20;
 
 const notePath = z.string().trim().min(1).max(1024).refine(value => /\.md$/i.test(value) && !value.startsWith('/') &&

@@ -1,5 +1,5 @@
 {
-  "name": "@webobsidian/markdown-core",
+  "name": "@shale/markdown-core",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,7 +19,7 @@
     "dev": "tsc -p tsconfig.json --watch --preserveWatchOutput"
   },
   "dependencies": {
-    "@webobsidian/search-core": "*",
+    "@shale/search-core": "*",
     "@lezer/common": "^1.5.3",
     "@lezer/markdown": "^1.6.4",
     "diff": "^7.0.0",

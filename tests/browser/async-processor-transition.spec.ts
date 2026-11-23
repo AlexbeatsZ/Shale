@@ -38,7 +38,7 @@ async function queryFixture(page: Page) {
     const { compositionSelection } = await import('/src/lib/editorSelection.ts');
     const { livePreviewState, livePreviewReadonly } = await import('/src/lib/renderState.ts');
     const { renderContext } = await import('/src/lib/renderContext.ts');
-    const { codeBlocks } = await import('/src/lib/obsidian/markdown.ts');
+    const { codeBlocks } = await import('/src/lib/shale/markdown.ts');
     const { installQueryBlocks } = await import('/src/lib/queryBlock.ts');
     const { api } = await import('/src/lib/api.ts');
     const { updateSearch } = await import('/src/lib/search.ts');
@@ -142,8 +142,8 @@ test('cold code processor displays status without raw fenced source then reports
   await page.evaluate(async () => {
     const probe = (window as any).processorProbe;
     probe.view.destroy(); probe.stop();
-    const { registerCodeProcessor } = await import('/src/lib/obsidian/markdown.ts');
-    const { Component } = await import('/src/lib/obsidian/events.ts');
+    const { registerCodeProcessor } = await import('/src/lib/shale/markdown.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
     const owner = new Component(); await owner.load();
     registerCodeProcessor(owner, 'query', async () => new Promise((_resolve, reject) => { probe.reject = reject; }));
     probe.owner = owner;
@@ -161,8 +161,8 @@ test('cold code processor displays status without raw fenced source then reports
 
 test('public MarkdownRenderer owns one mount per host across replacement and old-owner unload', async ({ page }) => {
   const result = await page.evaluate(async () => {
-    const { MarkdownRenderer, sharedApp } = await import('/src/lib/obsidian/runtime.ts');
-    const { Component } = await import('/src/lib/obsidian/events.ts');
+    const { MarkdownRenderer, sharedApp } = await import('/src/lib/shale/runtime.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
     const first = new Component(), second = new Component(); await first.load(); await second.load();
     const host = document.createElement('div'); host.id = 'public-renderer-fixture'; document.body.prepend(host);
     await MarkdownRenderer.render(sharedApp, 'First output', host, 'first.md', first);
@@ -179,8 +179,8 @@ test('public MarkdownRenderer owns one mount per host across replacement and old
 
 test('public MarkdownRenderer keeps prior content through delayed replacement failure cancellation and retry', async ({ page }, info) => {
   await page.evaluate(async () => {
-    const { MarkdownRenderer, sharedApp } = await import('/src/lib/obsidian/runtime.ts');
-    const { Component } = await import('/src/lib/obsidian/events.ts');
+    const { MarkdownRenderer, sharedApp } = await import('/src/lib/shale/runtime.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
     const owner = new Component(); await owner.load();
     const host = document.createElement('div'); host.id = 'public-renderer-fixture'; document.body.prepend(host);
     await MarkdownRenderer.render(sharedApp, 'Stable public output', host, 'public.md', owner);
@@ -230,8 +230,8 @@ test('public MarkdownRenderer keeps prior content through delayed replacement fa
 
 test('code processor survives unrelated edits and leaves native source editing and Undo intact', async ({ page }) => {
   await page.evaluate(async () => {
-    const { registerCodeProcessor } = await import('/src/lib/obsidian/markdown.ts');
-    const { Component } = await import('/src/lib/obsidian/events.ts');
+    const { registerCodeProcessor } = await import('/src/lib/shale/markdown.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
     const owner = new Component(); await owner.load();
     (window as any).editProcessorProbe = { owner, calls: 0, aborted: 0 };
     registerCodeProcessor(owner, 'transition', async (_source: string, host: HTMLElement, context: any) => {
@@ -289,7 +289,7 @@ test('configured block effect retains completed output while its watched depende
     const { renderContext } = await import('/src/lib/renderContext.ts');
     const { blockEffects } = await import('/src/lib/blocks/view.ts');
     const { installBlockEffects } = await import('/src/lib/blocks/runtime.ts');
-    const { sharedApp } = await import('/src/lib/obsidian/runtime.ts');
+    const { sharedApp } = await import('/src/lib/shale/runtime.ts');
     const probe: any = { jobs: [], sharedApp };
     (window as any).effectProcessorProbe = probe;
     probe.stop = installBlockEffects(sharedApp);
@@ -346,8 +346,8 @@ test('public MarkdownRenderer mounts actual formulas tables and images at nonzer
   }));
   const raw = '# Actual rich fragment\n\n$$\\frac{a}{b}+\\sqrt{c}$$\n\n| Header | Second |\n| --- | --- |\n| Cell | Value |\n\n![fixture](processor-image.svg)\n\nTail';
   await page.evaluate(async raw => {
-    const { MarkdownRenderer, sharedApp } = await import('/src/lib/obsidian/runtime.ts');
-    const { Component } = await import('/src/lib/obsidian/events.ts');
+    const { MarkdownRenderer, sharedApp } = await import('/src/lib/shale/runtime.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
     const owner = new Component(); await owner.load();
     const host = document.createElement('div'); host.id = 'public-rich-fixture'; host.style.width = '700px'; document.body.prepend(host);
     const probe: any = { owner, host, jobs: [], blocked: false, render: () => MarkdownRenderer.render(sharedApp, raw, host, 'rich.md', owner) };
@@ -387,8 +387,8 @@ test('public MarkdownRenderer mounts actual formulas tables and images at nonzer
 for (const change of ['source', 'path']) {
   test(`public MarkdownRenderer removes old document content when ${change} identity changes`, async ({ page }) => {
     const result = await page.evaluate(async change => {
-      const { MarkdownRenderer, sharedApp } = await import('/src/lib/obsidian/runtime.ts');
-      const { Component } = await import('/src/lib/obsidian/events.ts');
+      const { MarkdownRenderer, sharedApp } = await import('/src/lib/shale/runtime.ts');
+      const { Component } = await import('/src/lib/shale/events.ts');
       const owner = new Component(); await owner.load();
       const host = document.createElement('div'); document.body.prepend(host);
       await MarkdownRenderer.render(sharedApp, 'Old private document', host, 'old.md', owner);
@@ -406,8 +406,8 @@ for (const change of ['source', 'path']) {
 
 test('public MarkdownRenderer synchronous mount failure rejects and releases pending owner and candidate DOM', async ({ page }) => {
   const result = await page.evaluate(async () => {
-    const { MarkdownRenderer, sharedApp } = await import('/src/lib/obsidian/runtime.ts');
-    const { Component } = await import('/src/lib/obsidian/events.ts');
+    const { MarkdownRenderer, sharedApp } = await import('/src/lib/shale/runtime.ts');
+    const { Component } = await import('/src/lib/shale/events.ts');
     const owner = new Component(); await owner.load();
     const host = document.createElement('div'); document.body.prepend(host);
     await MarkdownRenderer.render(sharedApp, 'Stable output', host, 'sync.md', owner);
@@ -434,9 +434,9 @@ test('native JavascriptBlock retains isolated output during watched refresh and 
     const { compositionSelection } = await import('/src/lib/editorSelection.ts');
     const { livePreviewState, livePreviewReadonly } = await import('/src/lib/renderState.ts');
     const { renderContext } = await import('/src/lib/renderContext.ts');
-    const { codeBlocks } = await import('/src/lib/obsidian/markdown.ts');
+    const { codeBlocks } = await import('/src/lib/shale/markdown.ts');
     const { installJavascript } = await import('/src/lib/javascript/runtime.ts');
-    const { sharedApp } = await import('/src/lib/obsidian/runtime.ts');
+    const { sharedApp } = await import('/src/lib/shale/runtime.ts');
     const probe: any = { sharedApp }; (window as any).nativeProcessorProbe = probe;
     probe.stop = installJavascript(sharedApp);
     const host = document.createElement('div'); host.id = 'native-processor-fixture'; document.body.prepend(host);

@@ -1,4 +1,4 @@
-import type { CatalogEntry } from '@webobsidian/search-core';
+import type { CatalogEntry } from '@shale/search-core';
 import type { TreeNode } from './api';
 export type { VirtualDocument, VirtualSource } from '../../../server/src/contracts/virtualDocument';
 import type { VirtualDocument } from '../../../server/src/contracts/virtualDocument';

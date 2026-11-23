@@ -14,7 +14,7 @@ import type { FileSyncStatus, SyncManifest } from '../contracts/fileSync.js';
 describe('real application integration', () => {
   it('starts from a cloned Vault with fresh application data and keeps malformed configuration from crashing startup', async () => {
     const parent = path.join(os.tmpdir(), '.agents'); await fs.mkdir(parent, { recursive: true });
-    const directory = await fs.mkdtemp(path.join(parent, 'webobsidian-sync-bootstrap-'));
+    const directory = await fs.mkdtemp(path.join(parent, 'shale-sync-bootstrap-'));
     const source = path.join(directory, 'source'); const clone = path.join(directory, 'clone');
     const token = 'fixture-only-bootstrap-token-0123456789-abcdef';
     const hub = await createSyncServer({ root: path.join(directory, 'hub'), token });
@@ -22,21 +22,21 @@ describe('real application integration', () => {
     try {
       await new Promise<void>(resolve => hub.server.listen(0, '127.0.0.1', resolve));
       const endpoint = `http://127.0.0.1:${(hub.server.address() as AddressInfo).port}${prefix}/`;
-      await fs.mkdir(path.join(source, '.obsidian/webobsidian'), { recursive: true });
-      await fs.writeFile(path.join(source, '.obsidian/webobsidian/sync.jsonc'), JSON.stringify({ enabled: true, endpoints: [endpoint], token, intervalSec: 3600 }));
-      await fs.writeFile(path.join(source, '.obsidian/webobsidian/git.jsonc'), JSON.stringify({
+      await fs.mkdir(path.join(source, '.shale'), { recursive: true });
+      await fs.writeFile(path.join(source, '.shale/sync.jsonc'), JSON.stringify({ enabled: true, endpoints: [endpoint], token, intervalSec: 3600 }));
+      await fs.writeFile(path.join(source, '.shale/git.jsonc'), JSON.stringify({
         enabled: true, remote: 'https://github.com/example/private.git', token: 'fixture-only-git-secret', autoSync: false,
       }));
       await fs.writeFile(path.join(source, 'cloned.md'), 'clone-only source\r\n');
       const git = simpleGit(source); await git.init(); await git.addConfig('user.name', 'Fixture'); await git.addConfig('user.email', 'fixture@localhost');
       await git.add('.'); await git.commit('fixture'); await simpleGit().clone(source, clone);
       for (const malformed of [false, true]) {
-        if (malformed) await fs.writeFile(path.join(clone, '.obsidian/webobsidian/sync.jsonc'), '{ malformed');
+        if (malformed) await fs.writeFile(path.join(clone, '.shale/sync.jsonc'), '{ malformed');
         const data = path.join(directory, malformed ? 'invalid-data' : 'fresh-data'); await fs.mkdir(data);
-        const entry = process.env.WEBOBSIDIAN_SYNC_TEST_ENTRY; let logs = '';
+        const entry = process.env.SHALE_SYNC_TEST_ENTRY; let logs = '';
         child = spawn(process.execPath, entry ? [path.resolve(entry)] : ['--import', 'tsx', 'server/src/index.ts'], { cwd: process.cwd(), windowsHide: true,
           env: { ...process.env, PORT: '0', HOST: '127.0.0.1', DATA_DIR: data, VAULT_PATH: clone, ALLOWED_ROOTS: directory,
-            WEBOBSIDIAN_INITIAL_VAULT: '', NODE_ENV: 'development' }, stdio: ['ignore', 'pipe', 'pipe'] });
+            SHALE_INITIAL_VAULT: '', NODE_ENV: 'development' }, stdio: ['ignore', 'pipe', 'pipe'] });
         child.stdout!.on('data', chunk => { logs = (logs + chunk).slice(-65536); }); child.stderr!.on('data', chunk => { logs = (logs + chunk).slice(-65536); });
         let base = '';
         await expect.poll(async () => {
@@ -54,7 +54,7 @@ describe('real application integration', () => {
             'X-Vault-Identity': identity, 'Content-Type': 'application/json',
           }, body: JSON.stringify({ git: { intervalSec: 900, token: '••••••••' } }) });
           expect(updated.status).toBe(200);
-          expect(JSON.parse(await fs.readFile(path.join(clone, '.obsidian/webobsidian/git.jsonc'), 'utf8')))
+          expect(JSON.parse(await fs.readFile(path.join(clone, '.shale/git.jsonc'), 'utf8')))
             .toMatchObject({ intervalSec: 900, token: 'fixture-only-git-secret' });
           expect(JSON.parse(await fs.readFile(path.join(data, 'settings.json'), 'utf8')).git).toBeUndefined();
           const sync = await fetch(base + '/api/file-sync/run', { method: 'POST', headers: { 'X-Vault-Identity': identity } });
@@ -68,14 +68,14 @@ describe('real application integration', () => {
     } finally {
       if (child && child.exitCode === null) { const closed = new Promise(resolve => child!.once('close', resolve)); child.kill(); await closed; }
       await hub.close();
-      if (!path.resolve(directory).startsWith(path.join(parent, 'webobsidian-sync-bootstrap-'))) throw new Error('Unsafe bootstrap fixture');
+      if (!path.resolve(directory).startsWith(path.join(parent, 'shale-sync-bootstrap-'))) throw new Error('Unsafe bootstrap fixture');
       await fs.rm(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   }, 60000);
 
   it('uses the existing watcher and workspace lease, masks credentials and never overwrites a dirty editor', async () => {
     const parent = path.join(os.tmpdir(), '.agents'); await fs.mkdir(parent, { recursive: true });
-    const directory = await fs.mkdtemp(path.join(parent, 'webobsidian-sync-runtime-'));
+    const directory = await fs.mkdtemp(path.join(parent, 'shale-sync-runtime-'));
     const vault = path.join(directory, 'vault'); const data = path.join(directory, 'data'); const peerRoot = path.join(directory, 'peer');
     await fs.mkdir(vault); await fs.mkdir(peerRoot); await fs.mkdir(data);
     const token = 'fixture-only-runtime-token-0123456789-abcdef';
@@ -89,10 +89,10 @@ describe('real application integration', () => {
       const image = Buffer.from([137, 80, 78, 71, 0, 255]);
       await fs.writeFile(path.join(peerRoot, 'remote.png'), image); expect((await peer.run()).phase).toBe('idle');
       await fs.writeFile(path.join(vault, 'local.md'), 'local source\r\n');
-      const entry = process.env.WEBOBSIDIAN_SYNC_TEST_ENTRY;
+      const entry = process.env.SHALE_SYNC_TEST_ENTRY;
       child = spawn(process.execPath, entry ? [path.resolve(entry)] : ['--import', 'tsx', 'server/src/index.ts'], { cwd: process.cwd(), windowsHide: true,
         env: { ...process.env, PORT: '0', HOST: '127.0.0.1', DATA_DIR: data, VAULT_PATH: vault, ALLOWED_ROOTS: directory,
-          WEBOBSIDIAN_INITIAL_VAULT: '', NODE_ENV: 'development' }, stdio: ['ignore', 'pipe', 'pipe'] });
+          SHALE_INITIAL_VAULT: '', NODE_ENV: 'development' }, stdio: ['ignore', 'pipe', 'pipe'] });
       child.stdout!.on('data', chunk => { logs = (logs + chunk).slice(-65536); }); child.stderr!.on('data', chunk => { logs = (logs + chunk).slice(-65536); });
       let base = '';
       await expect.poll(async () => {
@@ -106,8 +106,8 @@ describe('real application integration', () => {
       });
       expect(await (await request('file-sync')).json()).toMatchObject({ status: { enabled: false } });
       expect((await request('file-sync', 'PUT', preferences)).status).toBe(200);
-      const configuration = path.join(vault, '.obsidian/webobsidian/sync.jsonc');
-      expect(JSON.parse(await fs.readFile(configuration, 'utf8'))).toEqual({ ...preferences, endpoints: ['http://127.0.0.1:1/webobsidian-sync/v1/', endpoint] });
+      const configuration = path.join(vault, '.shale/sync.jsonc');
+      expect(JSON.parse(await fs.readFile(configuration, 'utf8'))).toEqual({ ...preferences, endpoints: ['http://127.0.0.1:1/shale-sync/v1/', endpoint] });
       const settings = await (await request('settings')).json(); expect(settings).not.toHaveProperty('fileSync'); expect(JSON.stringify(settings)).not.toContain(token);
       expect(await (await request('file-sync')).json()).toMatchObject({ preferences: { token: '••••••••' } });
       let blocked = true; const maintenance: string[] = [];
@@ -127,7 +127,7 @@ describe('real application integration', () => {
       const completed = await (await request('file-sync/run', 'POST', {})).json() as FileSyncStatus; expect(completed.phase, logs).toBe('idle'); expect(completed.activeEndpoint).toBe(endpoint);
       expect(await fs.readFile(path.join(vault, 'remote.png'))).toEqual(image); expect(maintenance).toContain('release');
       await peer.run(); expect(await fs.readFile(path.join(peerRoot, 'local.md'), 'utf8')).toBe('local source\r\n');
-      expect(await fs.readFile(path.join(peerRoot, '.obsidian/webobsidian/sync.jsonc'), 'utf8')).toBe(await fs.readFile(configuration, 'utf8'));
+      expect(await fs.readFile(path.join(peerRoot, '.shale/sync.jsonc'), 'utf8')).toBe(await fs.readFile(configuration, 'utf8'));
       await fs.writeFile(path.join(vault, 'external.png'), Buffer.from([0, 254, 253]));
       await expect.poll(async () => {
         await peer.run(); return fs.readFile(path.join(peerRoot, 'external.png')).then(value => [...value], () => []);
@@ -140,7 +140,7 @@ describe('real application integration', () => {
       if (socket && socket.readyState !== WebSocket.CLOSED) { const closed = new Promise(resolve => socket!.once('close', resolve)); socket.close(); await closed; }
       if (child && child.exitCode === null) { const closed = new Promise(resolve => child!.once('close', resolve)); child.kill(); await closed; }
       await hub.close();
-      if (!path.resolve(directory).startsWith(path.join(parent, 'webobsidian-sync-runtime-'))) throw new Error('Unsafe runtime fixture');
+      if (!path.resolve(directory).startsWith(path.join(parent, 'shale-sync-runtime-'))) throw new Error('Unsafe runtime fixture');
       await fs.rm(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   }, 45000);

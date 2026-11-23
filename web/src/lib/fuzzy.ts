@@ -1,4 +1,4 @@
-import { matchText, matchPath, prepareQuery, type PreparedQuery } from '@webobsidian/search-core';
+import { matchText, matchPath, prepareQuery, type PreparedQuery } from '@shale/search-core';
 import { searchSettings } from './search';
 export { prepareQuery, type PreparedQuery };
 export interface FuzzyMatch {

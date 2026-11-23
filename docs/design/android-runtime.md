@@ -50,7 +50,7 @@ private files; the create dialog explains this. Server state remains in
 selection succeeded, not a second selected path. `RuntimeHost` reads the existing
 settings.json Vault on subsequent starts, checks accessibility, and never calls
 mkdir on an implicit/default Vault. It passes a first choice once through
-WEBOBSIDIAN_INITIAL_VAULT. Before indexing or any client/watcher exists, server
+SHALE_INITIAL_VAULT. Before indexing or any client/watcher exists, server
 index calls the same `assertVaultPathAllowed`, `updateSettings`,
 `ensureVaultBrowsable` and workspace selection used by the existing settings
 route. Existing notes/configuration are retained, with ordinary settings backups.
@@ -136,7 +136,7 @@ cd android
 ```
 
 Release key/properties remain in ignored `android/.signing` and must be retained
-for future updates. `io.github.alexbeatsz.webobsidian` is the signed personal
+for future updates. `io.github.alexbeatsz.shale` is the signed personal
 release; `.debug` is a distinct application identity and data directory for older
 installations. Neither build command installs, starts, uninstalls or clears an app.
 Android version.properties owns Android0.1.67/versionCode67 independently. This
@@ -199,8 +199,8 @@ Parent owns device tests. A debuggable variant is only for explicitly requested
 isolated diagnostics when no such test app exists; do not replace a daily
 installation with it. Normal device delivery uses the release variants above.
 For a separately authorized isolated debug test installation, the disposable Vault is
-`/data/user/0/io.github.alexbeatsz.webobsidian.debug/files/Vault` (available with
-`adb shell run-as io.github.alexbeatsz.webobsidian.debug`); log is `files/logs/server.log`.
+`/data/user/0/io.github.alexbeatsz.shale.debug/files/Vault` (available with
+`adb shell run-as io.github.alexbeatsz.shale.debug`); log is `files/logs/server.log`.
 Launch `.MainActivity`; WebView debugging is enabled only in that variant.
 Stage disposable ordinary Markdown files in the debug Vault, edit/save/read
 back, background/reopen and restart process; verify device offline with no PC

@@ -25,7 +25,7 @@ afterEach(async () => {
 });
 
 it('serializes plugin data, adapter binary and Vault binary through one atomic path queue', async () => {
-  const relative = '.obsidian/plugins/test/data.json', target = path.join(state.root, relative);
+  const relative = '.shale/plugins/test/data.json', target = path.join(state.root, relative);
   await fs.mkdir(path.dirname(target), { recursive: true }); await fs.writeFile(target, 'original');
   const commits: Buffer[] = [];
   const rename = fs.rename.bind(fs);

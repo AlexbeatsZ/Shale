@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { WebSocket } from 'ws';
 import { z } from 'zod';
-import type { NoteFileOperation } from '@webobsidian/markdown-core';
+import type { NoteFileOperation } from '@shale/markdown-core';
 
 const point = z.object({ line: z.number().int().min(1), ch: z.number().int().min(0) });
 const snapshot = z.object({ path: z.string().max(1024), raw: z.string().max(1024 * 1024),

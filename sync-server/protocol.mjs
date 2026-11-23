@@ -1,4 +1,4 @@
-export const prefix = '/webobsidian-sync/v1';
+export const prefix = '/shale-sync/v1';
 export const defaultPort = 18744;
 export const hashPattern = /^[a-f0-9]{64}(?![\s\S])/;
 export const idPattern = /^[A-Za-z0-9_-]{16,80}(?![\s\S])/;
@@ -8,6 +8,8 @@ const excluded = new Set(['.git', '.trash', '.stfolder', '.stversions', '.stigno
 export function validPath(value) {
   if (typeof value !== 'string' || !value || value.length > 1000 || /[\\\x00-\x1f\x7f:<>"|?*]/.test(value)) return false;
   const parts = value.split('/');
+  if (parts[0].toLowerCase() === '.shale' && (parts[1]?.toLowerCase() === 'plugins' || ['workspace.json', 'workspace-mobile.json', 'community-plugins.json', 'hotkeys.json'].includes(parts[1]?.toLowerCase()))) return false;
+  // Read historical manifests/checkpoints during the coordinated rename. Never create these paths.
   if (parts[0].toLowerCase() === '.obsidian' && parts[1] !== 'webobsidian') return false;
   return parts.every(part => part && part !== '.' && part !== '..' && !/[. ]$/.test(part) &&
     !reserved.test(part) && !excluded.has(part.toLowerCase()) && !/\.(tmp|previous)$|\.tmp-|\.sync-conflict-/i.test(part));

@@ -1,4 +1,4 @@
-// Obsidian's documented DOM helpers. Define non-enumerably, once per realm.
+// Shale's documented DOM helpers. Define non-enumerably, once per realm.
 type Options =
   | string
   | {

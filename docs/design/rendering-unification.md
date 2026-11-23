@@ -256,7 +256,7 @@ for the private vault; shares and print do not receive it.
   or asynchronous stale syntax is introduced.
 
 - This establishes one client rendering implementation; it does not implement
-  every Obsidian extension or prove every theme/browser visually identical.
+  every Shale extension or prove every theme/browser visually identical.
 - Complex YAML scalars/anchors, duplicate keys and irregular tables retain a
   source entry. Source-mode edits deliberately permit arbitrary Markdown/YAML.
 - Fragment-local reference definitions are supported. References/footnotes whose
@@ -507,14 +507,14 @@ Frontmatter rows, the property-type submenu and the add-property suggestions use
 the same property type/icon mapping: automatic inference, checkbox, date, date &
 time, list, number and text. All glyphs come from `lib/icons.ts`; the existing DOM
 getIcon/setIcon/addIcon implementation and its one custom-icon registry live
-there too. `obsidian/ui.ts` retains its public exports by re-exporting that same
+there too. `shale/ui.ts` retains its public exports by re-exporting that same
 implementation, keeping the core editor independent of the plugin UI module.
 Menus use the existing icon column and checked state instead of Unicode check
 prefixes; property add/remove/list controls use catalog plus/x icons.
 
 Automatic removes the key's override through the existing setPropertyType service
 and uses the existing registry fallback to infer from the YAML source. No `auto`
-pseudo-type is persisted to Obsidian's types.json, and no source list/scalar value
+pseudo-type is persisted to Shale's types.json, and no source list/scalar value
 is converted. An explicit type save failure is
 reported before changing local controls. The S2 flow-root measurement shell,
 divider, source patches, selection and document session remain unchanged.

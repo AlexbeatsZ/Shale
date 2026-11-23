@@ -1,17 +1,17 @@
 /** Native identity is independent of the responsive workspace layout. */
 export function isAndroid(): boolean {
-  return typeof navigator !== 'undefined' && /\bWebObsidianAndroid\b/.test(navigator.userAgent);
+  return typeof navigator !== 'undefined' && /\bShaleAndroid\b/.test(navigator.userAgent);
 }
 export function hasWebViewer(): boolean {
-  return !!globalThis.window?.webobsidianDesktop?.webViewer;
+  return !!globalThis.window?.shaleDesktop?.webViewer;
 }
 export function isMacOS(): boolean {
-  return typeof window !== 'undefined' && window.webobsidianDesktop
-    ? window.webobsidianDesktop.platform === 'darwin'
+  return typeof window !== 'undefined' && window.shaleDesktop
+    ? window.shaleDesktop.platform === 'darwin'
     : typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 }
 export const Platform = {
-  get isDesktop() { return typeof window !== 'undefined' && !!window.webobsidianDesktop; },
+  get isDesktop() { return typeof window !== 'undefined' && !!window.shaleDesktop; },
   get isDesktopApp() { return this.isDesktop; },
   get isMobile() { return isAndroid(); },
   get isMobileApp() { return isAndroid(); },
@@ -25,7 +25,7 @@ export const Platform = {
 };
 
 export function appVersion(): string {
-  if (typeof window !== 'undefined' && window.webobsidianDesktop?.version) return window.webobsidianDesktop.version;
-  const android = typeof navigator !== 'undefined' && /WebObsidianAndroid\/([^\s]+)/.exec(navigator.userAgent);
+  if (typeof window !== 'undefined' && window.shaleDesktop?.version) return window.shaleDesktop.version;
+  const android = typeof navigator !== 'undefined' && /ShaleAndroid\/([^\s]+)/.exec(navigator.userAgent);
   return android ? android[1] : typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'development';
 }

@@ -130,7 +130,7 @@ export type LatexSuiteCMSettings = LatexSuiteProcessedSchemaSettings &
 	LatexSuiteParsedSettings &
 	LatexSuiteCMKeymapSettings;
 
-export const NATIVE_SNIPPETS_DIRECTORY = '.obsidian/webobsidian/snippets';
+export const NATIVE_SNIPPETS_DIRECTORY = '.shale/snippets';
 export const DEFAULT_SETTINGS: LatexSuitePluginSettings = {
 	snippets: '[]',
 	snippetVariables: DEFAULT_SNIPPET_VARIABLES,

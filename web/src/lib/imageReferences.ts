@@ -1,5 +1,5 @@
 import { analyzeMarkdown, imageEmbeds, imageName, imageReferenceText, isTableCellRange, parseImageParameters, parseLinkTarget, SourceDocument, TargetIndex, wikiLinkParts,
-  type ImageEmbed, type MarkdownModel } from '@webobsidian/markdown-core';
+  type ImageEmbed, type MarkdownModel } from '@shale/markdown-core';
 import { api, vaultRequestIdentity } from './api';
 import { documents } from './documents';
 import { searchEntries, subscribeSearch } from './search';

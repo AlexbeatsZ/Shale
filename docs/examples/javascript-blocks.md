@@ -2,7 +2,7 @@
 
 Ordinary `js` and `javascript` display source. Use `js-widget` for isolated
 interactive charts in private notes. `javascript-widget` is an alias. Existing first-line
-`// @obsidian-js` blocks remain supported. Source view always shows source.
+`// @shale-js` blocks remain supported. Source view always shows source.
 
 The supplied values are `container`, `sourcePath`, `component`, `echarts`,
 `chart`, `ui`, `widgets`, `watch`, `onCleanup`, `renderMarkdown`, and `signal`.

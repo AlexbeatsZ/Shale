@@ -7,7 +7,7 @@ import { createVaultRenderContext } from '../lib/vaultRenderContext';
 import { activateNavigation, editorFind, getActiveEditor, getActiveNavigationId, setActiveEditorMode, subscribeActiveNavigation } from '../lib/activeEditor';
 import { TAB_DRAG_TYPE, TAB_INSERT_DWELL_MS, TAB_TOUCH_LIFT_MS, tabDrag } from '../lib/tabDrag';
 import { triggerAddProperty } from '../lib/livePreview';
-import { extendFileMenu } from '../lib/obsidian/menus';
+import { extendFileMenu } from '../lib/shale/menus';
 import { nativeBatchTagMenuItems } from '../lib/tags/actions';
 import { menuModifiers } from '../lib/configuredMenus/transform';
 import { useIsMobile } from '../lib/useIsMobile';
@@ -97,7 +97,7 @@ export default function WorkspaceTabs() {
     if (s.splitPath && (path === s.activePath || path === s.splitPath)) focusPane(path === s.activePath ? 'main' : 'split');
   };
 
-  // Obsidian's "Add file property": focus a new property-key field in the
+  // Shale's "Add file property": focus a new property-key field in the
   // Properties widget with the key suggester open (NOT a text prompt). The
   // widget only renders in Live Preview, so switch out of source/reading first.
   const addFileProperty = async (path: string) => {

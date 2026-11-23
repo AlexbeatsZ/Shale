@@ -1,8 +1,8 @@
-import type { App } from '../obsidian/runtime';
+import type { App } from '../shale/runtime';
 import { request } from '../api';
 import { compileJavascript } from '../javascript/execute';
 import { JavascriptRun } from '../javascript/lifetime';
-import { refreshPluginMarkdown } from '../obsidian/markdown';
+import { refreshPluginMarkdown } from '../shale/markdown';
 import { useStore } from '../store';
 import { setBlockDefinitions, refreshBlockViews, type BlockDefinition, type LoadedBlockDefinition } from './model';
 
@@ -52,7 +52,7 @@ export function installBlockEffects(currentApp: App): () => void {
   const report = (error: unknown) => useStore.getState().notify('块效果配置：' + String(error));
   const onConfiguration = (event: Event) => {
     const path = (event as CustomEvent<{ path?: string }>).detail?.path?.replace(/\\/g, '/');
-    const directory = '.obsidian/webobsidian/blocks';
+    const directory = '.shale/blocks';
     if (stopped || !path || !(path === directory || path.startsWith(directory + '/') && /\.(jsonc|css|js)$/i.test(path))) return;
     // Atomic saves can emit several events. Share the existing watcher/WS lane
     // and reload once; unchanged script source retains its compiled function.

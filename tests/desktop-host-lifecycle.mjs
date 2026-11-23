@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { _electron as electron, expect } from '@playwright/test';
 
-const profile = await fs.mkdtemp('/tmp/.agents/webobsidian-desktop-lifecycle-');
+const profile = await fs.mkdtemp('/tmp/.agents/shale-desktop-lifecycle-');
 const vault = path.join(profile, 'vault');
 await fs.mkdir(vault);
 await fs.writeFile(path.join(vault, 'fixture.md'), '# native lifecycle\n');
@@ -26,7 +26,7 @@ try {
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.app')).toBeVisible({ timeout: 30000 });
   await expect(page.locator('.desktop-titlebar-fallback')).toBeHidden();
-  assert.equal(await page.evaluate(() => window.webobsidianDesktop.version), '0.1.67');
+  assert.equal(await page.evaluate(() => window.shaleDesktop.version), '0.1.67');
   const endpoint = path.join(profile, 'server-data', 'operations-endpoint.json');
   const server = JSON.parse(await fs.readFile(endpoint, 'utf8'));
   await application.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].close());

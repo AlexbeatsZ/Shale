@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { EditorState } from '@codemirror/state';
-import { Component } from '../obsidian/events';
-import { codeBlocks, registerCodeProcessor } from '../obsidian/markdown';
+import { Component } from '../shale/events';
+import { codeBlocks, registerCodeProcessor } from '../shale/markdown';
 import { syntaxModel, blockModel } from '../syntaxModel';
 import { compositionSelection } from '../inlineHtml';
 import { livePreviewState, livePreviewReadonly } from '../renderState';

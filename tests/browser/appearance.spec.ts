@@ -28,7 +28,7 @@ const test = base.extend<{ backend: Backend }>({
     const child = spawn(process.execPath, ['--import', 'tsx', 'server/src/index.ts'], {
       cwd: process.cwd(), windowsHide: true,
       env: { ...process.env, PORT: '0', HOST: '127.0.0.1', DATA_DIR: data, VAULT_PATH: vault,
-        ALLOWED_ROOTS: directory, WEBOBSIDIAN_INITIAL_VAULT: '', NODE_ENV: 'development' },
+        ALLOWED_ROOTS: directory, SHALE_INITIAL_VAULT: '', NODE_ENV: 'development' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let logs = '';
@@ -213,10 +213,10 @@ test('typing touchpad guard is an Interface option that persists and ignores cli
 test('appearance persists to the real settings file, survives reload and resets through the UI', async ({ page, backend }, info) => {
   await openAppearance(page);
   await change(page, 'size', '26'); await change(page, 'width', '1024');
-  await page.getByRole('combobox', { name: '基础颜色' }).selectOption('obsidian-dark');
+  await page.getByRole('combobox', { name: '基础颜色' }).selectOption('shale-dark');
   await expect(page.locator('.settings-content [role="status"]')).toHaveText('已保存');
   const persisted = JSON.parse(await fs.readFile(path.join(backend.data, 'settings.json'), 'utf8'));
-  expect(persisted.ui).toMatchObject({ fontTextSize: 26, fileLineWidth: 1024, theme: 'obsidian-dark', defaultView: 'live' });
+  expect(persisted.ui).toMatchObject({ fontTextSize: 26, fileLineWidth: 1024, theme: 'shale-dark', defaultView: 'live' });
   await page.getByRole('button', { name: '关闭设置' }).click();
   await page.evaluate(async () => {
     const modulePath = '/src/lib/store.ts';
@@ -234,7 +234,7 @@ test('appearance persists to the real settings file, survives reload and resets 
   await expect(page.locator('.settings-content [role="status"]')).toHaveText('已保存');
   await expect(page.getByRole('spinbutton', { name: '正文字号', exact: true })).toHaveValue('18');
   const reset = JSON.parse(await fs.readFile(path.join(backend.data, 'settings.json'), 'utf8'));
-  expect(reset.ui).toMatchObject({ fontTextSize: 18, fileLineWidth: 700, theme: 'obsidian-dark' });
+  expect(reset.ui).toMatchObject({ fontTextSize: 18, fileLineWidth: 700, theme: 'shale-dark' });
   expect(reset.vault).toEqual(persisted.vault); expect(reset.search).toEqual(persisted.search);
 });
 
@@ -310,7 +310,7 @@ test('font, width and theme changes retain dirty source, editor identity and und
       (window as any).appearanceMarker = 'no-reload';
     });
     await openAppearance(page); await change(page, 'size', '25'); await change(page, 'width', '950');
-    await page.getByRole('combobox', { name: '基础颜色' }).selectOption('obsidian-dark');
+    await page.getByRole('combobox', { name: '基础颜色' }).selectOption('shale-dark');
     await expect(page.locator('.settings-content [role="status"]')).toHaveText('已保存');
     await page.getByRole('button', { name: '关闭设置' }).click();
     await expect(page.locator('.main-pane .cm-content')).toContainText('unsaved-appearance');

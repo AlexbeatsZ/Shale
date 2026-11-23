@@ -23,7 +23,7 @@ beforeEach(async()=>{
 });
 afterEach(async()=>{ if(path.dirname(state.root)!==base)throw new Error('Unsafe cleanup');await fs.rm(state.root,{recursive:true,force:true}); });
 it('rejects traversal, hidden source paths, unsupported files and duplicate identities',()=>{
-  for(const source of ['../secret.md','/secret.md','.obsidian/config.md','a/../../b.pdf','a\\b.md','x.js','a.md#heading'])
+  for(const source of ['../secret.md','/secret.md','.shale/config.md','a/../../b.pdf','a\\b.md','x.js','a.md#heading'])
     expect(virtualManifestSchema.safeParse({version:1,title:'Book',streams:[{id:'text',title:'Text',files:[source]}]}).success).toBe(false);
   expect(virtualManifestSchema.safeParse({version:1,title:'Book',streams:[{id:'text',title:'Text',files:['A.md','a.md']}]}).success).toBe(false);
 });

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { emptyHotkeys, resolveHotkeys, hotkeyLabel } from '@webobsidian/search-core';
+import { emptyHotkeys, resolveHotkeys, hotkeyLabel } from '@shale/search-core';
 const state = vi.hoisted(() => ({ root: '', settings: {} as any }));
 vi.mock('./settings.js', () => ({ getSettings: async () => state.settings }));
 vi.mock('./vaultFile.js', async original => ({ ...await original<typeof import('./vaultFile.js')>(), getVaultRoot: async () => state.root }));
@@ -10,10 +10,10 @@ import { readHotkeys, patchHotkeys } from './hotkeySettings';
 let directory: string, filename: string;
 const base = path.join(os.tmpdir(), '.agents');
 beforeEach(async () => {
-  await fs.mkdir(base, { recursive: true }); directory = await fs.mkdtemp(path.join(base, 'webobsidian-hotkeys-'));
+  await fs.mkdir(base, { recursive: true }); directory = await fs.mkdtemp(path.join(base, 'shale-hotkeys-'));
   state.root = path.join(directory, 'vault'); await fs.mkdir(state.root);
   state.settings = { vault: { path: state.root }, hotkeys: {}, search: { chinese: { shortcuts: {} } }, writing: {} };
-  filename = path.join(state.root, '.obsidian/webobsidian/hotkeys.jsonc');
+  filename = path.join(state.root, '.shale/hotkeys.jsonc');
 });
 afterEach(async () => { if (path.dirname(directory) === base) await fs.rm(directory, { recursive: true, force: true }); });
 
@@ -54,10 +54,10 @@ it('does not overwrite invalid synced bytes or accept a stale Vault identity', a
   expect(first.vault).not.toBe('other-vault');
 });
 
-it('imports existing seven-hash heading bindings and keeps the original Obsidian file unchanged', async () => {
+it('imports existing seven-hash heading bindings and keeps the original Shale file unchanged', async () => {
   const original = JSON.stringify({ 'obsidian-heading-shifter:apply-heading7': [{ modifiers: ['Ctrl', 'Alt'], key: '7' }] });
-  await fs.mkdir(path.join(state.root, '.obsidian'), { recursive: true });
-  await fs.writeFile(path.join(state.root, '.obsidian/hotkeys.json'), original);
+  await fs.mkdir(path.join(state.root, '.shale'), { recursive: true });
+  await fs.writeFile(path.join(state.root, '.shale/hotkeys.json'), original);
   expect((await readHotkeys()).bindings['editor:set-heading-7'][0].key).toBe('7');
-  expect(await fs.readFile(path.join(state.root, '.obsidian/hotkeys.json'), 'utf8')).toBe(original);
+  expect(await fs.readFile(path.join(state.root, '.shale/hotkeys.json'), 'utf8')).toBe(original);
 });

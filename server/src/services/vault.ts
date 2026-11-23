@@ -1,3 +1,4 @@
+import { migrateVaultConfiguration } from '../../../scripts/identity-migration.mjs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { queueFileUpdate, type FileUpdateResult } from './fileupdates.js';
@@ -5,8 +6,8 @@ import { indexedFilesUnder } from './fileindex.js';
 import { getSettings } from './settings.js';
 import { readTextFile, withFileWrite, writeBinaryFile, writeTextFile } from './textFile.js';
 import { getVaultRoot, resolveInVault, sameVaultFile, vaultPathKey, toRel, exists, ignoredVaultNames } from './vaultFile.js';
-import { planFolderTags } from '@webobsidian/markdown-core';
-import { fileTitleError } from '@webobsidian/search-core';
+import { planFolderTags } from '@shale/markdown-core';
+import { fileTitleError } from '@shale/search-core';
 import { scheduleAutoCommitOnSave } from './git.js';
 
 function assertFileTitle(rel: string): void {
@@ -17,6 +18,7 @@ function assertFileTitle(rel: string): void {
 export async function ensureVault(): Promise<void> {
   const root = await getVaultRoot();
   await fs.mkdir(root, { recursive: true });
+  await migrateVaultConfiguration(root);
 }
 
 /** Same planner for initial writes and reviewed candidates; never writes itself. */
@@ -56,7 +58,7 @@ export async function writeFileBuffer(rel: string, buf: Buffer, createOnly = fal
   void queueFileUpdate(rel, createOnly ? 'add' : 'change');
 }
 
-/** Never replaces an attachment: `name.ext`, then `name 1.ext`, … like Obsidian's available path. */
+/** Never replaces an attachment: `name.ext`, then `name 1.ext`, … like Shale's available path. */
 export async function createFileBuffer(dir: string, name: string, buf: Buffer): Promise<string> {
   const ext = path.posix.extname(name), stem = name.slice(0, name.length - ext.length);
   for (let index = 0; ; index++) {

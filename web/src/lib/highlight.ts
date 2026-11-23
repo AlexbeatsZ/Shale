@@ -10,7 +10,7 @@ export function codeLanguage(info: string) {
 }
 
 /**
- * Obsidian-style syntax colors (docs §19, "Variable editor/markdown"):
+ * Shale-style syntax colors (docs §19, "Variable editor/markdown"):
  * comment=faint, function=yellow, keyword=pink, string=green, operator/tag=red,
  * property=cyan, value/number=purple, important=orange. Colors are CSS variables
  * so the same style serves light & dark.
@@ -19,7 +19,7 @@ export function codeLanguage(info: string) {
  * escape…) — Live Preview decorations own those. This is what fixes stray red
  * escapes/brackets that defaultHighlightStyle painted in body text.
  */
-export const obsidianHighlightStyle = HighlightStyle.define([
+export const shaleHighlightStyle = HighlightStyle.define([
   { tag: t.comment, color: 'var(--text-faint)' },
   { tag: t.lineComment, color: 'var(--text-faint)' },
   { tag: t.blockComment, color: 'var(--text-faint)' },

@@ -9,15 +9,15 @@ import { FileSyncEngine } from './fileSyncEngine.js';
 
 it('current native client survives a lost receipt, server restart and binary conflict against a standalone server', async () => {
   const parent = path.join(os.tmpdir(), '.agents'); await fs.mkdir(parent, { recursive: true });
-  const temporary = await fs.mkdtemp(path.join(parent, 'webobsidian-standalone-client-'));
-  const entry = path.resolve(process.env.WEBOBSIDIAN_SYNC_TEST_SERVER ?? 'sync-server/server.mjs');
+  const temporary = await fs.mkdtemp(path.join(parent, 'shale-standalone-client-'));
+  const entry = path.resolve(process.env.SHALE_SYNC_TEST_SERVER ?? 'sync-server/server.mjs');
   const { createSyncServer } = await import(/* @vite-ignore */ pathToFileURL(entry).href) as { createSyncServer: typeof CreateSyncServer };
   const token = 'fixture-only-standalone-client-token-123456789';
   let service = await createSyncServer({ root: path.join(temporary, 'hub'), token });
   try {
     await new Promise<void>(resolve => service.server.listen(0, '127.0.0.1', resolve));
     const port = (service.server.address() as AddressInfo).port;
-    const endpoint = `http://127.0.0.1:${port}/webobsidian-sync/v1/`;
+    const endpoint = `http://127.0.0.1:${port}/shale-sync/v1/`;
     const preferences = { enabled: true, endpoints: [endpoint], token, intervalSec: 3600 };
     const makeClient = async (name: string) => {
       const root = path.join(temporary, name); const state = path.join(temporary, name + '-state');
@@ -64,7 +64,7 @@ it('current native client survives a lost receipt, server restart and binary con
   } finally {
     vi.restoreAllMocks();
     await service.close();
-    if (path.dirname(temporary) !== parent || !path.basename(temporary).startsWith('webobsidian-standalone-client-')) throw new Error('Unsafe client fixture');
+    if (path.dirname(temporary) !== parent || !path.basename(temporary).startsWith('shale-standalone-client-')) throw new Error('Unsafe client fixture');
     await fs.rm(temporary, { recursive: true, force: true, maxRetries: 3 });
   }
 }, 20000);

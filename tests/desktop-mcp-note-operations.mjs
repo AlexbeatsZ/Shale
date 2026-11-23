@@ -7,7 +7,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
-assert(process.argv[2], 'Pass the packaged WebObsidian executable');
+assert(process.argv[2], 'Pass the packaged Shale executable');
 const executable = path.resolve(process.argv[2]);
 const parent = path.join(os.tmpdir(), '.agents');
 await fs.mkdir(parent, { recursive: true });
@@ -29,8 +29,8 @@ try {
   await expect(page.getByRole('button', { name: 'MCP', exact: true })).toBeVisible({ timeout: 30000 });
   const settings = await page.evaluate(async () => (await fetch('/api/settings')).json());
   assert.equal(path.resolve(settings.vault.path), path.resolve(vault));
-  const host = await page.evaluate(() => window.webobsidianDesktop.mcp.inspect());
-  const stdio = JSON.parse(host.clientConfig).mcpServers.webobsidian;
+  const host = await page.evaluate(() => window.shaleDesktop.mcp.inspect());
+  const stdio = JSON.parse(host.clientConfig).mcpServers.shale;
   for (const transport of [new StreamableHTTPClientTransport(new URL('/mcp', page.url())),
     new StdioClientTransport({ ...stdio, env: { ...process.env, ...stdio.env, PATH: path.join(fixture, 'no-node-on-path') }, cwd: fixture, stderr: 'pipe' })]) {
     const client = new Client({ name: 'note-package-acceptance', version: '1' });
@@ -50,7 +50,7 @@ try {
     return page.getByRole('dialog', { name: '笔记操作审阅' });
   };
   const content = '\ufeff# Packaged MCP\r\n\r\n中文 😀\nTail\r';
-  const created = await call(clients[0], 'obsidian_propose_changes', { request_id: 'package-create', title: 'Package create',
+  const created = await call(clients[0], 'shale_propose_changes', { request_id: 'package-create', title: 'Package create',
     operations: [{ kind: 'create', path: 'MCP/new.md', content }] });
   assert.equal(created.status, 'awaiting_user_review');
   await assert.rejects(fs.readFile(path.join(vault, 'MCP/new.md')), { code: 'ENOENT' });
@@ -60,8 +60,8 @@ try {
   await expect(dialog.getByRole('status')).toHaveText('已接受');
   assert.equal(await fs.readFile(path.join(vault, 'MCP/new.md'), 'utf8'), content);
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
-  const read = await call(clients[1], 'obsidian_read_file', { path: 'MCP/new.md' });
-  const renamed = await call(clients[1], 'obsidian_propose_changes', { request_id: 'package-rename', title: 'Package rename',
+  const read = await call(clients[1], 'shale_read_file', { path: 'MCP/new.md' });
+  const renamed = await call(clients[1], 'shale_propose_changes', { request_id: 'package-rename', title: 'Package rename',
     operations: [{ kind: 'rename', path: 'MCP/new.md', to: 'MCP/renamed.md', base_revision: read.revision }] });
   assert.equal(renamed.status, 'awaiting_user_review');
   assert.equal(await fs.readFile(path.join(vault, 'MCP/new.md'), 'utf8'), content);
@@ -71,15 +71,15 @@ try {
   await expect(dialog.getByRole('status')).toHaveText('已接受');
   assert.equal(await fs.readFile(path.join(vault, 'MCP/renamed.md'), 'utf8'), content);
   await assert.rejects(fs.readFile(path.join(vault, 'MCP/new.md')), { code: 'ENOENT' });
-  assert.equal((await call(clients[0], 'obsidian_get_change_status', { proposal_id: renamed.proposal_id })).operation.status, 'accepted');
+  assert.equal((await call(clients[0], 'shale_get_change_status', { proposal_id: renamed.proposal_id })).operation.status, 'accepted');
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
-  const rejected = await call(clients[0], 'obsidian_propose_changes', { request_id: 'package-reject', title: 'Package reject',
+  const rejected = await call(clients[0], 'shale_propose_changes', { request_id: 'package-reject', title: 'Package reject',
     operations: [{ kind: 'create', path: 'rejected.md', content: '' }] });
   dialog = await select('Package reject');
   await dialog.getByRole('button', { name: '拒绝', exact: true }).click();
   await expect(dialog.getByRole('status')).toHaveText('已拒绝');
   await assert.rejects(fs.readFile(path.join(vault, 'rejected.md')), { code: 'ENOENT' });
-  assert.equal((await call(clients[1], 'obsidian_get_change_status', { proposal_id: rejected.proposal_id })).operation.status, 'rejected');
+  assert.equal((await call(clients[1], 'shale_get_change_status', { proposal_id: rejected.proposal_id })).operation.status, 'rejected');
   await dialog.getByRole('button', { name: '关闭', exact: true }).click();
   for (const route of ['/.well-known/oauth-protected-resource/mcp', '/.well-known/oauth-authorization-server']) {
     const response = await fetch(new URL(route, page.url()));

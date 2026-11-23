@@ -6,7 +6,7 @@ import { catalog } from './catalog.js';
 import { parseConfiguration } from './vaultConfiguration.js';
 import { readFileSnapshot, resolveInVault } from './vaultFile.js';
 import { writeFileText, trash } from './vault.js';
-import { parseLinkTarget, isGlobalContentTarget } from '@webobsidian/markdown-core';
+import { parseLinkTarget, isGlobalContentTarget } from '@shale/markdown-core';
 import { applyEdits, modify } from 'jsonc-parser';
 
 const failure = (message: string, status = 400) => Object.assign(new Error(message), { status });

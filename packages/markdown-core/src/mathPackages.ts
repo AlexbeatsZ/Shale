@@ -36,7 +36,7 @@ export const mathPackages: readonly MathPackage[] = [
   { id: 'html', name: 'HTML · 公式类名与链接', component: '[tex]/html' },
   { id: 'gensymb', name: 'Gensymb · 物理符号', component: '[tex]/gensymb' },
   { id: 'physics', name: 'Physics · 物理（重定义 dd、qty 等命令）', component: '[tex]/physics', conflicts: ['braket', 'siunitx'] },
-  { id: 'siunitx', name: 'siunitx · 数值与单位（第三方部分实现）', component: '[webobsidian]/siunitx.js',
+  { id: 'siunitx', name: 'siunitx · 数值与单位（第三方部分实现）', component: '[shale]/siunitx.js',
     requires: ['html', 'gensymb', 'color', 'cancel'], conflicts: ['physics'],
     stateCommands: ['sisetup', 'DeclareSIUnit'], state: { options: ['siunitx'], data: ['siunitx'] }, commands: {
       num: { arguments: ['literal'] }, ang: { arguments: ['literal'] },

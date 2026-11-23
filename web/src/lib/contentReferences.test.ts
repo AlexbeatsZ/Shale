@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DocumentSession } from '@webobsidian/markdown-core';
+import { DocumentSession } from '@shale/markdown-core';
 import { contentReferenceSuggestions, resolveContentLink } from './contentReferences';
 
 const state = vi.hoisted(() => ({ sessions: new Map<string, DocumentSession>(), resolve: vi.fn(), targets: vi.fn() }));

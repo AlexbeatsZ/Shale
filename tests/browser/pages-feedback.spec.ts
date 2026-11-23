@@ -222,7 +222,7 @@ test('macOS settings closes from its left red control', async ({ page }, info) =
       load('/node_modules/.vite/deps/react.js'), load('/node_modules/.vite/deps/react-dom_client.js'),
       load('/src/components/Settings.tsx'), load('/src/lib/store.ts'),
     ]);
-    (window as any).webobsidianDesktop = { isDesktop: true, platform: 'darwin' };
+    (window as any).shaleDesktop = { isDesktop: true, platform: 'darwin' };
     store.useStore.getState().setSettings(true);
     const host = document.createElement('div'); document.body.append(host);
     const h = (React.default ?? React).createElement;

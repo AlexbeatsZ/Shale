@@ -23,7 +23,7 @@ export function javascriptFramePlugin(): Plugin {
       build: {
         write: false, emptyOutDir: false, minify: true, cssMinify: true,
         target: 'es2022', cssCodeSplit: false,
-        lib: { entry: fileURLToPath(new URL('./frame.ts', import.meta.url)), name: 'WebObsidianChart', formats: ['iife'] },
+        lib: { entry: fileURLToPath(new URL('./frame.ts', import.meta.url)), name: 'ShaleChart', formats: ['iife'] },
         rollupOptions: { output: { banner: `/*! @openai/apps-sdk-ui\n${uiLicense}\n*/` }, onwarn(warning, warn) {
           if (warning.code === 'MODULE_LEVEL_DIRECTIVE' && warning.message.includes('use client')) return;
           warn(warning);
@@ -38,7 +38,7 @@ export function javascriptFramePlugin(): Plugin {
     };
   })().catch(error => { compiled = undefined; throw error; });
   return {
-    name: 'webobsidian-javascript-frame',
+    name: 'shale-javascript-frame',
     configResolved(config) { serving = config.command === 'serve'; },
     configureServer(server) {
       server.middlewares.use('/javascript-widget-runtime.js', (_request, response, next) => {

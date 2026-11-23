@@ -1,7 +1,7 @@
 import { isMacOS } from '../lib/platform';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { bindingFromString, eventHotkey, hotkeyLabel, hotkeySignature, hasHotkeyOverride, isReservedMacHotkey,
-  type Hotkey, type HotkeyPlatform } from '@webobsidian/search-core';
+  type Hotkey, type HotkeyPlatform } from '@shale/search-core';
 import { sharedApp, pluginRevision, subscribePlugins } from '../lib/plugins';
 import { consumeHotkeySettingsRequest, peekHotkeySettingsRequest, matchName, updateHotkeys, useSearch, refreshHotkeys } from '../lib/search';
 import { SettingGroup, SettingRow } from './SettingRow';

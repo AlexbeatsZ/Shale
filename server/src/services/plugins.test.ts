@@ -30,19 +30,19 @@ beforeEach(async () => {
   const base = path.join(os.tmpdir(), '.agents');
   await fs.mkdir(base, { recursive: true });
   state.root = await fs.mkdtemp(path.join(base, 'meta-obsidian-plugin-unit-'));
-  await fs.mkdir(path.join(state.root, '.obsidian/plugins/test'), {
+  await fs.mkdir(path.join(state.root, '.shale/plugins/test'), {
     recursive: true,
   });
   await fs.writeFile(
-    path.join(state.root, '.obsidian/plugins/test/manifest.json'),
+    path.join(state.root, '.shale/plugins/test/manifest.json'),
     JSON.stringify({ id: 'test', name: 'Test', version: '1' })
   );
 });
 afterEach(async () => {
   await fs.rm(state.root, { recursive: true, force: true });
 });
-test('reads existing Obsidian enablement and preserves unknown IDs when toggling', async () => {
-  const enabled = path.join(state.root, '.obsidian/community-plugins.json'),
+test('reads existing Shale enablement and preserves unknown IDs when toggling', async () => {
+  const enabled = path.join(state.root, '.shale/community-plugins.json'),
     source = '["test", "missing-original-plugin"]\n';
   await fs.writeFile(enabled, source);
   expect((await listInstalled())[0].enabled).toBe(true);
@@ -65,7 +65,7 @@ test('plugin JSON persists across reads, serializes writes, and reports corrupti
   ]);
   expect(await readPluginData('test')).toEqual({ value: 2 });
   await fs.writeFile(
-    path.join(state.root, '.obsidian/plugins/test/data.json'),
+    path.join(state.root, '.shale/plugins/test/data.json'),
     'invalid'
   );
   await expect(readPluginData('test')).rejects.toThrow();
@@ -74,8 +74,8 @@ test('plugin JSON persists across reads, serializes writes, and reports corrupti
   );
 });
 test('vault adapter reads hidden files and binary data and rejects traversal', async () => {
-  await adapterOperation('write', '.obsidian/test.txt', { content: 'text' });
-  expect(await adapterOperation('read', '.obsidian/test.txt')).toEqual({
+  await adapterOperation('write', '.shale/test.txt', { content: 'text' });
+  expect(await adapterOperation('read', '.shale/test.txt')).toEqual({
     content: 'text',
   });
   await adapterOperation('writeBinary', 'binary.bin', { base64: 'AAH/' });
@@ -90,6 +90,6 @@ test('vault adapter reads hidden files and binary data and rejects traversal', a
   ])
     await expect(adapterOperation('read', bad)).rejects.toThrow();
   expect(
-    ((await adapterOperation('stat', '.obsidian/test.txt')) as any).stat.type
+    ((await adapterOperation('stat', '.shale/test.txt')) as any).stat.type
   ).toBe('file');
 });

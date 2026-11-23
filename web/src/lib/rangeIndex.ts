@@ -1,4 +1,4 @@
-import type { SourceSpan } from '@webobsidian/markdown-core';
+import type { SourceSpan } from '@shale/markdown-core';
 
 /** Overlap lookup also handles nested ranges by keeping prefix maximum ends. */
 export function overlapIndex(ranges: readonly SourceSpan[]) {

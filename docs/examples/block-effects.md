@@ -1,7 +1,7 @@
 # 自定义块效果
 
 效果定义和 CSS/JavaScript 都放在笔记 Vault 的
-`.obsidian/webobsidian/blocks/`，随 Vault 一起保存。应用不自带效果集合，
+`.shale/blocks/`，随 Vault 一起保存。应用不自带效果集合，
 没有配置文件时不创建文件，也不自动导入 AnyBlock 默认设置。
 
 编辑配置、CSS 或 JS 后会自动重新加载，多次文件保存事件会合并处理。也可以在
@@ -95,7 +95,7 @@ await block.renderSource(body);
 同步死循环，也不能自动撤销任意全局副作用。
 
 自定义指令/模板定义则保存在同一 Vault 的
-`.obsidian/webobsidian/automation.jsonc`，见 [指令与模板](commands-and-templates.md)。
+`.shale/automation.jsonc`，见 [指令与模板](commands-and-templates.md)。
 
 ## 本次现用内容的注册
 

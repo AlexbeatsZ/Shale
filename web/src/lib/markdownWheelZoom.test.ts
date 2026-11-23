@@ -43,8 +43,8 @@ it('blocks document page zoom by default without fetching additional settings', 
 it('previews each font step immediately and saves a coalesced font-only patch', async () => {
   const view = await editor(), previews: unknown[] = [];
   window.addEventListener('document-font-preview', event => previews.push((event as CustomEvent).detail));
-  view.configureMarkdownWheelZoom({ ...defaultUiSettings, ctrlWheelFontSize: true, theme: 'obsidian-dark' });
-  fixture.putSettings.mockResolvedValue({ ui: { ...defaultUiSettings, ctrlWheelFontSize: true, theme: 'obsidian-dark', fontTextSize: 20 } });
+  view.configureMarkdownWheelZoom({ ...defaultUiSettings, ctrlWheelFontSize: true, theme: 'shale-dark' });
+  fixture.putSettings.mockResolvedValue({ ui: { ...defaultUiSettings, ctrlWheelFontSize: true, theme: 'shale-dark', fontTextSize: 20 } });
   view.wheel(); view.wheel();
   expect(previews).toEqual([{ fontTextSize: 19 }, { fontTextSize: 20 }]);
   expect(fixture.putSettings).not.toHaveBeenCalled();

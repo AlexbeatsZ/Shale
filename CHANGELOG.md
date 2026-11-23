@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to WebObsidian are documented here. This project tracks its product
+All notable changes to Shale are documented here. This project tracks its product
 design and version history in [PRD.md](PRD.md); the entries below summarize user-facing
 changes. The format is loosely based on [Keep a Changelog](https://keepachangelog.com).
 
@@ -14,14 +14,14 @@ changes. The format is loosely based on [Keep a Changelog](https://keepachangelo
   `POST /api/files/copy` for recursive copy). *(PRD 0.9)*
 
 ### Changed
-- ⋯ **More options** menu rebuilt for parity with Obsidian Desktop: backlinks-in-document,
+- ⋯ **More options** menu rebuilt for parity with Shale Desktop: backlinks-in-document,
   open linked view, open in new window, add file property, in-note Find, export to PDF,
   reveal file in navigation, and per-file version history. *(PRD 0.8)*
 
 ## Highlights by PRD revision
 
 - **0.9** — File tree Copy/Cut/Paste; recursive copy endpoint.
-- **0.8** — ⋯ menu parity with Obsidian Desktop; per-file Git version history (FR-4).
+- **0.8** — ⋯ menu parity with Shale Desktop; per-file Git version history (FR-4).
 - **0.7** — Per-note **Share dialog** (create/copy/toggle/password/delete) + globe badge.
 - **0.6** — Deploy hardening for self-hosting: all deploy params via `.env`, watcher polling
   fallback on inotify limits, longer healthcheck `start_period` (FR-9).
@@ -35,17 +35,17 @@ changes. The format is loosely based on [Keep a Changelog](https://keepachangelo
 
 ## Core (v1 baseline)
 
-- Obsidian-compatible vault (works on existing `.obsidian/` vaults).
+- Shale-compatible vault (works on existing `.shale/` vaults).
 - CodeMirror 6 editor with live/source/reading views; wikilinks, embeds, tags, callouts,
   tasks, KaTeX, Mermaid; backlinks, outline, graph view.
 - QMD full-text + fielded search (MiniSearch), incremental indexing, disk persistence.
 - GitHub sync (pull/commit/push) with Git LFS.
 - Single master password login (scrypt + JWT cookie).
 - Scoped Agent API at `/api/v1` with hashed API keys and rate limiting.
-- Community-plugin loader against an Obsidian-API shim (subset).
+- Community-plugin loader against an Shale-API shim (subset).
 - Pure-JSON config (`data/settings.json`); one-command Docker stack.
 
 ---
 
-> Note: WebObsidian is pre-1.0 and has not cut tagged releases yet. Once releases begin,
+> Note: Shale is pre-1.0 and has not cut tagged releases yet. Once releases begin,
 > each version will get its own dated section here.

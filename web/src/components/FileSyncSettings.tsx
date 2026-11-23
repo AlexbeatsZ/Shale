@@ -48,7 +48,7 @@ export default function FileSyncSettings() {
           <SettingRow name="启用文件同步"><input type="checkbox" checked={connection.preferences.enabled} onChange={event => update({ enabled: event.target.checked })} /></SettingRow>
           <SettingRow name="同步地址" desc="每行一个，严格按填写顺序尝试">
             <textarea className="text-input" rows={5} value={addresses}
-              placeholder={`192.168.1.10:${defaultPort}\nhttps://example.com/webobsidian-sync/v1/`} onChange={event => setAddresses(event.target.value)} />
+              placeholder={`192.168.1.10:${defaultPort}\nhttps://example.com/shale-sync/v1/`} onChange={event => setAddresses(event.target.value)} />
           </SettingRow>
           <SettingRow name="访问令牌" desc="随 Vault 保存；请使用私有仓库"><input className="text-input" type="password" autoComplete="new-password" value={connection.preferences.token} onChange={event => update({ token: event.target.value })} /></SettingRow>
           <SettingRow name="检查间隔（秒）"><input className="text-input" type="number" min={5} max={3600} value={connection.preferences.intervalSec} onChange={event => update({ intervalSec: Number(event.target.value) })} /></SettingRow>

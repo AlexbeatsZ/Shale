@@ -43,7 +43,7 @@ const test = base.extend<{ backend: Backend }>({
     await fs.mkdir(temporary, { recursive: true });
     const directory = await fs.mkdtemp(path.join(temporary, 'split-editing-browser-'));
     const vault = path.join(directory, 'vault'), data = path.join(directory, 'data');
-    const configuration = path.join(vault, '.obsidian', 'webobsidian');
+    const configuration = path.join(vault, '.shale', 'shale');
     await fs.mkdir(configuration, { recursive: true }); await fs.mkdir(data);
     for (const [file, text] of Object.entries(original)) await fs.writeFile(path.join(vault, file), text);
     await fs.writeFile(path.join(data, 'uistate.json'), JSON.stringify({ tabs: [{ path: 'main.md', title: 'main.md' }], activePath: 'main.md' }));
@@ -57,7 +57,7 @@ const test = base.extend<{ backend: Backend }>({
     const child = spawn(process.execPath, ['--import', 'tsx', 'server/src/index.ts'], {
       cwd: process.cwd(), windowsHide: true,
       env: { ...process.env, PORT: '0', HOST: '127.0.0.1', DATA_DIR: data, VAULT_PATH: vault,
-        ALLOWED_ROOTS: directory, WEBOBSIDIAN_INITIAL_VAULT: '', NODE_ENV: 'development' },
+        ALLOWED_ROOTS: directory, SHALE_INITIAL_VAULT: '', NODE_ENV: 'development' },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let logs = '', mounted = false;
@@ -544,7 +544,7 @@ for (const theme of ['light', 'dark'] as const) for (const mode of ['live', 'sou
       await page.setViewportSize({ width: 2400, height: 1800 });
       await page.evaluate(async theme => {
         const apiPath = '/src/lib/api.ts';
-        await (await import(apiPath)).api.putSettings({ ui: { theme: 'obsidian-' + theme, fontTextSize: 18, fileLineWidth: 700 } });
+        await (await import(apiPath)).api.putSettings({ ui: { theme: 'shale-' + theme, fontTextSize: 18, fileLineWidth: 700 } });
       }, theme);
       await expect(page.locator('body')).toHaveClass(new RegExp('theme-' + theme));
       await openParityNote(page, file, mode);
@@ -597,7 +597,7 @@ for (const theme of ['light', 'dark'] as const) for (const mode of ['live', 'sou
 
 async function workspacePaneBindings(page: Page, activePane: Pane) {
   return page.evaluate(async activePane => {
-    const pluginsPath = '/src/lib/plugins.ts', workspacePath = '/src/lib/obsidian/workspace.ts';
+    const pluginsPath = '/src/lib/plugins.ts', workspacePath = '/src/lib/shale/workspace.ts';
     const viewPath = '/node_modules/.vite/deps/@codemirror_view.js', contextPath = '/src/lib/renderContext.ts';
     const { sharedApp } = await import(pluginsPath), { MarkdownView } = await import(workspacePath);
     const { EditorView } = await import(viewPath), { contextOf } = await import(contextPath);

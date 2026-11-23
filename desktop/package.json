@@ -1,10 +1,10 @@
 {
-  "name": "@webobsidian/desktop",
-  "version": "0.1.86",
+  "name": "@shale/desktop",
+  "version": "0.1.87",
   "private": true,
   "description": "Shale native desktop application",
   "author": "xnohat <xnohat@gmail.com>",
-  "homepage": "https://github.com/AlexbeatsZ/webobsidian",
+  "homepage": "https://github.com/AlexbeatsZ/Shale",
   "license": "MIT",
   "main": "dist/main.js",
   "scripts": {
@@ -28,7 +28,7 @@
     "extract-zip": "^2.0.1"
   },
   "build": {
-    "appId": "com.xnohat.webobsidian",
+    "appId": "io.github.alexbeatsz.shale",
     "productName": "Shale",
     "copyright": "Copyright © 2026 xnohat",
     "electronVersion": "33.4.11",
@@ -54,7 +54,8 @@
         "to": "input-method",
         "filter": [
           "im-select*",
-          "LICENSE*"
+          "LICENSE*",
+          "migrate-keychain"
         ]
       }
     ],
@@ -108,13 +109,14 @@
       "deleteAppDataOnUninstall": false,
       "createDesktopShortcut": false,
       "createStartMenuShortcut": true,
-      "artifactName": "${productName}-${version}-win-${arch}-setup.${ext}"
+      "artifactName": "${productName}-${version}-win-${arch}-setup.${ext}",
+      "guid": "2704e2ab-b45b-53dd-a908-5cf90746ea66"
     },
     "linux": {
       "icon": "buildResources/icon.png",
       "category": "Utility",
       "maintainer": "xnohat <xnohat@gmail.com>",
-      "synopsis": "Personal Obsidian-like Markdown notes app",
+      "synopsis": "Personal Shale-like Markdown notes app",
       "target": [
         {
           "target": "AppImage",
@@ -137,7 +139,7 @@
       {
         "provider": "github",
         "owner": "AlexbeatsZ",
-        "repo": "webobsidian"
+        "repo": "Shale"
       }
     ]
   }

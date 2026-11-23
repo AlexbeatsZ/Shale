@@ -2,7 +2,7 @@ import type { Tab } from './store';
 
 /** Central tabs dragged onto a workspace pane; dragover cannot read transfer data, so the path is kept here.
  *  `path` is the single page a pane drop would open (null when a whole split group is dragged). */
-export const TAB_DRAG_TYPE = 'application/x-webobsidian-tab';
+export const TAB_DRAG_TYPE = 'application/x-shale-tab';
 export const tabDrag: { path: string | null } = { path: null };
 
 /** Hovering a tab this long while dragging turns "swap with it" into "insert before it". */

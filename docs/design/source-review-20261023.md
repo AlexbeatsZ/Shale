@@ -45,7 +45,7 @@ widget；`3461–3465` 对 `Reused.DOM` 不调用旧 tile 的 destroy，最终�
 相应订阅、abort controller、子编辑器或 listener。各 widget 的具体资源种类不同，属于
 同一所有权缺陷；不是本轮新引入的四个独立问题，也不能据此认定两种抖动同根因。
 
-**归属收敛。** shared 沿 `web/src/lib/obsidian/markdown.ts:71` 的模块级 `mounts` 和
+**归属收敛。** shared 沿 `web/src/lib/shale/markdown.ts:71` 的模块级 `mounts` 和
 `98–99` 的 DOM 绑定方式，使 cleanup 随 DOM 而不是 widget 实例。合并并删除被替代的
 实例存储；不另建宿主。未运行泄漏或运行复现验证。
 
@@ -231,6 +231,6 @@ queue/cache；不为每个 widget 新增 observer，也不在每次测量无条�
 本轮没有测试、类型检查、构建、探测、应用/服务/浏览器启动或网页渲染验收。
 
 本文是基线问题与调度记录。配套中文静态概览保存在
-`C:/Users/Meta/AppData/Local/Temp/.agents/architecture-review-meta-obsidian-20261023.html`，
+`C:/Users/Meta/AppData/Local/Temp/.agents/architecture-review-meta-shale-20261023.html`，
 内含三组修复前后所有权图；完全自包含，无脚本、CDN 或远程资源，未打开浏览器。
 根 AGENTS 和 feedback 清单由主协调维护；本文不暂存、不提交、不修改功能代码。

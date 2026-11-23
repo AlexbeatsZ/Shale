@@ -1,4 +1,4 @@
-package io.github.alexbeatsz.webobsidian;
+package io.github.alexbeatsz.shale;
 
 import android.content.Context;
 import android.content.res.AssetManager;
@@ -9,7 +9,7 @@ import java.nio.file.*;
 
 /** Exactly one embedded runtime per app process; Activity recreation only reattaches. */
 final class RuntimeHost {
-    static { System.loadLibrary("node"); System.loadLibrary("webobsidian"); }
+    static { System.loadLibrary("node"); System.loadLibrary("shale"); }
     private static volatile String origin;
     private static volatile String failure;
     private static boolean started;
@@ -57,10 +57,10 @@ final class RuntimeHost {
                 String[] env = {
                     "NODE_ENV=production", "PORT=0",
                     "DATA_DIR=" + data, "VAULT_PATH=" + (initialVault == null ? new File(files, "unselected-vault").getAbsolutePath() : initialVault),
-                    "ALLOWED_ROOTS_JSON=" + roots, "WEBOBSIDIAN_REQUIRE_VAULT=1", "WEBOBSIDIAN_EMBEDDED=1",
-                    "WEBOBSIDIAN_INITIAL_VAULT=" + (initialVault == null ? "" : initialVault),
+                    "ALLOWED_ROOTS_JSON=" + roots, "SHALE_REQUIRE_VAULT=1", "SHALE_EMBEDDED=1",
+                    "SHALE_INITIAL_VAULT=" + (initialVault == null ? "" : initialVault),
                     "HOME=" + files, "TMPDIR=" + app.getCacheDir(),
-                    "NODE_OPTIONS=--max-old-space-size=1024", "WEBOBSIDIAN_SEARCH_CACHE=0", "WEBOBSIDIAN_INDEX_PROGRESS=1"
+                    "NODE_OPTIONS=--max-old-space-size=1024", "SHALE_SEARCH_CACHE=0", "SHALE_INDEX_PROGRESS=1"
                 };
                 nodeEntered = true;
                 int codeResult = startNode(new String[] { "node", new File(code, "server/dist/index.mjs").getAbsolutePath() },
@@ -68,7 +68,7 @@ final class RuntimeHost {
                 failure = "本地运行时已退出（" + codeResult + "）。请关闭并重新打开应用。";
             } catch (Throwable error) { failure = error.toString(); }
             finally { synchronized (RuntimeHost.class) { if (!nodeEntered) started = false; } }
-        }, "WebObsidian-Node").start();
+        }, "Shale-Node").start();
     }
 
     static String awaitReady(Context context) throws Exception {

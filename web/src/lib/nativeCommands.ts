@@ -3,7 +3,7 @@ import { useStore } from './store';
 import { showReviews } from './review/client';
 import { api } from './api';
 import { writingCommands } from './writing/commands';
-import { hotkeyCommandId } from '@webobsidian/search-core';
+import { hotkeyCommandId } from '@shale/search-core';
 import { setActiveEditorMode } from './activeEditor';
 import type { NativeCommand } from './commands';
 import { nativeEditorCommands } from './nativeEditorCommands';

@@ -57,7 +57,7 @@ filesRouter.get(
       res.status(400).json({ error: 'path required' });
       return;
     }
-    // Obsidian-style resolution: if the exact path doesn't exist (e.g. an embed
+    // Shale-style resolution: if the exact path doesn't exist (e.g. an embed
     // `![[image.jpg]]` that lives in Attachments/), resolve it by basename.
     if (req.query.sourcePath || !(await exists(rel))) {
       const resolved = resolveFile(rel, String(req.query.sourcePath ?? ''));
@@ -121,7 +121,7 @@ filesRouter.post(
       res.status(400).json({ error: 'file required' });
       return;
     }
-    // Reuse an existing folder that differs only in case (e.g. an Obsidian vault's
+    // Reuse an existing folder that differs only in case (e.g. an Shale vault's
     // "Attachments") instead of creating a duplicate "attachments". See vaultFile.ts.
     const resolvedDir = dir ? await resolveDirCaseInsensitive(dir) : '';
     const rel = await vault.createFileBuffer(resolvedDir, path.posix.basename(file.originalname.replace(/\\/g, '/')), file.buffer);

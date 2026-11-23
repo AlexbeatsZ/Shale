@@ -6,13 +6,13 @@ async function main() {
   const option = args.indexOf('--url');
   if (option >= 0) {
     if (!args[option + 1]) throw new Error('--url 需要本机地址');
-    process.env.WEBOBSIDIAN_URL = args[option + 1];
-    delete process.env.WEBOBSIDIAN_ENDPOINT_FILE;
+    process.env.SHALE_URL = args[option + 1];
+    delete process.env.SHALE_ENDPOINT_FILE;
     args.splice(option, 2);
   }
   const name = args[0] ?? 'list';
   if (['--help', '-h', 'help'].includes(name)) {
-    console.log('webobsidian [--url http://127.0.0.1:8787] list | <obsidian_tool_name> [arguments.json]\nSet WEBOBSIDIAN_ENDPOINT_FILE for a desktop instance. Mutations are proposals only.');
+    console.log('shale [--url http://127.0.0.1:8787] list | <shale_tool_name> [arguments.json]\nSet SHALE_ENDPOINT_FILE for a desktop instance. Mutations are proposals only.');
     return;
   }
   const result = name === 'list' ? await operationHttp('tools') : await operationHttp('call', {

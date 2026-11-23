@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DocumentSession, fragmentRange } from '@webobsidian/markdown-core';
+import { DocumentSession, fragmentRange } from '@shale/markdown-core';
 import { EmbedProjection } from './embedProjection';
 import { nonExecutingContext, type RenderContext } from './renderContext';
 
