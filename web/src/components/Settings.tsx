@@ -246,7 +246,7 @@ const NAV_GROUPS: { title: string; sections: Section[] }[] = [
   { title: '核心功能', sections: ['search', 'writing', 'formatting', 'tags', 'automation', 'userscripts', 'menus', 'sync', 'git', 'mcp'] },
 ];
 
-function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
+function VaultSettings({ s, reload }: { s: any; reload: () => Promise<unknown> }) {
   const [path, setPath] = useState(s.vault.path);
   const [deleteMode, setDeleteMode] = useState(s.vault.deleteMode ?? 'trash');
   const [browser, setBrowser] = useState<any>(null);
@@ -275,7 +275,7 @@ function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
   return (
     <div>
       <h2>文件与链接</h2>
-      <FileLocationSettings vault={s.vault} />
+      <FileLocationSettings vault={s.vault} onSaved={reload} />
       <SettingGroup title="仓库位置">
       <Row name="仓库路径" desc="本机存放笔记的文件夹">
         <input
@@ -343,17 +343,22 @@ function VaultSettings({ s, reload }: { s: any; reload: () => void }) {
   );
 }
 
-function FileLocationSettings({ vault }: { vault: unknown }) {
+function FileLocationSettings({ vault, onSaved }: { vault: unknown; onSaved: () => Promise<unknown> }) {
   const [value, setValue] = useState(() => FilePlacementSchema.parse(vault));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const folderList = useId();
   const folders = useSearch().entries.filter(entry => entry.kind === 'folder');
+  useEffect(() => { setValue(FilePlacementSchema.parse(vault)); }, [vault]);
   const save = async () => {
     const parsed = FilePlacementSchema.safeParse(value);
     if (!parsed.success) { setError(parsed.error.issues[0].message); return; }
     setSaving(true); setError('');
-    try { await api.putSettings({ vault: parsed.data }); }
+    try {
+      await api.putSettings({ vault: parsed.data });
+      await onSaved();
+      useStore.getState().notify('已保存默认位置');
+    }
     catch (cause) { setError(String(cause)); }
     finally { setSaving(false); }
   };
@@ -363,7 +368,13 @@ function FileLocationSettings({ vault }: { vault: unknown }) {
       <Row name="新建文件的默认位置"><select className="text-input" aria-label="新建文件的默认位置" value={value.newFileLocation} onChange={event => patch('newFileLocation', event.target.value as FilePlacement['newFileLocation'])}>
         <option value="root">仓库根目录</option><option value="current">当前文件所在文件夹</option><option value="folder">指定文件夹</option>
       </select></Row>
-      {value.newFileLocation === 'folder' && <Row name="新建文件夹路径"><input className="text-input" aria-label="新建文件夹路径" placeholder="如 Notes/Inbox" list={folderList} value={value.newFileFolder} onChange={event => patch('newFileFolder', event.target.value)} /></Row>}
+      {value.newFileLocation === 'folder' && <>
+        <Row name="选择已有文件夹"><select className="text-input" aria-label="选择已有文件夹" value="" onChange={event => patch('newFileFolder', event.target.value)}>
+          <option value="" disabled>选择仓库中的文件夹…</option>
+          {folders.map(folder => <option key={folder.path} value={folder.path}>{folder.path}</option>)}
+        </select></Row>
+        <Row name="新建文件夹路径" desc="相对于仓库的路径；也可输入新路径，创建笔记时自动建立目录。"><input className="text-input" aria-label="新建文件夹路径" placeholder="如 Notes/Inbox" list={folderList} value={value.newFileFolder} onChange={event => patch('newFileFolder', event.target.value)} /></Row>
+      </>}
       <Row name="附件的默认位置"><select className="text-input" aria-label="附件的默认位置" value={value.attachmentLocation} onChange={event => patch('attachmentLocation', event.target.value as FilePlacement['attachmentLocation'])}>
         <option value="root">仓库根目录</option><option value="current">当前文件所在文件夹</option><option value="folder">指定文件夹</option><option value="subfolder">当前文件夹下的子文件夹</option>
       </select></Row>

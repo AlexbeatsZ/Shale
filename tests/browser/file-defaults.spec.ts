@@ -80,12 +80,21 @@ test('settings persist and default creation respects explicit folder choices', a
     useStore.getState().setSettings(true);
   });
   await page.getByRole('combobox', { name: '新建文件的默认位置', exact: true }).selectOption('folder');
+  await page.getByRole('combobox', { name: '选择已有文件夹', exact: true }).selectOption('Notes');
+  await expect(page.getByRole('combobox', { name: '新建文件夹路径', exact: true })).toHaveValue('Notes');
   await page.getByRole('combobox', { name: '新建文件夹路径', exact: true }).fill('Inbox/Nested');
   await page.getByRole('combobox', { name: '附件的默认位置', exact: true }).selectOption('subfolder');
   await page.getByRole('combobox', { name: '附件文件夹路径', exact: true }).fill('assets');
   await page.getByRole('button', { name: '保存默认位置', exact: true }).click();
   await expect.poll(() => page.evaluate(async () => (await (await fetch('/api/settings')).json()).vault.newFileFolder)).toBe('Inbox/Nested');
   await page.screenshot({ path: test.info().outputPath('default-locations.png') });
+  await page.getByRole('button', { name: '关闭设置' }).click();
+  await page.evaluate(async () => { const name = '/src/lib/store.ts'; const { useStore } = await import(name); useStore.getState().setSettings(true); });
+  await expect(page.getByRole('combobox', { name: '新建文件的默认位置', exact: true })).toHaveValue('folder');
+  await expect(page.getByRole('combobox', { name: '新建文件夹路径', exact: true })).toHaveValue('Inbox/Nested');
+  await page.getByRole('button', { name: '外观', exact: true }).click();
+  await page.getByRole('button', { name: '文件与链接', exact: true }).click();
+  await expect(page.getByRole('combobox', { name: '新建文件夹路径', exact: true })).toHaveValue('Inbox/Nested');
   await page.getByRole('button', { name: '关闭设置' }).click();
   const created = await page.evaluate(async () => {
     const name = '/src/lib/store.ts'; const { useStore } = await import(name);

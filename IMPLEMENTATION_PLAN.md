@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-24 (恢复原生光标与选区 PRD 1.59)
+Cập nhật lần cuối: 2026-11-24 (默认新建文件夹 PRD 1.60)
+
+### 默认新建文件夹 (PRD 1.60)
+
+- [~] 明确选择已有文件夹，保留手输相对路径；修复保存后重开显示旧值，验证实际新建/显式目录优先；发布桌面/Android 0.1.90 并更新全部可达设备。
 
 ### 恢复原生光标与选区 (PRD 1.59)
 
@@ -764,6 +768,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-24: PRD 1.60 默认新建文件夹选择与保存回读修复完成；641 单元、两个真实后端浏览器用例及类型检查通过，0.1.90 打包/全部设备更新进行中。
 
 - 2026-11-24: PRD 1.59 原生细光标/主题文字选区恢复；0.1.89 桌面与 Android 发布，全部五台可达设备已安装。Mac/OMEN/K70 healthz 通过，ROG 保留未选库；平板健康接口超时，验收边界见专项报告。
 

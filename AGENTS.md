@@ -22,6 +22,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
+- PRD 1.60 / 0.1.90：默认新建文件夹明确选择，修复设置重开旧值；实包验证、全平台发布与全部可达设备更新进行中。
 - 小米平板6Pro 0.1.89 服务 healthz 连接超时，后续可在设备前台确认；本轮安装与启动已完成，未修改网络/代理。Mac 本轮完整输入法往返受前台保护阻止，颜色专项及 Windows 完整输入法通过。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
@@ -73,6 +74,7 @@
 - Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。
 
 ## Docs Index
+- 新建文件与附件默认位置 → `docs/design/file-placement.md`。
 - Shale 身份、profile/Vault/跨设备迁移 → `docs/design/identity-migration.md`。
 - 原生 Vim 与输入法联动 → `docs/design/vim-input-method.md`。
 - 原生同步、自动合并与冲突审阅 → `docs/design/file-sync.md`；MCP 审阅 → `docs/design/native-mcp.md`。
