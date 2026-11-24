@@ -10,10 +10,11 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-24 PRD 1.60：默认新建文件夹新增已有目录选择，修复保存后重开显示旧值。桌面 v0.1.90（7 资产/latest）及 Android android-v0.1.90（生产 APK/预发布）已发布并原位安装到全部五台可达设备；类型、641 单元、2 浏览器与 Mac/Windows 最终实包选择/保存/创建/回读通过。报告 `tests/reports/default-new-folder-20261124.md`。
 - 2026-11-24 PRD 1.59：恢复 Insert/禁用时原生细光标与主题文字选区，保留 Normal/Visual 块光标和颜色自定义。桌面 v0.1.89（7 资产/latest）及 Android android-v0.1.89（生产 APK/预发布）已发布；Mac/OMEN/ROG/K70/小米平板6Pro 全部原位安装 0.1.89。641 单元、8 Vim 浏览器、Mac 颜色与完整 WebViewer、Windows 完整 Vim/输入法实包通过。报告 `tests/reports/native-selection-restoration-20261124.md`。
 - 2026-11-23 完成 Shale 完整身份迁移（PRD 1.57）：仓库 `AlexbeatsZ/Shale`；Mac 主检出 `/Users/meta/Developer/Shale`，OMEN 主检出 `C:\Users\Meta\source\repos\Shale`，旧主目录已不存在。
-- 身份迁移首发桌面/Android 0.1.87、同步服务 0.3.0 已公开发布（当前应用 0.1.89，同步服务仍 0.3.0）。原生 identifier/applicationId=`io.github.alexbeatsz.shale`；profile=`<appData>/Shale`，Vault 配置=`.shale/`，同步=`/shale-sync/v1/`。Windows 沿用安装 GUID；Mac 固定证书与钥匙串迁移助手，certificate leaf/deep/strict 通过。
-- 日用安装截至 2026-11-24：Mac/OMEN/K70 0.1.89 启动及 healthz ok；ROG 0.1.89 已启动并保留未选 Vault，ShaleNativeSync 0.3.0 未更改。小米平板6Pro 0.1.89/code89 安装与启动确认、服务端口监听存在，但 healthz 连接超时，尚未通过本轮服务健康验收。迁移后笔记/配置/身份保留，旧 Android 包 disabled-user 保留；完整 Android 同步/界面验收仍按用户此前要求延后。
+- 身份迁移首发桌面/Android 0.1.87、同步服务 0.3.0 已公开发布（当前应用 0.1.90，同步服务仍 0.3.0）。原生 identifier/applicationId=`io.github.alexbeatsz.shale`；profile=`<appData>/Shale`，Vault 配置=`.shale/`，同步=`/shale-sync/v1/`。Windows 沿用安装 GUID；Mac 固定证书与钥匙串迁移助手，certificate leaf/deep/strict 通过。
+- 日用安装截至 2026-11-24：Mac/OMEN/K70 0.1.90 启动及 healthz ok；ROG 0.1.90 已启动并保留未选 Vault，ShaleNativeSync 0.3.0 未更改。小米平板6Pro 0.1.90/code90 安装与启动确认、服务端口监听存在，但 healthz 连接超时，尚未通过本轮服务健康验收。迁移后笔记/配置/身份保留，旧 Android 包 disabled-user 保留；完整 Android 同步/界面验收仍按用户此前要求延后。
 - 640 单元、7 迁移、33 相关浏览器（MCP 10 复验）、插件旧 ABI 夹具、13 同步服务+2 解压包+17 客户端、三端类型/生产构建、Mac WebViewer/MCP 实包与 Windows/Android 构建通过。现有云端 MCP 只读复验遇网关429，未宣称外部连接验收完成。报告 `tests/reports/identity-migration-20261123.md`。
 - OMEN 有 5 个迁移前配置差异的冲突（appearance/bookmarks/hotkeys/Hider.css/Theme.css），两版已保留待审阅；没有覆盖用户配置。恢复状态见 `~/.agents/shale--identity-migration/AGENTS.md`。迁移设计 `docs/design/identity-migration.md`。
 - 2026-11-23 桌面 0.1.88（PRD 1.58）：侧栏笔记无顶部栏；网页焦点下已绑定快捷键经主进程 `before-input-event` 交回宿主；应用内拖动时 webview 不接收指针事件，笔记可拖到网页正文替换。
@@ -22,8 +23,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
-- PRD 1.60 / 0.1.90：默认新建文件夹明确选择，修复设置重开旧值；实包验证、全平台发布与全部可达设备更新进行中。
-- 小米平板6Pro 0.1.89 服务 healthz 连接超时，后续可在设备前台确认；本轮安装与启动已完成，未修改网络/代理。Mac 本轮完整输入法往返受前台保护阻止，颜色专项及 Windows 完整输入法通过。
+- 小米平板6Pro 0.1.90 服务 healthz 连接超时，后续可在设备前台确认；本轮安装与启动已完成，未修改网络/代理。Mac 0.1.89 完整输入法往返受前台保护阻止，颜色专项及 Windows 完整输入法通过。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。
