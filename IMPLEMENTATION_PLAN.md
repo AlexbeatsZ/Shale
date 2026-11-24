@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-23 (侧栏笔记与网页交互 PRD 1.58)
+Cập nhật lần cuối: 2026-11-24 (恢复原生光标与选区 PRD 1.59)
+
+### 恢复原生光标与选区 (PRD 1.59)
+
+- [~] 移除全局 drawSelection，原生光标/文字选区保持旧主题颜色，Vim 状态/历史/输入法回归；桌面与 Android 0.1.89 构建发布并部署 Mac/OMEN/ROG/K70/平板。
 
 ### 侧栏笔记与网页交互 (PRD 1.58)
 

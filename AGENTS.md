@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-24 PRD 1.59：移除 Vim 无条件 drawSelection，恢复 Insert/禁用时原生细光标与按文本绘制的主题选区，保留 Normal/Visual 块光标及颜色自定义。641 单元、8 Vim 浏览器及三端类型通过；0.1.89 桌面/Android 构建和五设备部署进行中。
 - 2026-11-23 完成 Shale 完整身份迁移（PRD 1.57）：仓库 `AlexbeatsZ/Shale`；Mac 主检出 `/Users/meta/Developer/Shale`，OMEN 主检出 `C:\Users\Meta\source\repos\Shale`，旧主目录已不存在。
 - 桌面/Android 0.1.87、同步服务 0.3.0 已公开发布（桌面 7 资产/latest，Android 新包 1 生产 APK/预发布，同步 ZIP/TAR/BUILD-INFO 3 资产）。原生 identifier/applicationId=`io.github.alexbeatsz.shale`；profile=`<appData>/Shale`，Vault 配置=`.shale/`，同步=`/shale-sync/v1/`。Windows 沿用安装 GUID；Mac 固定证书与钥匙串迁移助手，certificate leaf/deep/strict 通过。
 - Mac 日用安装 2026-11-23 已原位升级到 0.1.88（healthz ok）；OMEN/ROG 日用安装 0.1.87，笔记父目录与数据/启动引用已迁移；Mac 本地服务/原生同步完成、0 冲突，OMEN healthz200。ROG 桌面保持未选 Vault，ShaleNativeSync 服务 0.3.0 正常。K70/小米平板 6 Pro 新包及私有数据迁移、原生启动/healthz200 已完成，旧包 disabled-user 保留；用户明确要求完整设备同步/界面验收稍后。
@@ -21,6 +22,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
+- 0.1.89：Mac/Windows/Android 实包验证、Release 发布，部署全部可达设备（Mac/OMEN/ROG/K70/小米平板6Pro），恢复默认光标颜色。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。

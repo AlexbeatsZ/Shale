@@ -1,7 +1,8 @@
 # PRD — Shale
 
 > Product Requirements Document
-> Phiên bản: 1.58 · Cập nhật: 2026-11-23 · Trạng thái: Draft
+> Phiên bản: 1.59 · Cập nhật: 2026-11-24 · Trạng thái: Draft
+> Changelog 1.59 (恢复原生光标与选区) 移除 Vim 接入时无条件启用的 drawSelection：普通编辑与 Vim 插入模式恢复浏览器原生细光标及文字选区；Vim 普通/可视模式保留引擎块光标，但文字选区沿用原主题 --text-selection。颜色自定义和输入法/共享历史保留，关闭 Vim 恢复原生行为。按用户授权恢复各可达设备默认光标颜色，统一构建部署桌面与 Android 0.1.89。设计见 docs/design/vim-input-method.md。
 > Changelog 1.58 (侧栏笔记与网页交互) 侧栏笔记不再显示多余的图标/标题/关闭顶部栏，标题与关闭由竖排标签负责（中键、Delete、右键菜单）；图谱、书签和插件视图保留该栏。网页获得焦点时，已绑定的 Shale 组合键（带 Ctrl/Command/Alt 或 F 功能键）交回应用执行；复制/粘贴/剪切/全选/撤销/重做、编辑器专属命令和普通字符仍留给网页。笔记标签拖到网页正文区域与拖到网页工具栏一样触发替换/分屏。设计见 docs/design/web-viewer.md、workspace-sidebars.md、hotkeys.md。
 > Changelog 1.57 (Shale 完整身份迁移) 仓库、内部包/桥接/MCP、桌面与 Android 应用标识、应用数据和 Vault 根目录统一为 Shale；Vault 配置改为 `.shale/`，同步入口改为 `/shale-sync/v1/`。启动前迁移旧配置与本机路径，保留笔记、认证、用户脚本、布局和同步身份；出现路径冲突时保留两边并停止迁移。原第三方插件模块/ID、来源与许可不伪造改名。设计见 docs/design/identity-migration.md。
 > Changelog 1.56 (Vim 光标颜色) Vim 默认光标沿用普通编辑器的正文灰黑色（深色主题自动转浅），替换插件固定的低对比度配色；设置 › 编辑器 › Vim 可分别调整浅色/深色主题的光标颜色并恢复默认，即时生效且不重置 Vim 模式、选区或输入法状态。插入模式细光标与普通/可视模式块光标共用颜色，块光标保留文字可读性。设计见 docs/design/vim-input-method.md。

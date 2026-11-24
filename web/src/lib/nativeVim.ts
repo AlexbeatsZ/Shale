@@ -1,5 +1,5 @@
 import { Compartment, Prec, type Extension } from '@codemirror/state';
-import { drawSelection, EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
+import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { CodeMirror, Vim, getCM, vim } from '@replit/codemirror-vim';
 import { contextOf } from './renderContext';
 import { ensureVimSettings, subscribeVimSettings, vimSettings } from './vimSettings';
@@ -16,7 +16,7 @@ Vim.defineEx('write', 'w', cm => { actions.get(cm as CodeMirror)?.save(); });
 export function nativeVimExtensions(commands: Actions): Extension {
   const engine = new Compartment();
   const extension = (view?: EditorView) => vimSettings().vimEnabled && !view?.state.readOnly ? Prec.high(vim({ status: true })) : [];
-  return [drawSelection(), engine.of([]), ViewPlugin.fromClass(class {
+  return [engine.of([]), ViewPlugin.fromClass(class {
     private alive = true;
     private enabled = false;
     private key = '';

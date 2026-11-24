@@ -30,6 +30,20 @@ retains its outline. Color updates must not reconfigure the engine or acquire a
 new input-method lease, reset modes, change selection, or edit document source.
 Disabling Vim restores ordinary cursor styling. Theme changes apply immediately.
 
+## Native selection restoration (PRD 1.59, 2026-11-24)
+
+The pre-Vim baseline is 0.1.84 / 8651466. `editorSelection` owns the
+browser-native primary caret/range and decorated secondary ranges. Do not install
+`drawSelection` from the Vim host: it hides native selection even when Vim is off
+and paints rectangles behind opaque callouts instead of selected text. Vim already
+owns its Normal/Visual block cursor. Insert uses the native thin caret, with
+optional Vim colors inherited through caret-color. Override the engine's native
+selection suppression with the existing --text-selection background, including
+nested syntax spans; selection must not paint an extra rectangle behind blocks.
+File tree active/multiselected colors remain their pre-Vim theme variables.
+Vim color changes preserve the engine/mode/history/IME lease. On deployment the
+owner explicitly requested restoring defaults on every reachable daily device.
+
 ## Input-method contract
 
 - Snapshot on leaving Insert, then force English for Normal/Visual/Replace-normal.

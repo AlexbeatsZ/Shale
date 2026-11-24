@@ -546,6 +546,10 @@ body.wo-row-resizing { cursor: row-resize; user-select: none; }
 .cm-editor[data-vim-mode] { --vim-cursor-color: var(--vim-cursor-light, var(--text-normal)); }
 .theme-dark .cm-editor[data-vim-mode] { --vim-cursor-color: var(--vim-cursor-dark, var(--text-normal)); }
 .cm-editor[data-vim-mode] .cm-cursor { border-left-color: var(--vim-cursor-color); }
+.cm-editor[data-vim-mode] .cm-content { caret-color: var(--vim-cursor-color); }
+/* Keep native ranges above opaque callouts and use the pre-Vim theme palette. */
+.cm-editor[data-vim-mode] .cm-line::selection,
+.cm-editor[data-vim-mode] .cm-line ::selection { background-color: var(--text-selection) !important; }
 .cm-editor[data-vim-mode] .cm-fat-cursor {
   background-color: color-mix(in srgb, var(--vim-cursor-color) 30%, transparent);
   outline: 1px solid var(--vim-cursor-color);

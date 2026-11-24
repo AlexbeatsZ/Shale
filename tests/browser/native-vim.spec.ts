@@ -45,7 +45,7 @@ test('default Vim cursors follow the ordinary text color in light and dark theme
     await expect(block).toHaveCSS('outline-color', text);
     await expect(block).not.toHaveCSS('background-color', 'rgb(255, 150, 150)');
     await page.keyboard.press('i');
-    await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', text);
+    await expect(view.locator('.cm-content')).toHaveCSS('caret-color', text);
     await page.keyboard.press('Escape');
   }
 });
@@ -66,7 +66,7 @@ test('cursor colors update per theme without resetting Vim mode, selection, hist
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('settings-changed', { detail: { ui: {
     vimEnabled: true, vimInputMethod: false, vimCursorLight: '#123456', vimCursorDark: '#abcdef',
   } } })));
-  await expect(view.locator('.cm-cursor').first()).toHaveCSS('border-left-color', 'rgb(18, 52, 86)');
+  await expect(view.locator('.cm-content')).toHaveCSS('caret-color', 'rgb(18, 52, 86)');
   await expect(view).toHaveAttribute('data-vim-mode', 'insert');
   expect(await page.evaluate(async () => {
     const { getActiveEditor } = await import('/src/lib/activeEditor.ts');
@@ -166,4 +166,44 @@ test('native snippets run in Insert and remain in the Vim insertion undo group',
   await expect.poll(() => source(page)).toBe('\\(\\)alpha beta\nsecond line\n');
   await page.keyboard.press('Escape'); await page.keyboard.press('u');
   await expect.poll(() => source(page)).toBe('alpha beta\nsecond line\n');
+});
+
+
+test('native caret and text ranges survive Vim toggles and opaque callouts in both themes', async ({ page }) => {
+  const view = await editor(page, false);
+  for (const theme of ['theme-light', 'theme-dark']) {
+    await view.evaluate((element, theme) => {
+      const root = element.closest('.theme-light, .theme-dark')!;
+      root.classList.remove('theme-light', 'theme-dark'); root.classList.add(theme);
+    }, theme);
+    await expect(view.locator('.cm-selectionLayer')).toHaveCount(0);
+    const text = await view.locator('.cm-content').evaluate(element => getComputedStyle(element).color);
+    await expect(view.locator('.cm-content')).toHaveCSS('caret-color', text);
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('settings-changed', { detail: { ui: { vimEnabled: true, vimInputMethod: false } } })));
+    await expect(view).toHaveAttribute('data-vim-mode', 'normal');
+    await page.keyboard.press('i'); await expect(view).toHaveAttribute('data-vim-mode', 'insert');
+    await expect(view.locator('.cm-content')).toHaveCSS('caret-color', text);
+    await expect(view.locator('.cm-selectionLayer')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => window.renderHarness.cursor(0, 0));
+    await page.keyboard.type('ve');
+    await expect(view).toHaveAttribute('data-vim-mode', 'visual');
+    await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('alpha');
+    const colors = await view.locator('.cm-line').first().evaluate(element => {
+      const marker = document.createElement('span'); marker.style.backgroundColor = 'var(--text-selection)'; element.append(marker);
+      const expected = getComputedStyle(marker).backgroundColor; marker.remove();
+      return { expected, actual: getComputedStyle(element, '::selection').backgroundColor };
+    });
+    expect(colors.actual).toBe(colors.expected);
+    await page.keyboard.press('Escape');
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent('settings-changed', { detail: { ui: { vimEnabled: false } } })));
+    await expect(view).not.toHaveAttribute('data-vim-mode');
+    await expect(view.locator('.cm-selectionLayer')).toHaveCount(0);
+    await expect(view.locator('.cm-content')).toHaveCSS('caret-color', text);
+  }
+  await page.evaluate(() => { window.renderHarness.reset('> [!note] Title\n> **alpha** beta\n> next line\n'); window.renderHarness.mode(0, 'live'); });
+  await expect(view.locator('.cm-content')).toContainText('alpha');
+  await page.evaluate(() => { const start = window.renderHarness.source(0).indexOf('alpha'); window.renderHarness.cursor(0, start, start + 5); window.renderHarness.focus(0); });
+  await expect(view.locator('.cm-selectionLayer')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('alpha');
 });
