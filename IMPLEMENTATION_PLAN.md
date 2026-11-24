@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-23 (Shale 完整身份迁移)
+Cập nhật lần cuối: 2026-11-23 (侧栏笔记与网页交互 PRD 1.58)
+
+### 侧栏笔记与网页交互 (PRD 1.58)
+
+- [x] 侧栏笔记移除多余顶部栏；网页焦点下 Shale 快捷键转发；笔记拖到网页正文触发替换（Mac 实包回归通过）。
 
 ### Shale 完整身份迁移 (PRD 1.57)
 
@@ -755,6 +759,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-23 (PRD 1.58)：侧栏笔记去掉顶部栏；网页获得焦点时已绑定的 Shale 组合键由主进程交回应用；笔记标签拖到网页正文触发替换。641 单元、5 项浏览器与 Mac 0.1.88 完整 WebViewer 实包通过。
 
 - 2026-11-22 (PRD 1.56)：Vim 默认灰黑/浅色光标与按主题自定义/恢复默认完成，颜色热更新保留模式、选区、历史与输入法租约；640 单元、7 项 Vim 浏览器、双平台实包颜色设置/输入法及 Mac 完整 WebViewer 通过。桌面 0.1.86 发布 7 资产，本机 Mac 原位升级与服务验收通过。
 

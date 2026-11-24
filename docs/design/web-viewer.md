@@ -2,6 +2,12 @@
 
 2026-11-01 的原生化重构一并移除了桌面 WebViewer 和用户脚本。2026-11-19 用户要求恢复并将它们列为持续维护的桌面功能。
 
+## 键盘与拖放（2026-11-23）
+
+- 用户反馈：选中网页后部分快捷键失效。原因是获得焦点的访客在自己的进程接收按键，宿主 `App` 的捕获 `keydown` 收不到。宿主在访客 dom-ready 和每次获得焦点时，把 `CommandManager.guestHotkeys()` 的签名发给主进程（`webContents.ipc` 的 `webviewer:hotkeys`）。主进程在访客 `before-input-event` 用与宿主同一份 `eventHotkey`/`hotkeySignature` 匹配，命中后 `preventDefault` 并把按键发回宿主，由同一个 `dispatchHotkey` 执行。只转发带 Ctrl/Command/Alt 的组合或 F 功能键；主修饰键加 C/V/X/A/Z、Shift+Z（Windows 另有 Y）、编辑器专属命令和普通字符仍归网页，输入法组合中的按键不转发。网页不能拦截或伪造该转发。
+- 用户反馈：笔记拖到网页正文不触发替换。原因是访客吞掉宿主的 HTML5 拖放事件，只有工具栏能命中 `.editor-area` 的放置逻辑。`Workspace` 在应用内 `dragstart` 时给 body 加 `is-app-dragging`，拖动期间 `webview` 设为 `pointer-events: none`，`dragend`/`drop` 时移除。外部文件拖入网页不受影响。
+- 原生回归 `tests/desktop-webviewer.mjs` 用访客 `sendInputEvent` 发送主快捷键打开命令面板，并把笔记标签拖到中央网页正文完成替换。
+
 ## 行为
 
 - 首页、侧栏空标签和命令面板提供「打开网页浏览器」。命令 ID 为 `webviewer:open`。中央主页打开网页时，网页原位接替顶部的 Homepage 标签。左右侧栏主页打开网页时，网页原位接替该侧的竖排 Homepage 标签。命令面板按操作前的活动区域打开。

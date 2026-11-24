@@ -155,6 +155,36 @@ try {
   await centralTab.locator('.title').click();
   await expect(mainAddress).toHaveValue(origin + '/central');
 
+  // Bound Shale shortcuts still run while the page guest has keyboard focus.
+  const guestId = await main.locator('webview').evaluate(element => element.getWebContentsId());
+  await main.locator('webview').click();
+  await expect.poll(() => app.evaluate(({ webContents }, id) => webContents.fromId(id).isFocused(), guestId)).toBe(true);
+  await app.evaluate(({ webContents }, id) => {
+    const guest = webContents.fromId(id), modifiers = [process.platform === 'darwin' ? 'meta' : 'control'];
+    guest.sendInputEvent({ type: 'keyDown', keyCode: 'P', modifiers });
+    guest.sendInputEvent({ type: 'keyUp', keyCode: 'P', modifiers });
+  }, guestId);
+  await expect(page.locator('.palette-input')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.palette-backdrop')).toHaveCount(0);
+
+  // A note tab dropped on the page itself (not only its toolbar) replaces it.
+  const noteTab = mainTabs.locator('[data-tab-path="Note.md"]');
+  const guestBox = await main.locator('webview').boundingBox();
+  const tabBox = await noteTab.boundingBox();
+  await page.mouse.move(tabBox.x + tabBox.width / 2, tabBox.y + tabBox.height / 2);
+  await page.mouse.down();
+  const targetX = guestBox.x + guestBox.width * 0.25, targetY = guestBox.y + guestBox.height * 0.25;
+  for (const step of [0.2, 0.5, 0.8, 1]) await page.mouse.move(tabBox.x + (targetX - tabBox.x) * step, tabBox.y + (targetY - tabBox.y) * step);
+  for (const offset of [2, 4, 6]) await page.mouse.move(targetX + offset, targetY + offset);
+  await expect(page.locator('.pane-drop-indicator')).toBeVisible();
+  await page.mouse.up();
+  await expect(noteTab).toHaveAttribute('aria-selected', 'true');
+  await expect(main.locator('.cm-content')).toContainText('WebViewer fixture');
+  await expect(page.locator('body.is-app-dragging')).toHaveCount(0);
+  await centralTab.locator('.title').click();
+  await expect(mainAddress).toHaveValue(origin + '/central');
+
   const openSideFile = async (side, area, name) => {
     await page.getByRole('button', { name: `新建${side}标签页` }).click();
     await area.getByRole('button', { name: /打开文件/ }).click();
@@ -164,6 +194,8 @@ try {
   await expect(left.getByRole('tab', { name: 'Note', exact: true })).toBeVisible();
   await expect(left.getByRole('tab', { name: 'Homepage', exact: true })).toHaveCount(0);
   await expect(left.locator('.cm-content')).toContainText('WebViewer fixture');
+  // Side notes show only the editor; the vertical rail owns title and close.
+  await expect(left.locator('.sidebar-tab-header')).toHaveCount(0);
   await openSideFile('右侧', right, 'Plain');
   await expect(tabs.getByRole('tab', { name: 'Plain.txt', exact: true })).toBeVisible();
   await expect(tabs.getByRole('tab', { name: 'Homepage', exact: true })).toHaveCount(0);
@@ -340,7 +372,7 @@ try {
   await expect(resumed.locator('.dock-right').getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/second');
   await expect(resumed.getByRole('button', { name: '刷新网页' })).toHaveCount(2);
   await quit();
-  console.log('Desktop WebViewer: launcher, side tabs, stable sidebar expansion, guest isolation, navigation, imports, automatic update, permission review, layout persistence and normal quit passed');
+  console.log('Desktop WebViewer: launcher, guest hotkeys, note drop on page, side tabs, stable sidebar expansion, guest isolation, navigation, imports, automatic update, permission review, layout persistence and normal quit passed');
 } finally {
   const process = app?.process();
   if (process && process.exitCode === null && process.signalCode === null) {

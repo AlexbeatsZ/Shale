@@ -15,6 +15,7 @@
 - Mac/OMEN/ROG 日用安装 0.1.87，笔记父目录与数据/启动引用已迁移；Mac 本地服务/原生同步完成、0 冲突，OMEN healthz200。ROG 桌面保持未选 Vault，ShaleNativeSync 服务 0.3.0 正常。K70/小米平板 6 Pro 新包及私有数据迁移、原生启动/healthz200 已完成，旧包 disabled-user 保留；用户明确要求完整设备同步/界面验收稍后。
 - 640 单元、7 迁移、33 相关浏览器（MCP 10 复验）、插件旧 ABI 夹具、13 同步服务+2 解压包+17 客户端、三端类型/生产构建、Mac WebViewer/MCP 实包与 Windows/Android 构建通过。现有云端 MCP 只读复验遇网关429，未宣称外部连接验收完成。报告 `tests/reports/identity-migration-20261123.md`。
 - OMEN 有 5 个迁移前配置差异的冲突（appearance/bookmarks/hotkeys/Hider.css/Theme.css），两版已保留待审阅；没有覆盖用户配置。恢复状态见 `~/.agents/shale--identity-migration/AGENTS.md`。迁移设计 `docs/design/identity-migration.md`。
+- 2026-11-23 桌面 0.1.88（PRD 1.58）：侧栏笔记无顶部栏；网页焦点下已绑定快捷键经主进程 `before-input-event` 交回宿主；应用内拖动时 webview 不接收指针事件，笔记可拖到网页正文替换。
 - 既有 Vim/输入法、跨平台快捷键、完整 WebViewer/用户脚本、原生文件同步与冲突审阅、PPT/PDF 与连续文档功能均保留。历次版本/验收见 `docs/log/` 和 `tests/reports/`。
 - ROG 同步端口 18744，workspaceId=`76fcca29-885b-4dd1-832e-cfac4f07cc09`；同一数据根/凭据/回执必须保留。旧地址仅作为过渡导入兼容入口。
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
@@ -64,6 +65,7 @@
 - Windows 0.1.87 沿用既有 NSIS GUID 但使用新 appId；部署时须将既有安装目录迁移为 `%LOCALAPPDATA%\Programs\Shale`，更新卸载/快捷方式引用后再安装。profile 显式为 `%APPDATA%\Shale`，不再由 npm 包名推导。
 
 - OMEN 上 `npm ci` 直连 npm 会因 TLS 中断失败，且失败时已清空 node_modules；设 `HTTPS_PROXY/HTTP_PROXY=http://127.0.0.1:7897` 与 `ELECTRON_SKIP_BINARY_DOWNLOAD=1` 后 17s 完成。Playwright 版本要求的 headless shell 未安装时，用已有的 `%LOCALAPPDATA%\ms-playwright\chromium-1208\chrome-win64\chrome.exe` 作 `RENDER_TEST_BROWSER`，不必下载。
+- `<webview>` 访客在自己的进程接收键盘和拖放，宿主 DOM 监听收不到：快捷键要在主进程 `before-input-event` 转发，应用内拖放要在拖动期间给 webview `pointer-events:none`。
 - HTML5 拖放中途改动指针下的 DOM（如插入空位）时，放置容器必须同时取消 `dragenter` 和 `dragover`，否则 Chrome 不再触发 drop；Chrome 的 dragleave 常无 relatedTarget，用坐标判断离开。Playwright 的拖放模拟会把 dragover 滞后一步，测试"停留"要在目标上分几次小幅移动。
 
 - Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。

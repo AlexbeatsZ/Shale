@@ -42,6 +42,9 @@ export interface DesktopBridge {
   userscripts?: UserscriptBridge;
   webViewer?: {
     onOpenTab(listener: (target: { guestId: number; url: string }) => void): () => void;
+    /** Shale hotkey signatures a focused page hands back instead of consuming. */
+    setHotkeys(signatures: string[]): void;
+    onHotkey(listener: (key: WebViewerHotkey) => void): () => void;
   };
   mcp: {
     inspect(): Promise<McpLauncherState>;
@@ -53,4 +56,8 @@ export interface DesktopBridge {
   revealVaultPath(path: string): Promise<void>;
   setChrome(dark: boolean, workspace: boolean): void;
   onBeforeClose(listener: () => Promise<void>): () => void;
+}
+
+export interface WebViewerHotkey {
+  key: string; code: string; ctrlKey: boolean; metaKey: boolean; altKey: boolean; shiftKey: boolean; repeat: boolean;
 }

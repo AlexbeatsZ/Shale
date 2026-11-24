@@ -56,7 +56,8 @@ export default function SidebarTabPanels({ side, open }: { side: 'left' | 'right
   const tabs = allTabs.filter(tab => (tab.side ?? 'right') === side);
   const tab = tabs.find(tab => tab.id === activeId);
   return <>
-    {tab && tab.type !== 'webviewer' && <div className="sidebar-tab-header"><Icon name={tab.icon} size={16} /><span>{tab.title}</span>
+    {/* Notes and web pages carry their own title/toolbar; the rail closes them. */}
+    {tab && !['webviewer', 'markdown', 'file'].includes(tab.type) && <div className="sidebar-tab-header"><Icon name={tab.icon} size={16} /><span>{tab.title}</span>
       <button className="tool-btn" title="关闭标签页" aria-label={side === 'left' ? '关闭左侧标签页' : '关闭右侧标签页'} onClick={() => void useStore.getState().closeRightTab(tab.id)}><Icon name="x" size={16} /></button></div>}
     {open && tab?.type === 'empty' && <WorkspaceLauncher key={tab.id} viewId={'sidebar:' + tab.id} />}
     {tabs.filter(tab => tab.type === 'markdown' || tab.type === 'file').map(tab => <SidebarFile key={tab.id} tab={tab} active={open && tab.id === activeId} />)}

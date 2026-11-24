@@ -95,9 +95,18 @@ export default function Workspace() {
   const [drop, setDrop] = useState<{ view: 'main' | 'split' | 'right' | 'down'; left: number; top: number; width: number; height: number } | null>(null);
 
   useEffect(() => {
-    const clear = () => setDrop(null);
-    window.addEventListener('dragend', clear);
-    return () => window.removeEventListener('dragend', clear);
+    // Drags started inside Shale must reach pane drop targets above a web page guest.
+    const start = () => document.body.classList.add('is-app-dragging');
+    const clear = () => { setDrop(null); document.body.classList.remove('is-app-dragging'); };
+    window.addEventListener('dragstart', start, true);
+    window.addEventListener('dragend', clear, true);
+    window.addEventListener('drop', clear, true);
+    return () => {
+      window.removeEventListener('dragstart', start, true);
+      window.removeEventListener('dragend', clear, true);
+      window.removeEventListener('drop', clear, true);
+      document.body.classList.remove('is-app-dragging');
+    };
   }, []);
 
   // A dragged tab replaces the pane under the pointer; without a split, the far

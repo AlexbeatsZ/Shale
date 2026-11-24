@@ -17,6 +17,8 @@ vi.mock('./documents', () => ({ documents: { get: (path: string) => host.session
 vi.mock('./store', () => ({ useStore: { getState: () => ({ ...host.state, currentPath: () => host.state.activePath }) } }));
 vi.mock('./shale/editor', () => ({ Editor: class { constructor(public cm: EditorView) {} } }));
 vi.mock('./shale/workspace', () => ({ MarkdownView: class {} }));
+const platform = vi.hoisted(() => ({ mac: false }));
+vi.mock('./platform', () => ({ isMacOS: () => platform.mac }));
 
 import { CommandManager, commandContext, type Command, type CommandContext } from './commands';
 
@@ -154,5 +156,25 @@ describe('captured target validation', () => {
     await expect(commands.execute('user:write', {}, { ...captured(), signal: abort.signal }))
       .rejects.toMatchObject({ name: 'AbortError' });
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe('web page guest hotkeys', () => {
+  const native = [
+    { id: 'commands', title: 'Commands', run: vi.fn(), hotkeys: [{ modifiers: ['Mod'], key: 'P' }] },
+    { id: 'copy-like', title: 'Copy', run: vi.fn(), hotkeys: [{ modifiers: ['Mod'], key: 'C' }, { modifiers: ['Mod', 'Shift'], key: 'Z' }] },
+    { id: 'bold', title: 'Bold', run: vi.fn(), hotkeys: [{ modifiers: ['Mod'], key: 'B' }], hotkeyScope: 'editor' as const },
+    { id: 'rename', title: 'Rename', run: vi.fn(), hotkeys: [{ modifiers: [], key: 'F2' }] },
+    { id: 'plain', title: 'Plain', run: vi.fn(), hotkeys: [{ modifiers: [], key: 'K' }] },
+    { id: 'physical', title: 'Physical', run: vi.fn(), hotkeys: [{ modifiers: ['PhysicalCtrl', 'Alt'], key: 'M' }] },
+  ];
+  const manager = () => new CommandManager({} as App, () => native, new Map(), vi.fn());
+
+  it('hands back bound app shortcuts but leaves page editing, editor-only and plain keys to the page', () => {
+    platform.mac = false;
+    expect(manager().guestHotkeys()).toEqual(['Ctrl+Alt+m', 'Ctrl+p', 'f2']);
+    platform.mac = true;
+    expect(manager().guestHotkeys()).toEqual(['Ctrl+Alt+m', 'Meta+p', 'f2']);
+    platform.mac = false;
   });
 });

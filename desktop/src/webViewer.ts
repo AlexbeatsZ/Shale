@@ -1,6 +1,8 @@
 import { session, type Session, type WebContents } from 'electron';
 import path from 'node:path';
 import { parseWebViewerUrl, webViewerPartition } from './webViewerAddress';
+import { eventHotkey, hotkeySignature } from '../../packages/search-core/src/hotkeys';
+import type { WebViewerHotkey } from './bridge';
 
 const configuredSessions = new WeakSet<Session>();
 
@@ -46,8 +48,27 @@ export function configureWebViewer(host: WebContents, runtimePort: () => number,
     });
   });
 
+  // A focused guest receives keys in its own process, so the host's capture
+  // listener never sees them. The host publishes its bound signatures and
+  // matching keys are handed back before the page or its menus consume them.
+  let hotkeys = new Set<string>();
+  host.ipc.on('webviewer:hotkeys', (_event, signatures: unknown) => {
+    if (Array.isArray(signatures) && signatures.length <= 2000 && signatures.every(item => typeof item === 'string' && item.length <= 80))
+      hotkeys = new Set(signatures);
+  });
+  const mac = process.platform === 'darwin';
+
   host.on('did-attach-webview', (_event, guest) => {
     attachScripts(guest);
+    guest.on('before-input-event', (event, input) => {
+      if (input.type !== 'keyDown' || input.isComposing || !hotkeys.size || host.isDestroyed()) return;
+      const key: WebViewerHotkey = { key: input.key, code: input.code, ctrlKey: input.control, metaKey: input.meta,
+        altKey: input.alt, shiftKey: input.shift, repeat: input.isAutoRepeat };
+      const binding = eventHotkey(key);
+      if (!binding || !hotkeys.has(hotkeySignature(binding, mac))) return;
+      event.preventDefault();
+      host.send('webviewer:hotkey', key);
+    });
     const guard = (event: Electron.Event, url: string) => {
       if (!allowed(url)) event.preventDefault();
     };

@@ -215,7 +215,11 @@ export default function App() {
       e.preventDefault(); e.stopImmediatePropagation();
     };
     window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
+    // Keys from a focused web page guest arrive here instead of the DOM listener.
+    const stopGuest = window.shaleDesktop?.webViewer?.onHotkey?.(key => {
+      sharedApp.commands.dispatchHotkey(new KeyboardEvent('keydown', { ...key, bubbles: true, cancelable: true }));
+    });
+    return () => { window.removeEventListener('keydown', onKey, true); stopGuest?.(); };
   }, []);
 
   useEffect(() => {

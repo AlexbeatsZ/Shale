@@ -326,6 +326,8 @@ body.wo-col-resizing { cursor: col-resize; user-select: none; }
 .webviewer-toolbar .tool-btn { flex-shrink: 0; }
 .webviewer-toolbar .tool-btn:disabled { opacity: .4; cursor: default; }
 .webviewer-content, .webviewer-content webview { display: flex; flex: 1; min-height: 0; }
+/* Guest pages swallow host drag events; let an in-app drag reach the pane drop target. */
+body.is-app-dragging webview { pointer-events: none; }
 .launch-action > span { flex: 1; }
 .launch-action kbd { font: 11px var(--font-ui); border-radius: 8px; background: var(--background-modifier-hover); color: var(--text-muted); padding: 2px 5px; }
 .launch-action { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 12px; border: 1px solid var(--background-modifier-border); border-radius: 20px; color: var(--text-normal); background: transparent; font-size: 13px; text-align: left; }

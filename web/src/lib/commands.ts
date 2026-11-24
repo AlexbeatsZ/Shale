@@ -107,6 +107,15 @@ export class CommandManager extends Events {
     }
     return this.keyCache = { config, revision, native, mac, bindings, blocked };
   }
+  /** Signatures a focused web page guest hands back to Shale. Page editing keys and
+   *  editor-only commands stay with the page; plain keys remain page input. */
+  guestHotkeys(): string[] {
+    const index = this.keyIndex(), mac = isMacOS(), primary = mac ? 'Meta' : 'Ctrl';
+    const editing = new Set(['c', 'v', 'x', 'a', 'z', 'Shift+z', ...(mac ? [] : ['y'])].map(key => `${primary}+${key}`));
+    return [...index.bindings].filter(([signature, candidates]) => !editing.has(signature) &&
+      (/^(Ctrl|Meta|Alt)\+/.test(signature) || /(^|\+)f\d{1,2}$/.test(signature)) &&
+      candidates.some(({ command }) => !command.hotkeyScope)).map(([signature]) => signature).sort();
+  }
   dispatchHotkey(event: KeyboardEvent): boolean {
     if (event.defaultPrevented || event.isComposing || event.getModifierState('AltGraph')) return false;
     const target = event.target instanceof Element ? event.target : null;

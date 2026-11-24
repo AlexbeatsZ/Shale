@@ -22,6 +22,12 @@ const desktopApi: DesktopBridge = {
       ipcRenderer.on('webviewer:open-tab', handler);
       return () => ipcRenderer.removeListener('webviewer:open-tab', handler);
     },
+    setHotkeys: signatures => ipcRenderer.send('webviewer:hotkeys', signatures),
+    onHotkey: listener => {
+      const handler = (_event: unknown, key: Parameters<typeof listener>[0]) => listener(key);
+      ipcRenderer.on('webviewer:hotkey', handler);
+      return () => ipcRenderer.removeListener('webviewer:hotkey', handler);
+    },
   },
   userscripts: {
     request: (action, payload) => ipcRenderer.invoke('userscripts:manage', action, payload ?? {}),

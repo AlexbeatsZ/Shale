@@ -4,6 +4,7 @@ import { parseWebViewerUrl, webViewerPartition } from '../../../desktop/src/webV
 import { activateNavigation } from '../lib/activeEditor';
 import { openWebViewer, updateCentralWebViewer } from '../lib/openWebViewer';
 import { useStore } from '../lib/store';
+import { sharedApp } from '../lib/plugins';
 import Icon from './Icon';
 
 function addressUrl(input: string) {
@@ -49,6 +50,8 @@ export default function WebViewerTab({ id, url, active, sidebar = false }: { id:
     view.setAttribute('allowpopups', '');
     view.setAttribute('aria-label', '网页内容');
     let ready = false;
+    // Refresh the keys the focused guest hands back; the index is cached per configuration.
+    const publishHotkeys = () => bridge.setHotkeys?.(sharedApp.commands.guestHotkeys());
     const persistTab = (address: string, title: string) => {
       // Native close holds the workspace inert while saving its final layout.
       if (document.getElementById('root')?.inert) return;
@@ -70,6 +73,7 @@ export default function WebViewerTab({ id, url, active, sidebar = false }: { id:
       syncControls();
     };
     view.addEventListener('dom-ready', () => {
+      publishHotkeys();
       syncControls();
       syncTitle(view.getTitle());
     });
@@ -83,7 +87,7 @@ export default function WebViewerTab({ id, url, active, sidebar = false }: { id:
       if (event.isMainFrame && event.errorCode !== -3) setError(`页面加载失败（${event.errorDescription}）`);
     });
     view.addEventListener('render-process-gone', () => setError('网页进程已退出，请刷新页面'));
-    view.addEventListener('focus', select);
+    view.addEventListener('focus', () => { select(); publishHotkeys(); });
     const unsubscribe = bridge.onOpenTab(target => {
       // Only the tab that owns this guest may open its popup.
       if (!ready || document.getElementById('root')?.inert || target.guestId !== view.getWebContentsId()) return;
