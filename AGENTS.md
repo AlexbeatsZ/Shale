@@ -12,7 +12,7 @@
 ## Current State
 - 2026-11-23 完成 Shale 完整身份迁移（PRD 1.57）：仓库 `AlexbeatsZ/Shale`；Mac 主检出 `/Users/meta/Developer/Shale`，OMEN 主检出 `C:\Users\Meta\source\repos\Shale`，旧主目录已不存在。
 - 桌面/Android 0.1.87、同步服务 0.3.0 已公开发布（桌面 7 资产/latest，Android 新包 1 生产 APK/预发布，同步 ZIP/TAR/BUILD-INFO 3 资产）。原生 identifier/applicationId=`io.github.alexbeatsz.shale`；profile=`<appData>/Shale`，Vault 配置=`.shale/`，同步=`/shale-sync/v1/`。Windows 沿用安装 GUID；Mac 固定证书与钥匙串迁移助手，certificate leaf/deep/strict 通过。
-- Mac/OMEN/ROG 日用安装 0.1.87，笔记父目录与数据/启动引用已迁移；Mac 本地服务/原生同步完成、0 冲突，OMEN healthz200。ROG 桌面保持未选 Vault，ShaleNativeSync 服务 0.3.0 正常。K70/小米平板 6 Pro 新包及私有数据迁移、原生启动/healthz200 已完成，旧包 disabled-user 保留；用户明确要求完整设备同步/界面验收稍后。
+- Mac 日用安装 2026-11-23 已原位升级到 0.1.88（healthz ok）；OMEN/ROG 日用安装 0.1.87，笔记父目录与数据/启动引用已迁移；Mac 本地服务/原生同步完成、0 冲突，OMEN healthz200。ROG 桌面保持未选 Vault，ShaleNativeSync 服务 0.3.0 正常。K70/小米平板 6 Pro 新包及私有数据迁移、原生启动/healthz200 已完成，旧包 disabled-user 保留；用户明确要求完整设备同步/界面验收稍后。
 - 640 单元、7 迁移、33 相关浏览器（MCP 10 复验）、插件旧 ABI 夹具、13 同步服务+2 解压包+17 客户端、三端类型/生产构建、Mac WebViewer/MCP 实包与 Windows/Android 构建通过。现有云端 MCP 只读复验遇网关429，未宣称外部连接验收完成。报告 `tests/reports/identity-migration-20261123.md`。
 - OMEN 有 5 个迁移前配置差异的冲突（appearance/bookmarks/hotkeys/Hider.css/Theme.css），两版已保留待审阅；没有覆盖用户配置。恢复状态见 `~/.agents/shale--identity-migration/AGENTS.md`。迁移设计 `docs/design/identity-migration.md`。
 - 2026-11-23 桌面 0.1.88（PRD 1.58）：侧栏笔记无顶部栏；网页焦点下已绑定快捷键经主进程 `before-input-event` 交回宿主；应用内拖动时 webview 不接收指针事件，笔记可拖到网页正文替换。
