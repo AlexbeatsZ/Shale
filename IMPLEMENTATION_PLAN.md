@@ -8,7 +8,8 @@ Cập nhật lần cuối: 2026-11-24 (恢复原生光标与选区 PRD 1.59)
 
 ### 恢复原生光标与选区 (PRD 1.59)
 
-- [~] 移除全局 drawSelection，原生光标/文字选区保持旧主题颜色，Vim 状态/历史/输入法回归；桌面与 Android 0.1.89 构建发布并部署 Mac/OMEN/ROG/K70/平板。
+- [x] 移除全局 drawSelection，恢复原生光标/主题文字选区；641 单元、8 Vim 浏览器、Mac 颜色/WebViewer 与 Windows 完整 Vim/输入法实包通过。桌面/Android 0.1.89 已发布并安装 Mac/OMEN/ROG/K70/平板。
+- [ ] 平板已安装并启动但 healthz 连接超时，后续补服务/前台界面验收；Mac 本轮完整输入法往返受前台保护阻止。报告 `tests/reports/native-selection-restoration-20261124.md`。
 
 ### 侧栏笔记与网页交互 (PRD 1.58)
 
@@ -763,6 +764,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-24: PRD 1.59 原生细光标/主题文字选区恢复；0.1.89 桌面与 Android 发布，全部五台可达设备已安装。Mac/OMEN/K70 healthz 通过，ROG 保留未选库；平板健康接口超时，验收边界见专项报告。
 
 - 2026-11-23 (PRD 1.58)：侧栏笔记去掉顶部栏；网页获得焦点时已绑定的 Shale 组合键由主进程交回应用；笔记标签拖到网页正文触发替换。641 单元、5 项浏览器与 Mac 0.1.88 完整 WebViewer 实包通过。
 
