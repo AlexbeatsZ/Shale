@@ -14,7 +14,7 @@
 - 2026-11-24 PRD 1.59：恢复 Insert/禁用时原生细光标与主题文字选区，保留 Normal/Visual 块光标和颜色自定义。桌面 v0.1.89（7 资产/latest）及 Android android-v0.1.89（生产 APK/预发布）已发布；Mac/OMEN/ROG/K70/小米平板6Pro 全部原位安装 0.1.89。641 单元、8 Vim 浏览器、Mac 颜色与完整 WebViewer、Windows 完整 Vim/输入法实包通过。报告 `tests/reports/native-selection-restoration-20261124.md`。
 - 2026-11-23 完成 Shale 完整身份迁移（PRD 1.57）：仓库 `AlexbeatsZ/Shale`；Mac 主检出 `/Users/meta/Developer/Shale`，OMEN 主检出 `C:\Users\Meta\source\repos\Shale`，旧主目录已不存在。
 - 身份迁移首发桌面/Android 0.1.87、同步服务 0.3.0 已公开发布（当前应用 0.1.90，同步服务仍 0.3.0）。原生 identifier/applicationId=`io.github.alexbeatsz.shale`；profile=`<appData>/Shale`，Vault 配置=`.shale/`，同步=`/shale-sync/v1/`。Windows 沿用安装 GUID；Mac 固定证书与钥匙串迁移助手，certificate leaf/deep/strict 通过。
-- 日用安装截至 2026-11-24：Mac/OMEN/K70 0.1.90 启动及 healthz ok；ROG 0.1.90 已启动并保留未选 Vault，ShaleNativeSync 0.3.0 未更改。小米平板6Pro 0.1.90/code90 安装与启动确认、服务端口监听存在，但 healthz 连接超时，尚未通过本轮服务健康验收。迁移后笔记/配置/身份保留，旧 Android 包 disabled-user 保留；完整 Android 同步/界面验收仍按用户此前要求延后。
+- 日用安装截至 2026-11-24：Mac/OMEN/K70 0.1.90 启动及 healthz ok；ROG 0.1.90 已启动并保留未选 Vault，ShaleNativeSync 0.3.0 未更改。小米平板6Pro 0.1.90/code90 安装与启动确认、服务端点已写出，但 healthz 连接超时，尚未通过本轮服务健康验收。迁移后笔记/配置/身份保留，旧 Android 包 disabled-user 保留；完整 Android 同步/界面验收仍按用户此前要求延后。
 - 640 单元、7 迁移、33 相关浏览器（MCP 10 复验）、插件旧 ABI 夹具、13 同步服务+2 解压包+17 客户端、三端类型/生产构建、Mac WebViewer/MCP 实包与 Windows/Android 构建通过。现有云端 MCP 只读复验遇网关429，未宣称外部连接验收完成。报告 `tests/reports/identity-migration-20261123.md`。
 - OMEN 有 5 个迁移前配置差异的冲突（appearance/bookmarks/hotkeys/Hider.css/Theme.css），两版已保留待审阅；没有覆盖用户配置。恢复状态见 `~/.agents/shale--identity-migration/AGENTS.md`。迁移设计 `docs/design/identity-migration.md`。
 - 2026-11-23 桌面 0.1.88（PRD 1.58）：侧栏笔记无顶部栏；网页焦点下已绑定快捷键经主进程 `before-input-event` 交回宿主；应用内拖动时 webview 不接收指针事件，笔记可拖到网页正文替换。
