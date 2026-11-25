@@ -170,7 +170,16 @@ test('status groups include highlighted JSON configuration, retain edits through
   await expect(preview.locator('.cm-link-preview-header')).toHaveText(pdfPath);
   await expect(preview).not.toContainText('未找到');
   await page.keyboard.press('Escape');
-  await pdfLink.click({button:'right'});await host.getByRole('menuitem',{name:'在 Finder 中显示',exact:true}).click();
+  await pdfLink.click({button:'right'});
+  // A harmless view transaction while the menu is open must not invalidate a
+  // fixed file target (native PDF outline/preview loading can cause these).
+  await pdfLink.evaluate(async link=>{
+    const load=(path:string)=>import(path);
+    const {EditorView}=await load('/node_modules/.vite/deps/@codemirror_view.js');
+    const view=EditorView.findFromDOM(link.closest('.cm-editor') as HTMLElement)!;
+    view.dispatch({selection:{anchor:view.state.doc.length}});
+  });
+  await host.getByRole('menuitem',{name:'在 Finder 中显示',exact:true}).click();
   expect(await page.evaluate(()=>(window as any).nativeReveals)).toEqual([configPath,pdfPath]);
   await pdfLink.click();await expect(host.locator('.virtual-pdf-pages canvas').first()).toBeVisible();
   const surface=host.locator('.virtual-pdf-pages .pdf-page-surface').first();

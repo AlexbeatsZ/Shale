@@ -196,7 +196,10 @@ export default function MarkdownView(props: MarkdownViewProps) {
     const protect = (items: RenderMenuItem[]): RenderMenuItem[] => items.map(item => ({ ...item,
       submenu: item.submenu && protect(item.submenu),
       onClick: item.onClick && (() => {
-        if (view.current?.state !== captured) { context.reportError?.('文档或选区已改变，请重新打开菜单'); return; }
+        const fixedTarget = item.id === 'file:show-in-folder' || item.id?.startsWith('link:');
+        if (fixedTarget ? !view.current || latest.current.context.sourcePath !== context.sourcePath : view.current?.state !== captured) {
+          context.reportError?.('文档或选区已改变，请重新打开菜单'); return;
+        }
         item.onClick?.();
       }),
     }));

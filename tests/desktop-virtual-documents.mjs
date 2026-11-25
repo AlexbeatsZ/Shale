@@ -55,7 +55,7 @@ if (process.env.VIRTUAL_REAL_VAULT) {
     const text=`# Chapter ${chapter}\n\n$$x^2$$ ^eq-native-${chapter}\n\n`+'Independent chapter text.\n\n'.repeat(100);
     await fs.writeFile(path.join(vault,file),text); original.set(file,Buffer.from(text));
   }
-  for (let index=1;index<=3;index++) await fs.writeFile(path.join(vault,slides,`物理化学 课件 第0${index}章 #100% (A).pdf`),makePdfFixture({pages:40}));
+  for (let index=1;index<=3;index++) await fs.writeFile(path.join(vault,slides,`物理化学 课件 第0${index}章 100% (A).pdf`),makePdfFixture({pages:40}));
 }
 await fs.writeFile(path.join(profile,'desktop-config.json'),JSON.stringify({vaultPath:vault,trustedPlugins:false}));
 const executable = process.argv[2] ? path.resolve(process.argv[2]) : path.join(root,'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
