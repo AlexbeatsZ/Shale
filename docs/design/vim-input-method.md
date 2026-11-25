@@ -17,6 +17,12 @@ Native snippets and editing shortcuts run in Insert only. Reading views are not
 Vim editors. Application commands/search textboxes and WebViewer guests are separate contexts.
 Vim’s own command-line panel retains English so :w and other Ex commands work.
 
+Clipboard acceptance (2026-11-25): test both enabled and disabled Vim against
+WebViewer input/textarea/contenteditable and the host address bar. Vim does not
+own these fields. Native edit fallback must preserve Vim's Control combinations
+in Normal/Visual on Windows and shared document undo/redo. Test macOS OS events
+as well as CDP; successful CDP paste does not prove physical Command+V works.
+
 ## Cursor appearance (PRD 1.56)
 
 The default Vim cursor uses the ordinary editor's `--text-normal` color: gray/black

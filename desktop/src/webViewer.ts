@@ -3,6 +3,7 @@ import path from 'node:path';
 import { parseWebViewerUrl, webViewerPartition } from './webViewerAddress';
 import { eventHotkey, hotkeySignature } from '../../packages/search-core/src/hotkeys';
 import type { WebViewerHotkey } from './bridge';
+import { nativeEditShortcut, performNativeEdit } from './editShortcuts';
 
 const configuredSessions = new WeakSet<Session>();
 
@@ -61,9 +62,17 @@ export function configureWebViewer(host: WebContents, runtimePort: () => number,
   host.on('did-attach-webview', (_event, guest) => {
     attachScripts(guest);
     guest.on('before-input-event', (event, input) => {
-      if (input.type !== 'keyDown' || input.isComposing || !hotkeys.size || host.isDestroyed()) return;
+      if (input.type !== 'keyDown' || input.isComposing || host.isDestroyed()) return;
       const key: WebViewerHotkey = { key: input.key, code: input.code, ctrlKey: input.control, metaKey: input.meta,
         altKey: input.alt, shiftKey: input.shift, repeat: input.isAutoRepeat };
+      // With menu accelerators removed these keys do not produce native edits
+      // in a guest. Execute on this guest, without changing host/editor focus.
+      const edit = nativeEditShortcut(key, mac);
+      if (edit) {
+        event.preventDefault();
+        performNativeEdit(guest, edit);
+        return;
+      }
       const binding = eventHotkey(key);
       if (!binding || !hotkeys.has(hotkeySignature(binding, mac))) return;
       event.preventDefault();

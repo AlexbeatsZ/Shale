@@ -12,17 +12,9 @@ var existing: CFTypeRef?
 let present=SecItemCopyMatching(lookup as CFDictionary, &existing)
 if present == errSecSuccess {
  guard (existing as? Data) == data else { fputs("A different Shale encryption key already exists; preserved both\n",stderr);exit(2) }
- var trusted = [SecTrustedApplication]()
- for executable in [CommandLine.arguments[0]] + Array(CommandLine.arguments.dropFirst()) {
-  var application: SecTrustedApplication?
-  let code = executable.withCString { SecTrustedApplicationCreateFromPath($0, &application) }
-  guard code == errSecSuccess, let application = application else { exit(5) }; trusted.append(application)
- }
- var access: SecAccess?
- guard SecAccessCreate("Shale Safe Storage" as CFString, trusted as CFArray, &access) == errSecSuccess, let access = access else { exit(6) }
- let key: [String: Any] = [kSecClass as String:kSecClassGenericPassword,kSecAttrService as String:current + " Safe Storage"]
- guard SecItemUpdate(key as CFDictionary,[kSecAttrAccess as String:access] as CFDictionary) == errSecSuccess else { exit(7) }
- print("Shale encryption key already matches; trusted current signed application");exit(0)
+ // Rewriting the access of an existing item asks for the keychain password; its
+ // requirement-based ACL already trusts every build signed with the same identity.
+ print("Shale encryption key already matches; left unchanged");exit(0)
 }
 guard present == errSecItemNotFound else { exit(3) }
 var trusted = [SecTrustedApplication]()

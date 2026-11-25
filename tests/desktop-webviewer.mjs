@@ -51,7 +51,7 @@ const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 let app;
 const launch = () => electron.launch({
-  executablePath, args: [`--user-data-dir=${profile}`, ...launchArgs], cwd: fixture, env, timeout: 120000,
+  executablePath, args: [`--user-data-dir=${profile}`, '--use-mock-keychain', ...launchArgs], cwd: fixture, env, timeout: 120000,
 });
 const quit = async () => {
   await Promise.all([

@@ -10,7 +10,7 @@ export async function runDesktopAction(id: DesktopAction) {
   if (id === 'app:reload' || id === 'app:force-reload') {
     await saveWorkspaceBeforeExit();
   }
-  if (id.startsWith('native:') && !document.activeElement?.matches('input, textarea')) getActiveEditor()?.focus();
+  if (id.startsWith('native:') && !document.activeElement?.matches('input, textarea, webview, [contenteditable="true"]')) getActiveEditor()?.focus();
   await bridge.runAction(id);
 }
 export const desktopActionCommands: NativeCommand[] = desktopActions.map(action => ({

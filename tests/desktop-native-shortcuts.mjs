@@ -24,7 +24,7 @@ const [executablePath, ...args] = process.argv.slice(2);
 const primary = process.platform === 'darwin' ? 'Meta' : 'Control';
 let app;
 try {
-  app = await electron.launch({ executablePath, args: [`--user-data-dir=${profile}`, ...args], cwd: fixture, env, timeout: 120000 });
+  app = await electron.launch({ executablePath, args: [`--user-data-dir=${profile}`, '--use-mock-keychain', ...args], cwd: fixture, env, timeout: 120000 });
   const page = await app.firstWindow();
   page.on('pageerror', error => console.error('PAGE_ERROR', error.message));
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });

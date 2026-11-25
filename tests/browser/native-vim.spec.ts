@@ -19,6 +19,31 @@ async function editor(page: Page, enabled = true) {
 }
 const source = (page: Page) => page.evaluate(() => window.renderHarness.source(0));
 
+test('native clipboard fallback leaves Vim Control chords and shared undo with the editor', async ({ page }) => {
+  const view = await editor(page);
+  await page.evaluate(async () => {
+    const { dispatchNativeEdit } = await import('/src/lib/nativeEditShortcuts.ts');
+    (window as any).nativeEditCalls = [];
+    (window as any).shaleDesktop = { platform: 'win32', runEditAction: async (action: string) => { (window as any).nativeEditCalls.push(action); } };
+    window.addEventListener('keydown', event => {
+      if (dispatchNativeEdit(event)) { event.preventDefault(); event.stopImmediatePropagation(); }
+    }, true);
+  });
+  await page.keyboard.press('Control+v');
+  await expect(view).toHaveAttribute('data-vim-mode', 'visual');
+  expect(await page.evaluate(() => (window as any).nativeEditCalls)).toEqual([]);
+  await page.keyboard.press('Escape'); await page.keyboard.press('i');
+  await page.keyboard.press('Control+v');
+  expect(await page.evaluate(() => (window as any).nativeEditCalls)).toEqual(['paste']);
+  await page.keyboard.press('Control+z');
+  expect(await page.evaluate(() => (window as any).nativeEditCalls)).toEqual(['paste']);
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => { const input = document.createElement('input'); input.id = 'address-fixture'; document.body.append(input); input.focus(); });
+  await page.keyboard.press('Control+v'); await page.keyboard.press('Control+z');
+  expect(await page.evaluate(() => (window as any).nativeEditCalls)).toEqual(['paste', 'paste', 'undo']);
+  await expect(view).toHaveAttribute('data-vim-mode', 'normal');
+});
+
 test('Vim is opt-in and changing the setting reconfigures the existing editor', async ({ page }) => {
   const view = await editor(page, false);
   await expect(view).not.toHaveAttribute('data-vim-mode');

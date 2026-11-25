@@ -4,6 +4,8 @@
 
 ## 键盘与拖放（2026-11-23）
 
+- 2026-11-25 剪贴板补充：不向宿主转发标准编辑组合，还必须实际执行访客所属的原生编辑动作。菜单移除 role/accelerator 后，macOS 系统按键和访客 `sendInputEvent` 不会自动产生复制/粘贴；CDP 对宿主输入框的成功不覆盖这条路径。访客 `before-input-event` 直接执行所属 WebContents 的复制/粘贴/剪切/全选/撤销/重做；地址栏和宿主输入由 DOM 捕获在自定义命令未命中后补原生编辑动作。Markdown 撤销仍归共享历史，Windows Vim 普通模式 Control 键仍归 Vim。测试同时覆盖 Vim 开关、input/textarea/contenteditable、菜单、真实系统按键，所有隔离测试用 `--use-mock-keychain` 跳过真实钥匙串迁移。
+
 - 用户反馈：选中网页后部分快捷键失效。原因是获得焦点的访客在自己的进程接收按键，宿主 `App` 的捕获 `keydown` 收不到。宿主在访客 dom-ready 和每次获得焦点时，把 `CommandManager.guestHotkeys()` 的签名发给主进程（`webContents.ipc` 的 `webviewer:hotkeys`）。主进程在访客 `before-input-event` 用与宿主同一份 `eventHotkey`/`hotkeySignature` 匹配，命中后 `preventDefault` 并把按键发回宿主，由同一个 `dispatchHotkey` 执行。只转发带 Ctrl/Command/Alt 的组合或 F 功能键；主修饰键加 C/V/X/A/Z、Shift+Z（Windows 另有 Y）、编辑器专属命令和普通字符仍归网页，输入法组合中的按键不转发。网页不能拦截或伪造该转发。
 - 用户反馈：笔记拖到网页正文不触发替换。原因是访客吞掉宿主的 HTML5 拖放事件，只有工具栏能命中 `.editor-area` 的放置逻辑。`Workspace` 在应用内 `dragstart` 时给 body 加 `is-app-dragging`，拖动期间 `webview` 设为 `pointer-events: none`，`dragend`/`drop` 时移除。外部文件拖入网页不受影响。
 - 原生回归 `tests/desktop-webviewer.mjs` 用访客 `sendInputEvent` 发送主快捷键打开命令面板，并把笔记标签拖到中央网页正文完成替换。

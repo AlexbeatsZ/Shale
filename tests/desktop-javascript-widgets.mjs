@@ -36,7 +36,7 @@ const args = process.argv[2] ? [] : [path.join(root, 'desktop/dist/main.js')];
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
 let app;
 try {
-  app = await electron.launch({ executablePath, args: [...args, `--user-data-dir=${profile}`], cwd: fixture, env, timeout: 120000 });
+  app = await electron.launch({ executablePath, args: [...args, `--user-data-dir=${profile}`, '--use-mock-keychain'], cwd: fixture, env, timeout: 120000 });
   const page = await app.firstWindow();
   const diagnostics = [];
   page.on('console', message => { if (['error', 'warning'].includes(message.type())) diagnostics.push(message.text()); });

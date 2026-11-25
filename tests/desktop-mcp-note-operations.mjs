@@ -17,7 +17,7 @@ await fs.mkdir(profile); await fs.mkdir(vault);
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: false }));
 await fs.writeFile(path.join(vault, 'fixture.md'), '# Fixture\n\nOriginal note.\n');
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
-const app = await electron.launch({ executablePath: executable, args: [`--user-data-dir=${profile}`], cwd: fixture, env, timeout: 120000 });
+const app = await electron.launch({ executablePath: executable, args: [`--user-data-dir=${profile}`, '--use-mock-keychain'], cwd: fixture, env, timeout: 120000 });
 const clients = [], errors = [];
 const output = path.resolve(process.env.MCP_NOTES_OUTPUT ?? fixture);
 let stderr = '';

@@ -22,7 +22,7 @@ const run = promisify(execFile);
 let app, initial, helper, pid, page;
 const native = async (action, state) => JSON.parse((await run(helper, [action, ...(action === 'list' ? [] : [String(pid)]), ...(state ? [JSON.stringify(state)] : [])], { timeout: 5000, windowsHide: true })).stdout);
 try {
-  app = await electron.launch({ executablePath, args: [`--user-data-dir=${profile}`, ...args], cwd: fixture, env, timeout: 120000 });
+  app = await electron.launch({ executablePath, args: [`--user-data-dir=${profile}`, '--use-mock-keychain', ...args], cwd: fixture, env, timeout: 120000 });
   page = await app.firstWindow();
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });

@@ -61,7 +61,7 @@ await fs.writeFile(path.join(profile,'desktop-config.json'),JSON.stringify({vaul
 const executable = process.argv[2] ? path.resolve(process.argv[2]) : path.join(root,'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
 const args = process.argv[2] ? [] : [path.join(root,'desktop/dist/main.js')];
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
-const app = await electron.launch({executablePath:executable,args:[...args,`--user-data-dir=${profile}`],cwd:fixture,env,timeout:120000});
+const app = await electron.launch({executablePath:executable,args:[...args,`--user-data-dir=${profile}`, '--use-mock-keychain'],cwd:fixture,env,timeout:120000});
 const errors = [], reads = new Set();
 try {
   const page=await app.firstWindow();page.on('pageerror',error=>errors.push(String(error)));

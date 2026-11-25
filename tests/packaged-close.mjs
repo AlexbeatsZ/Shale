@@ -72,7 +72,7 @@ require(${JSON.stringify(entry)});
   const readEvents = async () => (await fs.readFile(eventsFile, 'utf8')).trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
   const started = Date.now();
   try {
-    application = await _electron.launch({ executablePath, args: [bootstrap, '--user-data-dir=' + profile],
+    application = await _electron.launch({ executablePath, args: [bootstrap, '--user-data-dir=' + profile, '--use-mock-keychain'],
       cwd: fixture, env: environment, timeout: 30000 });
     nativeProcess = application.process();
     nativeProcess.stdout?.on('data', chunk => { void fs.appendFile(path.join(fixture, 'electron-stdout.log'), chunk); });

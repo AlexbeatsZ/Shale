@@ -10,7 +10,7 @@ await fs.writeFile(path.join(vault, 'fixture.md'), '# native lifecycle\n');
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault }));
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
-const application = await electron.launch({ executablePath: path.resolve('node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'), args: [path.resolve('desktop'), `--user-data-dir=${profile}`], env, timeout: 120000 });
+const application = await electron.launch({ executablePath: path.resolve('node_modules/electron/dist/Electron.app/Contents/MacOS/Electron'), args: [path.resolve('desktop'), `--user-data-dir=${profile}`, '--use-mock-keychain'], env, timeout: 120000 });
 try {
   await application.firstWindow();
   const initial = await application.evaluate(({ BrowserWindow }) => {

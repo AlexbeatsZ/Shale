@@ -23,7 +23,7 @@ await new Promise(resolve => socket.listen(0, '127.0.0.1', resolve));
 const debugPort = socket.address().port;
 await new Promise(resolve => socket.close(resolve));
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
-const launch = () => spawn(executable, [`--user-data-dir=${profile}`, `--remote-debugging-port=${debugPort}`], {
+const launch = () => spawn(executable, [`--user-data-dir=${profile}`, '--use-mock-keychain', `--remote-debugging-port=${debugPort}`], {
   env, cwd: fixture, windowsHide: true, stdio: 'ignore',
 });
 const launchers = [launch()];

@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { migrateDesktopProfile } from '../../scripts/identity-migration.mjs';
 import { InputMethodService, inputMethodBackend } from './inputMethod';
 import { performDesktopAction } from './nativeActions';
+import { performNativeEdit } from './editShortcuts';
 import { app, BrowserWindow, Menu, dialog, ipcMain, shell, safeStorage, clipboard, type IpcMainEvent, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron';
 import { configureWebViewer } from './webViewer';
 import { UserscriptService } from './userscripts/service';
@@ -470,6 +471,11 @@ function registerDesktopRequests(): void {
     if (!window) throw new Error('Local application frame required');
     performDesktopAction(window, action);
   });
+  ipcMain.handle('desktop:edit', (event, action: unknown) => {
+    const window = desktopWindow(event);
+    if (!window) throw new Error('Local application frame required');
+    performNativeEdit(window.webContents, action);
+  });
 
   const mcp = mcpLauncher = new McpLauncher({
     runtimeDir: path.join(app.getPath('userData'), 'mcp'),
@@ -544,7 +550,8 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     try {
-      if (app.isPackaged && process.platform === 'darwin') {
+      // Isolated test launches use Chromium's mock keychain and never touch the login keychain.
+      if (app.isPackaged && process.platform === 'darwin' && !app.commandLine.hasSwitch('use-mock-keychain')) {
         const marker = path.join(app.getPath('userData'), 'keychain-migrated-v1');
         try { await fs.access(marker); } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;

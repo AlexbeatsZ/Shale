@@ -26,7 +26,7 @@ const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
 let application;
 const errors = [], diagnostics = [];
 try {
-  application = await electron.launch({ executablePath, args: [`--user-data-dir=${profile}`], cwd: fixture, env, timeout: 120000 });
+  application = await electron.launch({ executablePath, args: [`--user-data-dir=${profile}`, '--use-mock-keychain'], cwd: fixture, env, timeout: 120000 });
   const page = await application.firstWindow();
   page.on('pageerror', error => errors.push(String(error)));
   page.on('console', message => { if (message.type() === 'error') diagnostics.push(message.text()); });

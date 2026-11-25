@@ -16,6 +16,7 @@ const desktopApi: DesktopBridge = {
   version: process.argv.find(arg => arg.startsWith('--shale-version='))?.split('=')[1] ?? '',
   nativePlugins: !!nativeArg,
   runAction: action => ipcRenderer.invoke('desktop:action', action),
+  runEditAction: action => ipcRenderer.invoke('desktop:edit', action),
   webViewer: {
     onOpenTab: listener => {
       const handler = (_event: unknown, target: { guestId: number; url: string }) => listener(target);

@@ -38,6 +38,7 @@ export interface DesktopBridge {
   version: string;
   nativePlugins: boolean;
   runAction(action: DesktopAction): Promise<void>;
+  runEditAction(action: import('./editShortcuts').NativeEditAction): Promise<void>;
   vaultPath?: string;
   userscripts?: UserscriptBridge;
   webViewer?: {

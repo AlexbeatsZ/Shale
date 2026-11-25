@@ -1,4 +1,5 @@
 import { host, handleBack } from './lib/host';
+import { dispatchNativeEdit } from './lib/nativeEditShortcuts';
 import { desktopCommands } from '../../desktop/src/bridge';
 import { ensureWriting, writingFileChanged, watchExternalWritingSources } from './lib/writing/config';
 import { bindWritingNavigation } from './lib/writing/commands';
@@ -211,7 +212,7 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!sharedApp.commands.dispatchHotkey(e)) return;
+      if (!sharedApp.commands.dispatchHotkey(e) && !dispatchNativeEdit(e)) return;
       e.preventDefault(); e.stopImmediatePropagation();
     };
     window.addEventListener('keydown', onKey, true);

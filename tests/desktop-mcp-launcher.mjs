@@ -25,7 +25,7 @@ await fs.writeFile(path.join(vault, 'fixture.md'), original);
 const config = { vaultPath: vault, trustedPlugins: false, mcpProjectPath: path.join(fixture, 'missing-old-companion') };
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify(config));
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
-const application = await electron.launch({ executablePath: executable, args: [`--user-data-dir=${profile}`], cwd: fixture, env, timeout: 120000 });
+const application = await electron.launch({ executablePath: executable, args: [`--user-data-dir=${profile}`, '--use-mock-keychain'], cwd: fixture, env, timeout: 120000 });
 const errors = [], clients = [];
 try {
   const page = await application.firstWindow();

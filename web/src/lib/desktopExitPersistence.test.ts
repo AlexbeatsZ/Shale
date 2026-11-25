@@ -1,6 +1,7 @@
 import { migrateDesktopProfile } from '../../../scripts/identity-migration.mjs';
 import { InputMethodService } from '../../../desktop/src/inputMethod';
 import { desktopActions } from '../../../desktop/src/bridge';
+import { performNativeEdit } from '../../../desktop/src/editShortcuts';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -50,6 +51,7 @@ function fixture(platform = 'win32') {
       send: vi.fn(),
       setWindowOpenHandler: vi.fn(),
       reload: vi.fn(),
+      paste: vi.fn(),
     });
     close = vi.fn(() => {
       const event = { preventDefault: vi.fn() };
@@ -76,7 +78,7 @@ function fixture(platform = 'win32') {
   });
   runInNewContext(compiled + '\nexports.fixture = { createWindow, requestWindowClose, initialize: (launcher, server) => { serverPort = 8787; serverProcess = server; registerDesktopRequests(); mcpLauncher = launcher; } };', {
     exports: moduleExports,
-    require: (id: string) => id === '../../scripts/identity-migration.mjs' ? { migrateDesktopProfile } : id === 'electron' ? electron : id === './inputMethod' ? { InputMethodService, inputMethodBackend: () => inputBackend } : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
+    require: (id: string) => id === './editShortcuts' ? { performNativeEdit } : id === '../../scripts/identity-migration.mjs' ? { migrateDesktopProfile } : id === 'electron' ? electron : id === './inputMethod' ? { InputMethodService, inputMethodBackend: () => inputBackend } : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
     process: { platform, arch: 'x64', execPath: 'Shale' },
     __dirname: fileURLToPath(new URL('../../../desktop/src', import.meta.url)),
     URL, Buffer, setTimeout, clearTimeout, console,
@@ -106,6 +108,18 @@ describe('desktop close coordinator against the production main implementation',
     expect(() => host.invoke('desktop:action', current, 'unknown-action')).toThrow('Unsupported desktop action');
     host.invoke('desktop:action', current, 'app:reload');
     expect(host.window.webContents.reload).toHaveBeenCalledOnce();
+  });
+
+  it('rejects guest edit IPC and arbitrary methods while allowing native paste from the local frame', () => {
+    const host = fixture('darwin'), frame = host.window.webContents.mainFrame;
+    for (const event of [{ sender: {}, senderFrame: frame }, { sender: host.window.webContents, senderFrame: { url: frame.url } }])
+      expect(() => host.invoke('desktop:edit', event, 'paste')).toThrow('Local application frame required');
+    const current = { sender: host.window.webContents, senderFrame: frame };
+    for (const action of ['reload', '__proto__', 'constructor', null, {}])
+      expect(() => host.invoke('desktop:edit', current, action)).toThrow('Unsupported native edit action');
+    host.invoke('desktop:edit', current, 'paste');
+    expect(host.window.webContents.paste).toHaveBeenCalledOnce();
+    expect(host.window.webContents.reload).not.toHaveBeenCalled();
   });
 
   it('restricts input-method IPC to the local main frame and restores the foreground lease', async () => {

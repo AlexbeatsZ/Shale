@@ -78,7 +78,7 @@ test('dm display snippets highlight while typing without Enter or leaving the fo
 for (const { trigger, opener, closer, keys, tex } of [
   { trigger: 'mk', opener: '\\(', closer: '\\)', keys: '(x', tex: '(x)' },
   { trigger: 'mk', opener: '\\(', closer: '\\)', keys: '1+x', tex: '1+x' },
-  { trigger: 'dm', opener: '\\[\n', closer: '\n\\]', keys: '(x', tex: '(x)' },
+  { trigger: 'dm', opener: '\\[', closer: '\\]', keys: '(x', tex: '(x)' },
 ]) {
   test(`TeX delimiter snippet ${trigger} accepts ${keys} from its first keystroke`, async ({ page }) => {
     const snippets = JSON.stringify([

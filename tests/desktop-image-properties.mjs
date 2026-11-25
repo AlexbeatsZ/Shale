@@ -86,7 +86,7 @@ let application;
 const rendererErrors = [], diagnostics = [];
 const virtualGeometry = [];
 try {
-  application = await electron.launch({ executablePath, args: [...args, `--user-data-dir=${profile}`], cwd: fixture, env, timeout: 120000 });
+  application = await electron.launch({ executablePath, args: [...args, `--user-data-dir=${profile}`, '--use-mock-keychain'], cwd: fixture, env, timeout: 120000 });
   const page = await application.firstWindow();
   page.on('pageerror', error => rendererErrors.push(String(error)));
   page.on('console', message => { if (['error', 'warning'].includes(message.type())) diagnostics.push(message.text()); });

@@ -50,23 +50,33 @@ test('revealed renderable syntax uses the ^id colour', async ({ page }) => {
 test('AI-style \\( \\) and \\[ \\] render as math and reveal faint delimiters', async ({ page }) => {
   await page.goto('/__render-test');
   await page.waitForFunction(() => Boolean(window.renderHarness));
-  const source = 'intro\n\n行内 \\(\\alpha^2\\) 公式\n\n\\[\nE = mc^2\n\\]\n\n引用 \\[吕九\\]\n\nend';
+  const source = 'intro\n\n行内 \\(\\alpha^2\\) 公式\n\n\\[x+1\\]\n\n\\[\nE = mc^2\n\\]\n\n引用 \\[吕九\\]\n\nend';
   await page.evaluate(s => window.renderHarness.reset(s), source);
   await page.evaluate(length => window.renderHarness.cursor(0, length), source.length);
   const live = page.locator('[data-slot="0"]');
   await expect(live.locator('mjx-container[jax="SVG"]:not([display="true"])')).toHaveCount(1);
-  await expect(live.locator('mjx-container[jax="SVG"][display="true"]')).toHaveCount(1);
+  await expect(live.locator('mjx-container[jax="SVG"][display="true"]')).toHaveCount(2);
   // Escaped literal brackets stay text (the backslashes are concealed as escapes).
   await expect(live.locator('.cm-line', { hasText: '引用 [吕九]' })).toHaveCount(1);
-  // Caret inside the inline formula: delimiters are source in the ^id colour.
-  await page.evaluate(p => window.renderHarness.cursor(0, p), source.indexOf('alpha'));
-  const delimiters = live.locator('.cm-tex-delimiter');
-  await expect(delimiters).toHaveText(['\\(', '\\)']);
-  const faint = await delimiters.first().evaluate(el => getComputedStyle(el).color);
   const blockId = await page.evaluate(() => {
     const probe = document.createElement('span'); probe.className = 'cm-blockid';
     document.querySelector('[data-slot="0"] .cm-line')!.append(probe);
     const colour = getComputedStyle(probe).color; probe.remove(); return colour;
   });
-  expect(faint).toBe(blockId);
+  for (const [body, opener, closer] of [
+    ['alpha', '\\(', '\\)'], ['x+1', '\\[', '\\]'], ['E =', '\\[', '\\]'],
+  ]) {
+    await page.evaluate(p => window.renderHarness.cursor(0, p), source.indexOf(body) + 1);
+    const delimiters = live.locator('.cm-tex-delimiter');
+    await expect(delimiters).toHaveText([opener, closer]);
+    const colors = await delimiters.evaluateAll(elements => elements.flatMap(element => {
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const colors: [string, string][] = [];
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        colors.push([node.textContent!, getComputedStyle(node.parentElement!).color]);
+      }
+      return colors;
+    }));
+    for (const [text, color] of colors) expect(color, `${body}: ${text}`).toBe(blockId);
+  }
 });
