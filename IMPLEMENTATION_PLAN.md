@@ -9,7 +9,7 @@ Cập nhật lần cuối: 2026-11-25 (标签颜色分组与复制 PRD 1.65)
 ### 标签颜色分组与复制 (PRD 1.65)
 
 - [x] 独立标签身份、Command/Ctrl 多选、颜色菜单与左描线、固定加入顺序及循环交换、复制标签与工作区恢复；666单元、50浏览器及Mac原生生命周期通过。
-- [~] 后台WebViewer与Windows/Android最终包验证、0.1.95发布及已有设备原位更新。
+- [x] Mac后台WebViewer、Windows4浏览器/5原生、Android生产构建/lint/签名通过；桌面latest七资产与Android0.1.95发布并更新全部五设备。Mac/OMEN/K70 healthz通过，ROG未选库保留，平板healthz仍超时；详见 `tests/reports/tab-groups-20261125.md`。
 
 ### Claude 触摸编辑合并与部署 (PRD 1.64)
 
@@ -795,6 +795,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-25: PRD1.65颜色分组、固定加入顺序循环交换与复制标签完成；666单元、Mac50/Windows4浏览器、两端原生回归及Android生产包验证，0.1.95发布/五设备更新，Mac网页专项默认后台。
 
 - 2026-11-25 PRD1.64 合并 Claude 触摸编辑分支并统一0.1.94主线，三端类型、658单元与31浏览器通过；0.1.94已发布并部署五台设备，平板healthz与真实触摸验收仍待完成。
 

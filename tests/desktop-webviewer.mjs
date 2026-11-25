@@ -47,7 +47,7 @@ const server = createServer((req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const [executablePath, ...launchArgs] = process.argv.slice(2);
-const background = process.env.SHALE_TEST_BACKGROUND === '1';
+const background = process.env.SHALE_TEST_BACKGROUND !== '0' && (process.platform === 'darwin' || process.env.SHALE_TEST_BACKGROUND === '1');
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 let app;

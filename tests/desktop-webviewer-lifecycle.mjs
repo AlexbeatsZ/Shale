@@ -21,7 +21,7 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 let app;
 try {
-  const background = process.env.SHALE_TEST_BACKGROUND === '1';
+  const background = process.env.SHALE_TEST_BACKGROUND !== '0' && (process.platform === 'darwin' || process.env.SHALE_TEST_BACKGROUND === '1');
   app = await electron.launch({ executablePath: process.argv[2], args: [`--user-data-dir=${profile}`, '--use-mock-keychain', ...(background ? ['--shale-test-background'] : [])], timeout: 120000 });
   const page = await app.firstWindow();
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
