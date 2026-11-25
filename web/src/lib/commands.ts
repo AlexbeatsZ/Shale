@@ -54,9 +54,9 @@ export type Command = {
   editorCheckCallback?: (checking: boolean, editor: Editor, view: MarkdownView) => unknown;
   run?: (args: unknown, context: CommandContext) => unknown;
   available?: (context: CommandContext) => boolean;
-  hotkeyScope?: 'editor';
+  hotkeyScope?: 'editor' | 'workspace';
 };
-export type NativeCommand = { id: string; title: string; run: () => unknown; hotkeys?: Hotkey[]; hotkeyScope?: 'editor'; available?: (context: CommandContext) => boolean };
+export type NativeCommand = { id: string; title: string; run: () => unknown; hotkeys?: Hotkey[]; hotkeyScope?: Command['hotkeyScope']; available?: (context: CommandContext) => boolean };
 
 /** One invocation contract for native contributions, Shale adapters and user JS. */
 export class CommandManager extends Events {
@@ -114,24 +114,27 @@ export class CommandManager extends Events {
     const editing = new Set(['c', 'v', 'x', 'a', 'z', 'Shift+z', ...(mac ? [] : ['y'])].map(key => `${primary}+${key}`));
     return [...index.bindings].filter(([signature, candidates]) => !editing.has(signature) &&
       (/^(Ctrl|Meta|Alt)\+/.test(signature) || /(^|\+)f\d{1,2}$/.test(signature)) &&
-      candidates.some(({ command }) => !command.hotkeyScope)).map(([signature]) => signature).sort();
+      candidates.some(({ command }) => command.hotkeyScope !== 'editor')).map(([signature]) => signature).sort();
   }
   dispatchHotkey(event: KeyboardEvent): boolean {
     if (event.defaultPrevented || event.isComposing || event.getModifierState('AltGraph')) return false;
     const target = event.target instanceof Element ? event.target : null;
     if (target?.closest('[data-hotkey-recorder], [role="dialog"], .modal-container, .settings-overlay, .palette-backdrop')) return false;
     const vimMode = target?.closest<HTMLElement>('[data-vim-mode]')?.dataset.vimMode;
-    if (vimMode && vimMode !== 'insert' && vimMode !== 'replace' && !event.metaKey && !event.altKey &&
-        (!event.ctrlKey || /^[rdufbeyoivax]$/i.test(event.key))) return false;
+    const vimKey = vimMode && vimMode !== 'insert' && vimMode !== 'replace' && !event.metaKey && !event.altKey &&
+        (!event.ctrlKey || /^[rdufbeyoivax]$/i.test(event.key));
     const binding = eventHotkey(event);
     if (!binding) return false;
     const index = this.keyIndex(), signature = hotkeySignature(binding, isMacOS());
     const inEditor = !!target?.closest('.cm-editor'), typing = !!target?.closest('input, textarea, [contenteditable="true"]');
-    let candidates = (index.bindings.get(signature) ?? []).filter(({ command }) => !command.hotkeyScope || inEditor);
+    let candidates = (index.bindings.get(signature) ?? []).filter(({ command }) => command.hotkeyScope !== 'editor' || inEditor);
     if (typing && !inEditor && !event.ctrlKey && !event.metaKey && !event.altKey) return false;
     // User bindings replace defaults. Equal-priority collisions are never resolved
     // by registration order; the settings page exposes both affected commands.
     if (candidates.some(candidate => candidate.custom)) candidates = candidates.filter(candidate => candidate.custom);
+    // Explicit workspace actions must also work while the page is in Vim Normal
+    // or Visual mode. Other Vim editing keys keep their existing owner.
+    if (vimKey && !candidates.some(({ command }) => command.hotkeyScope === 'workspace')) return false;
     if (candidates.length > 1) {
       if (!event.repeat) useStore.getState().notify(`快捷键冲突：${candidates.map(({ command }) => command.name).join('、')}。请在快捷键设置中调整。`);
       return true;

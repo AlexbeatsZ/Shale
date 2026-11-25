@@ -1,4 +1,10 @@
 import { test, expect } from './test';
+import type { Page } from '@playwright/test';
+
+async function groupStep(page: Page, key: string) {
+  if (process.platform === 'darwin') await page.keyboard.press('Control+Shift+' + key);
+  else await page.evaluate(key => (window as any).groupFixture.sharedApp.commands.executeCommandById('workspace:swap-group-' + (key === 'X' ? 'next' : 'previous')), key);
+}
 
 test.beforeEach(async ({ page }) => {
   let persisted: Record<string, unknown> = {};
@@ -6,6 +12,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/vault-identity' || url.pathname === '/api/writing') return route.fallback();
+    if (url.pathname === '/api/settings/hotkeys') return route.fulfill({ json: { version: 1, vault: 'browser-fixture', imported: [], migration: '', bindings: { 'editor:focus-left': [{modifiers:['Alt','Shift'],key:'Z'}], 'editor:focus-right': [{modifiers:['Alt','Shift'],key:'X'}] }, platforms: { windows: { 'workspace:swap-group-previous': [], 'workspace:swap-group-next': [] }, mac: { 'workspace:swap-group-previous': [{modifiers:['PhysicalCtrl','Shift'],key:'Z'}], 'workspace:swap-group-next': [{modifiers:['PhysicalCtrl','Shift'],key:'X'}] } } } });
     if (url.pathname === '/api/uistate/') {
       if (route.request().method() === 'PUT') persisted = route.request().postDataJSON();
       return route.fulfill({ json: persisted });
@@ -21,6 +28,7 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => !!window.renderHarness);
   await page.evaluate(async () => {
     const module = (path: string) => import(path);
+    const { refreshHotkeys } = await module('/src/lib/search.ts'); await refreshHotkeys();
     const [React, ReactDOM, { default: Tabs }, { default: Workspace }, { default: Menu }, { default: Rail }, { default: Panels }, { useStore, flushWorkspaceState }, { documents }, { sharedApp }, active] = await Promise.all([
       module('/node_modules/.vite/deps/react.js'), module('/node_modules/.vite/deps/react-dom_client.js'),
       module('/src/components/WorkspaceTabs.tsx'), module('/src/components/Workspace.tsx'), module('/src/components/ContextMenu.tsx'), module('/src/components/SidebarTabRail.tsx'), module('/src/components/SidebarTabPanels.tsx'),
@@ -61,29 +69,29 @@ test('Command/Ctrl multi-selection groups in click order; single menus recolor a
   await expect(tab('b.md')).not.toHaveAttribute('data-tab-group');
 });
 
-test('single pane Option/Alt Shift Z/X immediately displays group members and cycles from the newly visible page', async ({ page }) => {
+test('single pane configured group commands immediately displays group members and cycles from the newly visible page', async ({ page }) => {
   await page.evaluate(async () => { const s = (window as any).groupFixture.store.getState(); s.setTabGroup(['c.md','a.md','b.md'], 'blue'); await s.showTab('a.md'); });
   const main = page.locator('.workspace .main-pane .cm-content');
   await expect(main).toContainText('Draft A');
   await main.click();
   for (const [key, content] of [['X','# B'],['X','# C'],['X','Draft A'],['Z','# C'],['Z','# B'],['Z','Draft A']]) {
-    await page.keyboard.press('Alt+Shift+' + key);
+    await groupStep(page, key);
     await expect(main).toContainText(content);
     await expect(page.locator('.workspace .split-pane')).toHaveCount(0);
   }
   expect(await page.evaluate(() => (window as any).groupFixture.store.getState().tabs.filter((t:any)=>t.groupColor).sort((a:any,b:any)=>a.groupOrder-b.groupOrder).map((t:any)=>t.path))).toEqual(['c.md','a.md','b.md']);
 });
 
-test('real Option/Alt Shift Z/X uses fixed join order, wraps and leaves the other split member untouched', async ({ page }) => {
+test('real configured group commands uses fixed join order, wraps and leaves the other split member untouched', async ({ page }) => {
   await page.evaluate(async () => { const s = (window as any).groupFixture.store.getState(); s.setTabGroup(['c.md','a.md','b.md'], 'blue'); await s.showTab('a.md'); await s.openToSide('home://side'); });
   const main = page.locator('.workspace .main-pane');
   await expect(main.locator('.cm-content')).toContainText('Draft A');
   await main.locator('.cm-content').click();
-  await page.keyboard.press('Alt+Shift+X');
+  await groupStep(page, 'X');
   await expect(main.locator('.cm-content')).toContainText('# B');
-  await page.keyboard.press('Alt+Shift+X');
+  await groupStep(page, 'X');
   await expect(main.locator('.cm-content')).toContainText('# C');
-  await page.keyboard.press('Alt+Shift+Z');
+  await groupStep(page, 'Z');
   await expect(main.locator('.cm-content')).toContainText('# B');
   expect(await page.evaluate(() => (window as any).groupFixture.store.getState().splitPath)).toBe('home://side');
 });
@@ -94,7 +102,7 @@ test('focused split pane brings its neighbor forward even when that neighbor is 
   await expect(side).toContainText('# B');
   await side.click();
   for (const [key, text] of [['Z','Draft A'],['Z','# C'],['X','Draft A']]) {
-    await page.keyboard.press('Alt+Shift+' + key);
+    await groupStep(page, key);
     await expect(side).toContainText(text);
     await expect(main).toContainText('# B');
   }
@@ -133,12 +141,48 @@ test('side rail supports grouping and duplication with unique identities and cyc
   const content = page.locator('.group-side-body .sidebar-note:not([hidden]) .cm-content');
   await expect(content).toContainText('Draft A');
   await content.click();
-  await page.keyboard.press('Alt+Shift+X');
+  await groupStep(page, 'X');
   await expect(content).toContainText('# B');
   await expect(page.locator('[data-tab-id="sidebar:side-b"]')).toHaveClass(/active/);
-  await page.keyboard.press('Alt+Shift+X');
+  await groupStep(page, 'X');
   await expect(content).toContainText('Draft A');
-  await page.keyboard.press('Alt+Shift+Z');
+  await groupStep(page, 'Z');
   await expect(content).toContainText('# B');
   await expect(page.locator('.workspace .main-pane .cm-content')).toContainText('# C');
+});
+
+
+test('Mac uses physical Control, Windows has no group binding, and Option focus bindings remain', async ({ page }) => {
+  const keys = await page.evaluate(() => {
+    const c=(window as any).groupFixture.sharedApp.commands;
+    return { mac: c.getHotkeys('workspace:swap-group-next',true), windows: c.getHotkeys('workspace:swap-group-next',false), defaults: c.getDefaultHotkeys('workspace:swap-group-next'), focus: c.getHotkeys('editor:focus-right',true) };
+  });
+  expect(keys).toEqual({mac:[{modifiers:['PhysicalCtrl','Shift'],key:'X'}],windows:[],defaults:[],focus:[{modifiers:['Alt','Shift'],key:'X'}]});
+  if (process.platform === 'darwin') {
+    await page.evaluate(() => (window as any).groupFixture.store.getState().setTabGroup(['a.md','b.md','c.md'],'blue'));
+    await page.locator('.workspace .main-pane .cm-content').click();
+    await page.keyboard.press('Meta+Shift+X');
+    await expect(page.locator('.workspace .main-pane .cm-content')).toContainText('# C');
+    await groupStep(page,'X');
+    await expect(page.locator('.workspace .main-pane .cm-content')).toContainText('Draft A');
+  }
+});
+
+test('physical Control group shortcut works in actual Vim Normal Visual and Insert modes', async ({ page }) => {
+  test.skip(process.platform !== 'darwin', 'Windows intentionally has no group shortcut');
+  await page.evaluate(async () => {
+    const s=(window as any).groupFixture.store.getState(); s.setTabGroup(['a.md','b.md','c.md'],'blue'); await s.showTab('a.md');
+    window.dispatchEvent(new CustomEvent('settings-changed',{detail:{ui:{vimEnabled:true,vimInputMethod:false}}}));
+  });
+  const editor=page.locator('.workspace .main-pane .cm-editor');
+  await expect(editor).toHaveAttribute('data-vim-mode','normal');
+  await editor.locator('.cm-content').click();
+  await groupStep(page,'X'); await expect(editor.locator('.cm-content')).toContainText('# B');
+  await editor.locator('.cm-content').click(); await page.keyboard.press('v');
+  await expect(editor).toHaveAttribute('data-vim-mode','visual');
+  await groupStep(page,'X'); await expect(editor.locator('.cm-content')).toContainText('# C');
+  await editor.locator('.cm-content').click(); await page.keyboard.press('Escape'); await page.keyboard.press('i');
+  await expect(editor).toHaveAttribute('data-vim-mode','insert');
+  await groupStep(page,'X'); await expect(editor.locator('.cm-content')).toContainText('Draft A');
+  await groupStep(page,'Z'); await expect(editor.locator('.cm-content')).toContainText('# C');
 });

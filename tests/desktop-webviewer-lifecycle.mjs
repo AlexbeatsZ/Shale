@@ -10,6 +10,16 @@ await fs.mkdir(base, { recursive: true });
 const fixture = await fs.mkdtemp(path.join(base, 'shale-webviewer-lifecycle-'));
 const vault = path.join(fixture, 'vault'), profile = path.join(fixture, 'profile');
 await fs.mkdir(vault); await fs.mkdir(profile);
+await fs.mkdir(path.join(vault,'.shale'));
+// Mac mirrors the user's physical-Control mapping and existing Option focus
+// bindings. Windows assigns Alt only in this isolated automation fixture;
+// production Windows preferences explicitly leave the group commands unbound.
+const groupMod = process.platform === 'darwin' ? 'Control' : 'Alt';
+const groupModifier = process.platform === 'darwin' ? 'PhysicalCtrl' : 'Alt';
+await fs.writeFile(path.join(vault,'.shale/hotkeys.jsonc'),JSON.stringify({version:1,imported:[],migration:'isolated lifecycle fixture',bindings:{
+  ...(process.platform === 'darwin' ? { 'editor:focus-left':[{modifiers:['Alt','Shift'],key:'Z'}], 'editor:focus-right':[{modifiers:['Alt','Shift'],key:'X'}] } : {}),
+  'workspace:swap-group-previous':[{modifiers:[groupModifier,'Shift'],key:'Z'}], 'workspace:swap-group-next':[{modifiers:[groupModifier,'Shift'],key:'X'}]
+}}));
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault }));
 const loads = new Map();
 const server = createServer((req, res) => {
@@ -75,7 +85,7 @@ try {
   await page.getByRole('menuitemcheckbox', { name: '红色', exact: true }).click();
   await tab('one').click();
   for (const [key, name] of [['X','three'], ['X','two'], ['X','one'], ['Z','two'], ['Z','three'], ['Z','one']]) {
-    await page.keyboard.press('Alt+Shift+' + key);
+    await page.keyboard.press(groupMod + '+Shift+' + key);
     const visible = page.locator('.workspace .main-pane');
     await expect(visible.getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/' + name);
     assert.equal(await visible.locator('webview').evaluate(view => view.getWebContentsId()), identities.get(name).id);
@@ -84,19 +94,19 @@ try {
   }
   const guestKey = async key => {
     const id = await page.locator('.workspace .main-pane webview').evaluate(view => view.getWebContentsId());
-    const observed = await app.evaluate(({ webContents }, { id, key }) => new Promise(resolve => {
+    const observed = await app.evaluate(({ webContents }, { id, key, groupMod }) => new Promise(resolve => {
       const guest = webContents.fromId(id);
       const listen = (_event, input) => {
         if (input.type !== 'keyDown') return;
         clearTimeout(timer); guest.removeListener('before-input-event', listen);
-        resolve({ key: input.key, code: input.code, alt: input.alt, shift: input.shift });
+        resolve({ key: input.key, code: input.code, alt: input.alt, control: input.control, shift: input.shift });
       };
       const timer = setTimeout(() => { guest.removeListener('before-input-event', listen); resolve(null); }, 2000);
       guest.on('before-input-event', listen);
-      guest.sendInputEvent({ type: 'keyDown', keyCode: key, modifiers: ['alt','shift'] });
-      guest.sendInputEvent({ type: 'keyUp', keyCode: key, modifiers: ['alt','shift'] });
-    }), { id, key });
-    assert.ok(observed?.alt && observed?.shift, 'The actual guest must receive Option/Alt+Shift before forwarding the shortcut');
+      guest.sendInputEvent({ type: 'keyDown', keyCode: key, modifiers: [groupMod.toLowerCase(),'shift'] });
+      guest.sendInputEvent({ type: 'keyUp', keyCode: key, modifiers: [groupMod.toLowerCase(),'shift'] });
+    }), { id, key, groupMod });
+    assert.ok(observed?.shift && (groupMod === 'Control' ? observed?.control : observed?.alt), 'The actual guest must receive the configured physical modifiers before forwarding the shortcut');
   };
   for (const [key, name] of [['X','three'],['X','two'],['X','one'],['Z','two'],['Z','three'],['Z','one']]) {
     await guestKey(key);
@@ -135,13 +145,13 @@ try {
   await page.getByRole('menuitem', { name: '设置分组（3 个标签页）', exact: true }).hover();
   await page.getByRole('menuitemcheckbox', { name: '红色', exact: true }).click();
   await expect(tabs.locator('[data-tab-group="red"]')).toHaveCount(3);
-  await tab('one').press('Alt+Shift+X');
+  await tab('one').press(groupMod + '+Shift+X');
   await expect(page.locator('.workspace .split-pane input[aria-label="网页地址"]')).toHaveValue(origin + '/three');
   await unchanged();
-  await tab('three').press('Alt+Shift+X');
+  await tab('three').press(groupMod + '+Shift+X');
   await expect(page.locator('.workspace .split-pane input[aria-label="网页地址"]')).toHaveValue(origin + '/two');
   await unchanged();
-  await tab('two').press('Alt+Shift+Z');
+  await tab('two').press(groupMod + '+Shift+Z');
   await expect(page.locator('.workspace .split-pane input[aria-label="网页地址"]')).toHaveValue(origin + '/three');
   await unchanged();
   await tab('one').click({ button: 'right' });

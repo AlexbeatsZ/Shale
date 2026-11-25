@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-25 (分组页面进入前台 PRD 1.66)
+Cập nhật lần cuối: 2026-11-25 (Mac实体Control分组键 PRD 1.67)
+
+### Mac实体Control分组键 (PRD 1.67)
+
+- [~] Mac PhysicalCtrl+Shift+Z/X、Windows空绑定，保留原Option窗格聚焦；移除动作默认键并支持Vim各模式。
+- [ ] 浏览器、正式包访客与真实配置回读验证，发布更新。
 
 ### 分组页面进入前台 (PRD 1.66)
 
@@ -800,6 +805,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-25: PRD1.67 Mac分组快捷键改为PhysicalCtrl+Shift+Z/X，Windows为空，原Option聚焦保留；668单元/19浏览器通过，0.1.97交付中。
 
 - 2026-11-25: PRD1.66复现0.1.95单页只重排的漏验，修复同组成员直接显示；668单元、Mac52/Windows6浏览器及两端原生通过，0.1.96发布并更新五设备；Android服务健康待确认。
 

@@ -10,6 +10,8 @@ Vim is enabled. Settings > Editor owns both options and an optional English sour
 
 ## Ownership
 
+PRD1.67: workspace-scoped group commands receive the configured physical Control+Shift+Z/X in Normal/Visual/Insert. The command manager checks scope after resolving user overrides; other Vim editing keys and editor-only scopes retain their previous behavior.
+
 Use @replit/codemirror-vim, not a second editor. MarkdownView owns the extension,
 mode events and its lifetime. DocumentSession still owns undo, redo, source edits
 and persistence; Vim u, Ctrl-r and :w use existing document history/save actions.

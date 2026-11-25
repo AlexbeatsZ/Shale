@@ -1,6 +1,6 @@
 # 快捷键
 
-PRD1.66：`workspace:swap-group-previous/next` 保留原 id 和 Option/Alt+Shift+Z/X 默认绑定，标题为“显示分组内上/下一个标签页”。目标直接进入当前页面，单页、当前分屏栏及左右侧栏均按固定加入顺序连续循环；见 workspace-sidebars.md。
+PRD1.67：`workspace:swap-group-previous/next` 保留原id，默认不分配键；用户Vault的platforms.mac显式绑定PhysicalCtrl+Shift+Z/X，platforms.windows为[]，原Option左右窗格绑定保留。标题为“显示分组内上/下一个标签页”。目标直接进入当前页面，单页、当前分屏栏及左右侧栏均按固定加入顺序连续循环；见 workspace-sidebars.md。
 
 ## Portable modifiers and one synchronized file (2026-11-22, PRD 1.53)
 
@@ -92,7 +92,7 @@ Fuzzy/编辑命令/标题移位/插件 ID → 本体命令）。`writing/command
 
 - 输入法组合（`isComposing`/`AltGraph`）、已 `defaultPrevented` 的事件不处理；
 - 焦点在弹窗、命令面板、设置浮层或快捷键录入框内时不处理；普通输入框内只响应带修饰键的组合；
-- `hotkeyScope: 'editor'` 的命令只在 CodeMirror 内响应，正文外的同名按键不触发；
+- `hotkeyScope: 'editor'` 的命令只在 CodeMirror 内响应，正文外的同名按键不触发；`workspace`的显式工作区动作（分组前后显示）也可在Vim Normal/Visual执行，并可由网页访客转发；
 - 用户显式绑定优先于默认值；`[]` 表示禁用默认按键，并在编辑器内阻止该键落到原生编辑动作；
 - 同优先级的多个命令不按注册顺序择一执行，改为提示冲突并列出命令名，由用户在设置页调整；
 - 索引按配置对象、插件 revision 与原生命令数组缓存，普通字符输入不解析配置或重建列表。

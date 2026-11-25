@@ -1,7 +1,8 @@
 # PRD — Shale
 
 > Product Requirements Document
-> Phiên bản: 1.66 · Cập nhật: 2026-11-25 · Trạng thái: Draft
+> Phiên bản: 1.67 · Cập nhật: 2026-11-25 · Trạng thái: Draft
+> Changelog 1.67 (分组快捷键使用实体Control) 用户将分组前后切换改为Mac实体Control+Shift+Z/X，Windows暂不绑定。两动作默认不再占用Option/Alt，个人Vault的同一份hotkeys.jsonc明确保存Mac PhysicalCtrl与Windows空绑定；原Option+Shift+Z/X聚焦左右窗格保留。分组切换是工作区动作，在Vim Normal/Visual/Insert均可执行，Vim自己的编辑组合仍归Vim。验收使用包含原聚焦绑定的实际配置形状，检查Mac实体Control生效、Command/Option不误触发分组、Windows未绑定。
 > Changelog 1.66 (分组页面进入前台) 修正 1.65 只交换标签位置的遗漏：Option+Shift+Z/X 必须把同组上/下一个成员直接显示在当前页面，连续按键以刚显示的成员继续，按加入顺序首尾循环。单页复用拖到正文的 showTab；分屏复用 replacePane，只替换当前聚焦栏，目标在另一栏时交换两栏；侧栏直接选中目标。保持网页访客与页面状态，不重新加载。验收必须包含单页正文、左右分屏与侧栏的可见内容，以及网页访客接收真实组合键的转发，不能只检查标签顺序或 store。
 > Changelog 1.65 (标签颜色分组与复制) Command（其他平台 Ctrl）点击按选择顺序多选标签，右键加入红、橙、黄、绿、蓝、紫、粉色分组，左边界显示颜色描线；单标签可直接加入/移出。每个标签栏的同色组按加入顺序固定编号，拖动与交换不改编号；Option+Shift+Z/X（其他平台 Alt+Shift+Z/X）与组内前/后一个成员交换，首尾循环，复用手动单页交换并保留网页访客实例。右键复制标签在原标签旁打开独立标签，同一笔记共享正文/撤销会话，不创建文件副本。标签身份与颜色/序号随工作区保存，选择仅本次会话有效。验证优先后台自动化，真实系统按键与输入法验收单独记录。
 > Changelog 1.64 (Android 触摸编辑) 合并 Claude 分支的长按菜单选区、异步粘贴与软键盘滚动修复；长按前未获焦时保持键盘关闭，已获焦时恢复焦点；菜单动作允许焦点/装饰事务但拒绝正文或点击前选区变化，保留固定链接的系统定位。沿用 Shale 原生身份、公式粘贴清理与共享历史，发布 0.1.94 并按用户持续授权原位更新。

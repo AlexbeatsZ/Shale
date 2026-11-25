@@ -165,6 +165,7 @@ describe('web page guest hotkeys', () => {
     { id: 'copy-like', title: 'Copy', run: vi.fn(), hotkeys: [{ modifiers: ['Mod'], key: 'C' }, { modifiers: ['Mod', 'Shift'], key: 'Z' }] },
     { id: 'bold', title: 'Bold', run: vi.fn(), hotkeys: [{ modifiers: ['Mod'], key: 'B' }], hotkeyScope: 'editor' as const },
     { id: 'rename', title: 'Rename', run: vi.fn(), hotkeys: [{ modifiers: [], key: 'F2' }] },
+    { id: 'workspace-group', title: 'Group', run: vi.fn(), hotkeyScope: 'workspace' as const, hotkeys: [{ modifiers: ['PhysicalCtrl','Shift'], key: 'X' }] },
     { id: 'plain', title: 'Plain', run: vi.fn(), hotkeys: [{ modifiers: [], key: 'K' }] },
     { id: 'physical', title: 'Physical', run: vi.fn(), hotkeys: [{ modifiers: ['PhysicalCtrl', 'Alt'], key: 'M' }] },
   ];
@@ -172,9 +173,9 @@ describe('web page guest hotkeys', () => {
 
   it('hands back bound app shortcuts but leaves page editing, editor-only and plain keys to the page', () => {
     platform.mac = false;
-    expect(manager().guestHotkeys()).toEqual(['Ctrl+Alt+m', 'Ctrl+p', 'f2']);
+    expect(manager().guestHotkeys()).toEqual(['Ctrl+Alt+m', 'Ctrl+Shift+x', 'Ctrl+p', 'f2']);
     platform.mac = true;
-    expect(manager().guestHotkeys()).toEqual(['Ctrl+Alt+m', 'Meta+p', 'f2']);
+    expect(manager().guestHotkeys()).toEqual(['Ctrl+Alt+m', 'Ctrl+Shift+x', 'Meta+p', 'f2']);
     platform.mac = false;
   });
 });
