@@ -145,6 +145,7 @@ test('status groups include highlighted JSON configuration, retain edits through
     await store.useStore.getState().loadUiState();publishVirtualDocuments(tree);store.useStore.setState({tree,rightOpen:false,viewMode:'live'});
     await store.useStore.getState().openFile('Book');const h=(React.default??React).createElement;
     (ReactDOM.createRoot??ReactDOM.default.createRoot)(host).render(h('div',{className:'app theme-dark'},h(Tabs),h(Workspace),h(ContextMenu)));
+    const {initializeNativeMenus}=await load('/src/lib/nativeFeatures.ts');initializeNativeMenus();
     (window as any).virtualConfigStore=store.useStore;
   },tree());
   const host=page.locator('#virtual-config-fixture');await expect(host.getByRole('button',{name:'切换分组：MD'})).toBeVisible();

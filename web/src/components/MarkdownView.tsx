@@ -189,7 +189,10 @@ export default function MarkdownView(props: MarkdownViewProps) {
     const link = linkElement?.dataset.menuLink ?? linkElement?.getAttribute('href') ?? undefined;
     const menuContext = { kind: link ? 'link' : 'editor', source: mode === 'reading' ? 'reading' : 'editor',
       paths: [context.sourcePath], fileTypes: [context.sourcePath.split('.').at(-1) ?? ''],
-      activePath: context.sourcePath, documentVersion: latest.current.snapshot.version,
+      // Generated covers/titles are local view sessions, not registry notes.
+      // Their captured view guard below owns selection safety; asking the
+      // registry to validate a nonexistent note would reject every menu action.
+      activePath: context.sourcePath, documentVersion: documents.get(context.sourcePath) ? latest.current.snapshot.version : undefined,
       selection: selection && { from: selection.from, to: selection.to, text: captured!.sliceDoc(selection.from, selection.to) },
       link,
       modifiers: menuModifiers(e.nativeEvent) };

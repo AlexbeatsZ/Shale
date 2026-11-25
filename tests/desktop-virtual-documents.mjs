@@ -16,6 +16,7 @@ const output = path.resolve(process.env.VIRTUAL_OUTPUT ?? path.join(fixture, 'ev
 await fs.mkdir(profile); await fs.mkdir(vault); await fs.mkdir(output, { recursive: true });
 const book = '04资料/化学/物理化学/物理化学 第三版', slides = '04资料/化学/物理化学/物理化学 课件';
 const original = new Map();
+const fileManager = process.platform === 'darwin' ? 'Finder' : process.platform === 'win32' ? '文件资源管理器' : '文件管理器';
 async function walk(directory, prefix = '') {
   const result = [];
   for (const entry of await fs.readdir(directory, { withFileTypes: true })) {
@@ -197,25 +198,31 @@ try {
     shell.openPath=async target=>{const result=await open(target);globalThis.nativeReveals.push({kind:'folder',target,result});return result;};
     shell.showItemInFolder=target=>{show(target);globalThis.nativeReveals.push({kind:'file',target});};
   });
-  await configEditor.click({button:'right'});await page.getByRole('menuitem',{name:'在 Finder 中显示',exact:true}).click();
+  await configEditor.click({button:'right'});await page.getByRole('menuitem',{name:`在 ${fileManager} 中显示`,exact:true}).click();
   await expect.poll(()=>app.evaluate(()=>globalThis.nativeReveals.length)).toBe(1);
-  await bookRow.click({button:'right'});await page.getByRole('menuitem',{name:'在 Finder 中打开',exact:true}).click();
+  await bookRow.click({button:'right'});await page.getByRole('menuitem',{name:`在 ${fileManager} 中打开`,exact:true}).click();
   await expect.poll(()=>app.evaluate(()=>globalThis.nativeReveals.length)).toBe(2);
   const nativeReveals=await app.evaluate(()=>globalThis.nativeReveals);
   assert.equal(nativeReveals[0].target,await fs.realpath(configPath));assert.equal(nativeReveals[1].target,await fs.realpath(path.join(vault,book)));assert.equal(nativeReveals[1].result,'');
+  await page.bringToFront();
   await page.locator(`[data-path="${slides}"]`).first().click();
   await expect(page.getByRole('navigation',{name:'文档索引'})).toBeVisible();
   const pdfLink=page.getByRole('navigation',{name:'文档索引'}).getByRole('link').nth(1);
   const pdfStart=Date.now();
-  await pdfLink.hover();
   const pdfPreview=page.getByRole('dialog',{name:'链接预览'});
-  await expect(pdfPreview.locator('canvas')).toBeVisible();
+  // Initial PDF outline/cover layout may replace the hovered DOM node. Begin a
+  // new hover once it settles, as a user moving back onto the link would.
+  await expect(async()=>{
+    await page.mouse.move(5,5);await pdfLink.hover();
+    await expect(pdfPreview.locator('canvas')).toBeVisible({timeout:1500});
+  }).toPass({timeout:10000});
   const pdfSource=await pdfPreview.locator('.cm-link-preview-header').textContent();
   assert(pdfSource.startsWith(slides+'/'));assert(!pdfSource.includes('%E'));
   await page.keyboard.press('Escape');
-  await pdfLink.click({button:'right'});await page.getByRole('menuitem',{name:process.platform==='darwin'?'在 Finder 中显示':'在 文件资源管理器 中显示',exact:true}).click();
+  await pdfLink.click({button:'right'});await page.getByRole('menuitem',{name:`在 ${fileManager} 中显示`,exact:true}).click();
   await expect.poll(()=>app.evaluate(()=>globalThis.nativeReveals.length)).toBe(3);
   assert.equal((await app.evaluate(()=>globalThis.nativeReveals))[2].target,await fs.realpath(path.join(vault,pdfSource)));
+  await page.bringToFront();
   await pdfLink.click();
   await expect(page.locator('.virtual-document-scroll .pdf-page-surface.is-ready').first()).toBeVisible({timeout:60000});
   const pdfOpenMs=Date.now()-pdfStart,canvases=await page.locator('.virtual-document-scroll canvas').count();assert(canvases<15);
