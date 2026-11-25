@@ -11,7 +11,7 @@
 
 ## Current State
 - 2026-11-25 同步活性修复(分支 `fix/sync-liveness`，未发布)：平板停在 recovery 的根因是渲染器 WebSocket 无重连 + 零窗口时维护闸门拒绝 + 每轮先重放入站日志即中止；现已重连/心跳/`unattended` 闸门/冲突按路径隔离。已装 0.1.90 平板需重启应用恢复，新包未发布。见 `docs/design/file-sync.md` Liveness 节。
-- 2026-11-25 PRD 1.62 / 桌面 0.1.92 正在验收：默认格式化/粘贴去除公式 tag（复制原样）、编辑器设置绝对/相对行号、含行内公式正文标题转换；647 单元与 27 个相关浏览器用例已覆盖，原生包/发布待完成。设计 `docs/design/editor-line-numbers.md`；报告 `tests/reports/writing-editor-options-20261125.md`。
+- 2026-11-25 PRD 1.62 / 桌面 0.1.92：默认格式化/粘贴去除公式 tag（复制原样）、编辑器设置绝对/相对行号、含行内公式正文标题转换。647 单元、27 相关浏览器及 Mac/Windows 正式包专项/完整 WebViewer/剪贴板通过；v0.1.92 已正式发布/latest（7资产，运行源码82e971a）；日用安装未改。设计 `docs/design/editor-line-numbers.md`；报告 `tests/reports/writing-editor-options-20261125.md`。
 - 2026-11-25 PRD 1.61：桌面 v0.1.91（7 资产/latest，运行源码 89f1407）已发布，本机 Mac 已原位升级、签名/启动/healthz/真实工作区恢复通过，未再触发钥匙串密码。642 单元、21 浏览器、Mac/Windows 剪贴板/完整 WebViewer/原生快捷键实包通过，桌面操作通道实际 Command+V 在地址栏与网页输入框通过。Vim 不是旧故障直接原因。Windows 日用与 Android 仍 0.1.90。隔离测试必须用 `--use-mock-keychain` 且包内含跳过真实迁移的逻辑；已有一致密钥不重写 ACL。报告 `tests/reports/browser-clipboard-20261125.md`。
 - 2026-11-24 PRD 1.60：默认新建文件夹新增已有目录选择，修复保存后重开显示旧值。桌面 v0.1.90（7 资产/latest）及 Android android-v0.1.90（生产 APK/预发布）已发布并原位安装到全部五台可达设备；类型、641 单元、2 浏览器与 Mac/Windows 最终实包选择/保存/创建/回读通过。报告 `tests/reports/default-new-folder-20261124.md`。
 - 2026-11-24 PRD 1.59：恢复 Insert/禁用时原生细光标与主题文字选区，保留 Normal/Visual 块光标和颜色自定义。桌面 v0.1.89（7 资产/latest）及 Android android-v0.1.89（生产 APK/预发布）已发布；Mac/OMEN/ROG/K70/小米平板6Pro 全部原位安装 0.1.89。641 单元、8 Vim 浏览器、Mac 颜色与完整 WebViewer、Windows 完整 Vim/输入法实包通过。报告 `tests/reports/native-selection-restoration-20261124.md`。

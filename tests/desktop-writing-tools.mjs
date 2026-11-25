@@ -76,7 +76,21 @@ try {
     const values = await numbers();
     return { zeros: values.filter(value => value === '0').length, first: values[0] };
   }).toEqual({ zeros: 1, first: '1' });
+  // Sidebars intentionally float over the document; close the isolated fixture's
+  // docks to verify the gutter is actually visible, not merely present in DOM.
+  const docks = ['折叠/展开左侧边栏', '折叠/展开右侧边栏'];
+  const closed = [];
+  for (const name of docks) {
+    const button = page.getByRole('button', { name, exact: true });
+    if (await button.getAttribute('aria-expanded') === 'true') { await button.click(); closed.push(name); }
+  }
+  for (const side of ['left', 'right']) await expect(page.locator('.dock-' + side)).toHaveCSS('visibility', 'hidden');
+  await expect.poll(() => view.locator('.cm-gutterElement').filter({ hasText: /^0$/ }).evaluate(element => {
+    const r = element.getBoundingClientRect();
+    return !!document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('.cm-gutters');
+  })).toBe(true);
   if (process.env.WRITING_SCREENSHOT) await page.screenshot({ path: process.env.WRITING_SCREENSHOT });
+  for (const name of closed) await page.getByRole('button', { name, exact: true }).click();
   await page.getByRole('button', { name: '设置', exact: true }).click();
   await page.getByRole('button', { name: '编辑器', exact: true }).click();
   await expect(page.getByRole('combobox', { name: '行号', exact: true })).toHaveValue('relative');
