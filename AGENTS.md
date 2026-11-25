@@ -11,8 +11,9 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-25 Claude 分支1c0d17a/23dd1ae与0.1.93已合入并推送main（运行源码0dd7e6d），PRD1.64；桌面/Android0.1.94发布，桌面latest七资产、Android生产APK预发布。Mac/OMEN/ROG/K70/平板已原位安装0.1.94；Mac/OMEN/K70启动及healthz通过，ROG保留未选Vault；平板启动和端点存在但healthz超时。658单元、31浏览器、两端五组原生回归通过。报告 `tests/reports/mainline-deployment-20261125.md`。
 - 2026-11-25 PRD 1.63 / 桌面 0.1.93 已正式发布/latest（7 资产，运行源码79c8cd8）：网页排序/交换/分屏保留访客；连续文档目录定位真实源文件、PDF 只读预览与可读路径；PDF 默认深色反色并记忆显式关闭；Vim 在停顿/移光标/失焦后分组。654 单元、51 浏览器及 Mac/Windows 五组原生回归通过；Mac 固定证书/identifier/certificate leaf/deep/strict 通过。日用安装未改（Mac 仍0.1.91），Android 未发新包。报告 tests/reports/viewer-lifecycle-20261125.md。
-- 2026-11-25 同步活性修复(分支 `fix/sync-liveness`，源码d1eb86e已随桌面0.1.93发布，日用及Android仍未更新)：平板停在 recovery 的根因是渲染器 WebSocket 无重连 + 零窗口时维护闸门拒绝 + 每轮先重放入站日志即中止；现已重连/心跳/`unattended` 闸门/冲突按路径隔离。已装 0.1.90 平板需重启应用恢复连接，Android 新包尚未发布。见 `docs/design/file-sync.md` Liveness 节。
+- 2026-11-25 同步活性修复(分支 `fix/sync-liveness`，源码d1eb86e已随桌面0.1.93及Android0.1.94发布，日用0.1.94已更新)：平板停在 recovery 的根因是渲染器 WebSocket 无重连 + 零窗口时维护闸门拒绝 + 每轮先重放入站日志即中止；现已重连/心跳/`unattended` 闸门/冲突按路径隔离。平板已装0.1.94，但服务健康/实际同步恢复尚未通过验收。见 `docs/design/file-sync.md` Liveness 节。
 - 2026-11-25 PRD 1.62 / 桌面 0.1.92：默认格式化/粘贴去除公式 tag（复制原样）、编辑器设置绝对/相对行号、含行内公式正文标题转换。647 单元、27 相关浏览器及 Mac/Windows 正式包专项/完整 WebViewer/剪贴板通过；v0.1.92 已正式发布（7资产，运行源码82e971a）；日用安装未改。设计 `docs/design/editor-line-numbers.md`；报告 `tests/reports/writing-editor-options-20261125.md`。
 - 2026-11-25 PRD 1.61：桌面 v0.1.91（7 资产/latest，运行源码 89f1407）已发布，本机 Mac 已原位升级、签名/启动/healthz/真实工作区恢复通过，未再触发钥匙串密码。642 单元、21 浏览器、Mac/Windows 剪贴板/完整 WebViewer/原生快捷键实包通过，桌面操作通道实际 Command+V 在地址栏与网页输入框通过。Vim 不是旧故障直接原因。Windows 日用与 Android 仍 0.1.90。隔离测试必须用 `--use-mock-keychain` 且包内含跳过真实迁移的逻辑；已有一致密钥不重写 ACL。报告 `tests/reports/browser-clipboard-20261125.md`。
 - 2026-11-24 PRD 1.60：默认新建文件夹新增已有目录选择，修复保存后重开显示旧值。桌面 v0.1.90（7 资产/latest）及 Android android-v0.1.90（生产 APK/预发布）已发布并原位安装到全部五台可达设备；类型、641 单元、2 浏览器与 Mac/Windows 最终实包选择/保存/创建/回读通过。报告 `tests/reports/default-new-folder-20261124.md`。
@@ -28,8 +29,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
-- 2026-11-25 正在将 Claude 分支的 Android 长按菜单/软键盘修复与已交付 0.1.93 合入 main，验证后构建 0.1.94 并部署。历史 0.1.81 分支测试包已被后续正式包覆盖，不能当作当前设备验收。
-- 小米平板6Pro 0.1.90 服务 healthz 连接超时，后续可在设备前台确认；本轮安装与启动已完成，未修改网络/代理。Mac 0.1.89 完整输入法往返受前台保护阻止，颜色专项及 Windows 完整输入法通过。
+- 小米平板6Pro 0.1.94 服务 healthz 仍连接超时，后续在设备前台确认；安装/版本/首次安装时间与进程启动已验证，长按/软键盘及完整同步交互未验收。Mac 0.1.89 完整输入法往返受前台保护阻止，颜色专项及 Windows 完整输入法通过。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
 - 待做格式化全文的MCP工具，格式化器位于渲染器 `web/src/lib/writing/format.ts`，需接通且结果走审阅。

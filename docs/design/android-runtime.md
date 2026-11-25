@@ -216,8 +216,8 @@ The current startup, readiness, shutdown, host capabilities and failure-recovery
 ## Touch editing and soft keyboard (2026-11-22)
 
 Renderer-only behaviour in `web/src/lib/touchEditing.ts`, `MarkdownView` and
-`contentClipboard`. Chromium on Android (Chrome and WebView 157 behave alike)
-was observed on an emulator with real `adb input` gestures:
+`contentClipboard`. The Android event order was observed in emulator Chrome 133 with real
+`adb input` gestures; the tablet WebView 157 still requires physical-device acceptance:
 
 - A long-press selects the word under the finger and focuses `.cm-content`
   *before* the `contextmenu` PointerEvent (`pointerType: "touch"`). The menu then
@@ -250,3 +250,9 @@ was observed on an emulator with real `adb input` gestures:
 Regression: `tests/browser/touch-editing.spec.ts` (synthesized Android event
 order) and `contentClipboard.test.ts`. Device acceptance on the tablet is still
 required; static or emulator evidence is not device acceptance.
+
+The 2026-11-25 mainline merge retains ShaleAndroid identity and formula-tag paste cleanup.
+Fixed link/system-location actions retain source identity validation; content menu actions
+validate document and selection, permitting focus/decorations-only transactions. The earlier
+0.1.81 tablet branch build was overwritten by later releases; 0.1.94/code94 is now installed
+on both current Android devices, without a claim of completed physical touch acceptance.

@@ -10,8 +10,8 @@ Cập nhật lần cuối: 2026-11-25 (Claude 触摸编辑合并、主线与部�
 
 - [x] 将 Claude 分支 1c0d17a / 23dd1ae 与 0.1.93 合入 main；保留 Shale 身份、公式粘贴清理、原生连续文档定位及 Vim 历史。
 - [x] 合并后三端类型、658 单元和31相关浏览器通过。
-- [~] 最终原生桌面回归与 Android 生产构建。
-- [ ] 构建发布 0.1.94，原位部署可达设备并记录版本、签名、启动/服务和数据保留结果。
+- [x] Mac/Windows最终五组原生回归、Android生产构建/lint/签名与对齐检查通过。
+- [x] 桌面/Android0.1.94发布并原位安装五台设备；Mac/OMEN/K70服务健康通过，ROG保留未选Vault，平板healthz超时与真实触摸验收仍待完成。报告 `tests/reports/mainline-deployment-20261125.md`。
 
 ### 网页生命周期与文档阅读 (PRD 1.63)
 
@@ -791,7 +791,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 
 ### Nhật ký tiến độ
 
-- 2026-11-25 PRD1.64 合并 Claude 触摸编辑分支并统一0.1.94主线，三端类型、658单元与31浏览器通过；构建交付进行中。
+- 2026-11-25 PRD1.64 合并 Claude 触摸编辑分支并统一0.1.94主线，三端类型、658单元与31浏览器通过；0.1.94已发布并部署五台设备，平板healthz与真实触摸验收仍待完成。
 
 - 2026-11-25: PRD1.63网页移动实例保留、连续文档真实路径定位和PDF预览、默认反色与开关记忆、Vim撤销分组完成。654单元/51浏览器及两端五组原生回归通过；0.1.93七资产发布/latest（源码79c8cd8），日用安装未更改。
 
