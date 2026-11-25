@@ -27,7 +27,7 @@ const original = {
   'parity-rich.md': richParitySource,
   'parity-blank.md': '',
 };
-const mod = 'Control';
+const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
 const documentStart = 'Control+Home';
 const documentEnd = 'Control+End';
 type Pane = 'main' | 'split';
@@ -43,7 +43,7 @@ const test = base.extend<{ backend: Backend }>({
     await fs.mkdir(temporary, { recursive: true });
     const directory = await fs.mkdtemp(path.join(temporary, 'split-editing-browser-'));
     const vault = path.join(directory, 'vault'), data = path.join(directory, 'data');
-    const configuration = path.join(vault, '.shale', 'shale');
+    const configuration = path.join(vault, '.shale');
     await fs.mkdir(configuration, { recursive: true }); await fs.mkdir(data);
     for (const [file, text] of Object.entries(original)) await fs.writeFile(path.join(vault, file), text);
     await fs.writeFile(path.join(data, 'uistate.json'), JSON.stringify({ tabs: [{ path: 'main.md', title: 'main.md' }], activePath: 'main.md' }));
@@ -296,7 +296,7 @@ test('same-document panes synchronize text but keep selections local and share u
   for (const which of ['main', 'split'] as const) await expect.poll(() => viewState(page, which)).toMatchObject({ text: shared });
   await page.keyboard.press(mod + '+z');
   for (const which of ['main', 'split'] as const) await expect.poll(() => viewState(page, which)).toMatchObject({ text: original['main.md'] });
-  await page.keyboard.press(mod + '+Shift+z'); await page.keyboard.press(mod + '+Shift+z');
+  await page.keyboard.press(mod + '+Shift+Z'); await page.keyboard.press(mod + '+Shift+Z');
   for (const which of ['main', 'split'] as const) await expect.poll(() => viewState(page, which)).toMatchObject({ text: renamed });
   await page.keyboard.press(mod + '+s');
   await expect.poll(() => fs.readFile(path.join(backend.vault, 'main.md'), 'utf8')).toBe(renamed.replace('，', ','));

@@ -21,11 +21,18 @@ await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 let app;
 try {
-  app = await electron.launch({ executablePath: process.argv[2], args: [`--user-data-dir=${profile}`, '--use-mock-keychain'], timeout: 120000 });
+  const background = process.env.SHALE_TEST_BACKGROUND === '1';
+  app = await electron.launch({ executablePath: process.argv[2], args: [`--user-data-dir=${profile}`, '--use-mock-keychain', ...(background ? ['--shale-test-background'] : [])], timeout: 120000 });
   const page = await app.firstWindow();
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });
-  await page.bringToFront();
+  if (!background) await page.bringToFront();
+  const assertBackground = async () => {
+    if (background) assert.deepEqual(await app.evaluate(({ BrowserWindow }) => {
+      const window = BrowserWindow.getAllWindows()[0]; return { visible: window.isVisible(), focused: window.isFocused() };
+    }), { visible: false, focused: false }, 'Background regression must never show or focus its native window');
+  };
+  await assertBackground();
   const tabs = page.getByRole('tablist', { name: '已打开的文件' });
   const identities = new Map();
   const guests = () => page.locator('.workspace webview');
@@ -85,7 +92,36 @@ try {
   await tab('three').click(); await tab('one').click();
   await expect(page.locator('.workspace .split-pane')).toBeVisible();
   await unchanged();
-  console.log(JSON.stringify({ ok: true, loads: Object.fromEntries(loads), guests: Object.fromEntries(identities) }, null, 2));
+  // Selection order is intentionally different from display order.
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+  for (const name of ['two', 'one', 'three']) await tab(name).click({ modifiers: [mod] });
+  await tab('one').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '设置分组（3 个标签页）', exact: true }).hover();
+  await page.getByRole('menuitemcheckbox', { name: '红色', exact: true }).click();
+  await expect(tabs.locator('[data-tab-group="red"]')).toHaveCount(3);
+  await tab('one').press('Alt+Shift+X');
+  await expect(page.locator('.workspace .split-pane input[aria-label="网页地址"]')).toHaveValue(origin + '/three');
+  await unchanged();
+  await tab('three').press('Alt+Shift+X');
+  await expect(page.locator('.workspace .split-pane input[aria-label="网页地址"]')).toHaveValue(origin + '/two');
+  await unchanged();
+  await tab('two').press('Alt+Shift+Z');
+  await expect(page.locator('.workspace .split-pane input[aria-label="网页地址"]')).toHaveValue(origin + '/three');
+  await unchanged();
+  await tab('one').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '复制标签页', exact: true }).click();
+  await expect.poll(() => loads.get('/one')).toBe(2);
+  await expect(guests()).toHaveCount(4);
+  const originalStates = [];
+  for (const element of await guests().all()) originalStates.push(await inspect(element));
+  for (const state of identities.values()) assert.deepEqual(originalStates.find(item => item.id === state.id), state, 'Duplication preserves every original guest');
+  const newTab = tabs.locator('[data-tab-path]').filter({ hasText: 'Life /one' }).last();
+  const newKey = await newTab.getAttribute('data-tab-id');
+  assert.notEqual(newKey, await tab('one').first().getAttribute('data-tab-id'));
+  await newTab.locator('.close').click();
+  await expect(guests()).toHaveCount(3);
+  await assertBackground();
+  console.log(JSON.stringify({ ok: true, background, loads: Object.fromEntries(loads), guests: Object.fromEntries(identities), colorGroups: true, cyclicSwap: true, duplicate: true }, null, 2));
 } finally {
   if (app) await app.close();
   await new Promise(resolve => server.close(resolve));

@@ -1,7 +1,8 @@
 import { parseWebViewerUrl } from '../../../desktop/src/webViewerAddress';
+import { restoreTabGrouping, type TabGrouping } from './tabGroups';
 
 /** Persist only view identity/state. Document text belongs to its session. */
-export interface SidebarTab {
+export interface SidebarTab extends TabGrouping {
   id: string;
   type: string;
   state: Record<string, any>;
@@ -33,7 +34,7 @@ export function restoreSidebarTabs(value: unknown, webViewer = false): SidebarTa
     if (item.type === 'webviewer' && (!webViewer || (item.state.url !== '' && !parseWebViewerUrl(item.state.url)))) return [];
     seen.add(item.id);
     const tab = sidebarTab(item.type, item.state, item.id);
-    return [{ ...tab, ...(item.side === 'left' || item.side === 'right' ? { side: item.side as 'left' | 'right' } : {}),
+    return [{ ...tab, ...restoreTabGrouping(item), ...(item.side === 'left' || item.side === 'right' ? { side: item.side as 'left' | 'right' } : {}),
       title: item.type === 'empty' ? tab.title : typeof item.title === 'string' ? item.title.slice(0, 512) : tab.title,
       icon: item.type === 'empty' ? tab.icon : typeof item.icon === 'string' ? item.icon.slice(0, 100) : tab.icon }];
   });

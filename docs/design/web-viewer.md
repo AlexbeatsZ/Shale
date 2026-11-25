@@ -28,6 +28,8 @@ Electron 的访客挂载会令主 WebContents 发出 `did-start-loading` 和子 
 
 ## 重构验收
 
+2026-11-25 起，`SHALE_TEST_BACKGROUND=1` 可运行生命周期与 WebViewer 的后台实包回归。启动须同时提供独立 `--user-data-dir`、`--use-mock-keychain` 与 `--shale-test-background`，才会隐藏窗口并在 Mac 使用 accessory 策略；测试断言窗口始终未显示、未获得原生焦点。后台 WebViewer 明确排除访客原生焦点/`sendInputEvent` 与 Mac 原生全屏检查，正常模式保留完整检查；不能把后台 DOM 按键覆盖说成系统键盘/输入法验收。生命周期专项包含颜色分组、首尾循环交换、复制后原访客身份/草稿/滚动/history 与加载计数。
+
 保留三处主页和命令面板入口、Homepage 标签原位替换、文件/URL 导入、定期检查和权限审阅。移除任何一项须先取得用户明确同意。用 `node tests/desktop-webviewer.mjs <打包应用可执行文件>` 测试原生宿主。测试使用本地 HTTP 夹具、隔离 Vault 与真实调度定时器，验证区域归属、原位替换、导航、弹窗、导入、执行、自动更新及扩权候选。
 
 ## 页面实例与标签移动（PRD 1.63）

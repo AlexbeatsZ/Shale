@@ -47,11 +47,12 @@ const server = createServer((req, res) => {
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 const [executablePath, ...launchArgs] = process.argv.slice(2);
+const background = process.env.SHALE_TEST_BACKGROUND === '1';
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 let app;
 const launch = () => electron.launch({
-  executablePath, args: [`--user-data-dir=${profile}`, '--use-mock-keychain', ...launchArgs], cwd: fixture, env, timeout: 120000,
+  executablePath, args: [`--user-data-dir=${profile}`, '--use-mock-keychain', ...(background ? ['--shale-test-background'] : []), ...launchArgs], cwd: fixture, env, timeout: 120000,
 });
 const quit = async () => {
   await Promise.all([
@@ -63,10 +64,18 @@ const quit = async () => {
 try {
   app = await launch();
   const page = await app.firstWindow();
+  const assertBackground = async () => {
+    if (background) assert.deepEqual(await app.evaluate(({ BrowserWindow }) => {
+      const window = BrowserWindow.getAllWindows()[0]; return { visible: window.isVisible(), focused: window.isFocused() };
+    }), { visible: false, focused: false }, 'Background regression must never show or focus its native window');
+  };
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });
-  await page.bringToFront();
-  await app.evaluate(({app,BrowserWindow})=>{const window=BrowserWindow.getAllWindows()[0];window.show();window.focus();app.focus({steal:true});});
+  if (!background) {
+    await page.bringToFront();
+    await app.evaluate(({app,BrowserWindow})=>{const window=BrowserWindow.getAllWindows()[0];window.show();window.focus();app.focus({steal:true});});
+  }
+  await assertBackground();
   const command = async name => {
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+p' : 'Control+p');
     await page.locator('.palette-input').fill(name);
@@ -159,21 +168,25 @@ try {
 
   // Bound Shale shortcuts still run while the page guest has keyboard focus.
   const guestId = await main.locator('webview').evaluate(element => element.getWebContentsId());
-  await page.bringToFront();
-  await app.evaluate(({ app, BrowserWindow }) => {
-    BrowserWindow.getAllWindows()[0].focus();
-    if (process.platform === 'darwin') app.focus({ steal: true });
-  });
-  await main.locator('webview').click();
-  await expect.poll(() => app.evaluate(({ webContents }, id) => webContents.fromId(id).isFocused(), guestId)).toBe(true);
-  await app.evaluate(({ webContents }, id) => {
-    const guest = webContents.fromId(id), modifiers = [process.platform === 'darwin' ? 'meta' : 'control'];
-    guest.sendInputEvent({ type: 'keyDown', keyCode: 'P', modifiers });
-    guest.sendInputEvent({ type: 'keyUp', keyCode: 'P', modifiers });
-  }, guestId);
-  await expect(page.locator('.palette-input')).toBeFocused();
-  await page.keyboard.press('Escape');
-  await expect(page.locator('.palette-backdrop')).toHaveCount(0);
+  if (!background) {
+    await page.bringToFront();
+    await app.evaluate(({ app, BrowserWindow }) => {
+      BrowserWindow.getAllWindows()[0].focus();
+      if (process.platform === 'darwin') app.focus({ steal: true });
+    });
+  }
+  if (!background) {
+    await main.locator('webview').click();
+    await expect.poll(() => app.evaluate(({ webContents }, id) => webContents.fromId(id).isFocused(), guestId)).toBe(true);
+    await app.evaluate(({ webContents }, id) => {
+      const guest = webContents.fromId(id), modifiers = [process.platform === 'darwin' ? 'meta' : 'control'];
+      guest.sendInputEvent({ type: 'keyDown', keyCode: 'P', modifiers });
+      guest.sendInputEvent({ type: 'keyUp', keyCode: 'P', modifiers });
+    }, guestId);
+    await expect(page.locator('.palette-input')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.palette-backdrop')).toHaveCount(0);
+  } else console.log('Background mode excludes native guest-focus/sendInputEvent verification.');
 
   // A note tab dropped on the page itself (not only its toolbar) replaces it.
   const noteTab = mainTabs.locator('[data-tab-path="Note.md"]');
@@ -247,7 +260,7 @@ try {
     await expect(address).toBeFocused();
   };
   await checkSidebarExpansion();
-  if (process.platform === 'darwin') {
+  if (process.platform === 'darwin' && !background) {
     const setFullScreen = async fullscreen => {
       await app.evaluate(async ({ BrowserWindow }, enabled) => {
         const window = BrowserWindow.getAllWindows()[0];
@@ -382,8 +395,9 @@ try {
   await expect(resumed.locator('.main-pane').getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/central', { timeout: 30000 });
   await expect(resumed.locator('.dock-right').getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/second');
   await expect(resumed.getByRole('button', { name: '刷新网页' })).toHaveCount(2);
+  await assertBackground();
   await quit();
-  console.log('Desktop WebViewer: launcher, guest hotkeys, note drop on page, side tabs, stable sidebar expansion, guest isolation, navigation, imports, automatic update, permission review, layout persistence and normal quit passed');
+  console.log(`Desktop WebViewer: launcher, ${background ? 'background DOM coverage (native guest-focus/fullscreen excluded)' : 'guest hotkeys/native focus/fullscreen'}, note drop on page, side tabs, stable sidebar expansion, guest isolation, navigation, imports, automatic update, permission review, layout persistence and normal quit passed`);
 } finally {
   const process = app?.process();
   if (process && process.exitCode === null && process.signalCode === null) {

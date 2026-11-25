@@ -440,6 +440,8 @@ html[data-desktop-titlebar][data-desktop-fullscreen] .tab-bar { padding-left: 0;
 }
 .tab:not(.active):hover { color: var(--text-normal); background: var(--bg-modifier-hover); }
 .tab.active { background: var(--tab-active-bg); color: var(--text-normal); }
+.tab[data-tab-group], .ribbon-tabs [data-tab-group] { border-left: 3px solid var(--tab-group-color); }
+.tab.is-multiselected, .ribbon-tabs button.is-multiselected { outline: 2px solid var(--text-accent); outline-offset: -2px; }
 .tab.active::before, .tab.active::after { content: ''; pointer-events: none; position: absolute; bottom: 0; width: 8px; height: 8px; }
 .tab.active::before { right: 100%; border-radius: 0 0 8px 0; box-shadow: 4px 0 0 var(--tab-active-bg); }
 .tab.active::after { left: 100%; border-radius: 0 0 0 8px; box-shadow: -4px 0 0 var(--tab-active-bg); }

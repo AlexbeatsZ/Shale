@@ -12,6 +12,7 @@ import { openWebViewer } from './openWebViewer';
 import { hasWebViewer } from './platform';
 import { userscriptBridge } from './userscripts/client';
 import { userscriptCommands } from './userscripts/commands';
+import { paneTabKey, tabKey } from './tabIdentity';
 
 const activePath = () => useStore.getState().currentPath();
 function tabTargets() {
@@ -21,8 +22,8 @@ function tabTargets() {
     const tabs = state.rightTabs.filter(tab => (tab.side ?? 'right') === (active?.side ?? 'right'));
     return { length: tabs.length, index: tabs.indexOf(active!), select: (index: number) => { const tab = tabs.at(index); if (tab) state.selectRightTab(tab.id); } };
   }
-  return { length: state.tabs.length, index: state.tabs.findIndex(tab => tab.path === state.currentPath()),
-    select: (index: number) => { const tab = state.tabs.at(index); if (tab) return state.openFile(tab.path, true, id, { preserveHomepage: true }); } };
+  return { length: state.tabs.length, index: state.tabs.findIndex(tab => tabKey(tab) === paneTabKey(state, id === 'split' ? 'split' : 'main')),
+    select: (index: number) => { const tab = state.tabs.at(index); if (tab) return state.openFile(tab.path, true, id, { preserveHomepage: true, tabId: tabKey(tab) }); } };
 }
 const selectTab = (index: number) => tabTargets().select(index);
 function moveTab(direction: number) { const tabs = tabTargets(); if (tabs.length) return tabs.select((tabs.index + direction + tabs.length) % tabs.length); }
@@ -53,6 +54,8 @@ export const nativeWorkspaceCommands: NativeCommand[] = [
   } },
   { id: 'workspace:next-tab', title: '转到下一个标签页', run: () => moveTab(1) },
   { id: 'workspace:previous-tab', title: '转到上一个标签页', run: () => moveTab(-1) },
+  { id: 'workspace:swap-group-previous', title: '与分组内上一个标签页交换', hotkeys: [{ modifiers: ['Alt', 'Shift'], key: 'Z' }], run: () => useStore.getState().swapGroupedTab(-1) },
+  { id: 'workspace:swap-group-next', title: '与分组内下一个标签页交换', hotkeys: [{ modifiers: ['Alt', 'Shift'], key: 'X' }], run: () => useStore.getState().swapGroupedTab(1) },
   { id: 'workspace:goto-last-tab', title: '转到最后一个标签页', run: () => selectTab(-1) },
   ...Array.from({ length: 8 }, (_, index) => ({ id: `workspace:goto-tab-${index + 1}`, title: `转到标签页 #${index + 1}`, run: () => selectTab(index) })),
   { id: 'split-down', title: '向下分屏', run: () => useStore.getState().splitWithHomepage(null, 'down') },

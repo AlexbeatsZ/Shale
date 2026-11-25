@@ -25,6 +25,9 @@ import { type DesktopCommand } from './bridge';
 //   <userData>/logs/server.log      — server child stdout/stderr (debugging)
 app.setName('Shale');
 const customProfile = app.commandLine.getSwitchValue('user-data-dir');
+// Isolated automation can exercise DOM and guest lifetimes without activating the user's desktop.
+const backgroundTest = !!customProfile && app.commandLine.hasSwitch('use-mock-keychain') && app.commandLine.hasSwitch('shale-test-background');
+if (backgroundTest && process.platform === 'darwin') app.setActivationPolicy('accessory');
 app.setPath('userData', customProfile ? path.resolve(customProfile) : migrateDesktopProfile(app.getPath('appData')));
 app.setPath('sessionData', app.getPath('userData'));
 if (process.platform === 'win32') app.setAppUserModelId('io.github.alexbeatsz.shale');
@@ -224,6 +227,7 @@ async function pickVaultDialog(): Promise<string | undefined> {
 // ---------------------------------------------------------------------------
 function createWindow(starting = false): void {
   mainWindow = new BrowserWindow({
+    ...(backgroundTest ? { show: false } : {}),
     width: 1280,
     height: 860,
     minWidth: 720,
@@ -238,6 +242,7 @@ function createWindow(starting = false): void {
       titleBarOverlay: { color: starting ? '#1e1e1e' : '#f6f6f6', symbolColor: starting ? '#dddddd' : '#333333', height: 32 },
     }),
     webPreferences: {
+      ...(backgroundTest ? { backgroundThrottling: false } : {}),
       preload: path.join(__dirname, 'preload.js'),
       // Native Shale plugins have the same machine access as the user.
       // Keep the restricted host by default; trust is a per-install choice.

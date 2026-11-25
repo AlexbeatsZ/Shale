@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-25 (Claude 触摸编辑合并、主线与部署 PRD 1.64)
+Cập nhật lần cuối: 2026-11-25 (标签颜色分组与复制 PRD 1.65)
+
+### 标签颜色分组与复制 (PRD 1.65)
+
+- [x] 独立标签身份、Command/Ctrl 多选、颜色菜单与左描线、固定加入顺序及循环交换、复制标签与工作区恢复；666单元、50浏览器及Mac原生生命周期通过。
+- [~] 后台WebViewer与Windows/Android最终包验证、0.1.95发布及已有设备原位更新。
 
 ### Claude 触摸编辑合并与部署 (PRD 1.64)
 

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath } from '../lib/store';
+import { paneTabKey } from '../lib/tabIdentity';
 import { activateNavigation } from '../lib/activeEditor';
 import { isFolderPath } from '../lib/tree';
 import { TAB_DRAG_TYPE, tabDrag } from '../lib/tabDrag';
@@ -19,7 +20,7 @@ function PaneDivider({ down }: { down: boolean }) {
   const lastTap = useRef<{ time: number; x: number; y: number } | null>(null);
   const swap = () => {
     const s = useStore.getState();
-    if (s.splitPath) void s.replacePane('main', s.splitPath).catch(error => s.notify(String(error)));
+    if (s.splitPath) void s.replacePane('main', paneTabKey(s, 'split')!).catch(error => s.notify(String(error)));
   };
   const area = (element: HTMLElement) => element.parentElement as HTMLElement;
   const ratioAt = (element: HTMLElement, x: number, y: number) => {
@@ -115,7 +116,8 @@ export default function Workspace() {
     const host = workspace.current, area = host?.querySelector<HTMLElement>(':scope > .editor-area'), path = tabDrag.path;
     if (!host || !area || !path) return null;
     const origin = host.getBoundingClientRect(), box = area.getBoundingClientRect();
-    const sideable = isHomepagePath(path) || (path !== GRAPH_PATH && !isFolderPath(tree, path));
+    const file = useStore.getState().tabs.find(tab => (tab.id ?? tab.path) === path)?.path ?? path;
+    const sideable = isHomepagePath(file) || (file !== GRAPH_PATH && !isFolderPath(tree, file));
     const at = (view: 'main' | 'split' | 'right' | 'down', r: { left: number; top: number; width: number; height: number }) =>
       ({ view, left: r.left - origin.left, top: r.top - origin.top, width: r.width, height: r.height });
     if (splitPath) {
@@ -146,7 +148,7 @@ export default function Workspace() {
     const s = useStore.getState();
     if (target.view === 'right' || target.view === 'down') void s.openToSide(path, target.view);
     else if (s.splitPath) void s.replacePane(target.view, path);
-    else if ((target.view === 'split' ? s.splitPath : s.activePath) !== path) void s.openFile(path, true, target.view);
+    else if (paneTabKey(s) !== path) void s.showTab(path);
   };
 
   // Paste uses each MarkdownView's clipboard handler, including sidebar embeds.

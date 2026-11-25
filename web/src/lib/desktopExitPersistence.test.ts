@@ -18,7 +18,7 @@ const compiled = transpileModule(readFileSync(sourceFile, 'utf8'), {
   compilerOptions: { module: ModuleKind.CommonJS, target: ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText;
 
-function fixture(platform = 'win32') {
+function fixture(platform = 'win32', switches: string[] = []) {
   vi.useFakeTimers();
   const application = Object.assign(new EventEmitter(), {
     requestSingleInstanceLock: () => true,
@@ -26,7 +26,8 @@ function fixture(platform = 'win32') {
     quit: vi.fn(),
     isPackaged: false,
     getPath: () => 'C:/fixture/profile', setPath: vi.fn(), setName: vi.fn(), setAppUserModelId: vi.fn(),
-    commandLine: { getSwitchValue: () => 'C:/fixture/profile' },
+    commandLine: { getSwitchValue: () => 'C:/fixture/profile', hasSwitch: (name: string) => switches.includes(name) },
+    setActivationPolicy: vi.fn(),
     getVersion: () => '0.1.67',
   });
   const ipc = Object.assign(new EventEmitter(), { handle: vi.fn() });
@@ -62,7 +63,7 @@ function fixture(platform = 'win32') {
       this.emit('closed');
     });
     show = vi.fn();
-    constructor() { super(); window = this; }
+    constructor(public options: Record<string, any>) { super(); window = this; }
     isDestroyed() { return this.destroyed; }
     isFocused() { return true; }
     setMenuBarVisibility() {}
@@ -100,6 +101,15 @@ function fixture(platform = 'win32') {
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
 
 describe('desktop close coordinator against the production main implementation', () => {
+  it('keeps background automation hidden only when both isolated testing switches are supplied', () => {
+    const background = fixture('darwin', ['use-mock-keychain', 'shale-test-background']);
+    expect(background.application.setActivationPolicy).toHaveBeenCalledWith('accessory');
+    expect(background.window.options.show).toBe(false);
+    expect(background.window.options.webPreferences.backgroundThrottling).toBe(false);
+    const regular = fixture('darwin', ['shale-test-background']);
+    expect(regular.application.setActivationPolicy).not.toHaveBeenCalled();
+    expect(regular.window.options.show).toBeUndefined();
+  });
   it('allows only enumerated desktop actions from the local main frame', () => {
     const host = fixture('darwin'), frame = host.window.webContents.mainFrame;
     for (const event of [{ sender: {}, senderFrame: frame }, { sender: host.window.webContents, senderFrame: { url: frame.url } }])
