@@ -123,7 +123,7 @@ for down in (True, False):
       await writeClipboard(`guest paste ${label}`); await guestKey('V');
       await page.waitForTimeout(100);
       check(`${label} guest ${id} paste`, await guest(`document.getElementById('${id}').${id === 'editable' ? 'textContent' : 'value'}`), `guest paste ${label}`);
-      await guestKey('A'); await guestKey('C'); await page.waitForTimeout(100);
+      await guestKey('A'); await writeClipboard('before field copy'); await guestKey('C'); await page.waitForTimeout(100);
       check(`${label} guest ${id} select/copy`, await readClipboard(), `guest paste ${label}`);
       await guestKey('X'); await page.waitForTimeout(100);
       check(`${label} guest ${id} cut`, await guest(`document.getElementById('${id}').${id === 'editable' ? 'textContent' : 'value'}`), '');

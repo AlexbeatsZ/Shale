@@ -10,7 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-25 PRD 1.61：桌面 0.1.91 修复网页和地址栏的原生剪贴板缺口；Vim 开关下均复现旧网页故障。642 单元、21 浏览器与 Mac 剪贴板实包通过，完整 WebViewer/原生快捷键、Windows 构建和发布部署进行中。隔离实包测试必须用 `--use-mock-keychain`，主进程跳过真实钥匙串迁移；已有一致密钥不重写 ACL。报告 `tests/reports/browser-clipboard-20261125.md`。
+- 2026-11-25 PRD 1.61：桌面 v0.1.91（7 资产/latest，运行源码 89f1407）已发布，本机 Mac 已原位升级、签名/启动/healthz/真实工作区恢复通过，未再触发钥匙串密码。642 单元、21 浏览器、Mac/Windows 剪贴板/完整 WebViewer/原生快捷键实包通过，桌面操作通道实际 Command+V 在地址栏与网页输入框通过。Vim 不是旧故障直接原因。Windows 日用与 Android 仍 0.1.90。隔离测试必须用 `--use-mock-keychain` 且包内含跳过真实迁移的逻辑；已有一致密钥不重写 ACL。报告 `tests/reports/browser-clipboard-20261125.md`。
 - 2026-11-24 PRD 1.60：默认新建文件夹新增已有目录选择，修复保存后重开显示旧值。桌面 v0.1.90（7 资产/latest）及 Android android-v0.1.90（生产 APK/预发布）已发布并原位安装到全部五台可达设备；类型、641 单元、2 浏览器与 Mac/Windows 最终实包选择/保存/创建/回读通过。报告 `tests/reports/default-new-folder-20261124.md`。
 - 2026-11-24 PRD 1.59：恢复 Insert/禁用时原生细光标与主题文字选区，保留 Normal/Visual 块光标和颜色自定义。桌面 v0.1.89（7 资产/latest）及 Android android-v0.1.89（生产 APK/预发布）已发布；Mac/OMEN/ROG/K70/小米平板6Pro 全部原位安装 0.1.89。641 单元、8 Vim 浏览器、Mac 颜色与完整 WebViewer、Windows 完整 Vim/输入法实包通过。报告 `tests/reports/native-selection-restoration-20261124.md`。
 - 2026-11-23 完成 Shale 完整身份迁移（PRD 1.57）：仓库 `AlexbeatsZ/Shale`；Mac 主检出 `/Users/meta/Developer/Shale`，OMEN 主检出 `C:\Users\Meta\source\repos\Shale`，旧主目录已不存在。

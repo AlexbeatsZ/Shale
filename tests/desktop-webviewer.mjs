@@ -65,6 +65,7 @@ try {
   const page = await app.firstWindow();
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });
+  await page.bringToFront();
   const command = async name => {
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+p' : 'Control+p');
     await page.locator('.palette-input').fill(name);
@@ -157,6 +158,11 @@ try {
 
   // Bound Shale shortcuts still run while the page guest has keyboard focus.
   const guestId = await main.locator('webview').evaluate(element => element.getWebContentsId());
+  await page.bringToFront();
+  await app.evaluate(({ app, BrowserWindow }) => {
+    BrowserWindow.getAllWindows()[0].focus();
+    if (process.platform === 'darwin') app.focus({ steal: true });
+  });
   await main.locator('webview').click();
   await expect.poll(() => app.evaluate(({ webContents }, id) => webContents.fromId(id).isFocused(), guestId)).toBe(true);
   await app.evaluate(({ webContents }, id) => {
