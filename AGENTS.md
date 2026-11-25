@@ -26,6 +26,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
+- 2026-11-25 PRD 1.63 / 桌面 0.1.93 在验收：网页排序固定宿主、防止交换重载；连续文档真实路径定位/只读 PDF 预览；PDF 默认反色并记忆显式关闭；Vim 停顿/移光标/失焦分组。654 单元、类型与生产构建通过；发布/日用安装尚未完成，见 tests/reports/viewer-lifecycle-20261125.md。
 - 小米平板6Pro 0.1.90 服务 healthz 连接超时，后续可在设备前台确认；本轮安装与启动已完成，未修改网络/代理。Mac 0.1.89 完整输入法往返受前台保护阻止，颜色专项及 Windows 完整输入法通过。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。

@@ -174,7 +174,9 @@ export default function Workspace() {
           <WorkspacePane path={activePath} navigationId="main" />
         )}
         {splitPath && <PaneDivider down={splitDirection === 'down'} />}
-        {tabs.filter(tab => isWebViewerPath(tab.path)).map(tab => {
+        {/* Electron detaches a guest when React reorders its DOM ancestor. Keep
+            hosts in identity order; CSS places the visible main/split panes. */}
+        {tabs.filter(tab => isWebViewerPath(tab.path)).sort((a, b) => a.path.localeCompare(b.path)).map(tab => {
           const pane = tab.path === activePath ? 'main' : tab.path === splitPath ? 'split' : undefined;
           return <div key={tab.path} className={`pane webviewer-pane${pane ? ' ' + pane + '-pane' : ''}`} data-view-id={pane} hidden={!pane}>
             <WebViewerTab id={tab.path} url={tab.webUrl ?? ''} active={!!pane} />

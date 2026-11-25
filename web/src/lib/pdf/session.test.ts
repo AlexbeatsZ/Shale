@@ -55,11 +55,11 @@ it('keeps independent display controls without reloading or resetting PDF search
   await vi.waitFor(() => expect(session.getSnapshot().searchPending).toBe(false));
   const resource = session.resource, matches = session.getSnapshot().matches;
   session.setZoom(1.25); session.toggleDark();
-  expect(session.getSnapshot()).toMatchObject({ currentPage: 4, query: 'needle', zoom: 1.25, dark: true });
+  expect(session.getSnapshot()).toMatchObject({ currentPage: 4, query: 'needle', zoom: 1.25, dark: false });
   expect(session.getSnapshot().matches).toBe(matches);
   expect(session.resource).toBe(resource);
   session.setZoom(99); expect(session.getSnapshot().zoom).toBe(3);
   session.setZoom(Number.NaN); expect(session.getSnapshot().zoom).toBe(3);
   session.destroy(); session.setZoom(1); session.toggleDark();
-  expect(session.getSnapshot()).toMatchObject({ status: 'destroyed', zoom: 3, dark: true });
+  expect(session.getSnapshot()).toMatchObject({ status: 'destroyed', zoom: 3, dark: false });
 });

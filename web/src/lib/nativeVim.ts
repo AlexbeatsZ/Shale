@@ -25,6 +25,7 @@ export function nativeVimExtensions(commands: Actions): Extension {
     private owner = `vim:${crypto.randomUUID()}`;
     private lastError = '';
     private pending = 0;
+    private lastEdit = 0;
     constructor(readonly view: EditorView) {
       this.stop = subscribeVimSettings(() => this.configure());
       view.dom.addEventListener('focusin', this.focus);
@@ -78,6 +79,7 @@ export function nativeVimExtensions(commands: Actions): Extension {
       const wasInsert = vimAllowsInsert(this.view);
       state.mode = event.mode; this.renderMode(event.mode);
       if (wasInsert && !vimAllowsInsert(this.view)) state.group++;
+      this.lastEdit = 0;
       this.sync();
     };
     private done = () => {
@@ -87,8 +89,8 @@ export function nativeVimExtensions(commands: Actions): Extension {
     private keydown = (event: KeyboardEvent) => {
       const state = nativeVimStates.get(this.view);
       if (state && !vimAllowsInsert(this.view) && !event.isComposing && !event.repeat && !['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) {
-        // Each Normal command starts its own native undo group. Insert keeps the
-        // group begun by i/a/c/o for the whole insertion, including snippet edits.
+        // A Normal command is atomic. Insert retains its starter command and
+        // snippets until a pause, caret move or focus change starts another group.
         if (!this.cm?.state.vim?.inputState?.keyBuffer?.length) state.group++;
       }
     };
@@ -98,7 +100,12 @@ export function nativeVimExtensions(commands: Actions): Extension {
         (active instanceof Element && this.view.dom.contains(active) && !!active.closest('.cm-vim-panel')));
     }
     private focus = () => { if (this.alive && this.enabled && this.ownsFocus()) this.sync(); };
-    private blur = () => { queueMicrotask(() => { if (!this.ownsFocus()) this.send('release'); }); };
+    private blur = () => { queueMicrotask(() => {
+      if (!this.ownsFocus()) {
+        const state = nativeVimStates.get(this.view); if (state) state.group++;
+        this.lastEdit = 0; this.send('release');
+      }
+    }); };
     private sync() {
       if (!this.alive || !this.enabled || !this.ownsFocus()) return;
       const mode = vimSettings().vimInputMethod ? (vimAllowsInsert(this.view) ? 'insert' : 'normal') : 'release';
@@ -116,7 +123,18 @@ export function nativeVimExtensions(commands: Actions): Extension {
         this.lastError = message;
       }).finally(() => { if (--this.pending === 0 && this.alive) delete this.view.dom.dataset.vimInputPending; });
     }
-    update(update: ViewUpdate) { if (update.startState.readOnly !== update.state.readOnly) this.configure(); }
+    update(update: ViewUpdate) {
+      if (update.startState.readOnly !== update.state.readOnly) this.configure();
+      const state = nativeVimStates.get(this.view);
+      if (!state || !vimAllowsInsert(this.view)) return;
+      if (update.docChanged) {
+        const now = Date.now();
+        if (this.lastEdit && now - this.lastEdit >= 500) state.group++;
+        this.lastEdit = now;
+      } else if (update.selectionSet && !update.startState.selection.eq(update.state.selection)) {
+        state.group++; this.lastEdit = 0;
+      }
+    }
     destroy() {
       this.alive = false; this.stop(); this.detach();
       this.view.dom.removeEventListener('focusin', this.focus);

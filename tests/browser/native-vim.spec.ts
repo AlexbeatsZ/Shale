@@ -19,6 +19,22 @@ async function editor(page: Page, enabled = true) {
 }
 const source = (page: Page) => page.evaluate(() => window.renderHarness.source(0));
 
+test('Insert undo stops at a pause, caret movement and a separate insertion', async ({ page }) => {
+  await editor(page);
+  await page.keyboard.press('i'); await page.keyboard.type('first');
+  await page.waitForTimeout(650);
+  await page.keyboard.type('second'); await page.keyboard.press('Escape'); await page.keyboard.press('u');
+  await expect.poll(() => source(page)).toBe('firstalpha beta\nsecond line\n');
+  await page.keyboard.press('Control+r');
+  await expect.poll(() => source(page)).toBe('firstsecondalpha beta\nsecond line\n');
+  await page.keyboard.press('i'); await page.keyboard.type('third');
+  await page.keyboard.press('ArrowLeft'); await page.keyboard.type('X');
+  await page.keyboard.press('Escape'); await page.keyboard.press('u');
+  expect(await source(page)).toContain('third'); expect(await source(page)).not.toContain('X');
+  await page.keyboard.press('u');
+  await expect.poll(() => source(page)).toBe('firstsecondalpha beta\nsecond line\n');
+});
+
 test('native clipboard fallback leaves Vim Control chords and shared undo with the editor', async ({ page }) => {
   const view = await editor(page);
   await page.evaluate(async () => {

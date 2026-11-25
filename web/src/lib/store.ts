@@ -1,3 +1,4 @@
+import { restorePdfDarkPreferences } from './pdf/preferences';
 import { manualSave } from './writing/format';
 import { create } from 'zustand';
 import { api, pendingMutations, type TreeNode } from './api';
@@ -142,7 +143,7 @@ interface AppState {
   pdfToolbarOpen: boolean;
   setPdfToolbarOpen: (open: boolean) => void;
   togglePdfToolbar: () => void;
-  pdfDarkPaths: string[];
+  pdfDarkOverrides: Record<string, boolean>;
   setPdfDark: (path: string, dark: boolean) => void;
 
   // expanded folders in the file tree (persisted)
@@ -299,7 +300,7 @@ function remapWorkspacePaths(state: AppState, from: string, to?: string): Partia
     rightActiveId: rightTabs.some(tab => tab.id === state.rightActiveId) ? state.rightActiveId : null,
     leftActiveId: rightTabs.some(tab => tab.id === state.leftActiveId) ? state.leftActiveId : null,
     recent: list(state.recent), bookmarks: list(state.bookmarks), expanded: list(state.expanded), selected: list(state.selected),
-    pdfDarkPaths: list(state.pdfDarkPaths),
+    pdfDarkOverrides: Object.fromEntries(Object.entries(state.pdfDarkOverrides).flatMap(([path, dark]) => { const next = map(path); return next === null ? [] : [[next, dark]]; })),
     history: state.history.flatMap(location => { const path = map(location.path); return path === null ? [] : [{ ...location, path }]; }),
     histIndex: state.history.slice(0, state.histIndex + 1).filter(location => map(location.path) !== null).length - 1,
     viewHistories: Object.fromEntries(Object.entries(state.viewHistories).map(([id, stack]) => [id, {
@@ -320,7 +321,7 @@ function splitPair(s: { activePath: string | null; splitPath: string | null; par
 const PERSIST_KEYS = [
   'tabs', 'activePath', 'viewMode', 'expanded', 'splitPath', 'splitDirection', 'parkedSplit',
   'recent', 'bookmarks', 'leftPanel', 'rightPanel', 'leftOpen', 'rightOpen', 'graphSettings',
-  'treeSort', 'autoReveal', 'pdfDarkPaths',
+  'treeSort', 'autoReveal', 'pdfDarkOverrides',
   'rightTabs', 'rightActiveId', 'leftActiveId',
 ] as const;
 
@@ -362,7 +363,7 @@ function applyPersisted(s: any, set: (p: any) => void): void {
     tabs,
     activePath: available(s.activePath) ? s.activePath : splitPath,
     viewMode: ['live', 'source', 'reading'].includes(s.viewMode) ? s.viewMode : 'live',
-    pdfDarkPaths: Array.isArray(s.pdfDarkPaths) ? s.pdfDarkPaths.filter((path: unknown) => typeof path === 'string') : [],
+    pdfDarkOverrides: restorePdfDarkPreferences(s),
     expanded: Array.isArray(s.expanded) ? s.expanded : [],
     treeSort: TREE_SORTS.includes(s.treeSort) ? s.treeSort : 'name-asc',
     autoReveal: s.autoReveal === true,
@@ -590,9 +591,9 @@ export const useStore = create<AppState>()(
       pdfToolbarOpen: false,
       setPdfToolbarOpen: (open) => set({ pdfToolbarOpen: open }),
       togglePdfToolbar: () => set((s) => ({ pdfToolbarOpen: !s.pdfToolbarOpen })),
-      pdfDarkPaths: [],
-      setPdfDark: (path, dark) => set(state => state.pdfDarkPaths.includes(path) === dark ? state
-        : { pdfDarkPaths: dark ? [...state.pdfDarkPaths, path] : state.pdfDarkPaths.filter(value => value !== path) }),
+      pdfDarkOverrides: {},
+      setPdfDark: (path, dark) => set(state => Object.hasOwn(state.pdfDarkOverrides, path) && state.pdfDarkOverrides[path] === dark ? state
+        : { pdfDarkOverrides: { ...state.pdfDarkOverrides, [path]: dark } }),
 
       expanded: [],
       toggleFolder: (path) =>

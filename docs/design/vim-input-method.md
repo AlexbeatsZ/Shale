@@ -85,3 +85,7 @@ blur, disable/unmount, IME composition, shared history, snippets, :w, default-of
 settings and persistence. Native acceptance uses disposable Vaults/profiles,
 restores the initial OS input source and serializes keyboard/focus tests. Preserve
 and run desktop WebViewer regression after host changes.
+
+## 撤销分组（PRD 1.63）
+
+原先同一次 Insert 的修改不设时限合并，长时间写作会一次撤回过多。改为与普通键入一致的约 500ms 停顿分界，插入期间单独移动光标、失去焦点也开始新组；Esc 后的下一次编辑保持独立。Normal 编辑命令仍原子化，cw 的删除和紧接输入、原生片段展开继续在同一组，点号重复与共享 DocumentSession 历史保留。

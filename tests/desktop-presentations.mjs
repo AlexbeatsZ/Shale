@@ -89,8 +89,9 @@ try {
   await page.screenshot({ path: path.join(evidence, 'legacy-ppt.png') });
   await open('Paper.pdf');
   await expect(main.locator('.pdf-page-surface.is-ready').first()).toBeVisible();
-  await command('切换 PDF / PPT 反色');
   await expect(main.locator('[data-pdf-page="1"]')).toHaveAttribute('data-pdf-dark', 'true');
+  await command('切换 PDF / PPT 反色');
+  await expect(main.locator('[data-pdf-page="1"]')).not.toHaveAttribute('data-pdf-dark');
   await open('Slides.PPTX');
   await expect(main.locator('[data-pdf-page="1"].is-ready')).toBeVisible();
   await expect(main.locator('[data-pdf-page="1"]')).toHaveAttribute('data-pdf-dark', 'true');

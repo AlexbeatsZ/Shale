@@ -29,3 +29,7 @@ Electron 的访客挂载会令主 WebContents 发出 `did-start-loading` 和子 
 ## 重构验收
 
 保留三处主页和命令面板入口、Homepage 标签原位替换、文件/URL 导入、定期检查和权限审阅。移除任何一项须先取得用户明确同意。用 `node tests/desktop-webviewer.mjs <打包应用可执行文件>` 测试原生宿主。测试使用本地 HTTP 夹具、隔离 Vault 与真实调度定时器，验证区域归属、原位替换、导航、弹窗、导入、执行、自动更新及扩权候选。
+
+## 页面实例与标签移动（PRD 1.63）
+
+Electron 的 webview 即使 React key 不变，移动其 DOM 祖先仍会断开访客并重新加载。中央和侧栏的网页宿主按不可变身份排列；标签排序只改变标签栏，主/副栏通过 CSS order 改变视觉位置。交换、排序、建立分屏、双击分隔条交换及暂存/恢复分屏均不得重新设置 src 或重挂载访客。关闭仍销毁对应网页。原生回归同时检查 webContents ID、页面随机实例、输入草稿、滚动、history.state 与服务器请求次数。

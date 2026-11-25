@@ -6,6 +6,7 @@ import Icon from './Icon';
 import { useStore } from '../lib/store';
 import { PDF_MIN_ZOOM, PDF_MAX_ZOOM, usePdfZoom } from '../lib/pdf/zoom';
 import { pagedDocumentLabel } from '../lib/pdf/documentResource';
+import { pdfMenuItems } from '../lib/pdf/menu';
 import '../styles/pdf.css';
 
 export function PageSlot({ session, page, width, root, anchorWithin, onLayoutScroll }: {
@@ -91,7 +92,10 @@ function Reader({ session, main }: { session: PdfSession; main: boolean }) {
   }, [session, state.pageCount]);
   const selected = state.activeMatch >= 0 ? state.activeMatch + 1 : 0;
   return <section className="pdf-viewer" data-pdf-path={session.path} data-document-format={label.toLowerCase()} onPointerDown={() => activatePdfSession(session)}
-    onFocusCapture={() => activatePdfSession(session)} onKeyDown={event => {
+    onFocusCapture={() => activatePdfSession(session)} onContextMenu={event => {
+      event.preventDefault(); event.stopPropagation();
+      useStore.getState().openContextMenu({ x: event.clientX, y: event.clientY, items: pdfMenuItems(session) });
+    }} onKeyDown={event => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
         event.preventDefault(); event.stopPropagation();
         if (main && !toolbarOpen) { focusSearch.current = true; setToolbarOpen(true); }
@@ -107,6 +111,7 @@ function Reader({ session, main }: { session: PdfSession; main: boolean }) {
       <button className="tool-btn" aria-label={`缩小 ${label}`} disabled={zoom <= PDF_MIN_ZOOM} onClick={() => setZoom(zoom - 0.25)}><Icon name="minus" /></button>
       <button className="pdf-zoom" onClick={() => setZoom(1)} title="适合宽度">{Math.round(zoom * 100)}%</button>
       <button className="tool-btn" aria-label={`放大 ${label}`} disabled={zoom >= PDF_MAX_ZOOM} onClick={() => setZoom(zoom + 0.25)}><Icon name="plus" /></button>
+      <button className="tool-btn" aria-label={`${label} 反色`} title={`${label} 反色`} aria-pressed={state.dark} onClick={session.toggleDark}><Icon name="moon" /></button>
       <div className="pdf-search">
         <Icon name="search" /><input ref={search} type="search" aria-label={`搜索 ${label}`} placeholder={`搜索 ${label}`} value={state.query} onChange={event => session.setQuery(event.target.value)}
           onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); session.nextMatch(event.shiftKey ? -1 : 1); } }} />

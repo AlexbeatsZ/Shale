@@ -113,7 +113,7 @@ test('virtual Markdown chapters stay bounded, jump through one outline and edit 
 
 test('status groups include highlighted JSON configuration, retain edits through refresh and reveal native locations', async ({page},testInfo)=>{
   const folder='Book',configPath=folder+'/.virtual-document.json';
-  let manifest={version:1,title:'Book',streams:[{id:'text',title:'MD',files:['chapter.md']},{id:'pdf',title:'PDF',files:['original.pdf']}]};
+  let manifest={version:1,title:'Book',streams:[{id:'text',title:'MD',files:['chapter.md']},{id:'pdf',title:'PDF',files:['量子 #1 100% (A).pdf']}]};
   let raw=JSON.stringify(manifest,null,2);const writes:{path:string;content:string}[]=[];
   const collection=()=>({path:folder,title:'Book',revision:raw,streams:manifest.streams.map(stream=>({...stream,files:stream.files.map(file=>({path:folder+'/'+file,title:file,kind:file.endsWith('.pdf')?'pdf':'markdown',size:200,headings:[]}))}))});
   const tree=()=>({name:'Fixture',path:'',type:'folder',children:[{name:'Book',path:folder,type:'folder',virtualDocument:collection()}]});
@@ -162,10 +162,31 @@ test('status groups include highlighted JSON configuration, retain edits through
   await expect(host.getByRole('button',{name:'切换分组：配置'})).toBeVisible();await expect(editor).toContainText('MD 新分组');
   await host.getByRole('button',{name:'切换分组：配置'}).click();await host.getByRole('menuitemcheckbox',{name:'PDF',exact:true}).click();
   await expect(host.getByRole('button',{name:'切换分组：PDF'})).toBeVisible();
-  await host.getByRole('navigation',{name:'文档索引'}).getByRole('link').first().click();await expect(host.locator('canvas').first()).toBeVisible();
+  const pdfLink=host.getByRole('navigation',{name:'文档索引'}).getByRole('link').first();
+  const pdfPath=folder+'/量子 #1 100% (A).pdf';
+  await pdfLink.hover();
+  const preview=page.getByRole('dialog',{name:'链接预览'});
+  await expect(preview.locator('canvas')).toBeVisible();
+  await expect(preview.locator('.cm-link-preview-header')).toHaveText(pdfPath);
+  await expect(preview).not.toContainText('未找到');
+  await page.keyboard.press('Escape');
+  await pdfLink.click({button:'right'});await host.getByRole('menuitem',{name:'在 Finder 中显示',exact:true}).click();
+  expect(await page.evaluate(()=>(window as any).nativeReveals)).toEqual([configPath,pdfPath]);
+  await pdfLink.click();await expect(host.locator('.virtual-pdf-pages canvas').first()).toBeVisible();
+  const surface=host.locator('.virtual-pdf-pages .pdf-page-surface').first();
+  await expect(surface).toHaveAttribute('data-pdf-dark','true');
+  await expect.poll(()=>surface.locator('canvas').evaluate(element=>getComputedStyle(element).filter)).not.toBe('none');
+  await surface.click({button:'right'});await host.getByRole('menuitemcheckbox',{name:'PDF 反色',exact:true}).click();
+  await expect(surface).not.toHaveAttribute('data-pdf-dark');
+  await page.evaluate(async path=>{await (window as any).virtualConfigStore.getState().openFile(path);},pdfPath);
+  await expect(host.locator('.pdf-viewer .pdf-page-surface').first()).not.toHaveAttribute('data-pdf-dark');
+  await host.locator('.pdf-viewer .pdf-page-surface').first().click({button:'right'});await host.getByRole('menuitemcheckbox',{name:'PDF 反色',exact:true}).click();
+  await expect(host.locator('.pdf-viewer .pdf-page-surface').first()).toHaveAttribute('data-pdf-dark','true');
+  await page.evaluate(async folder=>{await (window as any).virtualConfigStore.getState().openFile(folder);},folder);
+
   await host.getByRole('tab',{name:'Book 关闭 Book'}).click({button:'right'});
   await host.getByRole('menuitem',{name:'在 Finder 中打开',exact:true}).click();
-  expect(await page.evaluate(()=>(window as any).nativeReveals)).toEqual([configPath,folder]);
+  expect(await page.evaluate(()=>(window as any).nativeReveals)).toEqual([configPath,pdfPath,folder]);
   await page.screenshot({path:testInfo.outputPath('status-groups-pdf.png')});
 });
 

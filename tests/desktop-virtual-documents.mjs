@@ -55,7 +55,7 @@ if (process.env.VIRTUAL_REAL_VAULT) {
     const text=`# Chapter ${chapter}\n\n$$x^2$$ ^eq-native-${chapter}\n\n`+'Independent chapter text.\n\n'.repeat(100);
     await fs.writeFile(path.join(vault,file),text); original.set(file,Buffer.from(text));
   }
-  for (let index=1;index<=3;index++) await fs.writeFile(path.join(vault,slides,`物理化学 课件 第0${index}章.pdf`),makePdfFixture({pages:40}));
+  for (let index=1;index<=3;index++) await fs.writeFile(path.join(vault,slides,`物理化学 课件 第0${index}章 #100% (A).pdf`),makePdfFixture({pages:40}));
 }
 await fs.writeFile(path.join(profile,'desktop-config.json'),JSON.stringify({vaultPath:vault,trustedPlugins:false}));
 const executable = process.argv[2] ? path.resolve(process.argv[2]) : path.join(root,'node_modules/electron/dist/Electron.app/Contents/MacOS/Electron');
@@ -205,9 +205,29 @@ try {
   assert.equal(nativeReveals[0].target,await fs.realpath(configPath));assert.equal(nativeReveals[1].target,await fs.realpath(path.join(vault,book)));assert.equal(nativeReveals[1].result,'');
   await page.locator(`[data-path="${slides}"]`).first().click();
   await expect(page.getByRole('navigation',{name:'文档索引'})).toBeVisible();
-  const pdfStart=Date.now();await page.getByRole('navigation',{name:'文档索引'}).getByRole('link').nth(1).click();
+  const pdfLink=page.getByRole('navigation',{name:'文档索引'}).getByRole('link').nth(1);
+  const pdfStart=Date.now();
+  await pdfLink.hover();
+  const pdfPreview=page.getByRole('dialog',{name:'链接预览'});
+  await expect(pdfPreview.locator('canvas')).toBeVisible();
+  const pdfSource=await pdfPreview.locator('.cm-link-preview-header').textContent();
+  assert(pdfSource.startsWith(slides+'/'));assert(!pdfSource.includes('%E'));
+  await page.keyboard.press('Escape');
+  await pdfLink.click({button:'right'});await page.getByRole('menuitem',{name:process.platform==='darwin'?'在 Finder 中显示':'在 文件资源管理器 中显示',exact:true}).click();
+  await expect.poll(()=>app.evaluate(()=>globalThis.nativeReveals.length)).toBe(3);
+  assert.equal((await app.evaluate(()=>globalThis.nativeReveals))[2].target,await fs.realpath(path.join(vault,pdfSource)));
+  await pdfLink.click();
   await expect(page.locator('.virtual-document-scroll .pdf-page-surface.is-ready').first()).toBeVisible({timeout:60000});
   const pdfOpenMs=Date.now()-pdfStart,canvases=await page.locator('.virtual-document-scroll canvas').count();assert(canvases<15);
+  const pdfSurface=page.locator('.virtual-document-scroll .pdf-page-surface.is-ready').first();
+  await expect(pdfSurface).toHaveAttribute('data-pdf-dark','true');
+  await pdfSurface.click({button:'right'});await page.getByRole('menuitemcheckbox',{name:'PDF 反色',exact:true}).click();
+  await expect(pdfSurface).not.toHaveAttribute('data-pdf-dark');
+  await expect.poll(()=>page.evaluate(async pdfSource=>{
+    const identity=await(await fetch('/api/vault-identity')).json();
+    const saved=await fetch('/api/uistate',{headers:{'X-Vault-Identity':identity.vault}});return (await saved.json()).pdfDarkOverrides?.[pdfSource];
+  },pdfSource)).toBe(false);
+
   await page.screenshot({path:path.join(output,'native-pdf.png')});
   await page.getByRole('button',{name:'缩略图',exact:true}).click();
   await expect(page.locator('.virtual-thumbnails-panel [data-thumbnail-page="2"]')).toBeVisible();

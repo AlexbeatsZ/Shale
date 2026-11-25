@@ -7,6 +7,7 @@ import { Annotation, Compartment, EditorState, Prec } from '@codemirror/state';
 import { EditorView, keymap, type KeyBinding } from '@codemirror/view';
 import { nativeVimExtensions } from '../lib/nativeVim';
 import { vimEditOrigin } from '../lib/vimState';
+import { resolveTarget } from '@shale/markdown-core';
 import { editorSelection } from '../lib/editorSelection';
 import { editorDebugging } from '../lib/editorDebug';
 import { bindMarkdownWheelZoom } from '../lib/markdownWheelZoom';
@@ -207,7 +208,10 @@ export default function MarkdownView(props: MarkdownViewProps) {
       { id: 'link:side', label: '在分栏打开', onClick: () => followRenderedLink(v, link, { disposition: 'side' }) },
       { id: 'link:copy', label: '复制链接', onClick: () => { void navigator.clipboard.writeText(link); } },
     ] : [];
-    const locationItems = fileManagerMenuItems(context.sourcePath, false, message => context.reportError?.(message));
+    const destination = link ? resolveTarget(link, context.sourcePath, context.files()) : null;
+    const location = link ? destination?.status === 'resolved' ? { path: destination.path, folder: false } : null
+      : context.fileManagerTarget ?? { path: context.sourcePath, folder: false };
+    const locationItems = location ? fileManagerMenuItems(location.path, location.folder, message => context.reportError?.(message)) : [];
     const mcpTarget = captureMcpContextTarget(v, context.sourcePath);
     const mcpItem: RenderMenuItem = {
       id: 'editor:add-mcp-context',

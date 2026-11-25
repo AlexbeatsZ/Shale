@@ -16,7 +16,7 @@ export class PdfSession {
   readonly ready: Promise<void>;
   constructor(readonly path: string, readonly viewId = 'main') {
     this.label = pagedDocumentLabel(path);
-    this.state = { path, status: 'loading', pageCount: 0, currentPage: 1, navigation: 0, zoom: 1, dark: false, outline: [], outlineError: '',
+    this.state = { path, status: 'loading', pageCount: 0, currentPage: 1, navigation: 0, zoom: 1, dark: this.label === 'PDF', outline: [], outlineError: '',
       query: '', matches: [], matchesByPage: {}, activeMatch: -1, searchPending: false, searchedPages: 0, truncated: false, error: '' };
     this.ready = this.load();
   }

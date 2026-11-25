@@ -1,5 +1,5 @@
 import { ViewPlugin, type EditorView, type ViewUpdate } from '@codemirror/view';
-import { equationContext, extractMetadata, footnotes, footnoteFragment, fragmentRange, isGlobalContentTarget, parseLinkTarget } from '@shale/markdown-core';
+import { equationContext, extractMetadata, footnotes, footnoteFragment, fragmentRange, isGlobalContentTarget, parseLinkTarget, resolveTarget } from '@shale/markdown-core';
 import { contextOf, nonExecutingContext, renderContext, type RenderContext } from './renderContext';
 import { followRenderedLink, linkIntent } from './fragmentNavigation';
 import { syntaxModel, sourceOf } from './syntaxModel';
@@ -25,7 +25,9 @@ export function bindRenderedLink(anchor: HTMLAnchorElement, view: EditorView, ta
 export function mountLinkPreview(host: HTMLElement, context: RenderContext, target: string): () => void {
   const document = host.ownerDocument, lifetime = new RenderLifetime(); void lifetime.load();
   let active: RenderLifetime | undefined, pending: RenderLifetime | undefined;
-  const title = document.createElement('a'); title.className = 'cm-link-preview-header'; title.textContent = target;
+  const resolved = resolveTarget(target, context.sourcePath, context.files());
+  const title = document.createElement('a'); title.className = 'cm-link-preview-header';
+  title.textContent = resolved.status === 'resolved' ? resolved.path + (resolved.fragment ? '#' + resolved.fragment : '') : target;
   title.href = target; title.onclick = event => { event.preventDefault(); context.openLink(target, linkIntent(event)); };
   const body = document.createElement('div'); body.className = 'cm-link-preview-body';
   host.append(title, body); body.textContent = '加载预览…';
@@ -62,7 +64,27 @@ export function mountLinkPreview(host: HTMLElement, context: RenderContext, targ
   };
   const destination = parseLinkTarget(target);
   const local = !isGlobalContentTarget(target) && (!destination.path || destination.path === context.sourcePath);
-  if (local && context.mathSource) {
+  if (resolved.status === 'resolved' && /\.pdf$/i.test(resolved.path)) {
+    // A binary attachment is not a Markdown DocumentSession. Share only the
+    // read-only resource, with cancellation and the same per-file appearance.
+    void Promise.all([import('./pdf/resource'), import('./pdf/preferences'), import('./mediaFilter'), import('./store')]).then(async ([{ acquirePdfResource }, { pdfDarkPreference }, { bindDarkMedia }, { useStore }]) => {
+      if (lifetime.signal.aborted) return;
+      const acquired = await acquirePdfResource(resolved.path, lifetime.signal);
+      if (lifetime.signal.aborted) { acquired.release(); return; }
+      lifetime.register(acquired.release);
+      const canvas = document.createElement('canvas'); canvas.style.cssText = 'max-width:100%;height:auto;filter:var(--embed-filter, none)';
+      body.replaceChildren(canvas);
+      // Theme changes are observed by bindDarkMedia; preferences remount its binding.
+      let stop = () => {};
+      const bind = () => { stop(); stop = bindDarkMedia(body, () => pdfDarkPreference(resolved.path, useStore.getState().pdfDarkOverrides), () => host); };
+      let preferences = useStore.getState().pdfDarkOverrides;
+      bind(); lifetime.register(() => stop());
+      lifetime.register(useStore.subscribe(state => {
+        if (state.pdfDarkOverrides !== preferences) { preferences = state.pdfDarkOverrides; bind(); }
+      }));
+      await acquired.resource.render(1, canvas, 420, lifetime.signal);
+    }).catch(error => { if (!lifetime.signal.aborted) body.textContent = '预览失败：' + String(error); });
+  } else if (local && context.mathSource) {
     const model = context.mathSource.model, range = fragmentRange(model, destination.fragment);
     if (range) mount(model.text.slice(range.from, range.to), range.from, model, context);
     else body.textContent = '未找到链接目标';
@@ -94,7 +116,8 @@ export class LinkPreviewPopover {
     this.timer = setTimeout(() => { this.timer = undefined; this.show(element, target, context); }, 300);
   }
   show(element: HTMLElement, target: string, context: RenderContext) {
-    if (!element.isConnected) return;
+    const box = element.getBoundingClientRect();
+    if (!element.isConnected || element.closest('[hidden]') || box.bottom < 0 || box.top > window.innerHeight) return;
     const popup = document.createElement('div'); popup.className = 'cm-link-preview'; popup.setAttribute('role', 'dialog'); popup.setAttribute('aria-label', '链接预览');
     popup.style.position = 'fixed'; popup.style.zIndex = '1200';
     popup.onmouseenter = () => clearTimeout(this.closing); popup.onmouseleave = () => this.leave();
@@ -105,15 +128,18 @@ export class LinkPreviewPopover {
     const top = Math.max(8, Math.min(rect.bottom + 6, window.innerHeight - 260));
     popup.style.top = top + 'px'; popup.style.maxHeight = Math.min(440, window.innerHeight - top - 8) + 'px';
     document.addEventListener('keydown', this.key); document.addEventListener('pointerdown', this.outside, true); window.addEventListener('blur', this.close);
+    document.addEventListener('scroll', this.scroll, true);
   }
   contains(node: Node | null) { return !!node && !!this.popup?.contains(node); }
   leave() { clearTimeout(this.timer); this.timer = undefined; clearTimeout(this.closing); this.closing = setTimeout(this.close, 180); }
   key = (event: KeyboardEvent) => { if (event.key === 'Escape') this.close(); };
   outside = (event: PointerEvent) => { if (!this.contains(event.target as Node) && !this.element?.contains(event.target as Node)) this.close(); };
+  scroll = (event: Event) => { if (!this.contains(event.target as Node)) this.close(); };
   close = () => {
     clearTimeout(this.timer); clearTimeout(this.closing); this.timer = undefined;
     this.dispose?.(); this.dispose = undefined; this.popup?.remove(); this.popup = undefined; this.element = undefined; this.target = undefined;
     document.removeEventListener('keydown', this.key); document.removeEventListener('pointerdown', this.outside, true); window.removeEventListener('blur', this.close);
+    document.removeEventListener('scroll', this.scroll, true);
   };
 }
 

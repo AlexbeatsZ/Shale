@@ -38,11 +38,11 @@ describe('workspace persistence acknowledgements', () => {
   it('restores PDF dark properties and persists subsequent changes through the shared workspace state', async () => {
     host.getUiState.mockResolvedValue({ pdfDarkPaths: ['paper.pdf', null, 42] });
     await workspace.useStore.getState().loadUiState();
-    expect(workspace.useStore.getState().pdfDarkPaths).toEqual(['paper.pdf']);
+    expect(workspace.useStore.getState().pdfDarkOverrides).toEqual({ 'paper.pdf': true });
     workspace.useStore.getState().setPdfDark('other.pdf', true);
     workspace.useStore.getState().setPdfDark('paper.pdf', false);
     await workspace.flushWorkspaceState();
-    expect(host.putUiState.mock.calls.at(-1)?.[0].pdfDarkPaths).toEqual(['other.pdf']);
+    expect(host.putUiState.mock.calls.at(-1)?.[0].pdfDarkOverrides).toEqual({ 'paper.pdf': false, 'other.pdf': true });
   });
 
   it('retries an unchanged desired snapshot after failure instead of acknowledging the attempt', async () => {

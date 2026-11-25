@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
-import { DocumentSession, fragmentRange } from '@shale/markdown-core';
+import { DocumentSession, fragmentRange, resolveTarget } from '@shale/markdown-core';
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { useStore } from '../lib/store';
 import { createVaultRenderContext } from '../lib/vaultRenderContext';
@@ -8,6 +8,7 @@ import { VirtualReadingSession, registerVirtualReading, type ReadingTarget } fro
 import { PdfSession } from '../lib/pdf/session';
 import { registerPdfSession, usePdfSnapshot } from '../lib/pdf/react';
 import { usePdfZoom } from '../lib/pdf/zoom';
+import { pdfMenuItems } from '../lib/pdf/menu';
 import { PageSlot } from './PdfViewer';
 import MarkdownView from './MarkdownView';
 import { useDocumentSession } from '../lib/useDocumentSession';
@@ -18,6 +19,7 @@ import type { ViewMode } from '../lib/store';
 import { documents } from '../lib/documents';
 import { applyEdits, modify } from 'jsonc-parser';
 import type { RenderContext } from '../lib/renderContext';
+import { nonExecutingContext } from '../lib/renderContext';
 import '../styles/virtual-document.css';
 
 function renameSource(reader: VirtualReadingSession, path: string) {
@@ -41,15 +43,18 @@ const generatedServices: Pick<RenderContext, 'openMenu' | 'rawUrl' | 'files' | '
 };
 function CoverIndex({ reader, stream }: { reader: VirtualReadingSession; stream: VirtualDocument['streams'][number] }) {
   const content = '# ' + markdownText(stream.title) + '\n\n' + stream.files.map((source, index) =>
-    `${index + 1}. [${markdownText(source.title)}](<${encodeURI(source.path).replace(/[()]/g, char => '%' + char.charCodeAt(0).toString(16))}>)`).join('\n') + '\n';
+    `${index + 1}. [${markdownText(source.title)}](<${source.path.split('/').map(part => encodeURIComponent(part).replace(/[()]/g, char => '%' + char.charCodeAt(0).toString(16))).join('/')}>)`).join('\n') + '\n';
   const session = useMemo(() => new DocumentSession(reader.document.path + '/.virtual-document-index.md', content, undefined, async () => ({})), [reader, content]);
   const context = useMemo(() => ({
-    ...generatedServices,
+    ...nonExecutingContext(createVaultRenderContext(session.id, {
+      openMenu: generatedServices.openMenu, files: () => stream.files.map(source => source.path),
+      openLink: () => {}, reportError: message => useStore.getState().notify(message),
+    })),
+    fileManagerTarget: { path: reader.document.path, folder: true },
     sourcePath: session.id, navigationId: reader.viewId,
     openLink: (target: string) => {
-      let path = target;
-      try { path = decodeURIComponent(target); } catch { /* literal link */ }
-      if (stream.files.some(source => source.path === path)) reader.go({ path });
+      const resolved = resolveTarget(target, session.id, stream.files.map(source => source.path));
+      if (resolved.status === 'resolved') reader.go({ path: resolved.path });
     },
     reportError: (message: string) => useStore.getState().notify(message),
     renameTitle: async (value: string) => {
@@ -181,7 +186,10 @@ function PdfChapter({ source, reader, root, width, target, layoutVersion, onLayo
     return () => { element.removeEventListener('scroll', observe); cancelAnimationFrame(frame); };
   }, [root, session, state.pageCount]);
   if (state.status === 'error') return <p role="alert">{state.error}</p>;
-  return <div ref={host} className="virtual-pdf-pages">
+  return <div ref={host} className="virtual-pdf-pages" onContextMenu={event => {
+    event.preventDefault(); event.stopPropagation();
+    useStore.getState().openContextMenu({ x: event.clientX, y: event.clientY, items: pdfMenuItems(session) });
+  }}>
     {state.status !== 'ready' ? <p role="status" data-virtual-loading>正在打开 PDF…</p> : Array.from({ length: state.pageCount }, (_, index) =>
       <PageSlot key={index} page={index + 1} session={session} width={width} root={root} anchorWithin={host} onLayoutScroll={onLayoutScroll} />)}
   </div>;

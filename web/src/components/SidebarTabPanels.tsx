@@ -66,7 +66,7 @@ export default function SidebarTabPanels({ side, open }: { side: 'left' | 'right
       <GraphView navigationId={'sidebar:' + tab.id} />
     </div>}
     {open && tab?.type === 'bookmarks' && <div className="sidebar-body"><BookmarksPanel /></div>}
-    {tabs.filter(tab => tab.type === 'webviewer').map(tab => <WebViewerTab key={tab.id} id={tab.id} url={tab.state.url} sidebar active={open && tab.id === activeId} />)}
+    {tabs.filter(tab => tab.type === 'webviewer').sort((a, b) => a.id.localeCompare(b.id)).map(tab => <WebViewerTab key={tab.id} id={tab.id} url={tab.state.url} sidebar active={open && tab.id === activeId} />)}
     {tabs.filter(tab => !['empty', 'markdown', 'file', 'graph', 'bookmarks', 'webviewer'].includes(tab.type)).map(tab => <SidebarView key={tab.id + tab.type} tab={tab} active={open && tab.id === activeId} />)}
   </>;
 }

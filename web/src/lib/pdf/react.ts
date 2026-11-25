@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type { PdfSession } from './session';
 import { useStore } from '../store';
+import { pdfDarkPreference } from './preferences';
 
 const sessions: PdfSession[] = [];
 const listeners = new Set<() => void>();
@@ -11,11 +12,20 @@ export function activatePdfSession(session: PdfSession) {
   active = session; notify();
 }
 export function registerPdfSession(session: PdfSession) {
-  const readDark = () => session.setDark(useStore.getState().pdfDarkPaths.includes(session.path));
+  let applyingPreference = false;
+  const readDark = () => {
+    applyingPreference = true;
+    try { session.setDark(pdfDarkPreference(session.path, useStore.getState().pdfDarkOverrides)); }
+    finally { applyingPreference = false; }
+  };
   readDark();
+  let dark = session.getSnapshot().dark;
   const stopStore = useStore.subscribe(readDark);
   const stopSession = session.subscribe(() => {
-    if (session.getSnapshot().status !== 'destroyed') useStore.getState().setPdfDark(session.path, session.getSnapshot().dark);
+    const snapshot = session.getSnapshot();
+    if (snapshot.status === 'destroyed' || snapshot.dark === dark) return;
+    dark = snapshot.dark;
+    if (!applyingPreference) useStore.getState().setPdfDark(session.path, dark);
   });
   sessions.push(session); active = session; notify();
   return () => {
