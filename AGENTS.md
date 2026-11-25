@@ -7,6 +7,7 @@
 - 中央与两侧主页提供同样的打开和新建动作，打开内容时在各自标签栏原位替换当前 Homepage。中央使用顶部标签，两侧使用各自竖排标签，侧栏专有固定面板继续归侧栏。桌面端须保留网页浏览、用户脚本文件/URL 导入及自动检查更新。修改宿主或工作区时运行桌面网页浏览回归。删除或停用任一能力需要用户明确同意。设计见 `docs/design/workspace-sidebars.md` 和 `docs/design/web-viewer.md`。
 
 ## Repository Records
+- 用户于 2026-11-25 明确授权「部署,之后更新不需要我授权」：后续 Shale 构建、发布及已有设备原位更新无需再次确认；保留现有数据和工作区，其他程序与代理配置的权限边界不变。
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
@@ -27,6 +28,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
+- 2026-11-25 正在将 Claude 分支的 Android 长按菜单/软键盘修复与已交付 0.1.93 合入 main，验证后构建 0.1.94 并部署。历史 0.1.81 分支测试包已被后续正式包覆盖，不能当作当前设备验收。
 - 小米平板6Pro 0.1.90 服务 healthz 连接超时，后续可在设备前台确认；本轮安装与启动已完成，未修改网络/代理。Mac 0.1.89 完整输入法往返受前台保护阻止，颜色专项及 Windows 完整输入法通过。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。
@@ -79,6 +81,7 @@
 - Android 共享存储 `/storage/emulated/0` 拒绝 `link()`（EACCES）。写入 Vault 的代码不要依赖硬链接做原子不覆盖创建，用 `textFile.ts` 的 `createWithoutReplace`。
 
 ## Docs Index
+- Android 触摸编辑（长按选区、菜单焦点、软键盘滚动）→ `docs/design/android-runtime.md`。
 - 绝对/相对编辑器行号 → `docs/design/editor-line-numbers.md`；含公式标题 → `docs/design/heading-level-commands.md`。
 - 新建文件与附件默认位置 → `docs/design/file-placement.md`。
 - Shale 身份、profile/Vault/跨设备迁移 → `docs/design/identity-migration.md`。

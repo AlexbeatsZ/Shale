@@ -212,3 +212,41 @@ shared-storage directory only. Build/static evidence is not device acceptance.
 ## Host lifecycle update (2026-11-13)
 
 The current startup, readiness, shutdown, host capabilities and failure-recovery contract is defined in [host-lifecycle.md](host-lifecycle.md). This supersedes the older fixed-port reservation, fixed total startup timeout, DOM-based chrome/Back detection and desktop-specific plugin-request path described above.
+
+## Touch editing and soft keyboard (2026-11-22)
+
+Renderer-only behaviour in `web/src/lib/touchEditing.ts`, `MarkdownView` and
+`contentClipboard`. Chromium on Android (Chrome and WebView 157 behave alike)
+was observed on an emulator with real `adb input` gestures:
+
+- A long-press selects the word under the finger and focuses `.cm-content`
+  *before* the `contextmenu` PointerEvent (`pointerType: "touch"`). The menu then
+  takes focus, so CodeMirror never adopts that DOM selection. Menu paste/copy/cut
+  used the old caret (often off-screen), which looked like "nothing happened".
+  The editor menu adopts the visibly selected range on touch (`adoptTouchSelection`),
+  falling back to a caret at the press point; an existing selection that contains
+  the press point is kept.
+- Whether the keyboard may open is decided by the editor focus at `pointerdown`.
+  If the editor was not focused, the long-press focus is dropped before the menu
+  opens (so `ContextMenu` cannot restore it) and menu clipboard/insert actions
+  pass `focus: false`. If it was focused, focus returns as before.
+- Menu clipboard actions are validated on click (document and selection, not
+  state identity: blur/focus/decoration transactions are effects-only). After the
+  asynchronous clipboard read, a menu paste only aborts on a document change and
+  applies at the clicked selection; focus restoration may re-read the DOM
+  selection meanwhile. Keyboard `Ctrl-V` keeps aborting when the user moves the
+  selection. On Android an `navigator.clipboard.read()` that stays pending
+  (1.5 s) or returns empty text falls back to the host bridge `clipboard-read`.
+- When the keyboard shrinks the WebView, Chromium's
+  `ScrollFocusedEditableNodeIntoView` scrolls the editor one frame after the
+  resize, observed in the wrong direction into unmeasured CJK lines; CodeMirror
+  re-measured and the visible text jumped while the caret stayed under the
+  keyboard. `softKeyboardScroll` (Android identity only) undoes a non-user scroll
+  of the focused editor's scroller in the capture phase while the window is
+  shorter than the last stable size (same width), then reveals the caret with
+  CodeMirror `scrollIntoView` (`nearest`, 32 px margin) two frames later. Touch
+  move/wheel/keys within 400 ms are treated as user scrolling and left alone.
+
+Regression: `tests/browser/touch-editing.spec.ts` (synthesized Android event
+order) and `contentClipboard.test.ts`. Device acceptance on the tablet is still
+required; static or emulator evidence is not device acceptance.

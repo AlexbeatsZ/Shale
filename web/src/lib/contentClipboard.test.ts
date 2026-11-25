@@ -6,6 +6,7 @@ vi.mock('./writing/editing', () => ({ writingOperation: Annotation.define<string
 import { ContentClipboardPolicy, contentClipboard, CONTENT_CLIPBOARD_MIME, type ClipboardOptions } from './contentClipboard';
 import { syntaxModel } from './syntaxModel';
 import { EditorView } from '@codemirror/view';
+import { host } from './host';
 
 const empty = () => analyzeMarkdown('');
 const heading = '# Title ^heading-one\n\n[[^heading-one|label]] [local](#^heading-one)\n';
@@ -237,6 +238,56 @@ it('async menu operations do not edit a changed selection or a newly locked view
     await locked;
     expect(target.view.state.doc.toString()).toBe('before');
   } finally { vi.unstubAllGlobals(); }
+});
+
+it('menu paste keeps its clicked selection when focus restoration re-reads the DOM selection', async () => {
+  let finish: (text: string) => void = () => {};
+  vi.stubGlobal('navigator', { clipboard: { readText: () => new Promise<string>(resolve => { finish = resolve; }) } });
+  try {
+    const target = editor('one two three');
+    target.view.dispatch({ selection: { anchor: 4, head: 7 } });
+    const pending = target.controller.paste(target.view, { menu: true, focus: false });
+    target.view.dispatch({ selection: { anchor: 0 } });
+    finish('2');
+    await pending;
+    expect(target.view.state.doc.toString()).toBe('one 2 three');
+    expect(target.view.focus).not.toHaveBeenCalled();
+    const edited = target.controller.paste(target.view, { menu: true });
+    target.view.dispatch({ changes: { from: 0, insert: 'x' } });
+    finish('lost');
+    await edited;
+    expect(target.view.state.doc.toString()).toBe('xone 2 three');
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it('effects-only transactions during an asynchronous read do not drop the paste', async () => {
+  let finish: (text: string) => void = () => {};
+  vi.stubGlobal('navigator', { clipboard: { readText: () => new Promise<string>(resolve => { finish = resolve; }) } });
+  try {
+    const target = editor('before');
+    const pending = target.controller.paste(target.view);
+    target.view.dispatch({});
+    finish('X');
+    await pending;
+    expect(target.view.state.doc.toString()).toBe('Xbefore');
+    expect(target.view.focus).toHaveBeenCalled();
+  } finally { vi.unstubAllGlobals(); }
+});
+
+it.each(['pending', 'empty'] as const)('Android WebView async clipboard (%s) falls back to the host bridge', async kind => {
+  vi.useFakeTimers();
+  const bridge = vi.spyOn(host, 'readClipboardText').mockResolvedValue('bridge');
+  class Item { types = ['text/plain']; async getType() { return new Blob([''], { type: 'text/plain' }); } }
+  vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 ShaleAndroid/0.1.94',
+    clipboard: { read: () => kind === 'pending' ? new Promise(() => {}) : Promise.resolve([new Item()]) } });
+  try {
+    const target = editor('');
+    const pending = target.controller.paste(target.view);
+    await vi.advanceTimersByTimeAsync(1600);
+    await pending;
+    expect(bridge).toHaveBeenCalledOnce();
+    expect(target.view.state.doc.toString()).toBe('bridge');
+  } finally { bridge.mockRestore(); vi.unstubAllGlobals(); vi.useRealTimers(); }
 });
 
 it('native image paste calls the shared insertion once and stops the outer workspace handler', async () => {

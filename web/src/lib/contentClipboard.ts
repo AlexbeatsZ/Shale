@@ -1,4 +1,5 @@
 import { host } from './host';
+import { isAndroid } from './platform';
 import { EditorSelection, Prec, type Extension } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { analyzeMarkdown, contentTargets, extractMetadata, isGlobalContentTarget, parseLinkTarget, type MarkdownModel, type SourceSpan } from '@shale/markdown-core';
@@ -17,6 +18,7 @@ interface Payload {
 }
 interface CutEntry { payload: Payload; source: () => MarkdownModel | undefined; moved: boolean }
 export interface ClipboardContent { text: string; metadata?: string }
+export interface ClipboardActionOptions { focus?: boolean; menu?: boolean }
 export interface ClipboardOptions {
   source: () => { identity: string; model: MarkdownModel; offset: number; read: () => MarkdownModel | undefined };
   writable: () => boolean;
@@ -116,6 +118,12 @@ export class ContentClipboardPolicy {
 
 const policy = new ContentClipboardPolicy();
 
+/** Android WebView may leave the async clipboard promise pending; the host bridge is the fallback. */
+const ANDROID_CLIPBOARD_TIMEOUT = 1500;
+function settled<T>(promise: Promise<T>, timeout: number): Promise<T | undefined> {
+  return Promise.race([promise, new Promise<undefined>(resolve => setTimeout(resolve, timeout))]);
+}
+
 export function contentClipboard(options: ClipboardOptions) {
   const writable = (view: EditorView) => !view.state.readOnly && options.writable();
   const capture = (view: EditorView, cut: boolean) => {
@@ -124,13 +132,21 @@ export function contentClipboard(options: ClipboardOptions) {
     return policy.capture(source.model, { from: from + source.offset, to: to + source.offset }, source.identity,
       cut && !options.projection() ? 'cut' : 'copy', source.read);
   };
-  const remove = (view: EditorView) => {
+  // Async operations stay valid while content and selection are unchanged.
+  // Focus, blur and decoration transactions replace the state object only. A
+  // menu action was already validated on click; returning focus to the editor
+  // may re-read the DOM selection, so it keeps its selection unless content changed.
+  const unchanged = (view: EditorView, before: EditorView['state'], keep: boolean) =>
+    view.state.doc === before.doc && (keep || view.state.selection.eq(before.selection));
+  const at = (view: EditorView, selection: EditorSelection) =>
+    view.state.selection.eq(selection) ? view.state : view.state.update({ selection }).state;
+  const remove = (view: EditorView, selection = view.state.selection) => {
     if (!writable(view)) return;
-    view.dispatch({ ...view.state.replaceSelection(''), userEvent: 'delete.cut' });
+    view.dispatch({ ...at(view, selection).replaceSelection(''), userEvent: 'delete.cut' });
   };
-  const apply = (view: EditorView, content: ClipboardContent) => {
+  const apply = (view: EditorView, content: ClipboardContent, selection = view.state.selection) => {
     if (!writable(view) || view.composing || !content.text) return false;
-    const before = view.state;
+    const before = at(view, selection);
     const prepared: ReturnType<ContentClipboardPolicy['prepare']>[] = [];
     const changes = before.changeByRange(range => {
       const result = policy.prepare(content, before.field(syntaxModel), before.selection.ranges.length === 1);
@@ -138,7 +154,7 @@ export function contentClipboard(options: ClipboardOptions) {
       const text = options.format(result.text, view, !!content.metadata);
       return { changes: { from: range.from, to: range.to, insert: text }, range: EditorSelection.cursor(range.from + text.length) };
     });
-    view.dispatch({ ...changes, annotations: writingOperation.of('paste'), userEvent: 'input.paste' });
+    view.dispatch({ ...changes, annotations: writingOperation.of('paste'), userEvent: 'input.paste', scrollIntoView: true });
     if (!view.state.doc.eq(before.doc)) for (const result of prepared) result.commit();
     return true;
   };
@@ -199,25 +215,30 @@ export function contentClipboard(options: ClipboardOptions) {
     },
   }));
   const clipboard = { extension,
-    async copy(view: EditorView, cut = false) {
+    /**
+     * `menu` keeps the selection validated by the menu click; `focus: false`
+     * keeps a touch-opened menu from raising the soft keyboard.
+     */
+    async copy(view: EditorView, cut = false, { focus = true, menu = false }: ClipboardActionOptions = {}) {
       if (cut && !writable(view)) return;
       const before = view.state, content = capture(view, cut);
       if (!content) return;
       try {
         await write(content);
-        if (view.state !== before) return;
-        if (cut && writable(view)) remove(view);
-        view.focus();
+        if (!unchanged(view, before, menu)) return;
+        if (cut && writable(view)) remove(view, before.selection);
+        if (focus) view.focus();
       } catch (error) { options.reportError(error); }
     },
-    async paste(view: EditorView) {
+    async paste(view: EditorView, { focus = true, menu = false }: ClipboardActionOptions = {}) {
       if (!writable(view)) return;
       const before = view.state;
+      const current = () => unchanged(view, before, menu) && writable(view);
       try {
         let content: ClipboardContent | undefined;
         if (navigator.clipboard.read) {
           let items: ClipboardItems | undefined;
-          try { items = await navigator.clipboard.read(); } catch { }
+          try { items = await (isAndroid() ? settled(navigator.clipboard.read(), ANDROID_CLIPBOARD_TIMEOUT) : navigator.clipboard.read()); } catch { }
           if (items) {
             if (items.some(item => item.types.some(type => type.startsWith('image/')))) {
               const files: File[] = [];
@@ -228,19 +249,23 @@ export function contentClipboard(options: ClipboardOptions) {
                 const extension = type === 'image/jpeg' ? 'jpg' : type === 'image/svg+xml' ? 'svg' : type.split('/')[1] || 'png';
                 files.push(new File([blob], `image.${extension}`, { type }));
               }
-              if (view.state === before && writable(view)) await options.pasteImages?.(files, view);
+              if (current()) {
+                if (!view.state.selection.eq(before.selection)) view.dispatch({ selection: before.selection });
+                await options.pasteImages?.(files, view);
+              }
               return;
             }
             for (const item of items) if (item.types.includes('text/plain')) {
               const metadataType = item.types.find(type => type === browserMime || type === CONTENT_CLIPBOARD_MIME);
-              content = { text: await (await item.getType('text/plain')).text(),
-                metadata: metadataType ? await (await item.getType(metadataType)).text() : undefined };
+              const text = await (await item.getType('text/plain')).text();
+              // An empty sanitized read is not authoritative; ask the host clipboard.
+              if (text) content = { text, metadata: metadataType ? await (await item.getType(metadataType)).text() : undefined };
               break;
             }
           }
         }
         content ??= { text: await host.readClipboardText() };
-        if (view.state === before && writable(view)) { apply(view, content); view.focus(); }
+        if (current()) { apply(view, content, before.selection); if (focus) view.focus(); }
       } catch (error) { options.reportError(error); }
     },
   };
