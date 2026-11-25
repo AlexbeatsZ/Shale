@@ -4,7 +4,7 @@ import { desktopCommands } from '../../desktop/src/bridge';
 import { ensureWriting, writingFileChanged, watchExternalWritingSources } from './lib/writing/config';
 import { bindWritingNavigation } from './lib/writing/commands';
 import { refreshSearch, refreshHotkeys, searchSettings } from './lib/search';
-import { clearSyncConflicts, refreshSyncConflicts } from './lib/syncConflicts';
+import { clearSyncConflicts, refreshSyncConflicts, runFileSync } from './lib/syncConflicts';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { api, invalidateVaultRequests } from './lib/api';
 import { useStore, flushWorkspaceState, saveWorkspaceBeforeExit, workspaceHasUnsavedChanges } from './lib/store';
@@ -122,15 +122,11 @@ export default function App() {
       .catch(() => {});
     loadPlugins().catch(() => {});
     // websocket live updates
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws = new WebSocket(`${proto}://${location.host}/ws`);
-    const stopMaintenance = bindVaultMaintenance(ws);
-    const stopOperations = bindOperationWorkspace(ws);
     const stopPropertyTypes = initializePropertyTypes(error => useStore.getState().notify(String(error)));
     let treeTimer: number | undefined;
     let indexTimer: number | undefined;
     let syncSeen: { conflict: string; resolution: string } | undefined;
-    ws.onmessage = async (ev) => {
+    const receive = async (ev: MessageEvent) => {
       try {
         const msg = JSON.parse(ev.data);
         if (msg.type === 'fs') {
@@ -196,12 +192,63 @@ export default function App() {
         /* ignore */
       }
     };
+    // The socket is also how this window confirms its editing state to background sync. Android/WebView and
+    // sleeping desktops drop it silently, so it must reconnect; otherwise sync stalls and live updates stop.
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    let ws: WebSocket;
+    let unbindSocket = () => {};
+    let disposed = false;
+    let opened = false;
+    let retryTimer: number | undefined;
+    let retryDelay = 500;
+    let lastForegroundSync = 0;
+    const resynchronize = () => {
+      // Filesystem events sent while disconnected were lost: reread the tree and every open document.
+      loadTree();
+      for (const snapshot of documents.snapshots())
+        void documents.refresh(snapshot.id).catch(error => useStore.getState().notify(String(error)));
+      notifyIndexChanged();
+      void refreshSyncConflicts().catch(() => {});
+    };
+    const connect = () => {
+      window.clearTimeout(retryTimer); retryTimer = undefined;
+      unbindSocket();
+      const socket = ws = new WebSocket(`${proto}://${location.host}/ws`);
+      const stopMaintenance = bindVaultMaintenance(socket);
+      const stopOperations = bindOperationWorkspace(socket);
+      unbindSocket = () => { stopMaintenance(); stopOperations(); unbindSocket = () => {}; };
+      socket.onmessage = receive;
+      socket.onopen = () => { retryDelay = 500; if (opened) resynchronize(); opened = true; };
+      socket.onclose = () => {
+        if (disposed || ws !== socket) return;
+        unbindSocket();
+        retryTimer = window.setTimeout(connect, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 10000);
+      };
+    };
+    const revive = () => {
+      if (disposed || document.visibilityState === 'hidden') return;
+      if (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) { retryDelay = 500; connect(); }
+      // Back in the foreground: exchange now instead of waiting for the next interval.
+      if (Date.now() - lastForegroundSync > 5000) {
+        lastForegroundSync = Date.now();
+        void runFileSync().catch(() => {});
+      }
+    };
+    connect();
+    document.addEventListener('visibilitychange', revive);
+    window.addEventListener('online', revive);
+    window.addEventListener('pageshow', revive);
     return () => {
+      disposed = true;
+      window.clearTimeout(retryTimer);
+      document.removeEventListener('visibilitychange', revive);
+      window.removeEventListener('online', revive);
+      window.removeEventListener('pageshow', revive);
       window.clearTimeout(treeTimer);
       window.clearTimeout(indexTimer);
       ws.close();
-      stopMaintenance();
-      stopOperations();
+      unbindSocket();
       stopPropertyTypes();
       stopMenus();
       clearNativeFeaturePreferences();

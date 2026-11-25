@@ -9,7 +9,8 @@ import { isReadOnlyAdapterOperation } from '../contracts.js';
 let epoch = 0;
 let activeWrites = 0;
 let clients: () => Iterable<WebSocket> = () => [];
-type Lease = { token: string; failure?: string; released?: Promise<void>; checks: Map<WebSocket, { id: string; blockers?: string[] }> };
+type Lease = { token: string; failure?: string; released?: Promise<void>; unattended?: boolean;
+  checks: Map<WebSocket, { id: string; blockers?: string[] }> };
 let lease: Lease | undefined;
 let inspection: Lease | undefined;
 const conflict = (message: string) => Object.assign(new Error(message), { status: 409 });
@@ -87,7 +88,12 @@ const pause = () => new Promise<void>(resolve => setTimeout(resolve, 20));
 async function checkWorkspace(current: Lease, freeze: boolean): Promise<string[]> {
   if (current.failure) throw conflict(current.failure);
   const connected = [...clients()];
-  if (!connected.length) throw conflict('没有可确认编辑状态的应用连接');
+  if (!connected.length) {
+    // No window means no unsaved editor buffer on this host. A window whose socket dropped still saves through
+    // baseRevision CAS and meets a document conflict instead of overwriting, so CAS-only publishers may proceed.
+    if (current.unattended) return [];
+    throw conflict('没有可确认编辑状态的应用连接');
+  }
   if (connected.some(client => client.readyState !== 1)) throw conflict('应用连接状态未知');
   const check = randomUUID();
   current.checks = new Map(connected.map(client => [client, { id: check }]));
@@ -120,10 +126,16 @@ export async function assertMaintenanceWorkspaceSafe(): Promise<void> {
   if (blockers.length) throw conflict(blockers.join('；'));
 }
 
-export async function withVaultMaintenance<T>(drainUpdates: () => Promise<void>, work: () => Promise<T>): Promise<T> {
+/**
+ * `unattended` lets a publisher whose every write is revision-checked (native sync) run while no application
+ * window is connected. Connected windows are still asked and their blockers still apply.
+ */
+export async function withVaultMaintenance<T>(drainUpdates: () => Promise<void>, work: () => Promise<T>,
+  options: { unattended?: boolean } = {}): Promise<T> {
   if (lease) throw conflict('已有附件清理正在执行');
   let releaseReaders!: () => void;
-  const current: Lease = { token: randomUUID(), checks: new Map(), released: new Promise<void>(resolve => { releaseReaders = resolve; }) };
+  const current: Lease = { token: randomUUID(), checks: new Map(), unattended: options.unattended,
+    released: new Promise<void>(resolve => { releaseReaders = resolve; }) };
   const flushNotifications = holdVaultNotifications();
   lease = current;
   try {

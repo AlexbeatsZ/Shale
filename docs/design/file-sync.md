@@ -129,6 +129,34 @@ the note is saved and the path resolves as `local` (unchanged) or `merged` (curr
 the remote base, uploaded next pass). Added/deleted/binary files use the file-level panel.
 Resolution may cover a subset of paths; the rest stay in the same conflict.
 
+## Liveness: one problem never stops the whole Vault (2026-11-25)
+
+Failure that triggered this: the tablet's renderer WebSocket dropped (Android WebView) and the renderer
+never reconnected. With zero connected windows the maintenance gate refused every publication
+("没有可确认编辑状态的应用连接"), the journaled incoming files were retried first on every pass, and the
+pass aborted before scanning or uploading. Mac edits reached the server but the tablet stayed stale until
+the app restarted. Mojian has the same shape: one retained conflict blocked unrelated incoming changes.
+Mature tools (Syncthing, Dropbox, Obsidian Sync, Dayweave's own hub) isolate problems per file. Rules now:
+- The renderer socket reconnects with backoff (0.5 s doubling to 10 s, immediately on
+  visibilitychange/online/pageshow). On every reconnect it reloads the tree, refreshes every open
+  document and conflict list, because file events sent while disconnected are lost. Returning to the
+  foreground also requests one sync pass (throttled to 5 s), like Dayweave's scheduler.
+- The server pings sockets every 30 s and terminates those that miss a pong, so a vanished window
+  cannot stall each gate check for its 5 s acknowledgement timeout.
+- Sync publishes with `withVaultMaintenance(..., { unattended: true })`: zero connected windows means no
+  unsaved buffer on this host, and a window with a dead socket still saves through `baseRevision` CAS and
+  gets a document conflict instead of overwriting. Connected windows are still asked and their blockers
+  (unsaved/conflicted/saving documents) still refuse publication. Attachment cleanup keeps requiring a window.
+- A gate refusal (HTTP 409) of the journaled downloads at the start of a pass is not fatal: the pass still
+  scans and uploads, then retries the journal at the end. Uploads and downloads cover disjoint paths, so
+  the outbox is submitted before the journal is applied.
+- A retained conflict holds back only its own paths (and paths still journaled). Every other path keeps
+  synchronizing in both directions; status stays `conflict` with "其他文件已同步；N 个冲突文件待处理".
+- When applying the journal, only files edited locally after the download was planned become conflicts;
+  the other journaled files are applied in the same pass.
+Not yet done: per-path gate blockers. One unsaved or conflicted open document still refuses the whole
+download journal (uploads continue); narrowing that needs the acknowledgement to carry paths.
+
 ## Server-side Git backup (sync-server)
 
 Direction (user, 2026-11-02): the always-on sync server is the single Git backup writer;

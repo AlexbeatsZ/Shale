@@ -29,9 +29,8 @@ type Checkpoint = z.infer<typeof checkpoint>;
 /** 'merged' keeps the current local file (a reviewed mix of both versions) on top of the remote base. */
 export type ConflictChoice = 'local' | 'remote' | 'recheck' | Record<string, 'local' | 'remote' | 'merged'>;
 type Incoming = z.infer<typeof incoming>;
-class IncomingConflict extends Error {
-  constructor(readonly changes: Incoming[]) { super('待同步文件已有新修改'); }
-}
+/** The editing gate refused publication for now (an unsaved editor, a write in flight); not a data error. */
+const gateBusy = (error: unknown) => (error as { status?: number })?.status === 409;
 export type ConflictSnapshot = { id: string; files: { path: string; local: string | null; remote: string | null }[] };
 export type Resolution = { at: string; path: string; kind: 'fast-forward' | 'deleted' | 'merged'; local: string | null;
   remote: string | null; content: string | null; recovery: string | null };
@@ -117,10 +116,11 @@ export class FileSyncEngine {
     if (!this.preferences.enabled) return this.status();
     await this.load();
     await this.validateRoot();
-    if (this.state.conflict) { this.setConflictStatus(); return this.status(); }
     this.snapshot.phase = 'syncing'; this.snapshot.message = ''; this.snapshot.activeEndpoint = null;
-    await this.applyIncoming();
-    if (this.state.conflict) return this.status();
+    // Downloads journaled by an earlier pass. When the editing gate is busy they stay journaled and are
+    // retried at the end of this pass; local edits still upload meanwhile.
+    try { await this.applyIncoming(); }
+    catch (error) { if (!gateBusy(error)) throw error; }
     await this.scan();
     const transport = new OrderedSyncTransport(this.preferences.endpoints, this.preferences.token);
     let manifest = await transport.select(this.state.workspaceId ? { workspaceId: this.state.workspaceId, revision: this.state.revision } : undefined);
@@ -137,6 +137,8 @@ export class FileSyncEngine {
     // Paths this device never acknowledged and the server deleted: an upload unless the content is known stale.
     const resurrections: Incoming[] = [];
     const acknowledgements: Record<string, SyncEntry> = {};
+    // A conflicted or still-journaled path is held back on its own; every other path keeps synchronizing.
+    const held = new Set([...(this.state.incoming ?? []), ...(this.state.conflict?.changes ?? [])].map(item => item.path));
     for (const name of new Set([...this.files.keys(), ...Object.keys(this.state.base), ...Object.keys(manifest.files)])) {
       const local = this.files.get(name) ?? null;
       const base = this.state.base[name]?.hash ?? null;
@@ -144,6 +146,7 @@ export class FileSyncEngine {
       if (remote.version < (this.state.base[name]?.version ?? 0)) throw new Error('远端文件版本回退，已停止同步');
       if (this.state.base[name]?.version === remote.version && this.state.base[name].hash !== remote.hash)
         throw new Error('远端文件内容与已确认版本不一致，已停止同步');
+      if (held.has(name)) continue;
       if (local === remote.hash) { if (remote.version) acknowledgements[name] = remote; continue; }
       if (local === base) downloads.push({ path: name, expected: local, entry: remote });
       else if (!this.state.base[name] && local && remote.version && !remote.hash) resurrections.push({ path: name, expected: local, entry: remote });
@@ -157,23 +160,20 @@ export class FileSyncEngine {
       else if (resurrections.includes(item)) changes.push({ path: item.path, expectedVersion: item.entry.version, hash: item.expected });
       else unresolved.push(item);
     }
-    if (unresolved.length) {
-      await this.retainConflicts(transport, unresolved);
-      return this.status();
-    }
+    if (unresolved.length) await this.retainConflicts(transport, unresolved);
     for (const item of downloads) if (item.entry.hash && !item.content) await this.download(transport, item.entry.hash);
     Object.assign(this.state.base, acknowledgements);
     this.state.revision = Math.max(this.state.revision, manifest.revision);
-    if (downloads.length) this.state.incoming = downloads;
+    if (downloads.length) this.state.incoming = [...(this.state.incoming ?? []), ...downloads];
     if (changes.length) {
       if (changes.length > 20000) throw new Error('单批同步超过 20000 个文件，请分批导入');
       this.state.outbox = { workspaceId: manifest.workspaceId, deviceId: this.state.deviceId, operationId: randomUUID(), changes };
     }
     await this.persist();
-    await this.applyIncoming();
-    if (this.state.conflict) return this.status();
     if (automatic.length) await this.recordResolutions(automatic);
+    // Uploads and downloads touch disjoint paths, so uploading never waits for the local editing gate.
     if (this.state.outbox && !await this.submit(transport)) throw new Error('远端已有新修改，本机内容已保留，下次同步重新比较');
+    await this.applyIncoming();
     // A merge result is now the local file on top of the remote base; the next pass uploads it.
     if (automatic.some(item => item.kind === 'merged' && item.content !== item.remote) && followUp < 2) {
       const next = await this.pass(followUp + 1);
@@ -183,6 +183,10 @@ export class FileSyncEngine {
     this.state.lastSuccess = new Date().toISOString(); await this.persist();
     this.snapshot.lastSuccess = this.state.lastSuccess; this.snapshot.phase = 'idle';
     this.snapshot.message = automatic.length ? this.automaticMessage(automatic) : '同步完成';
+    if (this.state.conflict) {
+      this.setConflictStatus();
+      this.snapshot.message = `其他文件已同步；${this.state.conflict.changes.length} 个冲突文件待处理，两版均已保留`;
+    }
     return this.status();
   }
 
@@ -310,29 +314,22 @@ export class FileSyncEngine {
 
   private async applyIncoming(): Promise<void> {
     if (!this.state.incoming?.length) return;
-    try { await this.hooks.publish(async () => {
-      const current: Incoming[] = [];
-      let conflicted = false;
-      for (const item of this.state.incoming!) {
-        const absolute = await resolveVaultPath(this.root, item.path, true);
-        const actual = await hashFile(absolute);
-        current.push({ path: item.path, expected: actual, entry: item.entry });
-        if (actual !== item.expected && actual !== (item.content ?? item.entry.hash)) conflicted = true;
-      }
-      if (conflicted) {
-        for (const item of current) if (item.expected) {
-          const absolute = await resolveVaultPath(this.root, item.path, true);
-          const digest = await stageLocalFile(absolute, this.blobs, fileSignature(await fs.stat(absolute)));
-          if (digest !== item.expected) throw new Error('本机文件仍在修改，已暂停恢复');
-        }
-        throw new IncomingConflict(current);
-      }
+    const conflicted: Incoming[] = [];
+    await this.hooks.publish(async () => {
       for (const item of this.state.incoming!) {
         const absolute = await resolveVaultPath(this.root, item.path, true);
         const actual = await hashFile(absolute);
         const target = item.content ?? item.entry.hash;
+        if (actual !== target && actual !== item.expected) {
+          // Edited locally after this download was planned: retain both versions for this path only.
+          if (actual) {
+            const digest = await stageLocalFile(absolute, this.blobs, fileSignature(await fs.stat(absolute)));
+            if (digest !== actual) throw new Error('本机文件仍在修改，已暂停恢复');
+          }
+          conflicted.push({ path: item.path, expected: actual, entry: item.entry });
+          continue;
+        }
         if (actual !== target) {
-          if (actual !== item.expected) throw new Error('待同步文件已有新修改，未覆盖；请保留恢复目录');
           const source = target ? path.join(this.blobs, target) : null;
           if (source && await hashFile(source) !== target) throw new Error('待恢复附件不完整，未修改笔记');
           await writeFileFromSource(absolute, source, item.expected);
@@ -345,11 +342,8 @@ export class FileSyncEngine {
         await this.hooks.changed(item.path, !item.entry.hash);
       }
       delete this.state.incoming; await this.persist();
-    }); } catch (error) {
-      if (!(error instanceof IncomingConflict)) throw error;
-      await this.retainConflicts(null, error.changes);
-      delete this.state.incoming; await this.persist();
-    }
+    });
+    if (conflicted.length) await this.retainConflicts(null, conflicted);
   }
 
   private async retainConflicts(transport: OrderedSyncTransport | null, changes: Incoming[]): Promise<void> {

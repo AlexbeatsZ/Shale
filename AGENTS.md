@@ -10,6 +10,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-25 同步活性修复(分支 `fix/sync-liveness`，未发布)：平板停在 recovery 的根因是渲染器 WebSocket 无重连 + 零窗口时维护闸门拒绝 + 每轮先重放入站日志即中止；现已重连/心跳/`unattended` 闸门/冲突按路径隔离。已装 0.1.90 平板需重启应用恢复，新包未发布。见 `docs/design/file-sync.md` Liveness 节。
 - 2026-11-25 PRD 1.62 / 桌面 0.1.92 正在验收：默认格式化/粘贴去除公式 tag（复制原样）、编辑器设置绝对/相对行号、含行内公式正文标题转换；647 单元与 27 个相关浏览器用例已覆盖，原生包/发布待完成。设计 `docs/design/editor-line-numbers.md`；报告 `tests/reports/writing-editor-options-20261125.md`。
 - 2026-11-25 PRD 1.61：桌面 v0.1.91（7 资产/latest，运行源码 89f1407）已发布，本机 Mac 已原位升级、签名/启动/healthz/真实工作区恢复通过，未再触发钥匙串密码。642 单元、21 浏览器、Mac/Windows 剪贴板/完整 WebViewer/原生快捷键实包通过，桌面操作通道实际 Command+V 在地址栏与网页输入框通过。Vim 不是旧故障直接原因。Windows 日用与 Android 仍 0.1.90。隔离测试必须用 `--use-mock-keychain` 且包内含跳过真实迁移的逻辑；已有一致密钥不重写 ACL。报告 `tests/reports/browser-clipboard-20261125.md`。
 - 2026-11-24 PRD 1.60：默认新建文件夹新增已有目录选择，修复保存后重开显示旧值。桌面 v0.1.90（7 资产/latest）及 Android android-v0.1.90（生产 APK/预发布）已发布并原位安装到全部五台可达设备；类型、641 单元、2 浏览器与 Mac/Windows 最终实包选择/保存/创建/回读通过。报告 `tests/reports/default-new-folder-20261124.md`。
@@ -45,6 +46,7 @@
 - Windows 安装在 Session1 进行(一次性 Interactive 计划任务):先 `CloseMainWindow` 正常关闭，再 `Shale-<ver>-win-x64-setup.exe /S`。Android 从 OMEN `git archive` 隔离目录构建时需把 Mac 已解压的 `android/.runtime`(nodejs-mobile)放入，并临时复制 `Shale/android/.signing`,构建后删除。
 
 ## Durable Lessons
+- 同步/后台任务不能依赖渲染器 WebSocket 存活：Android WebView 和睡眠桌面会静默断开。任何“需要窗口确认”的闸门必须有零窗口策略，客户端套接字必须重连并在重连后重读错过的事件；一个文件的冲突或闸门拒绝不得中止整轮同步(查平板状态：`adb forward tcp:<端口> tcp:<端口>` 后 `GET /api/file-sync`，端口从 `/proc/net/tcp` 的 127.0.0.1 LISTEN 找)。
 - Electron33 的 role 菜单在 accelerator 为 null/undefined 时仍补默认键，须显式空字符串；Mac role 原生 selector 还可能先于 click 执行，同目录动作必须移除 role 再转发。reload 须复用 saveWorkspaceBeforeExit 保存布局与文档，仅保存文档会被 beforeunload 的布局脏状态阻止。
 - 仅副作用导入的上游 Worker 包装可能被 package sideEffects 树摇删除，须使用真实打包入口。Electron33 Worker 请求不继承页面 User-Agent 标记，课件本地 blob 内联也受 connect-src 限制，原生包必须覆盖实际 Worker 与图片页。
 - 代码块不声明root时会命中浏览器的同名应用根节点；隔离来源请求运行时会带Origin:null。复用localAccess，仅为固定只读runtime资产放行，API/WS继续拒绝，原生验收必须覆盖生产CSP；生成的native Markdown还需paint containment避免固定定位类覆盖应用。

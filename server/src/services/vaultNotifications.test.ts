@@ -50,4 +50,15 @@ describe('Vault notifications and the existing maintenance lease', () => {
     if (fail) await expect(work).rejects.toThrow('fixture partial publication'); else await work;
     expect(events.indexOf('release')).toBeLessThan(events.indexOf('file-event'));
   });
+  it('lets only unattended (revision-checked) publishers run without any application window', async () => {
+    bindMaintenanceClients(() => []);
+    await expect(withVaultMaintenance(async () => {}, async () => 'cleanup')).rejects.toMatchObject({ status: 409 });
+    await expect(withVaultMaintenance(async () => {}, async () => 'sync', { unattended: true })).resolves.toBe('sync');
+    const client = { readyState: 1, send: (raw: string) => {
+      const message = JSON.parse(raw);
+      if (message.phase === 'prepare') maintenanceClientMessage(client as WebSocket, { ...message, type: 'maintenance-ack', blockers: ['fixture unsaved'] });
+    } };
+    bindMaintenanceClients(() => [client as WebSocket]);
+    await expect(withVaultMaintenance(async () => {}, async () => 'sync', { unattended: true })).rejects.toThrow('fixture unsaved');
+  });
 });

@@ -32,7 +32,7 @@ export async function fileSyncEngine(): Promise<FileSyncEngine> {
       return withVaultMaintenance(drainFileUpdates, async () => {
         if (vaultPathKey(await getVaultRoot()) !== vaultPathKey(root)) throw new Error('Vault 已切换，同步已停止');
         return work();
-      });
+      }, { unattended: true });
     },
     changed: async (relative, deleted) => { await queueFileUpdate(relative, deleted ? 'unlink' : 'change'); },
     conflict: async snapshot => {

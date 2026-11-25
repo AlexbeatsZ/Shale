@@ -7,7 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';
 import http from 'node:http';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, type WebSocket as ServerSocket } from 'ws';
 import chokidar from 'chokidar';
 
 import { config } from './config.js';
@@ -289,7 +289,22 @@ function setupWebsocket(server: http.Server) {
     wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
   });
 
+  // Heartbeat: a window that vanished without closing (suspended WebView, dropped loopback) would otherwise stay
+  // in wss.clients and stall every maintenance check until its 5 s acknowledgement timeout.
+  const alive = new WeakSet<ServerSocket>();
+  const heartbeat = setInterval(() => {
+    for (const client of wss.clients) {
+      if (!alive.has(client)) { client.terminate(); continue; }
+      alive.delete(client);
+      try { client.ping(); } catch { client.terminate(); }
+    }
+  }, 30000);
+  heartbeat.unref();
+  wss.on('close', () => clearInterval(heartbeat));
+
   wss.on('connection', (ws) => {
+    alive.add(ws);
+    ws.on('pong', () => alive.add(ws));
     maintenanceClientConnected();
     bindOperationClient(ws);
     ws.on('message', data => {

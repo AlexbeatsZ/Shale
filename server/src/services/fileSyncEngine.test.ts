@@ -181,6 +181,53 @@ describe('native file synchronization', () => {
     expect(await fs.readFile(path.join(first.root, 'other.md'), 'utf8')).toBe('本机');
   });
 
+  it('keeps synchronizing every other file while one file waits in conflict', async () => {
+    const first = await client('first'); const second = await client('second');
+    await first.write('held.png', Buffer.from([0])); await first.engine.run(); await second.engine.run();
+    await first.write('held.png', Buffer.from([1])); await first.engine.run();
+    await second.write('held.png', Buffer.from([2]));
+    expect((await second.engine.run()).conflictCount).toBe(1);
+    await first.write('from-mac.md', '电脑上的新内容'); expect((await first.engine.run()).phase).toBe('idle');
+    await second.write('from-tablet.md', '平板上的新内容');
+    const status = await second.engine.run();
+    expect(status).toMatchObject({ phase: 'conflict', conflictCount: 1 }); expect(status.message).toContain('其他文件已同步');
+    expect(await fs.readFile(path.join(second.root, 'from-mac.md'), 'utf8')).toBe('电脑上的新内容');
+    expect(await fs.readFile(path.join(second.root, 'held.png'))).toEqual(Buffer.from([2]));
+    await first.engine.run(); expect(await fs.readFile(path.join(first.root, 'from-tablet.md'), 'utf8')).toBe('平板上的新内容');
+    expect((await second.engine.resolveConflict('local')).phase).toBe('idle');
+    await first.engine.run(); expect(await fs.readFile(path.join(first.root, 'held.png'))).toEqual(Buffer.from([2]));
+  });
+
+  it('still uploads local edits while the editing gate refuses incoming files', async () => {
+    let open = false;
+    const busy = Object.assign(new Error('fixture editor has unsaved text'), { status: 409 });
+    const first = await client('first');
+    const second = await client('second', {}, async work => { if (!open) throw busy; return work(); });
+    await first.write('remote.md', '服务器'); await first.engine.run();
+    await second.write('local.md', '本机');
+    const refused = await second.engine.run();
+    expect(refused.phase).toBe('recovery'); expect(refused.message).toContain('unsaved');
+    await expect(fs.access(path.join(second.root, 'remote.md'))).rejects.toThrow();
+    await first.engine.run(); expect(await fs.readFile(path.join(first.root, 'local.md'), 'utf8')).toBe('本机');
+    await second.write('later.md', '稍后'); expect((await second.engine.run()).phase).toBe('recovery');
+    await first.engine.run(); expect(await fs.readFile(path.join(first.root, 'later.md'), 'utf8')).toBe('稍后');
+    open = true;
+    expect((await second.engine.run()).phase).toBe('idle');
+    expect(await fs.readFile(path.join(second.root, 'remote.md'), 'utf8')).toBe('服务器');
+  });
+
+  it('turns only the journaled files edited after planning into conflicts', async () => {
+    const first = await client('first'); await first.write('a.md', 'A 服务器'); await first.write('b.md', 'B 服务器'); await first.engine.run();
+    const second = await client('second', {}, async () => { throw new Error('fixture closed before publication'); });
+    expect((await second.engine.run()).phase).toBe('recovery');
+    await second.write('a.md', 'A 本机');
+    const restarted = new FileSyncEngine(second.root, second.state, second.preferences, { publish: async work => work(), changed: async () => {} });
+    await restarted.recover();
+    expect(restarted.status()).toMatchObject({ phase: 'conflict', conflictCount: 1 });
+    expect(await fs.readFile(path.join(second.root, 'a.md'), 'utf8')).toBe('A 本机');
+    expect(await fs.readFile(path.join(second.root, 'b.md'), 'utf8')).toBe('B 服务器');
+  });
+
   it('retries the same durable operation after losing a successful commit response', async () => {
     const first = await client('first'); await first.write('note.md', 'retained');
     const original = globalThis.fetch; let lost = false; const operations: string[] = [];
