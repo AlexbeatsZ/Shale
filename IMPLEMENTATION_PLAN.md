@@ -9,7 +9,7 @@ Cập nhật lần cuối: 2026-11-25 (网页生命周期与文档阅读 PRD 1.6
 ### 网页生命周期与文档阅读 (PRD 1.63)
 
 - [x] 网页交换/移动固定宿主实现；连续文档链接预览与访达定位；默认 PDF 反色及开关记忆；Vim 独立编辑撤销分组。654 单元、51 浏览器、类型及生产构建通过。
-- [~] Mac/Windows 原生包验证，构建发布新版本。
+- [x] Mac/Windows 最终正式包 lifecycle/完整 WebViewer/PDF 与 PPT/连续文档/剪贴板均通过；桌面0.1.93七资产正式发布/latest，日用及Android未更新。
 
 ### 公式 tag、行号与含公式标题 (PRD 1.62)
 
@@ -783,6 +783,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-25: PRD1.63网页移动实例保留、连续文档真实路径定位和PDF预览、默认反色与开关记忆、Vim撤销分组完成。654单元/51浏览器及两端五组原生回归通过；0.1.93七资产发布/latest（源码79c8cd8），日用安装未更改。
 
 - 2026-11-25: PRD 1.62 新增默认去除公式 tag、绝对/相对行号与含公式正文标题修复；647 单元与 27 相关浏览器用例覆盖，桌面 0.1.92 两端正式包验收与七资产发布/latest完成，日用安装未更新。
 

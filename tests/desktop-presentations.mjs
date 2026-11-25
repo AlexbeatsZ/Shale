@@ -32,15 +32,17 @@ try {
   page.on('console', message => { if (message.type() === 'error') diagnostics.push(message.text()); });
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });
+  await page.bringToFront();
+  const primary = process.platform === 'darwin' ? 'Meta' : 'Control';
   const main = page.locator('.main-pane');
   const open = async name => {
-    await page.keyboard.press('Control+o');
+    await page.keyboard.press(`${primary}+o`);
     await page.locator('.palette-input').fill(name.replace(/\.md$/i, ''));
     await page.locator('.palette-file-item').filter({ hasText: name.replace(/\.md$/i, '') }).first().click();
     await expect(page.locator('.palette-backdrop')).toHaveCount(0);
   };
   const command = async name => {
-    await page.keyboard.press('Control+p');
+    await page.keyboard.press(`${primary}+p`);
     await page.locator('.palette-input').fill(name); await page.keyboard.press('Enter');
     await expect(page.locator('.palette-backdrop')).toHaveCount(0);
   };

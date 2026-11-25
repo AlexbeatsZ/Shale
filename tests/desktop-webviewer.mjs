@@ -66,6 +66,7 @@ try {
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//, { timeout: 120000 });
   await expect(page.locator('.workspace-launcher')).toBeVisible({ timeout: 60000 });
   await page.bringToFront();
+  await app.evaluate(({app,BrowserWindow})=>{const window=BrowserWindow.getAllWindows()[0];window.show();window.focus();app.focus({steal:true});});
   const command = async name => {
     await page.keyboard.press(process.platform === 'darwin' ? 'Meta+p' : 'Control+p');
     await page.locator('.palette-input').fill(name);
@@ -232,14 +233,15 @@ try {
       const startTime = performance.now();
       let maxMovement = 0;
       // The scroll can return to zero by the end of the transition.
-      function sample(now) {
+      function sample() {
+        const now = performance.now();
         maxMovement = Math.max(maxMovement, Math.abs(window.scrollX - startScroll),
           Math.abs(workspace.getBoundingClientRect().left - startLeft));
-        if (now - startTime < 200) requestAnimationFrame(sample);
+        if (now - startTime < 200) setTimeout(sample, 16);
         else resolve(maxMovement);
       }
       button.click();
-      requestAnimationFrame(sample);
+      setTimeout(sample, 16);
     }));
     assert.equal(movement, 0, 'Opening an empty side browser should not scroll the workspace');
     await expect(address).toBeFocused();
@@ -249,9 +251,12 @@ try {
     const setFullScreen = async fullscreen => {
       await app.evaluate(async ({ BrowserWindow }, enabled) => {
         const window = BrowserWindow.getAllWindows()[0];
-        await new Promise(resolve => {
-          window.once(enabled ? 'enter-full-screen' : 'leave-full-screen', resolve);
-          window.setFullScreen(enabled);
+        if (window.isFullScreen() === enabled) return;
+        await new Promise((resolve,reject) => {
+          const event = enabled ? 'enter-full-screen' : 'leave-full-screen';
+          const done = () => { clearTimeout(timer); resolve(); };
+          const timer = setTimeout(() => { window.removeListener(event,done); reject(new Error('Native fullscreen transition timed out')); },15000);
+          window.once(event,done);window.setFullScreen(enabled);
         });
       }, fullscreen);
       await page.waitForFunction(enabled => document.documentElement.hasAttribute('data-desktop-fullscreen') === enabled, fullscreen);

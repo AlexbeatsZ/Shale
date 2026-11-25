@@ -226,7 +226,7 @@ try {
   await pdfLink.click();
   await expect(page.locator('.virtual-document-scroll .pdf-page-surface.is-ready').first()).toBeVisible({timeout:60000});
   const pdfOpenMs=Date.now()-pdfStart,canvases=await page.locator('.virtual-document-scroll canvas').count();assert(canvases<15);
-  const pdfSurface=page.locator('.virtual-document-scroll .pdf-page-surface.is-ready').first();
+  const pdfSurface=page.locator(`[data-virtual-source="${pdfSource}"] .pdf-page-surface.is-ready`).first();
   await expect(pdfSurface).toHaveAttribute('data-pdf-dark','true');
   await pdfSurface.click({button:'right'});await page.getByRole('menuitemcheckbox',{name:'PDF 反色',exact:true}).click();
   await expect(pdfSurface).not.toHaveAttribute('data-pdf-dark');
@@ -245,7 +245,7 @@ try {
   assert.deepEqual(errors,[]);
   const metrics=await app.evaluate(({app})=>app.getAppMetrics().map(({type,memory})=>({type,memory})));
   const result={executable,fixture,realMaterials:!!process.env.VIRTUAL_REAL_VAULT,sourceMarkdown:original.size,sourceMarkdownBytes:[...original.values()].reduce((sum,bytes)=>sum+bytes.length,0),
-    firstOpenMs,chapterJumpMs,pdfOpenMs,reversePositions,sourceTitleRenameAndManifest:true,markdownThumbnails:true,pdfThumbnailNavigation:true,markdownReadCount:mdReadCount,markdownMounted,pdfCanvases:canvases,unrelatedSourceBytesUnchanged:true,independentEditAndUndo:true,configurationValidSave:true,invalidConfigurationPreserved:true,jsonHighlightColors:highlightColors,nativeReveals,rendererErrors:errors,processMetrics:metrics};
+    firstOpenMs,chapterJumpMs,pdfOpenMs,reversePositions,sourceTitleRenameAndManifest:true,markdownThumbnails:true,pdfThumbnailNavigation:true,markdownReadCount:mdReadCount,markdownMounted,pdfCanvases:canvases,unrelatedSourceBytesUnchanged:true,independentEditAndUndo:true,configurationValidSave:true,invalidConfigurationPreserved:true,jsonHighlightColors:highlightColors,nativePdfReveal:true,pdfDarkOffPersisted:true,nativeReveals:await app.evaluate(()=>globalThis.nativeReveals),rendererErrors:errors,processMetrics:metrics};
   await fs.writeFile(path.join(output,'native-result.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 } catch(error) {
   const page=await app.firstWindow();await page.screenshot({path:path.join(output,'native-failure.png')}).catch(()=>{});
