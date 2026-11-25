@@ -21,9 +21,9 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => !!window.renderHarness);
   await page.evaluate(async () => {
     const module = (path: string) => import(path);
-    const [React, ReactDOM, { default: Tabs }, { default: Workspace }, { default: Menu }, { default: Rail }, { useStore, flushWorkspaceState }, { documents }, { sharedApp }, active] = await Promise.all([
+    const [React, ReactDOM, { default: Tabs }, { default: Workspace }, { default: Menu }, { default: Rail }, { default: Panels }, { useStore, flushWorkspaceState }, { documents }, { sharedApp }, active] = await Promise.all([
       module('/node_modules/.vite/deps/react.js'), module('/node_modules/.vite/deps/react-dom_client.js'),
-      module('/src/components/WorkspaceTabs.tsx'), module('/src/components/Workspace.tsx'), module('/src/components/ContextMenu.tsx'), module('/src/components/SidebarTabRail.tsx'),
+      module('/src/components/WorkspaceTabs.tsx'), module('/src/components/Workspace.tsx'), module('/src/components/ContextMenu.tsx'), module('/src/components/SidebarTabRail.tsx'), module('/src/components/SidebarTabPanels.tsx'),
       module('/src/lib/store.ts'), module('/src/lib/documents.ts'), module('/src/lib/plugins.ts'), module('/src/lib/activeEditor.ts'),
     ]);
     document.getElementById('root')!.hidden = true;
@@ -32,7 +32,8 @@ test.beforeEach(async ({ page }) => {
     const h = (React.default ?? React).createElement, host = document.createElement('div');
     host.style.cssText = 'position:fixed;inset:0'; document.body.append(host);
     const root = (ReactDOM.createRoot ?? ReactDOM.default.createRoot)(host);
-    root.render(h('div', { className: 'app theme-dark' }, h(Tabs), h(Workspace), h('div', { className: 'ribbon' }, h(Rail, { side: 'right' })), h(Menu)));
+    root.render(h('div', { className: 'app theme-dark' }, h(Tabs), h(Workspace), h('div', { className: 'ribbon' }, h(Rail, { side: 'right' })),
+      h('div', { className: 'group-side-body', style: { position: 'absolute', right: 40, top: 100, width: 260, height: 400, zIndex: 20 } }, h(Panels, { side: 'right', open: true })), h(Menu)));
     window.addEventListener('keydown', event => { if (sharedApp.commands.dispatchHotkey(event)) { event.preventDefault(); event.stopPropagation(); } }, true);
     (window as any).groupFixture = { store: useStore, flushWorkspaceState, documents, sharedApp, active };
   });
@@ -60,6 +61,19 @@ test('Command/Ctrl multi-selection groups in click order; single menus recolor a
   await expect(tab('b.md')).not.toHaveAttribute('data-tab-group');
 });
 
+test('single pane Option/Alt Shift Z/X immediately displays group members and cycles from the newly visible page', async ({ page }) => {
+  await page.evaluate(async () => { const s = (window as any).groupFixture.store.getState(); s.setTabGroup(['c.md','a.md','b.md'], 'blue'); await s.showTab('a.md'); });
+  const main = page.locator('.workspace .main-pane .cm-content');
+  await expect(main).toContainText('Draft A');
+  await main.click();
+  for (const [key, content] of [['X','# B'],['X','# C'],['X','Draft A'],['Z','# C'],['Z','# B'],['Z','Draft A']]) {
+    await page.keyboard.press('Alt+Shift+' + key);
+    await expect(main).toContainText(content);
+    await expect(page.locator('.workspace .split-pane')).toHaveCount(0);
+  }
+  expect(await page.evaluate(() => (window as any).groupFixture.store.getState().tabs.filter((t:any)=>t.groupColor).sort((a:any,b:any)=>a.groupOrder-b.groupOrder).map((t:any)=>t.path))).toEqual(['c.md','a.md','b.md']);
+});
+
 test('real Option/Alt Shift Z/X uses fixed join order, wraps and leaves the other split member untouched', async ({ page }) => {
   await page.evaluate(async () => { const s = (window as any).groupFixture.store.getState(); s.setTabGroup(['c.md','a.md','b.md'], 'blue'); await s.showTab('a.md'); await s.openToSide('home://side'); });
   const main = page.locator('.workspace .main-pane');
@@ -74,10 +88,23 @@ test('real Option/Alt Shift Z/X uses fixed join order, wraps and leaves the othe
   expect(await page.evaluate(() => (window as any).groupFixture.store.getState().splitPath)).toBe('home://side');
 });
 
+test('focused split pane brings its neighbor forward even when that neighbor is already in the main pane', async ({ page }) => {
+  await page.evaluate(async () => { const s = (window as any).groupFixture.store.getState(); s.setTabGroup(['a.md','b.md','c.md'], 'red'); await s.showTab('a.md'); await s.openToSide('b.md'); });
+  const main = page.locator('.workspace .main-pane .cm-content'), side = page.locator('.workspace .split-pane .cm-content');
+  await expect(side).toContainText('# B');
+  await side.click();
+  for (const [key, text] of [['Z','Draft A'],['Z','# C'],['X','Draft A']]) {
+    await page.keyboard.press('Alt+Shift+' + key);
+    await expect(side).toContainText(text);
+    await expect(main).toContainText('# B');
+  }
+});
+
 test('duplicate note menu creates a neighboring view, shares edits in split, restores identities and closes one copy', async ({ page }) => {
   const original = page.locator('.tab[data-tab-id="a.md"]');
   await original.click({ button: 'right' }); await page.getByRole('menuitem', { name: '复制标签页', exact: true }).click();
   await expect(page.locator('.tab[data-tab-path="a.md"]')).toHaveCount(2);
+  await expect.poll(() => page.evaluate(() => (window as any).groupFixture.store.getState().activeTabId)).toMatch(/^tab:/);
   const copy = await page.evaluate(() => (window as any).groupFixture.store.getState().activeTabId);
   expect(copy).toMatch(/^tab:/);
   expect(await page.locator('.tab').evaluateAll(tabs=>tabs.map(tab=>tab.getAttribute('data-tab-id')))).toEqual(['a.md', copy, 'b.md', 'c.md']);
@@ -101,6 +128,17 @@ test('side rail supports grouping and duplication with unique identities and cyc
   await side.click({ button: 'right' }); await page.getByRole('menuitem',{name:'复制标签页',exact:true}).click();
   await expect(page.locator('.ribbon-tabs [role=tab]')).toHaveCount(3);
   expect(await page.evaluate(()=> (window as any).groupFixture.store.getState().rightTabs.map((tab:any)=>tab.state.file))).toEqual(['a.md','a.md','b.md']);
-  await page.evaluate(async () => { const f = (window as any).groupFixture, s=f.store.getState(); s.setTabGroup(['sidebar:side-b'],'green'); s.selectRightTab('side-a'); await s.swapGroupedTab(-1); });
+  await page.evaluate(() => { const s=(window as any).groupFixture.store.getState(); s.setTabGroup(['sidebar:side-b'],'green'); });
+  await side.click();
+  const content = page.locator('.group-side-body .sidebar-note:not([hidden]) .cm-content');
+  await expect(content).toContainText('Draft A');
+  await content.click();
+  await page.keyboard.press('Alt+Shift+X');
+  await expect(content).toContainText('# B');
   await expect(page.locator('[data-tab-id="sidebar:side-b"]')).toHaveClass(/active/);
+  await page.keyboard.press('Alt+Shift+X');
+  await expect(content).toContainText('Draft A');
+  await page.keyboard.press('Alt+Shift+Z');
+  await expect(content).toContainText('# B');
+  await expect(page.locator('.workspace .main-pane .cm-content')).toContainText('# C');
 });

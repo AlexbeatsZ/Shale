@@ -1,5 +1,7 @@
 # 快捷键
 
+PRD1.66：`workspace:swap-group-previous/next` 保留原 id 和 Option/Alt+Shift+Z/X 默认绑定，标题为“显示分组内上/下一个标签页”。目标直接进入当前页面，单页、当前分屏栏及左右侧栏均按固定加入顺序连续循环；见 workspace-sidebars.md。
+
 ## Portable modifiers and one synchronized file (2026-11-22, PRD 1.53)
 
 This supersedes the 2026-11-06 literal-Control policy.

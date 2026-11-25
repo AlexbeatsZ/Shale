@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-25 (标签颜色分组与复制 PRD 1.65)
+Cập nhật lần cuối: 2026-11-25 (分组页面进入前台 PRD 1.66)
+
+### 分组页面进入前台 (PRD 1.66)
+
+- [~] 复现 0.1.95 单页只改标签顺序；修正为按加入顺序直接显示前/后成员，连续循环，分屏保持当前栏与另一栏行为。
+- [ ] 补单页、分屏、侧栏可见正文和网页访客按键/不重载实包回归；构建、发布并原位更新。
 
 ### 标签颜色分组与复制 (PRD 1.65)
 
@@ -795,6 +800,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-25: PRD1.66复现0.1.95单页只重排的漏验，修复同组成员直接显示；668单元、52相关浏览器通过，正式包与交付进行中。
 
 - 2026-11-25: PRD1.65颜色分组、固定加入顺序循环交换与复制标签完成；666单元、Mac50/Windows4浏览器、两端原生回归及Android生产包验证，0.1.95发布/五设备更新，Mac网页专项默认后台。
 

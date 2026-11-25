@@ -66,6 +66,43 @@ try {
     }
   };
   const tab = name => tabs.getByRole('tab', { name: new RegExp('Life /' + name) });
+  // Regression: 0.1.95 only reordered the strip in a single pane. The visible
+  // page must change on every key, without clicking a tab between presses.
+  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+  for (const name of ['two', 'one', 'three']) await tab(name).click({ modifiers: [mod] });
+  await tab('one').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '设置分组（3 个标签页）', exact: true }).hover();
+  await page.getByRole('menuitemcheckbox', { name: '红色', exact: true }).click();
+  await tab('one').click();
+  for (const [key, name] of [['X','three'], ['X','two'], ['X','one'], ['Z','two'], ['Z','three'], ['Z','one']]) {
+    await page.keyboard.press('Alt+Shift+' + key);
+    const visible = page.locator('.workspace .main-pane');
+    await expect(visible.getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/' + name);
+    assert.equal(await visible.locator('webview').evaluate(view => view.getWebContentsId()), identities.get(name).id);
+    await expect(page.locator('.workspace .split-pane')).toHaveCount(0);
+    await unchanged();
+  }
+  const guestKey = async key => {
+    const id = await page.locator('.workspace .main-pane webview').evaluate(view => view.getWebContentsId());
+    const observed = await app.evaluate(({ webContents }, { id, key }) => new Promise(resolve => {
+      const guest = webContents.fromId(id);
+      const listen = (_event, input) => {
+        if (input.type !== 'keyDown') return;
+        clearTimeout(timer); guest.removeListener('before-input-event', listen);
+        resolve({ key: input.key, code: input.code, alt: input.alt, shift: input.shift });
+      };
+      const timer = setTimeout(() => { guest.removeListener('before-input-event', listen); resolve(null); }, 2000);
+      guest.on('before-input-event', listen);
+      guest.sendInputEvent({ type: 'keyDown', keyCode: key, modifiers: ['alt','shift'] });
+      guest.sendInputEvent({ type: 'keyUp', keyCode: key, modifiers: ['alt','shift'] });
+    }), { id, key });
+    assert.ok(observed?.alt && observed?.shift, 'The actual guest must receive Option/Alt+Shift before forwarding the shortcut');
+  };
+  for (const [key, name] of [['X','three'],['X','two'],['X','one'],['Z','two'],['Z','three'],['Z','one']]) {
+    await guestKey(key);
+    await expect(page.locator('.workspace .main-pane').getByRole('textbox', { name: '网页地址' })).toHaveValue(origin + '/' + name);
+    await unchanged();
+  }
   const drag = async (source, target, dwell = 0) => {
     const transfer = await page.evaluateHandle(() => new DataTransfer());
     await source.dispatchEvent('dragstart', { dataTransfer: transfer });
@@ -93,7 +130,6 @@ try {
   await expect(page.locator('.workspace .split-pane')).toBeVisible();
   await unchanged();
   // Selection order is intentionally different from display order.
-  const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
   for (const name of ['two', 'one', 'three']) await tab(name).click({ modifiers: [mod] });
   await tab('one').click({ button: 'right' });
   await page.getByRole('menuitem', { name: '设置分组（3 个标签页）', exact: true }).hover();
@@ -121,7 +157,7 @@ try {
   await newTab.locator('.close').click();
   await expect(guests()).toHaveCount(3);
   await assertBackground();
-  console.log(JSON.stringify({ ok: true, background, loads: Object.fromEntries(loads), guests: Object.fromEntries(identities), colorGroups: true, cyclicSwap: true, duplicate: true }, null, 2));
+  console.log(JSON.stringify({ ok: true, background, loads: Object.fromEntries(loads), guests: Object.fromEntries(identities), colorGroups: true, singlePaneForeground: true, guestShortcutForwarding: true, cyclicSwap: true, duplicate: true }, null, 2));
 } finally {
   if (app) await app.close();
   await new Promise(resolve => server.close(resolve));

@@ -78,6 +78,32 @@ describe('workspace persistence acknowledgements', () => {
     expect(workspace.useStore.getState().activeTabId).toBe(copy);
   });
 
+  it('displays the next single page and cycles from that page without changing join order', async () => {
+    const s = workspace.useStore.getState();
+    for (const path of ['A.md', 'B.md', 'C.md']) await s.openFile(path);
+    s.setTabGroup(['C.md', 'A.md', 'B.md'], 'blue');
+    await s.showTab('A.md');
+    for (const [direction, path] of [[1,'B.md'],[1,'C.md'],[1,'A.md'],[-1,'C.md'],[-1,'B.md'],[-1,'A.md']] as const) {
+      await s.swapGroupedTab(direction);
+      expect(workspace.useStore.getState()).toMatchObject({ activePath: path, activeTabId: path, splitPath: null });
+    }
+    expect(workspace.useStore.getState().tabs.map(tab => tab.path)).toEqual(['A.md','B.md','C.md']);
+  });
+
+  it('replaces the focused pane when the next member is in the other split pane, then keeps cycling in the same pane', async () => {
+    const s = workspace.useStore.getState();
+    for (const path of ['A.md', 'B.md', 'C.md']) await s.openFile(path);
+    s.setTabGroup(['A.md', 'B.md', 'C.md'], 'blue');
+    await s.showTab('A.md'); await s.openToSide('B.md');
+    host.navigation = 'split';
+    await s.swapGroupedTab(-1);
+    expect(workspace.useStore.getState()).toMatchObject({ activePath: 'B.md', splitPath: 'A.md' });
+    expect(host.navigation).toBe('split');
+    await s.swapGroupedTab(-1);
+    expect(workspace.useStore.getState()).toMatchObject({ activePath: 'B.md', splitPath: 'C.md' });
+    expect(host.navigation).toBe('split');
+  });
+
   it('uses fixed join order and wraps both ways while replacing only the targeted split member', async () => {
     const s = workspace.useStore.getState();
     for (const path of ['A.md', 'B.md', 'C.md', 'D.md']) await s.openFile(path);

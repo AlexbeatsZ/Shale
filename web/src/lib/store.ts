@@ -541,13 +541,15 @@ export const useStore = create<AppState>()(
           const current = s.rightTabs.find(tab => 'sidebar:' + tab.id === view);
           const target = groupNeighbor(s.rightTabs.filter(tab => (tab.side ?? 'right') === (current?.side ?? 'right')), current, direction);
           if (!current || !target) return;
-          set(st => ({ rightTabs: st.rightTabs.map(tab => tab.id === current.id ? target : tab.id === target.id ? current : tab),
-            ...(current.side === 'left' ? { leftActiveId: target.id } : { rightActiveId: target.id }) }));
-          activateNavigation('sidebar:' + target.id);
+          s.selectRightTab(target.id);
         } else {
           const key = paneTabKey(s, view === 'split' ? 'split' : 'main');
           const current = s.tabs.find(tab => tabKey(tab) === key), target = groupNeighbor(s.tabs, current, direction);
-          if (current && target) await get().swapTabs(tabKey(current), tabKey(target));
+          if (!current || !target) return;
+          // Like dropping a tab into the page: replace the focused pane and
+          // display the target. A strip-only swap leaves single pages unchanged.
+          if (s.splitPath) await get().replacePane(view === 'split' ? 'split' : 'main', tabKey(target));
+          else await get().showTab(tabKey(target));
         }
       },
       duplicateTab: async key => {
