@@ -202,12 +202,13 @@ it('native copy/cut/paste use the same policy with single-use cut movement', () 
   expect(contentTargets(next.view.state.field(syntaxModel)).targets.every(target => target.id !== 'heading-one')).toBe(true);
 });
 
-it('native passthrough retains external text formatting and file paste handlers; read-only blocks mutations', () => {
+it('native paste formats external text and retains file handlers; read-only blocks mutations', () => {
   const target = nativeEditor();
   const external = clipboardEvent();
   external.clipboardData!.setData('text/plain', heading);
-  expect(target.handlers.paste!(external, target.view)).toBe(false);
-  expect(external.preventDefault).not.toHaveBeenCalled();
+  expect(target.handlers.paste!(external, target.view)).toBe(true);
+  expect(external.preventDefault).toHaveBeenCalled();
+  expect(target.view.state.doc.toString()).toBe(heading);
   const attachment = clipboardEvent([{ type: 'image/png' }]);
   attachment.clipboardData!.setData(CONTENT_CLIPBOARD_MIME, '{}');
   expect(target.handlers.paste!(attachment, target.view)).toBe(true);

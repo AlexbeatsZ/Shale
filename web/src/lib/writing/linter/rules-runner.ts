@@ -28,6 +28,7 @@ import {IgnoreTypes, ignoreListOfTypes} from './utils/ignore-types';
 import {protectFormulaDollars} from '../analysis';
 import MoveMathBlockIndicatorsToOwnLine from './rules/move-math-block-indicators-to-own-line';
 import ConvertTexMathDelimiters from './rules/convert-tex-math-delimiters';
+import { RemoveMathTagsOnPaste } from './rules/remove-math-tags';
 import {LinterSettings} from './settings-data';
 import TrailingSpaces from './rules/trailing-spaces';
 type CustomAutoCorrectContent = any;
@@ -279,6 +280,8 @@ export class RulesRunner {
 
   runPasteLint(currentLine: string, selectedText: string, runOptions: RunLinterRulesOptions): string {
     let newText = runOptions.oldText;
+
+    [newText] = RemoveMathTagsOnPaste.applyIfEnabled(newText, runOptions.settings, []);
 
     [newText] = RemoveHyphensOnPaste.applyIfEnabled(newText, runOptions.settings, []);
 

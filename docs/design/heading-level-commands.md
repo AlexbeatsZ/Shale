@@ -46,3 +46,13 @@ BodyHeading parsing/rendering already supports this syntax. Explicit level 0–6
 also accept an existing BodyHeading so it can be converted back to a paragraph or ordinary heading. The old
 `obsidian-heading-shifter:apply-heading7` ID resolves to the new command so imported
 bindings work too. Promote/demote still operate only on H1–H6.
+
+## Inline formula prose (PRD 1.62, 2026-11-25)
+
+Explicit level 0–7 commands and menu actions share `toggleLineStyle`. A line
+containing single-line inline math remains editable prose, including
+`Wigner 的 $2k+1$ 规则`; inserting/removing heading markers must retain its TeX.
+The previous blanket formula-overlap exclusion incorrectly blocked such lines.
+Standalone/display and multiline formula source remains protected, as do code
+and YAML. Option/Alt digit resolution still uses the existing physical key-code
+normalization and the user's bindings; no new default shortcuts are introduced.

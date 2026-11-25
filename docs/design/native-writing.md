@@ -366,3 +366,20 @@ The core and the CodeMirror language share the grammar extension that disables
 Setext headings. `---` retains thematic break, table delimiter and YAML roles.
 `===` under prose stays text. Outlines, fragments, folding, heading commands and
 the formatter follow the same core heading syntax as live and reading views.
+
+## Formula tag cleanup (PRD 1.62, 2026-11-25)
+
+The default-enabled `remove-math-tags` Content rule and independently controlled
+`remove-math-tags-on-paste` Paste rule share markdown-core `removeMathTags`.
+Only closed dollar/TeX-delimited formula bodies are scanned. Balanced arguments,
+starred tags, escaped characters, TeX comments, quote prefixes and line breaks
+are retained correctly; code/math fences, prose, YAML and incomplete commands
+remain unchanged. Cleanup leaves `\label`, `\notag` and `\nonumber` intact.
+Explicit false settings and normal formatter ignore/disabled-rule policy apply.
+
+The user requested incoming paste cleanup only. Copy and cut output retain the
+original text and identity payload. ContentClipboard owns all Markdown text
+paste paths, including native events and menu/physical-Control actions; there
+is no duplicate text-paste handler in nativeWritingExtensions. External text
+uses paste rules; internal payloads apply identity remapping/movement first and
+only formula cleanup afterward. Both remain one source transaction/undo step.

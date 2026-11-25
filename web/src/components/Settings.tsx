@@ -33,6 +33,7 @@ import { SettingRow as Row, SettingGroup } from './SettingRow';
 import { useDialogEscape } from '../lib/useDialogEscape';
 import { documentAppearance, typingPointerGuardDelay, UiSettingsSchema, type UiSettings } from '../../../server/src/contracts/uiSettings';
 import { FilePlacementSchema, type FilePlacement } from '../../../server/src/contracts/filePlacement';
+import { ensureLineNumbers, useLineNumbers, type LineNumberStyle } from '../lib/lineNumberSettings';
 
 type Section =
   'search' | 'hotkeys' | 'mcp' | 'automation' | 'writing' | 'formatting' | 'userscripts' | 'menus' | 'tags' | 'vault' | 'sync' | 'git' | 'plugins' | 'appearance' | 'interface' | 'editor' | 'about' | 'debug';
@@ -766,14 +767,27 @@ function TypingPointerGuardSettings({ ui }: { ui: Partial<UiSettings> }) {
 
 function EditorSettings() {
   const viewMode = useStore(state => state.viewMode);
+  const lineNumbers = useLineNumbers();
+  const [error, setError] = useState('');
+  useEffect(() => { void ensureLineNumbers(); }, []);
   return <div>
     <h2>编辑器</h2>
     <NativeVimSettings />
     <SettingGroup title="文档视图">
+      <Row name="行号" desc="绝对行号从 1 开始；相对行号以光标所在行为 0，上下显示距离。阅读视图不显示行号。">
+        <select aria-label="行号" value={lineNumbers} onChange={event => {
+          setError('');
+          void api.putSettings({ ui: { lineNumbers: event.target.value as LineNumberStyle } })
+            .catch(cause => setError(`保存失败：${String(cause)}`));
+        }}>
+          <option value="off">关闭</option><option value="absolute">绝对行号（1、2、3…）</option><option value="relative">相对行号（光标行 0）</option>
+        </select>
+      </Row>
       <Row name="当前编辑视图" desc="工作区使用的视图模式，也可在文档右下角切换。"><select value={viewMode} onChange={event => useStore.getState().setViewMode(event.target.value as typeof viewMode)}>
         <option value="live">实时预览</option><option value="source">源码模式</option><option value="reading">阅读视图</option>
       </select></Row>
     </SettingGroup>
+    {error && <p role="alert">{error}</p>}
   </div>;
 }
 

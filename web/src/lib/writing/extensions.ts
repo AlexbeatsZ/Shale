@@ -18,9 +18,7 @@ import {
 } from './latex/editor_extensions/highlight_brackets';
 import { highlight_dollar_extension } from './latex/editor_extensions/highlight_dollar';
 import { mkConcealPlugin } from './latex/editor_extensions/conceal';
-import { formatPaste } from './format';
 import { contextOf } from '../renderContext';
-import { writingOperation } from './editing';
 
 export function nativeWritingExtensions() {
   const config = new Compartment(),
@@ -80,32 +78,7 @@ export function nativeWritingExtensions() {
         }, 0);
         return false;
       },
-      paste(event, view) {
-        if (view.state.readOnly || view.composing || !event.clipboardData) return false;
-        const text = event.clipboardData.getData('text/plain');
-        if (!text) return false;
-        const sel = view.state.selection.main;
-        const line = view.state.doc.lineAt(sel.from).text;
-        try {
-          const result = formatPaste(
-            text,
-            contextOf(view).sourcePath,
-            line,
-            view.state.sliceDoc(sel.from, sel.to),
-          );
-          if (result === text) return false;
-          event.preventDefault();
-          view.dispatch({
-            ...view.state.replaceSelection(result),
-            annotations: writingOperation.of('paste'),
-            userEvent: 'input.paste',
-          });
-          return true;
-        } catch (error) {
-          contextOf(view).reportError?.(String(error));
-          return true;
-        }
-      },
+
     }),
   ];
 }

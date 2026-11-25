@@ -14,6 +14,7 @@ export const UiSettingsSchema = z.object({
   debugRecording: z.boolean().default(false),
   debugSource: z.boolean().default(true),
   ctrlWheelFontSize: z.boolean().default(false),
+  lineNumbers: z.enum(['off', 'absolute', 'relative']).default('off'),
   vimEnabled: z.boolean().default(false),
   vimInputMethod: z.boolean().default(true),
   vimEnglishSource: z.string().max(256).default(''),

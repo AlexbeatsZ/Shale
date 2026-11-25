@@ -41,7 +41,7 @@ describe('document appearance in existing UI settings', () => {
     await fs.writeFile(filename, original);
     vi.resetModules();
     settings = await import('./settings');
-    expect((await settings.getSettings()).ui).toMatchObject({ fontTextSize: 18, fileLineWidth: 700, theme: 'shale-dark', defaultView: 'reading' });
+    expect((await settings.getSettings()).ui).toMatchObject({ fontTextSize: 18, fileLineWidth: 700, theme: 'shale-dark', defaultView: 'reading', lineNumbers: 'off' });
     expect(await fs.readFile(filename, 'utf8')).toBe(original);
   });
 
@@ -79,5 +79,14 @@ describe('document appearance in existing UI settings', () => {
     rename.mockRestore();
     await settings.updateSettings(draft => { draft.ui.fileLineWidth = 900; });
     expect((await settings.getSettings()).ui.fileLineWidth).toBe(900);
+  });
+  it('persists line number styles and rejects unsupported values without losing settings', async () => {
+    await settings.getSettings();
+    for (const style of ['absolute', 'relative', 'off'] as const) {
+      await settings.updateSettings(draft => { draft.ui.lineNumbers = style; });
+      vi.resetModules(); settings = await import('./settings');
+      expect((await settings.loadSettings()).ui.lineNumbers).toBe(style);
+    }
+    expect(UiSettingsSchema.safeParse({ lineNumbers: 'hybrid' }).success).toBe(false);
   });
 });

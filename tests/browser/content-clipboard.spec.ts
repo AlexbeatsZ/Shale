@@ -84,7 +84,7 @@ test('a cut from a closed source view clones instead of trusting its stale sourc
   expect(result.source.match(/^# Title \^(heading-[\w-]+)/m)![1]).not.toBe('heading-original');
 });
 
-test('native read-only mutations are blocked and image paste remains available to attachment handlers', async ({ page }) => {
+test('native read-only mutations are blocked and image paste is owned by the shared attachment handler', async ({ page }) => {
   await page.evaluate(() => window.renderHarness.mode(1, 'reading'));
   await expect(page.locator('[data-slot="1"] .cm-content[contenteditable="true"]')).toHaveCount(0);
   const cut = await capture(page, 1, 'cut');
@@ -106,8 +106,8 @@ test('native read-only mutations are blocked and image paste remains available t
     slot.querySelector('.cm-content')!.dispatchEvent(event);
     return { reached, files, prevented: event.defaultPrevented, source: window.renderHarness.source(0) };
   });
-  expect(image.reached).toBe(true);
-  expect(image.files).toBe(1);
+  expect(image.reached).toBe(false);
+  expect(image.files).toBe(0);
   expect(image.prevented).toBe(true);
   expect(image.source).toBe(source);
 });

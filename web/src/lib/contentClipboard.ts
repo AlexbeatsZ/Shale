@@ -21,7 +21,7 @@ export interface ClipboardOptions {
   source: () => { identity: string; model: MarkdownModel; offset: number; read: () => MarkdownModel | undefined };
   writable: () => boolean;
   projection: () => boolean;
-  format: (text: string, view: EditorView) => string;
+  format: (text: string, view: EditorView, internal: boolean) => string;
   pasteImages?: (files: readonly File[], view: EditorView) => void | Promise<void>;
   reportError: (error: unknown) => void;
 }
@@ -135,7 +135,7 @@ export function contentClipboard(options: ClipboardOptions) {
     const changes = before.changeByRange(range => {
       const result = policy.prepare(content, before.field(syntaxModel), before.selection.ranges.length === 1);
       prepared.push(result);
-      const text = content.metadata ? result.text : options.format(result.text, view);
+      const text = options.format(result.text, view, !!content.metadata);
       return { changes: { from: range.from, to: range.to, insert: text }, range: EditorSelection.cursor(range.from + text.length) };
     });
     view.dispatch({ ...changes, annotations: writingOperation.of('paste'), userEvent: 'input.paste' });
@@ -190,9 +190,10 @@ export function contentClipboard(options: ClipboardOptions) {
         return true;
       }
       const metadata = event.clipboardData.getData(CONTENT_CLIPBOARD_MIME) || event.clipboardData.getData(browserMime);
-      if (!metadata) return false;
+      const text = event.clipboardData.getData('text/plain');
+      if (!text) return false;
       event.preventDefault();
-      try { apply(view, { text: event.clipboardData.getData('text/plain'), metadata }); }
+      try { apply(view, { text, metadata: metadata || undefined }); }
       catch (error) { options.reportError(error); }
       return true;
     },

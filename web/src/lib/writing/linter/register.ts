@@ -47,6 +47,7 @@ import './rules/remove-hyphens-on-paste';
 import './rules/remove-leading-or-trailing-whitespace-on-paste';
 import './rules/remove-leftover-footnotes-from-quote-on-paste';
 import './rules/remove-link-spacing';
+import './rules/remove-math-tags';
 import './rules/remove-multiple-blank-lines-on-paste';
 import './rules/remove-multiple-spaces';
 import './rules/remove-space-around-characters';

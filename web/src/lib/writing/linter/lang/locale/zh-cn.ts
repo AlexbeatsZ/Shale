@@ -529,6 +529,14 @@ export default {
       'name': '脚注移至文档底部',
       'description': '将所有脚注移动到文档底部',
     },
+    'remove-math-tags': {
+      'name': '去除公式 tag',
+      'description': '去除公式中的 <code>\\tag{…}</code> 和 <code>\\tag*{…}</code>，使用原生自动编号；保留代码、注释、label 和 notag。默认开启。',
+    },
+    'remove-math-tags-on-paste': {
+      'name': '粘贴时去除公式 tag',
+      'description': '粘贴进 Shale 时自动去除公式 tag，复制出去保持原样。默认开启，可独立关闭。',
+    },
     // convert-tex-math-delimiters.ts
     'convert-tex-math-delimiters': {
       'name': '转换 TeX 公式定界符',

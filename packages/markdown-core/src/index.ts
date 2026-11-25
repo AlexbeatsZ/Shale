@@ -7,6 +7,7 @@ export * from './links.js';
 export * from './metadata.js';
 export * from './blocks.js';
 export * from './math.js';
+export * from './mathTags.js';
 export * from './mathPackages.js';
 export * from './mathSource.js';
 export * from './properties.js';

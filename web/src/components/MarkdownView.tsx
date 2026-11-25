@@ -19,7 +19,8 @@ import { linkPreview } from '../lib/linkPreview';
 import { nativeWritingExtensions } from '../lib/writing/extensions';
 import { mathEditingExtensions } from '../lib/writing/latex/editor_extensions/math_tooltip';
 import { captureWritingState, restoreWritingState, snippetChangeEffects, writingOperation, snippetGroup, type WritingViewState } from '../lib/writing/editing';
-import { formatPaste } from '../lib/writing/format';
+import { formatPaste, formatMathPaste } from '../lib/writing/format';
+import { editorLineNumbers } from '../lib/editorLineNumbers';
 import { contentClipboard } from '../lib/contentClipboard';
 import { documents } from '../lib/documents';
 import { defaultKeymap, indentWithTab } from '@codemirror/commands';
@@ -114,8 +115,12 @@ export default function MarkdownView(props: MarkdownViewProps) {
     },
     writable: () => latest.current.mode !== 'reading' && !latest.current.snapshot.locked && !latest.current.documentSession?.snapshot.locked,
     projection: () => !!latest.current.context.sourceFragment,
-    format: (text, current) => {
+    format: (text, current, internal) => {
       const selection = current.state.selection.main;
+      const model = current.state.field(syntaxModel);
+      const literal = [...model.literal, ...model.htmlBlocks, ...model.html, ...(model.frontmatter ? [model.frontmatter] : [])];
+      if (literal.some(range => selection.from >= range.from && selection.to <= range.to)) return text;
+      if (internal) return formatMathPaste(text, latest.current.context.sourcePath);
       return formatPaste(text, latest.current.context.sourcePath, current.state.doc.lineAt(selection.from).text, current.state.sliceDoc(selection.from, selection.to));
     },
     reportError: error => latest.current.context.reportError?.(String(error)),
@@ -301,6 +306,7 @@ export default function MarkdownView(props: MarkdownViewProps) {
         editorSelection, editorDebugging, syntaxModel.init(() => p.analysis ?? analyzeMarkdown(p.snapshot.text, p.context.sourcePath, p.snapshot.version)), documentMetadata, embeddedFormulasField, blockModel,
         contextComp.of(renderContext.of(scopedContext)),
         clipboard.extension,
+        ...(p.layout !== 'embedded' ? [editorLineNumbers()] : []),
         extraComp.of(p.extensions ?? []),
         readonlyComp.of(readonlyExt(p.mode === 'reading' || !!p.snapshot.locked)),
         EditorState.transactionFilter.of((tr) =>

@@ -6,12 +6,21 @@ const native = migrateLinterReplacements(legacy);
 const now = Date.UTC(2026, 9, 22, 12, 0);
 describe('native formatting compatibility', () => {
   it('retains the installed rule inventory and ordered custom replacements', () => {
-    expect(formatRules).toHaveLength(66);
+    expect(formatRules).toHaveLength(68);
     expect(Object.values(legacy.ruleConfigs).filter((r) => r.enabled)).toHaveLength(29);
     const settings = compileFormattingSettings(native);
     expect(settings.customRegexes).toHaveLength(46);
     expect(ignoresFormatting('09插件/rules.md', settings)).toBe(true);
     expect(ignoresFormatting('notes/example.md', settings)).toBe(false);
+  });
+  it('removes math tags by default and honors rule and per-document opt-outs', () => {
+    const source = String.raw`$$x \tag{manual} \label{eq:x}$$`;
+    const defaults = compileFormattingSettings({});
+    expect(defaults.ruleConfigs['remove-math-tags-on-paste'].enabled).toBe(true);
+    expect(formatText(source, 'x.md', {}, defaults, now)).toBe(String.raw`$$x \label{eq:x}$$`);
+    const disabled = compileFormattingSettings({ ruleConfigs: { 'remove-math-tags': { enabled: false } } });
+    expect(formatText(source, 'x.md', {}, disabled, now)).toBe(source);
+    expect(formatText('---\ndisabled rules: [remove-math-tags]\n---\n' + source, 'x.md', {}, defaults, now)).toContain(source);
   });
   it('preserves TeX delimiters by default and converts with the explicit rule enabled', () => {
     const settings = compileFormattingSettings(native);

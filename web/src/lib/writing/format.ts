@@ -14,6 +14,7 @@ import {
   compileReplacement,
   replacementCallback,
   REPLACEMENT_SYNTAX,
+  removeMathTags,
   type DocumentSession,
 } from '@shale/markdown-core';
 import { documents } from '../documents';
@@ -44,7 +45,11 @@ export function compileFormattingSettings(raw: Record<string, any>) {
   for (const value of raw.filesToIgnore ?? []) if (value.match) new RegExp(value.match, value.flags);
   setLanguage('zh-CN');
   const ruleConfigs = Object.fromEntries(
-    rules.map((rule) => [rule.alias, { ...rule.getDefaultOptions(), ...raw.ruleConfigs?.[rule.alias] }]),
+    rules.map((rule) => [rule.alias, {
+      ...rule.getDefaultOptions(),
+      ...(['remove-math-tags', 'remove-math-tags-on-paste'].includes(rule.alias) ? { enabled: true } : {}),
+      ...raw.ruleConfigs?.[rule.alias],
+    }]),
   );
   const customRegexes = (raw.customRegexes ?? []).map((value: any) => ({
     ...value,
@@ -119,6 +124,12 @@ export function formatPaste(text: string, path: string, line: string, selected: 
   const settings = formatterSettings();
   if (ignoresFormatting(path, settings)) return text;
   return new RulesRunner().runPasteLint(line, selected, runOptions(text, path, {}, settings));
+}
+/** Internal content transfers retain identity handling and skip unrelated paste rules. */
+export function formatMathPaste(text: string, path: string) {
+  const settings = formatterSettings();
+  return !ignoresFormatting(path, settings) && settings.ruleConfigs['remove-math-tags-on-paste'].enabled
+    ? removeMathTags(text) : text;
 }
 async function prepareCorrections(settings: any) {
   const config = settings.ruleConfigs['auto-correct-common-misspellings'];

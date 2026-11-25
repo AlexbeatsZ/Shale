@@ -278,7 +278,11 @@ function selectedMarkdownLines(view: EditorView, bodyHeading = false) {
     const first = state.doc.lineAt(range.from).number, last = state.doc.lineAt(range.to > range.from ? range.to - 1 : range.to).number;
     for (let n = first; n <= last; n++) {
       const line = state.doc.line(n);
-      if (model.frontmatter && line.from < model.frontmatter.to || formulas.some(region => line.from < region.to && line.to >= region.from)) continue;
+      // Inline math belongs to the prose. Only standalone or multiline formulas
+      // own the entire source line and must not acquire Markdown prefixes.
+      if (model.frontmatter && line.from < model.frontmatter.to || formulas.some(region =>
+        line.from < region.to && line.to >= region.from &&
+        (region.display || region.block || model.text.slice(region.from, region.to).includes('\n')))) continue;
       let excluded = false;
       for (let node = model.tree.resolveInner(line.from + (line.text.match(/^[ \t]*/)?.[0].length ?? 0), 1); node; node = node.parent!) {
         if (['FencedCode', 'CodeBlock'].includes(node.name) || !bodyHeading && node.name === 'BodyHeading') { excluded = true; break; }

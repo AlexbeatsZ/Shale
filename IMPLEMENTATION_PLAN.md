@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-25 (网页与地址栏剪贴板 PRD 1.61)
+Cập nhật lần cuối: 2026-11-25 (公式 tag、行号与含公式标题 PRD 1.62)
+
+### 公式 tag、行号与含公式标题 (PRD 1.62)
+
+- [x] 增加默认开启的格式化/粘贴公式 tag 清理与可持久化的两种行号；修复含行内公式正文的标题转换。647 单元与 27 个相关浏览器用例覆盖。
+- [~] 完成原生实包验收，构建并发布桌面 0.1.92。
 
 ### 网页与地址栏剪贴板 (PRD 1.61)
 
@@ -773,6 +778,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-25: PRD 1.62 新增默认去除公式 tag、绝对/相对行号与含公式正文标题修复；647 单元与 27 相关浏览器用例覆盖，桌面 0.1.92 实包验收/发布进行中。
 
 - 2026-11-24: PRD 1.60 默认新建文件夹选择与保存回读修复完成；641 单元、两个真实后端浏览器用例及类型检查通过，Mac/Windows 实包选择/保存/创建/回读通过；0.1.90 双 Release 与五设备安装完成，平板 healthz 超时边界已记录。
 
