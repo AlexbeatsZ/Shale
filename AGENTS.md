@@ -34,6 +34,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
+- 【暂停，用户 2026-11-26 要求仅记录设备故障】OMEN 同步检查点总 revision 445，部分已选配置的基线版本 469 导致重启拒载；两份 CSS 冲突保留，无 incoming/outbox。源码已修复部分审阅后的水位持久化和旧检查点加载，现场恢复未执行，未发布新版本。见 2026-11 日志。
 - Android0.1.99：K70/平板 Mac adb 不可达，APK 已发布（`android/release/0.1.99`），设备在线后 `adb install -r --user current` 并核对首次安装时间。
 - `tests/browser/presentation.spec.ts` “dark command”用例自 PRD1.63 PDF 默认反色起过期（改动前即失败），需按默认开启重写断言。
 - `tests/desktop-image-properties.mjs` 已失效：读身份迁移前 `.shale/shale/blocks/` 与已改名真实笔记，需改用当前路径/素材。

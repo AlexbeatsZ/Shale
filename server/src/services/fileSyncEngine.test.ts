@@ -228,6 +228,38 @@ describe('native file synchronization', () => {
     expect(await fs.readFile(path.join(second.root, 'b.md'), 'utf8')).toBe('B 服务器');
   });
 
+  it('restarts cleanly after resolving part of a conflict recorded behind the checkpoint revision', async () => {
+    const first = await client('first'); const second = await client('second');
+    await first.write('a.md', 'a'); await first.write('b.md', 'b'); await first.engine.run(); await second.engine.run();
+    await first.write('a.md', 'a 电脑'); await first.write('b.md', 'b 电脑'); await first.engine.run();
+    await second.write('a.md', 'a 平板\n'); await second.write('b.md', 'b 平板\n');
+    expect((await second.engine.run()).conflictCount).toBe(2);
+    // Older builds kept the revision from before the conflict, as on OMEN (445 vs. 469).
+    const filename = path.join(second.state, 'checkpoint.json');
+    const saved = JSON.parse(await fs.readFile(filename, 'utf8')); saved.revision = 1; await fs.writeFile(filename, JSON.stringify(saved));
+    const restart = () => new FileSyncEngine(second.root, second.state, second.preferences, { publish: async work => work(), changed: async () => {} });
+    await first.write('c.md', '新文件'); await first.engine.run();
+    expect((await restart().resolveConflict({ 'a.md': 'remote' })).conflictCount).toBe(1);
+    const resolved = JSON.parse(await fs.readFile(filename, 'utf8'));
+    expect(resolved.revision).toBeGreaterThan(resolved.base['a.md'].version);
+    expect(resolved.base['c.md']).toBeUndefined();
+    expect(resolved.conflict.changes.map((item: { path: string }) => item.path)).toEqual(['b.md']);
+    expect(resolved.conflict.id).toBe(saved.conflict.id);
+    expect((await restart().run()).phase).toBe('conflict');
+    expect(await fs.readFile(path.join(second.root, 'c.md'), 'utf8')).toBe('新文件');
+    // A checkpoint already written with the inconsistency loads and keeps synchronizing.
+    resolved.revision = 1; await fs.writeFile(filename, JSON.stringify(resolved));
+    const engine = restart();
+    expect((await engine.run()).phase).toBe('conflict');
+    expect(await fs.readFile(path.join(second.root, 'c.md'), 'utf8')).toBe('新文件');
+    expect((await engine.resolveConflict({ 'b.md': 'local' })).phase).toBe('idle');
+
+    // Repairing the watermark still rejects structurally invalid baselines.
+    resolved.base['A.md'] = resolved.base['a.md'];
+    await fs.writeFile(filename, JSON.stringify(resolved));
+    await expect(restart().load()).rejects.toThrow('Invalid sync entry');
+  });
+
   it('retries the same durable operation after losing a successful commit response', async () => {
     const first = await client('first'); await first.write('note.md', 'retained');
     const original = globalThis.fetch; let lost = false; const operations: string[] = [];

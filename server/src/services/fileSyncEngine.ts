@@ -81,6 +81,10 @@ export class FileSyncEngine {
       this.state = { version: 1, root: vaultPathKey(this.root), deviceId: randomUUID(), workspaceId: null, revision: 0, base: {}, cache: {}, lastSuccess: null };
     }
     if (this.state.root !== vaultPathKey(this.root)) throw new Error('同步检查点属于另一个 Vault');
+    // `revision` is only the newest server revision seen (the rollback watermark). Every base entry came from a
+    // server manifest or receipt, so an entry newer than the watermark (written by builds that resolved part of a
+    // conflict without recording the revision) proves the server reached it: raise the watermark, never brick.
+    for (const entry of Object.values(this.state.base)) this.state.revision = Math.max(this.state.revision, entry.version);
     if (this.state.workspaceId) validateManifest({ workspaceId: this.state.workspaceId, revision: this.state.revision, files: this.state.base });
     if (Object.keys(this.state.cache).some(name => !validPath(name)) || Object.keys(this.state.conflict?.local ?? {}).some(name => !validPath(name)))
       throw new Error('同步检查点包含无效路径');
@@ -407,6 +411,8 @@ export class FileSyncEngine {
         throw new Error(`${item.path} 在冲突后又有变化，请点同步重新比较`);
     }
     for (const item of chosen) this.state.base[item.path] = item.entry;
+    // The entries come from this manifest; record it with them, or a later load sees versions past the checkpoint.
+    this.state.revision = Math.max(this.state.revision, manifest.revision);
     const incoming = chosen.filter(item => pick(item.path) === 'remote');
     if (incoming.length) this.state.incoming = incoming;
     else delete this.state.incoming;

@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-25 (连续文档 PPT 来源 PRD 1.69)
+Cập nhật lần cuối: 2026-11-26 (同步检查点恢复)
+
+### 同步检查点恢复
+
+- [x] 修复部分冲突审阅后检查点总版本低于文件基线的问题，验证旧检查点恢复和未应用文件继续同步。
+- [ ] OMEN 现场恢复与验收，按用户要求暂停。
 
 ### 连续文档 PPT 来源 (PRD 1.69)
 
@@ -815,6 +820,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-26: 修复部分解决同步冲突后的检查点水位，674 单元及类型检查通过。源码交付，OMEN 现场恢复暂停。
 
 - 2026-11-25: PRD1.69连续文档支持PPT/PPTX来源并迁移课件规则；Mac/Windows浏览器与原生PPT回归通过，0.1.99发布并更新Mac/OMEN/ROG，Android待设备在线。
 
