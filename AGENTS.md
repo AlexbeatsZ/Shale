@@ -12,7 +12,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-26 PRD1.72 / 应用 0.1.100 与独立同步服务 0.4.0 接入 file-sync-core 0.2.0。首次从固定快照分页，后续增量分页；页游标和附件部分内容可恢复。旧 v1 全清单仍可使用；真实 OMEN 恢复与 Android 实库同步继续按原边界暂停。安装本版前留意 1.70、1.71 配置迁移要求。
+- 2026-11-26 PRD1.72 / 应用 0.1.100 与独立同步服务 0.4.0 接入 file-sync-core 0.2.0。桌面 v0.1.100（latest，七资产）及 android-v0.1.100（预发布）已发布，标签均为 8f1c016；未更新设备。Windows 额外 WebViewer 拖放冒烟超时，前台未验收；详见 tests/reports/central-sync-20261126.md。首次从固定快照分页，后续增量分页；页游标和附件部分内容可恢复。旧 v1 全清单仍可使用；真实 OMEN 恢复与 Android 实库同步继续按原边界暂停。安装本版前留意 1.70、1.71 配置迁移要求。
 - 2026-11-26 PRD1.71（源码，未构建）：删除全部旧格式兼容与一次性迁移代码（插件时代导入、`migration`/`imported`/`replacementSyntax` 字段、Linter 旧替换语法、Templater 别名、第三方命令 ID、旧图片 `|300`/`#dark`、旧 UI 状态、身份迁移与钥匙串助手）。STEM 41 篇笔记 344 处图片已改写并逐图核对等价，hotkeys/writing 配置已删旧字段。保留插件运行时、Obsidian 核心命令 ID、GM 旧式 API、搜索语法与同步协议。报告 `tests/reports/legacy-removal-20261126.md`。
 - 2026-11-26 PRD1.70（源码，未构建）：删除虚拟文档 version/分组id 兼容与运行时重复 id，阅读状态以分组标题为键。Mac Vault 28 个已是新格式；OMEN Vault 25 个旧格式（未同步），安装含此改动的版本前须先迁移/同步。
 - 2026-11-25 PRD1.69 / 0.1.99：连续文档来源增加 PPT/PPTX（复用分页章节），默认启用总写 MD/PDF/PPT 三个自动分组；STEM 11 个课件主线/补充资料匹配 pdf|pptx?。v0.1.99 latest 与 android-v0.1.99 预发布已发布（源码7092f80）；Mac/OMEN/ROG 原位更新，Mac/OMEN 健康通过。OMEN 的 STEM Vault 尚未同步到迁移后的配置（25 个旧格式，兼容有效）。

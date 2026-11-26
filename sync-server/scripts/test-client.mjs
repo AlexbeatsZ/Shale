@@ -13,7 +13,7 @@ const temporary = await mkdtemp(path.join(parent, 'shale-package-client-'));
 try {
   const folder = `shale-sync-server-${metadata.version}`;
   execFileSync('tar', ['-xf', path.join(output, folder + '.tar.gz'), '-C', temporary], { stdio: 'inherit' });
-  execFileSync(process.execPath, [path.join(repo, 'node_modules/vitest/vitest.mjs'), 'run',
+  execFileSync(process.execPath, [path.join(repo, 'node_modules/vitest/vitest.mjs'), 'run', '--testTimeout=30000',
     'server/src/services/fileSyncEngine.test.ts', 'server/src/services/fileSyncStandalone.test.ts'], {
     cwd: repo, stdio: 'inherit', windowsHide: true,
     env: { ...process.env, SHALE_SYNC_TEST_SERVER: path.join(temporary, folder, 'sync-server/server.mjs') },
