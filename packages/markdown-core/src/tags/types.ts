@@ -31,4 +31,4 @@ export interface TagPreviewRequest { operation: TagOperation; scope: TagScope; o
 export interface TagApplyResult { path: string; status: 'written' | 'local'; revision?: string }
 export interface FolderTagRule { folder: string; tags: string[]; recursive: boolean }
 export interface FolderTagSettings { enabled: boolean; pruneAncestors: boolean; rules: FolderTagRule[] }
-export interface TagPreferences { batchEnabled: boolean; wranglerEnabled: boolean; migration?: string; folderTags?: FolderTagSettings }
+export interface TagPreferences { batchEnabled: boolean; wranglerEnabled: boolean; folderTags?: FolderTagSettings }

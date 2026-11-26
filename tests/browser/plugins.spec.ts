@@ -6,7 +6,6 @@ import os from 'node:os';
 import { createRequire } from 'node:module';
 import { build } from 'esbuild';
 
-import { migrateLinterReplacements } from '../../packages/markdown-core/src/legacyReplacement';
 
 const fixtureCode = `
 const {Plugin,PluginSettingTab,Setting,MarkdownRenderChild} = require('obsidian');
@@ -43,7 +42,7 @@ async function setup(
       body = request.postDataJSON?.();
     const json = (value: any) => route.fulfill({ json: value });
     if (url.pathname === '/api/vault-identity') return json({ vault: 'browser-fixture' });
-    if(url.pathname==='/api/writing')return json({version:1,migration:'fixture',latex:{snippets:'[]',snippetVariables:'{}',...data['obsidian-latex-suite']},linter:migrateLinterReplacements(data['obsidian-linter']??{}),hotkeys:{}});
+    if(url.pathname==='/api/writing')return json({version:1,latex:{snippets:'[]',snippetVariables:'{}',...data['obsidian-latex-suite']},linter:data['obsidian-linter']??{},hotkeys:{}});
     if (url.pathname === '/api/plugins/')
       return json({ plugins: entries.map(({ code, ...m }) => m) });
     if (url.pathname.endsWith('/main.js')) {

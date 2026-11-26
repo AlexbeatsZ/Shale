@@ -38,9 +38,7 @@ Example (one file on both devices):
   "platforms": {
     "windows": { "editor:toggle-bold": [{ "modifiers": ["Ctrl"], "key": "B" }] },
     "mac": { "editor:toggle-bold": [{ "modifiers": ["PhysicalCtrl"], "key": "B" }] }
-  },
-  "imported": [],
-  "migration": ""
+  }
 }
 ```
 
@@ -69,8 +67,7 @@ Example (one file on both devices):
 
 Hotkeys uses Vault.vaultPathKey with native features/configuration/workspace.
 Equivalent historical Windows hotkey keys merge only when overlapping command
-values agree; conflicts preserve stored state and report errors. First migration
-also finds old writing hotkeys across equivalent keys without rewriting them.
+values agree; conflicts preserve stored state and report errors.
 Linux casing and existing token/file encodings remain. Format menus call the
 same editorCommands using their captured view. Source/diff evidence only.
 
@@ -101,13 +98,11 @@ Fuzzy/编辑命令/标题移位/插件 ID → 本体命令）。`writing/command
 ## 配置与迁移
 
 按 Vault 存储在 `.shale/hotkeys.jsonc`，`GET/PUT /api/settings/hotkeys`
-只做窄字段读写，沿用既有 Vault 身份/revision/串行写入检查。首次读取时迁移一次：
-
-1. `.shale/hotkeys.json` 只读导入，原文件不改；
-2. 旧 `search.chinese.shortcuts` 的单值绑定（含空值禁用语义）按命令别名并入；
-3. 旧写作/LaTeX 快捷键经同一别名表并入。
-
-旧 settings.hotkeys 作为首次迁移来源，迁移结果通过 Vault 配置写入一次，之后用户编辑只改对应平台/通用 `bindings`；`null` 删除覆盖以
+只做窄字段读写，沿用既有 Vault 身份/revision/串行写入检查。文件缺失即内置默认值，读取不写文件；
+文件只允许 `version`/`bindings`/`platforms`，其他字段报错。2026-11-26（PRD 1.71）删除全部旧格式兼容：不再从 `.shale/hotkeys.json`、
+旧 `settings.hotkeys`、`search.chinese.shortcuts` 或写作快捷键导入，也不再把第三方插件命令 ID（Fuzzy Pinyin、
+Heading Shifter、Templater、Linter、LaTeX Suite、Plus 附件清理）映射到原生命令；只保留插件 API 使用的 Obsidian 核心命令 ID 别名。
+用户编辑只改对应平台/通用 `bindings`；`null` 删除覆盖以
 恢复默认，`[]` 保留为显式禁用。
 
 ## 设置界面

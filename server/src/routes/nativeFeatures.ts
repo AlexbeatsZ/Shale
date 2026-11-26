@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { asyncHandler } from '../middleware/error.js';
 import { nativeFeatureSettings, patchNativeFeatureSettings } from '../services/nativeFeatureSettings.js';
-import { AutomationSchema, readAutomationConfiguration, saveAutomationConfiguration, importAutomationConfiguration } from '../services/automationSettings.js';
+import { AutomationSchema, readAutomationConfiguration, saveAutomationConfiguration } from '../services/automationSettings.js';
 import { promises as fs } from 'node:fs';
 import { readFileSnapshot, resolveInVault } from '../services/vaultFile.js';
 import { broadcast } from '../services/realtime.js';
@@ -19,23 +19,7 @@ nativeFeaturesRouter.put('/automation', asyncHandler(async (req, res) => {
   const value = await saveAutomationConfiguration(input.data);
   broadcast({ type: 'automation-changed' }); res.json(value);
 }));
-nativeFeaturesRouter.post('/automation/import', asyncHandler(async (req, res) => {
-  const input = configSource.safeParse(req.body);
-  if (!input.success) { res.status(400).json({ error: 'Invalid configuration snapshot' }); return; }
-  const value = await importAutomationConfiguration(input.data);
-  broadcast({ type: 'automation-changed' }); res.json(value);
-}));
 nativeFeaturesRouter.get('/', asyncHandler(async (_req, res) => { res.json(await nativeFeatureSettings()); }));
-nativeFeaturesRouter.get('/folder-tags/import', asyncHandler(async (req, res) => {
-  const before = await nativeFeatureSettings();
-  if (req.query.vault !== before.vault) { res.status(409).json({ error: 'Vault changed; reopen settings' }); return; }
-  const path = '@管理/按文件夹补标签配置.md';
-  const stat = await fs.stat(await resolveInVault(path));
-  if (stat.size > 1024 * 1024) { res.status(413).json({ error: '旧规则笔记超过 1 MiB' }); return; }
-  const { content } = await readFileSnapshot(path);
-  if ((await nativeFeatureSettings()).vault !== before.vault) { res.status(409).json({ error: 'Vault changed during import' }); return; }
-  res.json({ content });
-}));
 nativeFeaturesRouter.put('/', asyncHandler(async (req, res) => {
   const input = z.object({ vault: z.string().min(1), tags: z.object({ batchEnabled: z.boolean().optional(),
     wranglerEnabled: z.boolean().optional(), folderTags: z.object({ enabled: z.boolean(), pruneAncestors: z.boolean(),

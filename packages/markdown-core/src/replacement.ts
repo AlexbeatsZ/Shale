@@ -1,5 +1,4 @@
 /** LaTeX Suite replacement templates, shared by snippets and document formatting. */
-export const REPLACEMENT_SYNTAX = 'latex-suite-v1' as const;
 export type ReplacementPart =
   | { kind: 'text'; text: string }
   | { kind: 'capture'; key: number | string; source: string }

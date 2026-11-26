@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { SettingGroup, SettingRow } from './SettingRow';
 import ConfigurationFile from './ConfigurationFile';
 import { sharedApp } from '../lib/plugins';
-import { readAutomation, importAutomation, type AutomationSettings as Preferences, type AutomationConfiguration } from '../lib/userCommands';
+import { readAutomation, type AutomationSettings as Preferences, type AutomationConfiguration } from '../lib/userCommands';
 
 export default function AutomationSettings() {
   const [snapshot, setSnapshot] = useState<AutomationConfiguration>();
@@ -29,9 +29,6 @@ export default function AutomationSettings() {
       </ConfigurationFile>
       {snapshot && !snapshot.source.exists && <SettingRow name="创建配置" desc="保存当前配置到仓库；原有配置文件保留。">
         <button disabled={busy} onClick={() => save({})}>创建配置文件</button>
-      </SettingRow>}
-      {snapshot && !snapshot.source.exists && <SettingRow name="导入旧应用配置" desc="只在当前仓库尚无配置文件时可用。">
-        <button disabled={busy} onClick={() => run(async () => { const value = await importAutomation(snapshot.source); await sharedApp.automation.reload(); return value; })}>导入</button>
       </SettingRow>}
     </SettingGroup>
     {snapshot && <fieldset disabled={busy}>

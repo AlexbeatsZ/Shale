@@ -11,8 +11,6 @@ await fs.mkdir(base, { recursive: true });
 const fixture = await fs.mkdtemp(path.join(base, 'shale-vim-'));
 const vault = path.join(fixture, 'vault'), profile = path.join(fixture, 'profile');
 await fs.mkdir(path.join(vault, '.shale'), { recursive: true }); await fs.mkdir(profile);
-// Disposable profiles must never run the daily login-keychain migration.
-await fs.writeFile(path.join(profile, 'keychain-migrated-v1'), 'isolated acceptance');
 await fs.writeFile(path.join(vault, 'Note.md'), 'alpha beta\nsecond line\n');
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: false }));
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;

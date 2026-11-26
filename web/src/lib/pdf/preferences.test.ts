@@ -7,7 +7,7 @@ it('defaults PDFs on and honors remembered off without changing presentation def
   expect(pdfDarkPreference('A.pdf', { 'A.pdf': false })).toBe(false);
 });
 
-it('migrates old enabled paths, with explicit booleans taking priority', () => {
-  expect(restorePdfDarkPreferences({ pdfDarkPaths: ['a.pdf', 4, 'slides.pptx'],
-    pdfDarkOverrides: { 'a.pdf': false, 'b.pdf': true, invalid: 'yes' } })).toEqual({ 'a.pdf': false, 'b.pdf': true, 'slides.pptx': true });
+it('restores only explicit boolean overrides', () => {
+  expect(restorePdfDarkPreferences({ pdfDarkOverrides: { 'a.pdf': false, 'b.pdf': true, invalid: 'yes' } })).toEqual({ 'a.pdf': false, 'b.pdf': true });
+  expect(restorePdfDarkPreferences({ pdfDarkOverrides: ['a.pdf'] })).toEqual({});
 });

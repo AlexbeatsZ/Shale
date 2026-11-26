@@ -1,7 +1,7 @@
 {
   "status": "Authored, deliberately unexecuted under static-only verification",
   "references": [
-    { "source": "notes/a.md", "text": "![[../assets/a%20b.png|300]]", "protect": ["assets/a b.png"] },
+    { "source": "notes/a.md", "text": "![[../assets/a%20b.png|#width=300]]", "protect": ["assets/a b.png"] },
     { "source": "notes/a.md", "text": "![x](../assets/a\\(1\\).png)", "protect": ["assets/a(1).png"] },
     { "source": "notes/a.md", "text": "[x][asset]\n\n[asset]: <../assets/a b.pdf> \"title\"", "protect": ["assets/a b.pdf"] },
     { "source": "notes/a.md", "text": "---\ncover: ../assets/a%23b.png\nmedia: ['[[song.mp3]]']\n---\n", "protect": ["assets/a#b.png", "audio/song.mp3"] },

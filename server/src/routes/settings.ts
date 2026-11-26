@@ -100,10 +100,7 @@ settingsRouter.put(
       if (body.search) {
         const { chinese, ...rest } = body.search;
         Object.assign(d.search, rest);
-        if (chinese) {
-          Object.assign(d.search.chinese, chinese);
-          if (!d.search.chinese.migration) d.search.chinese.migration = 'Native settings';
-        }
+        if (chinese) Object.assign(d.search.chinese, chinese);
       }
       if (ui?.success) Object.assign(d.ui, ui.data);
     }); };

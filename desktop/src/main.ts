@@ -1,5 +1,4 @@
 import { execFileSync } from 'node:child_process';
-import { migrateDesktopProfile } from '../../scripts/identity-migration.mjs';
 import { InputMethodService, inputMethodBackend } from './inputMethod';
 import { performDesktopAction } from './nativeActions';
 import { performNativeEdit } from './editShortcuts';
@@ -28,7 +27,7 @@ const customProfile = app.commandLine.getSwitchValue('user-data-dir');
 // Isolated automation can exercise DOM and guest lifetimes without activating the user's desktop.
 const backgroundTest = !!customProfile && app.commandLine.hasSwitch('use-mock-keychain') && app.commandLine.hasSwitch('shale-test-background');
 if (backgroundTest && process.platform === 'darwin') app.setActivationPolicy('accessory');
-app.setPath('userData', customProfile ? path.resolve(customProfile) : migrateDesktopProfile(app.getPath('appData')));
+app.setPath('userData', customProfile ? path.resolve(customProfile) : path.join(app.getPath('appData'), 'Shale'));
 app.setPath('sessionData', app.getPath('userData'));
 if (process.platform === 'win32') app.setAppUserModelId('io.github.alexbeatsz.shale');
 
@@ -555,15 +554,6 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(async () => {
     try {
-      // Isolated test launches use Chromium's mock keychain and never touch the login keychain.
-      if (app.isPackaged && process.platform === 'darwin' && !app.commandLine.hasSwitch('use-mock-keychain')) {
-        const marker = path.join(app.getPath('userData'), 'keychain-migrated-v1');
-        try { await fs.access(marker); } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
-          execFileSync(path.join(process.resourcesPath, 'input-method', 'migrate-keychain'), [app.getPath('exe')], { encoding: 'utf8' });
-          await fs.writeFile(marker, 'Shale', { mode: 0o600 });
-        }
-      }
       if (!app.isPackaged && process.platform === 'darwin') app.dock?.setIcon(DEVELOPMENT_ICON);
       const cfg = await ensureVault(await readConfig());
       if (!cfg) { app.quit(); return; }

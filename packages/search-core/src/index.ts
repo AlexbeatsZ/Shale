@@ -32,12 +32,9 @@ export const searchDefaults = {
   tagFilter: true,
   showFirstHeading: true,
   headingIndent: true,
-  templateFolder: '',
   pinnedCommands: [] as string[],
   recentCommands: [] as string[],
   historyKeys: '1234567890',
-  shortcuts: {} as Record<string, string>,
-  migration: '',
 };
 export type SearchSettings = typeof searchDefaults;
 

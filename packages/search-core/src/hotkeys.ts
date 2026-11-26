@@ -1,4 +1,4 @@
-/** One binding format for native commands, plugin adapters and legacy imports. */
+/** One binding format for native commands and plugin adapters. */
 export interface Hotkey { modifiers: string[]; key: string }
 export type HotkeyPlatform = 'windows' | 'mac';
 export type HotkeyBindings = Record<string, Hotkey[]>;
@@ -6,41 +6,20 @@ export interface HotkeyPreferences {
   version: 1;
   bindings: Record<string, Hotkey[]>;
   platforms?: Partial<Record<HotkeyPlatform, HotkeyBindings>>;
-  imported: string[];
-  migration: string;
 }
 export interface VaultHotkeys extends HotkeyPreferences { vault: string; revision?: string }
-export const emptyHotkeys = (): HotkeyPreferences => ({ version: 1, bindings: {}, imported: [], migration: '' });
+export const emptyHotkeys = (): HotkeyPreferences => ({ version: 1, bindings: {} });
 
+/** Obsidian core command ids that third-party plugins call through the plugin API. */
 const aliases: Record<string, string> = {
   'editor:save-file': 'save', 'command-palette:open': 'commands', 'switcher:open': 'files',
-  'fuzzy-chinese-pinyin:open-search': 'files', 'fuzzy-chinese-pinyin:execute-command': 'commands',
-  'fuzzy-chinese-pinyin:move-file': 'move', 'fuzzy-chinese-pinyin:search-heading': 'headings',
-  'fuzzy-chinese-pinyin:insert-templates': 'templates', 'fuzzy-chinese-pinyin:rebuild-index': 'reindex',
   'app:open-settings': 'settings', 'global-search:open': 'search', 'graph:open': 'graph',
   'file-explorer:open': 'file-explorer', 'bookmarks:open': 'bookmarks', 'outline:open': 'outline', 'tag-pane:open': 'tags',
   'workspace:new-tab': 'new-tab', 'workspace:split-vertical': 'split', 'workspace:split-horizontal': 'split-down',
   'markdown:toggle-preview': 'toggle-preview', 'editor:toggle-source': 'toggle-source',
-  'obsidian-heading-shifter:decrease-heading': 'editor:promote-headings',
-  'obsidian-heading-shifter:increase-heading': 'editor:demote-headings',
-  'templater-obsidian:07模板/Cmd-提升 标题层次.md': 'editor:promote-headings',
-  'templater-obsidian:07模板/Cmd-降低 标题层次.md': 'editor:demote-headings',
-  'obsidian-quiet-outline:quiet-outline': 'outline',
-  'obsidian-plus:clear-unused-images': 'attachments:cleanup',
-  'obsidian-linter:lint-file': 'format', 'obsidian-linter:lint-file-unless-ignored': 'format',
-  'obsidian-linter:lint-all-files': 'format-vault', 'obsidian-linter:lint-all-files-in-folder': 'format-folder',
-  'obsidian-linter:ignore-file': 'format-ignore-file', 'obsidian-linter:ignore-folder': 'format-ignore-folder',
-  'obsidian-linter:paste-as-plain-text': 'paste-plain',
-  'obsidian-latex-suite:latex-suite-box-equation': 'formula-box',
-  'obsidian-latex-suite:latex-suite-select-equation': 'formula-select',
-  'obsidian-latex-suite:latex-suite-enable-all-features': 'formula-input-enable',
-  'obsidian-latex-suite:latex-suite-disable-all-features': 'formula-input-disable',
-  'obsidian-latex-suite:latex-suite-toggle-all-features': 'formula-input-toggle',
-  'obsidian-latex-suite:latex-suite-toggle-conceal': 'formula-conceal',
 };
 export function hotkeyCommandId(id: string): string {
-  const heading = /^obsidian-heading-shifter:apply-heading([0-7])$/.exec(id);
-  return heading ? `editor:set-heading-${heading[1]}` : aliases[id] ?? id;
+  return aliases[id] ?? id;
 }
 export function normalizeKey(key: string): string {
   const aliases: Record<string, string> = { ' ': 'Space', esc: 'Escape', return: 'Enter', left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown' };
@@ -108,11 +87,9 @@ export function normalizeHotkeyPreferences(value: unknown): HotkeyPreferences {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('快捷键文件格式无效');
   const data = value as Record<string, unknown>;
   if (data.version !== 1) throw new Error('快捷键文件版本无效');
-  const result: HotkeyPreferences = { version: 1, bindings: normalizeHotkeyMap(data.bindings ?? {}), imported: [], migration: '' };
-  if (data.imported !== undefined && (!Array.isArray(data.imported) || data.imported.some(id => typeof id !== 'string'))) throw new Error('快捷键迁移记录无效');
-  result.imported = (data.imported as string[] | undefined) ?? [];
-  if (data.migration !== undefined && typeof data.migration !== 'string') throw new Error('快捷键迁移说明无效');
-  result.migration = (data.migration as string | undefined) ?? '';
+  const unknown = Object.keys(data).filter(key => !['version', 'bindings', 'platforms'].includes(key));
+  if (unknown.length) throw new Error('快捷键文件包含不支持的字段：' + unknown.join(', '));
+  const result: HotkeyPreferences = { version: 1, bindings: normalizeHotkeyMap(data.bindings ?? {}) };
   if (data.platforms !== undefined) {
     if (!data.platforms || typeof data.platforms !== 'object' || Array.isArray(data.platforms)) throw new Error('快捷键平台配置无效');
     result.platforms = {};

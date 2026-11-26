@@ -15,8 +15,7 @@ const SNIPPETS = String.raw`[
 
 async function editor(page: Page, source: string) {
   await page.route('**/api/writing', route => route.fulfill({ json: {
-    version: 1, migration: 'fixture',
-    latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false, snippets: SNIPPETS, snippetVariables: '{}',
+    version: 1, latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false, snippets: SNIPPETS, snippetVariables: '{}',
       snippetsTrigger: 'Tab', taboutEnabled: true },
     linter: {}, hotkeys: {},
   } }));

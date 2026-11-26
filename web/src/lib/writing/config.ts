@@ -17,7 +17,6 @@ import { validateMathProfile, type MathCandidate } from '../mathjax';
 
 export interface WritingSettings {
   version: 1;
-  migration: string;
   latex: Record<string, any>;
   linter: Record<string, any>;
   hotkeys: Record<string, { modifiers: string[]; key: string }[]>;
@@ -25,7 +24,7 @@ export interface WritingSettings {
   math?: MathConfiguration;
   mathSource?: VaultConfigurationSource;
 }
-let settings: WritingSettings = { version: 1, migration: '', latex: {}, linter: {}, hotkeys: {} };
+let settings: WritingSettings = { version: 1, latex: {}, linter: {}, hotkeys: {} };
 let cm = processLatexSuiteSettings(
   { ...DEFAULT_SETTINGS, matrixShortcutsEnabled: false, vimEnabled: false },
   { snippets: [], snippetVariables: {}, rawConcealMaps: [], updateHandlers: [] },

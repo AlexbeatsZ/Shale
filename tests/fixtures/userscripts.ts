@@ -84,15 +84,8 @@ try {
   const bundle = await prepareBundle(source('1.0.0'));
   const id = await store.install(bundle, { sourceUrl: origin + '/latest.user.js', approve: true });
   await store.setValues(id, { installed: 'preserve me' });
-  await store.mutate(d => {
-    d.values.removed = { abandoned: 'erase me' };
-    d.retained = { [identity(bundle.metadata)]: 'removed' };
-  });
   const reloaded = new UserscriptStore(vault, path.join(root, 'data'), () => {});
   await reloaded.load();
-  const disk = JSON.parse(await fs.readFile(reloaded.file, 'utf8'));
-  assert.equal(disk.retained, undefined);
-  assert.equal(disk.values.removed, undefined);
   assert.deepEqual(reloaded.values(id), { installed: 'preserve me' });
   const updater = new UserscriptUpdater(reloaded, error => { throw error; });
   await updater.check(id, true);

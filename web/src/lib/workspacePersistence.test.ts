@@ -120,7 +120,7 @@ describe('workspace persistence acknowledgements', () => {
   });
 
   it('restores PDF dark properties and persists subsequent changes through the shared workspace state', async () => {
-    host.getUiState.mockResolvedValue({ pdfDarkPaths: ['paper.pdf', null, 42] });
+    host.getUiState.mockResolvedValue({ pdfDarkOverrides: { 'paper.pdf': true, broken: 42 } });
     await workspace.useStore.getState().loadUiState();
     expect(workspace.useStore.getState().pdfDarkOverrides).toEqual({ 'paper.pdf': true });
     workspace.useStore.getState().setPdfDark('other.pdf', true);

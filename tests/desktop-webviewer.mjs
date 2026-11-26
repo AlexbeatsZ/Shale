@@ -342,7 +342,6 @@ try {
   const storeFile = (await request('paths')).store;
   const removed = JSON.parse(await fs.readFile(storeFile, 'utf8'));
   assert.equal(Object.hasOwn(removed.values, fileId), false);
-  assert.equal(removed.retained, undefined);
   await settings.getByLabel('从文件导入用户脚本').setInputFiles({
     name: 'local.user.js', mimeType: 'text/javascript', buffer: Buffer.from(source('File fixture', '1.0.0')),
   });

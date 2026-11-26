@@ -89,7 +89,7 @@ export class UserscriptService {
   private initial = (event: IpcMainEvent) => {
     try {
       const g = this.guest(event), store = this.requireStore();
-      const scripts = store.snapshot().scripts.filter(s => s.enabled && !s.warnings.some(w => w.startsWith('Migration blocked:')) && !needsApproval(s.approved, s.metadata) && matches(event.senderFrame!.url, s.metadata));
+      const scripts = store.snapshot().scripts.filter(s => s.enabled && !needsApproval(s.approved, s.metadata) && matches(event.senderFrame!.url, s.metadata));
       g.token ||= randomUUID();
       for (const s of scripts) if (!g.scripts.has(s.id)) g.scripts.set(s.id, s);
       event.returnValue = { token: g.token, scripts, values: Object.fromEntries(scripts.map(s => [s.id, store.values(s.id)])) };
@@ -156,7 +156,7 @@ export class UserscriptService {
         await store.mutate(d => {
           const s = d.scripts.find(s => s.id === id); if (!s) throw new Error('Script no longer exists');
           if (p.enabled !== undefined) {
-            if (p.enabled && (needsApproval(s.approved, s.metadata) || s.warnings.some(w => w.startsWith('Migration blocked:')))) throw new Error('Review/approve this script before enabling it');
+            if (p.enabled && needsApproval(s.approved, s.metadata)) throw new Error('Review/approve this script before enabling it');
             s.enabled = bool(p.enabled);
           }
           if (p.autoUpdate !== undefined) s.autoUpdate = bool(p.autoUpdate);
@@ -176,7 +176,6 @@ export class UserscriptService {
             if (!s.update.candidateId || p.candidateId !== s.update.candidateId) throw new Error('Pending source changed since review; review again');
             Object.assign(s, pending, { revision: s.revision + 1, updatedAt: Date.now(), sourceUrl: s.update.pendingSourceUrl ?? s.sourceUrl, update: { state: 'updated', checkedAt: Date.now() } });
           }
-          if (s.warnings.some(w => w.startsWith('Migration blocked:'))) throw new Error('Repair/reimport unsupported source first');
           s.approved = approval(s);
         }); return;
       }

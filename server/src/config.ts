@@ -33,10 +33,8 @@ export const config: RuntimeConfig = {
 export const SETTINGS_FILE = path.join(config.dataDir, 'settings.json');
 export const INDEX_FILE = path.join(config.dataDir, 'qmd-index.json');
 
-// Legacy platform environment remains accepted for old development launchers.
+/** Hosts set these explicitly; Android disables the search cache and enables index progress. */
 export const runtimeCapabilities = {
-  get searchCache() { return process.env.SHALE_SEARCH_CACHE !== undefined
-    ? process.env.SHALE_SEARCH_CACHE !== '0' : process.env.SHALE_PLATFORM !== 'android'; },
-  get indexProgress() { return process.env.SHALE_INDEX_PROGRESS !== undefined
-    ? process.env.SHALE_INDEX_PROGRESS === '1' : process.env.SHALE_PLATFORM === 'android'; },
+  get searchCache() { return process.env.SHALE_SEARCH_CACHE !== '0'; },
+  get indexProgress() { return process.env.SHALE_INDEX_PROGRESS === '1'; },
 };

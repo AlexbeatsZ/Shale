@@ -9,7 +9,6 @@ import type { VaultConfigurationSource } from '../../../server/src/contracts';
 export type { AutomationSettings };
 export interface AutomationConfiguration { source: VaultConfigurationSource; settings: AutomationSettings }
 export const readAutomation = () => request<AutomationConfiguration>('/api/native-features/automation');
-export const importAutomation = (source: VaultConfigurationSource) => request<AutomationConfiguration>('/api/native-features/automation/import', { method: 'POST', body: JSON.stringify(source) });
 import { useStore } from './store';
 import { Templates } from './templates';
 import { normalizePath } from './shale/vault';

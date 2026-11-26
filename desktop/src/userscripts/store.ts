@@ -8,15 +8,15 @@ import { identity, pageWorld, parseMetadata } from './metadata';
 import { scriptFetch, verifyIntegrity } from './network';
 
 interface StoreData {
-  version: 1; vault: string; migration: string; scripts: ScriptRecord[];
-  values: Record<string, Record<string, unknown>>; retained?: Record<string, string>; autoUpdate: boolean; intervalHours: number;
+  version: 1; vault: string; scripts: ScriptRecord[];
+  values: Record<string, Record<string, unknown>>; autoUpdate: boolean; intervalHours: number;
 }
-const empty = (vault: string): StoreData => ({ version: 1, vault, migration: '', scripts: [], values: {}, autoUpdate: false, intervalHours: 24 });
+const empty = (vault: string): StoreData => ({ version: 1, vault, scripts: [], values: {}, autoUpdate: false, intervalHours: 24 });
 const clone = <T>(value: T): T => structuredClone(value);
 export const approval = (b: ScriptBundle): ScriptRecord['approved'] => ({ grants: [...b.metadata.grants], connects: [...b.metadata.connects], pageWorld: pageWorld(b.metadata),
   rules: { matches: [...b.metadata.matches], includes: [...b.metadata.includes], excludes: [...b.metadata.excludes], excludeMatches: [...b.metadata.excludeMatches] } });
 export function validateSyntax(source: string, label: string) {
-  // Parse only. Never run downloaded or migrated code in Node.
+  // Parse only. Never run downloaded code in Node.
   new Script('(function(){\n' + source + '\n})', { filename: label });
 }
 export async function prepareBundle(source: string, signal?: AbortSignal): Promise<ScriptBundle> {
@@ -60,57 +60,20 @@ export class UserscriptStore {
     this.file = path.join(dataDir, 'userscripts', createHash('sha256').update(path.resolve(vault)).digest('hex').slice(0, 24) + '.json');
   }
   async load() {
-    try {
-      const d = JSON.parse(await fs.readFile(this.file, 'utf8'));
-      if (d.version !== 1 || d.vault !== this.vault || !Array.isArray(d.scripts) || !d.values || typeof d.values !== 'object' || Array.isArray(d.values)) throw new Error('Invalid native userscript store');
-      for (const s of d.scripts) {
-        if (!s.id || !s.approved || !s.update || !Number.isInteger(s.revision)) throw new Error('Invalid script record');
-        if (!s.warnings?.some((w: string) => w.startsWith('Migration blocked:'))) { s.metadata = parseMetadata(s.source); validateSyntax(s.source, s.id); }
-      }
-      this.data = d;
-      // Old uninstall flows kept GM values by identity. Only installed scripts own data now.
-      const installed = new Set(this.data.scripts.map(s => s.id));
-      const orphaned = Object.keys(this.data.values).filter(id => !installed.has(id));
-      if (orphaned.length || this.data.retained) {
-        for (const id of orphaned) delete this.data.values[id];
-        delete this.data.retained;
-        await this.persist(this.data);
-      }
+    let d: any;
+    try { d = JSON.parse(await fs.readFile(this.file, 'utf8')); }
+    catch (e: any) {
+      if (e.code !== 'ENOENT') throw e;
+      await this.persist(this.data);
       return;
-    } catch (e: any) { if (e.code !== 'ENOENT') throw e; }
-    let legacy: any;
-    try { legacy = JSON.parse(await fs.readFile(path.join(this.vault, '.shale/plugins/webviewer-userscripts/data.json'), 'utf8')); }
-    catch (e: any) { if (e.code !== 'ENOENT') throw new Error('Legacy userscript migration failed: ' + e.message); }
-    if (legacy) {
-      if (legacy.schemaVersion !== 1 || !Array.isArray(legacy.scripts) || !legacy.values || Array.isArray(legacy.values)) throw new Error('Unsupported legacy userscript data; original was preserved');
-      for (const old of legacy.scripts) {
-        if (typeof old.source !== 'string' || typeof old.id !== 'string' || this.data.scripts.some(s => s.id === old.id)) throw new Error('Invalid/duplicate legacy script');
-        // Migration is entirely offline. Missing cached assets stay disabled until edited/imported.
-        let bundle: ScriptBundle;
-        try {
-          const metadata = parseMetadata(old.source); validateSyntax(old.source, old.id);
-          const requires = metadata.requires.map(url => {
-            const asset = old.requiredSources?.find((a: any) => a.url === url);
-            if (!asset || typeof asset.source !== 'string') throw new Error('Missing cached @require');
-            validateSyntax(asset.source, url); verifyIntegrity(url, Buffer.from(asset.source));
-            return { url, source: asset.source };
-          });
-          if (metadata.resources.length) throw new Error('Resources need a fresh import');
-          bundle = { source: old.source, metadata, requires, resources: {}, warnings: warnings(metadata) };
-        } catch (e) {
-          // Keep unsupported source and its values visible for repair, without executing it.
-          const fallback = parseMetadata('// ==UserScript==\n// @name ' + String(old.metadata?.name ?? old.id).replace(/[\r\n]/g, '') + '\n// ==/UserScript==');
-          bundle = { source: old.source, metadata: fallback, requires: [], resources: {}, warnings: ['Migration blocked: ' + String(e)] };
-        }
-        const blocked = bundle.warnings.some(w => w.startsWith('Migration blocked:'));
-        this.data.scripts.push({ ...bundle, id: old.id, revision: 1, enabled: !!old.enabled && !blocked,
-          importedAt: old.importedAt || Date.now(), updatedAt: old.updatedAt || Date.now(), autoUpdate: false,
-          approved: approval(bundle), update: { state: blocked ? 'migration-error' : 'migrated' } });
-        this.data.values[old.id] = clone(legacy.values[old.id] ?? {});
-      }
-      this.data.migration = 'Read-only import of webviewer-userscripts schema 1; original sources/configuration preserved';
-    } else this.data.migration = 'No legacy userscript configuration';
-    await this.persist(this.data);
+    }
+    if (d.version !== 1 || d.vault !== this.vault || !Array.isArray(d.scripts) || !d.values || typeof d.values !== 'object' || Array.isArray(d.values)) throw new Error('Invalid native userscript store');
+    for (const s of d.scripts) {
+      if (!s.id || !s.approved || !s.update || !Number.isInteger(s.revision)) throw new Error('Invalid script record');
+      s.metadata = parseMetadata(s.source); validateSyntax(s.source, s.id);
+    }
+    this.data = { version: 1, vault: d.vault, scripts: d.scripts, values: d.values,
+      autoUpdate: d.autoUpdate === true, intervalHours: Number.isFinite(d.intervalHours) ? d.intervalHours : 24 };
   }
   snapshot() { const { values: _values, ...rest } = this.data; return clone(rest); }
   get(id: string) { const r = this.data.scripts.find(s => s.id === id); if (!r) throw new Error('Script no longer exists'); return clone(r); }
@@ -161,7 +124,6 @@ export class UserscriptStore {
         enabled: old?.enabled ?? false, importedAt: old?.importedAt ?? now, updatedAt: now,
         sourceUrl: options.sourceUrl ?? old?.sourceUrl, autoUpdate: old?.autoUpdate ?? false,
         approved: options.approve ? approval(bundle) : old?.approved ?? { grants: [], connects: [], pageWorld: false, rules: { matches: [], includes: [], excludes: [], excludeMatches: [] } }, update: { state: 'saved' } };
-      if (d.retained) delete d.retained[identity(bundle.metadata)];
       if (old) d.scripts[d.scripts.indexOf(old)] = record; else d.scripts.push(record);
       return record.id;
     });

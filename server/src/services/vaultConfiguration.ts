@@ -53,7 +53,7 @@ export async function readVaultConfiguration(file: string, vault?: string, exten
   const target = await location(file, vault, extensions);
   return readConfiguration(file, target);
 }
-/** Read-only legacy source: same size/symlink/revision/Vault checks, no writer. */
+/** Read a `.shale/*.json` file with the same size/symlink/revision/Vault checks, no writer. */
 export async function readShaleConfiguration(file: string): Promise<VaultConfigurationSource> {
   return readConfiguration(file, await location(file, undefined, ['.json'], '.shale'));
 }

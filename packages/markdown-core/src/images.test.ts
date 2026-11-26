@@ -5,9 +5,13 @@ import { extractMetadata } from './metadata.js';
 import { tableModels } from './tables.js';
 import { imageAt, imageCaption, imageEmbeds, imageReferenceText, parseImageParameters, rewriteImageAttribute, validateImageAttribute } from './images.js';
 
-it('parses English image flags and values, with explicit attributes ahead of legacy values', () => {
-  expect(parseImageParameters('image.png#dark#center#x2', '示意图|300x200#width=420#scale=1.5')).toMatchObject({
+it('parses English image flags and values only from the alias attributes', () => {
+  expect(parseImageParameters('image.png', '示意图#dark#align=center#width=420#height=200#scale=1.5')).toMatchObject({
     target: 'image.png', alias: '示意图', dark: true, align: 'center', width: 420, height: 200, scale: 1.5,
+  });
+  // Target fragments and trailing sizes are ordinary target/alias text.
+  expect(parseImageParameters('image.png#dark', '示意图|300x200')).toMatchObject({
+    target: 'image.png#dark', alias: '示意图|300x200', dark: false, width: undefined, height: undefined,
   });
   expect(parseImageParameters('my-dark-Wiki.png', '说明#full#fit=cover#custom')).toMatchObject({
     dark: false, full: true, fit: 'cover', attributes: { full: true, fit: 'cover', custom: true },
@@ -53,8 +57,8 @@ it('preserves figure link alias semantics and uses the original filename for an 
   expect(imageReferenceText(undefined, null)).toBeUndefined();
 });
 
-it('edits only one wiki embed, canonicalizes old dimensions and preserves unknown property bytes', () => {
-  const text = 'before ![[a.png#center|名称|300x200#special=a\\#b#width=old#unknown]] after\n![[a.png|另一张#dark]]';
+it('edits only one wiki embed, orders known properties and preserves unknown property bytes', () => {
+  const text = 'before ![[a.png|名称#align=center#height=200#special=a\\#b#width=old#unknown]] after\n![[a.png|另一张#dark]]';
   const model = analyzeMarkdown(text), first = imageEmbeds(model)[0];
   const change = rewriteImageAttribute(model, first.from, 'width', 480), source = new SourceDocument(text);
   source.apply([change]);
@@ -90,20 +94,20 @@ it('shares legacy spaced image targets with metadata and preserves their origina
 it('parses table-escaped wiki aliases and keeps property edits inside their original cells', () => {
   const text = '# Chapter\n\n| Image | Reference |\n| --- | --- |\n'
     + '| ![[a.png\\|Alias\\|part#width=120#dark#mystery=a\\#b]] | [[a.png]] [[a.png\\|]] [[a.png\\|Named\\|alias]] |\n'
-    + '| ![[b.png\\|Old\\|300x200#custom=x\\|y]] | other |\n\nend';
+    + '| ![[b.png\\|Old#width=300#height=200#custom=x\\|y]] | other |\n\nend';
   const model = analyzeMarkdown(text), images = imageEmbeds(model);
   expect(images).toHaveLength(2);
   expect(images[0]).toMatchObject({ target: 'a.png', alias: 'Alias|part', number: '1-1', parameters: { width: 120, dark: true } });
   expect(images[1]).toMatchObject({ target: 'b.png', alias: 'Old', number: '1-2', parameters: { width: 300, height: 200 } });
   expect(extractMetadata(model).linkOccurrences.map(link => [link.target, link.label])).toEqual([
     ['a.png', 'Alias|part#width=120#dark#mystery=a\\#b'], ['a.png', 'a.png'], ['a.png', ''],
-    ['a.png', 'Named|alias'], ['b.png', 'Old|300x200#custom=x|y'],
+    ['a.png', 'Named|alias'], ['b.png', 'Old#width=300#height=200#custom=x|y'],
   ]);
   const source = new SourceDocument(text);
   source.apply([rewriteImageAttribute(model, images[0].from, 'dark', false)]);
   expect(source.text).toBe(text.replace('#width=120#dark#mystery', '#width=120#mystery'));
-  const changed = analyzeMarkdown(source.text), legacy = imageEmbeds(changed)[1];
-  source.apply([rewriteImageAttribute(changed, legacy.from, 'width', 480)]);
+  const changed = analyzeMarkdown(source.text), second = imageEmbeds(changed)[1];
+  source.apply([rewriteImageAttribute(changed, second.from, 'width', 480)]);
   expect(source.text).toContain('![[b.png\\|Old#width=480#height=200#custom=x\\|y]]');
   const table = tableModels(analyzeMarkdown(source.text))[0];
   expect(table.editable).toBe(true);

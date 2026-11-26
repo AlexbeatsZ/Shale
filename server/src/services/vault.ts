@@ -1,4 +1,3 @@
-import { migrateVaultConfiguration } from '../../../scripts/identity-migration.mjs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { queueFileUpdate, type FileUpdateResult } from './fileupdates.js';
@@ -18,7 +17,6 @@ function assertFileTitle(rel: string): void {
 export async function ensureVault(): Promise<void> {
   const root = await getVaultRoot();
   await fs.mkdir(root, { recursive: true });
-  await migrateVaultConfiguration(root);
 }
 
 /** Same planner for initial writes and reviewed candidates; never writes itself. */

@@ -22,7 +22,6 @@ vi.mock('./settings.js', () => ({
     return draft;
   },
 }));
-vi.mock('./tags/migration.js', () => ({ readLegacyTagPreferences: async () => ({ batchEnabled: true, wranglerEnabled: true }) }));
 vi.mock('./git.js', () => ({ scheduleAutoCommitOnSave: vi.fn() }));
 vi.mock('./fileupdates.js', () => ({ queueFileUpdate: async () => ({ status: 'indexed' }) }));
 import { guardVaultMutations, withVaultMaintenance, bindMaintenanceClients, maintenanceClientMessage, beginBackgroundVaultWrite, vaultGeneration } from './vaultMaintenance.js';

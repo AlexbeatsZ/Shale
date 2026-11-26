@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/vault-identity' || url.pathname === '/api/writing') return route.fallback();
-    if (url.pathname === '/api/settings/hotkeys') return route.fulfill({ json: { version: 1, vault: 'browser-fixture', imported: [], migration: '', bindings: { 'editor:focus-left': [{modifiers:['Alt','Shift'],key:'Z'}], 'editor:focus-right': [{modifiers:['Alt','Shift'],key:'X'}] }, platforms: { windows: { 'workspace:swap-group-previous': [], 'workspace:swap-group-next': [] }, mac: { 'workspace:swap-group-previous': [{modifiers:['PhysicalCtrl','Shift'],key:'Z'}], 'workspace:swap-group-next': [{modifiers:['PhysicalCtrl','Shift'],key:'X'}] } } } });
+    if (url.pathname === '/api/settings/hotkeys') return route.fulfill({ json: { version: 1, vault: 'browser-fixture', bindings: { 'editor:focus-left': [{modifiers:['Alt','Shift'],key:'Z'}], 'editor:focus-right': [{modifiers:['Alt','Shift'],key:'X'}] }, platforms: { windows: { 'workspace:swap-group-previous': [], 'workspace:swap-group-next': [] }, mac: { 'workspace:swap-group-previous': [{modifiers:['PhysicalCtrl','Shift'],key:'Z'}], 'workspace:swap-group-next': [{modifiers:['PhysicalCtrl','Shift'],key:'X'}] } } } });
     if (url.pathname === '/api/uistate/') {
       if (route.request().method() === 'PUT') persisted = route.request().postDataJSON();
       return route.fulfill({ json: persisted });

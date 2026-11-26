@@ -51,10 +51,8 @@
 应用切库路径与退出等待异步队列落盘。临时文件写完后同目录原子 rename；损坏文件
 直接报告，不以空配置覆盖。
 
-第一次初始化只读导入旧 schema 1：保留 ID、启用状态、时间及全部 GM 值；已有
-require 缓存离线导入。缺失 asset 或不支持元数据的脚本保留源码与值，关闭并显示
-迁移错误，等待修复/重新导入。原插件目录和启用列表不变，加载器由协调模块阻止
-旧注入器重复运行。新脚本和全局/逐脚本自动更新默认关闭。
+2026-11-26（PRD 1.71）删除全部旧格式兼容：不再导入 webviewer-userscripts 插件数据，也没有“Migration blocked”状态或旧卸载流程的
+GM 值清理；存储只读取 version/vault/scripts/values/autoUpdate/intervalHours，缺失即空存储。新脚本和全局/逐脚本自动更新默认关闭。
 
 源码/URL/文件导入共用 prepareBundle。下载并解析全部资产成功后才安装；同
 namespace/name 的重导入暂存在原记录，明确审阅后替换。编辑器保存带 revision，

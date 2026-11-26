@@ -54,12 +54,11 @@ export interface MathConfiguration {
   packageOptions: Record<string, Record<string, unknown>>;
   preambleFile: string;
   preamble: string;
-  migration: string;
 }
 export const defaultMathConfiguration = (): MathConfiguration => ({
   version: 1,
   packages: ['mathtools', 'mhchem', 'bussproofs', 'cancel', 'color', 'boldsymbol', 'braket', 'bbox', 'enclose', 'unicode', 'bbm', 'bboldx', 'dsfont', 'extpfeil', 'html'],
-  packageOptions: {}, preambleFile: '', preamble: '', migration: 'native-math-v1',
+  packageOptions: {}, preambleFile: '', preamble: '',
 });
 export function resolveMathPackages(ids: readonly string[]): MathPackage[] {
   const result = new Map<string, MathPackage>();

@@ -12,7 +12,6 @@ module.exports = async function signMac(options) {
     preAutoEntitlements: false, preEmbedProvisioningProfile: false,
     gatekeeperAssess: false, strictVerify: undefined,
     optionsForFile: file => ({ hardenedRuntime: false, timestamp: 'none',
-      ...(file.endsWith('/Resources/input-method/migrate-keychain') ? { additionalArguments: ['--identifier', 'io.github.alexbeatsz.shale.key-migration'] } : {}),
       ...(file.endsWith('/Resources/input-method/im-select') ? {
         additionalArguments: ['--identifier', 'io.github.alexbeatsz.shale.input-method'],
       } : {}),

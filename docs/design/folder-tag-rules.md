@@ -19,15 +19,13 @@ by `_资料/AI`. Inline tags, aliases and unrelated metadata are untouched. With
 pruning, parent and descendant tags both remain. Moving a note out of a matching
 folder never removes its previous tags automatically.
 
-## Legacy import
+## Note widget data
 
-The original template calls `09插件/templates_scripts/folder_tag_sync.js` and reads
-`@管理/按文件夹补标签配置.md`. The native import button reads that note into a
-settings draft, preserving the original note and script. It accepts the marked
-data-only object literal, JSONC comments/trailing commas and known bare keys;
-expressions/functions/spread/unknown or duplicate keys are rejected. No eval or
-JavaScript execution is used. Import clips typeRules/subjectRules to managedRoots,
-retains recursive coverage, enables ancestor pruning, and leaves auto-run off.
+2026-11-26 (PRD 1.71) removed the settings button that imported `@管理/按文件夹补标签配置.md`
+into a draft, and its `/folder-tags/import` endpoint. The read-only note widget still parses
+that note's marked data-only object literal with `parseFolderRuleData`
+(`web/src/lib/tags/folderRuleData.ts`): JSONC comments/trailing commas and known bare keys;
+expressions/functions/spread/duplicate keys are rejected. No eval or JavaScript execution is used.
 Review and save the imported draft explicitly. It does not require Templater.
 
 ## Ownership, timing and source safety

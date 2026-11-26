@@ -69,10 +69,9 @@ literal `<%`. Values returned by commands are never parsed again.
 - `<% cursor 1 %>` / `<% cursor 2 %>` define ordered placeholders; equal numbers
   share a multi-cursor group, reusing native writing navigation.
 
-Simple legacy `tp.file.title`, `tp.file.path()`, `tp.file.folder()`,
-`tp.file.selection()`, `tp.date.now("format")`, `tp.frontmatter.key` and
-`tp.file.cursor(n)` map to these same directives. Legacy `<%* ... %>`, dynamic
-commands and arbitrary expressions fail explicitly; move their code into a user
+2026-11-26 (PRD 1.71) removed the Templater `tp.*` aliases (`tp.file.title`, `tp.date.now`,
+`tp.frontmatter.*`, `tp.file.cursor` ...); write the native directives directly. `<%* ... %>`,
+dynamic commands and arbitrary expressions fail explicitly; move their code into a user
 command, and call that command from the template. No silent regex conversion of
 personal scripts or original notes is performed.
 

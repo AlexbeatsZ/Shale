@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 
 test('Option digits turn inline-math prose into headings, change levels, clear and undo without touching display math', async ({ page }) => {
   const source = 'Wigner 的 $2k+1$ 规则\n\n$$\nx \\tag{1}\n$$\n\nplain';
-  await page.route('**/api/settings/hotkeys', route => route.fulfill({ json: { version: 1, bindings: Object.fromEntries(Array.from({ length: 8 }, (_, level) => ['editor:set-heading-' + level, [{ modifiers: ['Alt'], key: String(level) }]])), platforms: {}, imported: [], migration: 'fixture' } }));
+  await page.route('**/api/settings/hotkeys', route => route.fulfill({ json: { version: 1, bindings: Object.fromEntries(Array.from({ length: 8 }, (_, level) => ['editor:set-heading-' + level, [{ modifiers: ['Alt'], key: String(level) }]])), platforms: {} } }));
   await page.evaluate(source => window.renderHarness.reset(source), source);
   await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe(source);
   await page.evaluate(async () => {
@@ -79,7 +79,7 @@ test('pasting formula source into code stays literal and the paste cleanup has a
   await page.evaluate(() => window.renderHarness.cursor(0, 7));
   expect(await paste()).toBe('```tex\n$$x \\tag{1}$$\n```');
   await page.route('**/api/writing', route => route.fulfill({ json: {
-    version: 1, migration: 'fixture', latex: { snippets: '[]', snippetVariables: '{}', loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false },
+    version: 1, latex: { snippets: '[]', snippetVariables: '{}', loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false },
     linter: { ruleConfigs: { 'remove-math-tags-on-paste': { enabled: false } } }, hotkeys: {},
   } }));
   await page.evaluate(async () => {

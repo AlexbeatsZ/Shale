@@ -346,23 +346,9 @@ function pickPersisted(s: any): Record<string, unknown> {
   return o;
 }
 
-/**
- * Merge persisted graph settings over defaults. Settings saved before the move
- * to Shale-native slider units (all sliders were normalized 0..1) are detected
- * by linkDistance ≤ 1 — keep the filters/groups but reset display/forces.
- */
-function migrateGraphSettings(gs: unknown): GraphSettings {
-  if (!gs || typeof gs !== 'object') return DEFAULT_GRAPH_SETTINGS;
-  const merged = { ...DEFAULT_GRAPH_SETTINGS, ...(gs as Partial<GraphSettings>) };
-  if (typeof merged.linkDistance !== 'number' || merged.linkDistance <= 1) {
-    const d = DEFAULT_GRAPH_SETTINGS;
-    Object.assign(merged, {
-      textFade: d.textFade, nodeSize: d.nodeSize, linkThickness: d.linkThickness,
-      centerForce: d.centerForce, repelForce: d.repelForce, linkForce: d.linkForce,
-      linkDistance: d.linkDistance,
-    });
-  }
-  return merged;
+/** Merge persisted graph settings over defaults. */
+function restoreGraphSettings(gs: unknown): GraphSettings {
+  return gs && typeof gs === 'object' ? { ...DEFAULT_GRAPH_SETTINGS, ...(gs as Partial<GraphSettings>) } : DEFAULT_GRAPH_SETTINGS;
 }
 
 function applyPersisted(s: any, set: (p: any) => void): void {
@@ -381,7 +367,6 @@ function applyPersisted(s: any, set: (p: any) => void): void {
   const available = (path: unknown): path is string => typeof path === 'string' &&
     (!isWebViewerPath(path) || tabs.some(tab => tab.path === path));
   const splitPath = available(s.splitPath) ? s.splitPath : null;
-  if (s.leftPanel === 'bookmarks' && !rightTabs.some(tab => tab.type === 'bookmarks')) rightTabs.push(sidebarTab('bookmarks', {}, 'legacy-bookmarks'));
   set({
     tabs, selectedTabs: [],
     activeTabId: paneTabKey({ ...s, tabs }), splitTabId: paneTabKey({ ...s, tabs }, 'split'),
@@ -400,14 +385,13 @@ function applyPersisted(s: any, set: (p: any) => void): void {
     recent: Array.isArray(s.recent) ? s.recent : [],
     bookmarks: Array.isArray(s.bookmarks) ? s.bookmarks : [],
     leftPanel: s.leftPanel === 'search' ? 'search' : 'files',
-    rightPanel: s.leftPanel === 'tags' ? 'tags' : ['properties', 'backlinks', 'outgoing', 'tags', 'outline', 'minimap', 'mcp'].includes(s.rightPanel) ? s.rightPanel : 'backlinks',
+    rightPanel: ['properties', 'backlinks', 'outgoing', 'tags', 'outline', 'minimap', 'mcp'].includes(s.rightPanel) ? s.rightPanel : 'backlinks',
     rightTabs,
     leftActiveId: rightTabs.some(tab => tab.side === 'left' && tab.id === s.leftActiveId) ? s.leftActiveId : null,
-    rightActiveId: s.leftPanel === 'bookmarks' ? rightTabs.find(tab => tab.type === 'bookmarks')!.id
-      : rightTabs.some(tab => tab.side !== 'left' && tab.id === s.rightActiveId) ? s.rightActiveId : null,
+    rightActiveId: rightTabs.some(tab => tab.side !== 'left' && tab.id === s.rightActiveId) ? s.rightActiveId : null,
     leftOpen: s.leftOpen !== false,
     rightOpen: s.rightOpen !== false,
-    graphSettings: migrateGraphSettings(s.graphSettings),
+    graphSettings: restoreGraphSettings(s.graphSettings),
   });
 }
 

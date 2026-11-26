@@ -231,7 +231,7 @@ const pointX = (e: MouseEvent | TouchEvent): number =>
 const imageMounts = new WeakMap<HTMLElement, RenderLifetime>();
 class ImageWidget extends WidgetType {
   destroy(dom: HTMLElement) { const lifetime = imageMounts.get(dom); imageMounts.delete(dom); lifetime?.unload(); }
-  /** `width`/`height` from the Shale size param `![[img|300]]` / `![[img|300x200]]`. */
+  /** `width`/`height` from the image attributes `![[img|#width=300#height=200]]`. */
   constructor(readonly src: string, readonly alt: string, readonly width?: number, readonly height?: number, readonly ro = false, readonly target = src, readonly image?: ImageEmbed) {
     super();
   }
@@ -1901,7 +1901,7 @@ function buildDecorations(view: EditorView): DecorationSet {
         const defaultDisplay = href.split('#').filter(Boolean).join(' > ');
         if (isEmbed && /\.(bmp|png|jpe?g|gif|svg|webp|avif)$/i.test(href.split(/[?#]/)[0])) {
           const image = imageAt(source.model, source.from + s);
-          const parameters = image?.parameters ?? parseImageParameters(href, alias, tableCell);
+          const parameters = image?.parameters ?? parseImageParameters(href, alias);
           hasRenderedImage = true;
           pushReplace(s, e, Decoration.replace({ widget: new ImageWidget(attachmentUrl(parameters.target, view), alias ?? '',
             parameters.width, parameters.height, readonly, href, image) }));

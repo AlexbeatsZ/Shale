@@ -35,7 +35,7 @@ export const imagePropertyDefinitions: readonly ImagePropertyDefinition[] = [
 
 interface AttributeToken { name?: string; value?: string | true; raw: string }
 export interface ImageParameters extends ImageAttributes {
-  /** The loadable target, with recognized legacy presentation fragments removed. */
+  /** The loadable target. */
   target: string;
   /** Null means that the source has no alias. */
   alias: string | null;
@@ -77,25 +77,10 @@ function tokens(raw: string): AttributeToken[] {
     return { raw: '#' + value, name, value: name ? equal < 0 ? true : unescape(value.slice(equal + 1)) : undefined };
   });
 }
-function aliasParts(raw: string | null, tableCell = false) {
-  if (raw === null) return { alias: null, prefix: '', tokens: [] as AttributeToken[], width: undefined as number | undefined, height: undefined as number | undefined };
+function aliasParts(raw: string | null) {
+  if (raw === null) return { alias: null, prefix: '', tokens: [] as AttributeToken[] };
   const prefix = raw.split(/(?<!\\)#/, 1)[0];
-  const size = prefix.match(tableCell ? /(?:^|\\?\|)\s*(\d+)\s*(?:x\s*(\d+)\s*)?$/ : /(?:^|(?<!\\)\|)\s*(\d+)\s*(?:x\s*(\d+)\s*)?$/);
-  const value = size ? prefix.slice(0, size.index) : prefix;
-  return { alias: unescape(value).trim(), prefix: value, tokens: tokens(raw),
-    width: size ? Number(size[1]) : undefined, height: size?.[2] ? Number(size[2]) : undefined };
-}
-
-function legacyTarget(raw: string) {
-  if (/^data:/i.test(raw)) return { target: raw, attributes: {} as Record<string, string | true> };
-  const parts = raw.split('#'), retained = [parts[0]], attributes: Record<string, string | true> = {};
-  for (const part of parts.slice(1)) {
-    if (part === 'dark' || part === 'full') attributes[part] = true;
-    else if (part === 'center') attributes.align = 'center';
-    else if (/^x(?:\d+(?:\.\d*)?|\.\d+)$/.test(part)) attributes.scale = part.slice(1);
-    else retained.push(part);
-  }
-  return { target: retained.join('#'), attributes };
+  return { alias: unescape(prefix).trim(), prefix, tokens: tokens(raw) };
 }
 
 /** Reject invalid edits while retaining unsupported existing source parameters verbatim. */
@@ -111,11 +96,9 @@ export function validateImageAttribute(name: string, value: string | number | bo
 }
 
 /** Wiki aliases and Markdown alt text share `alias#name=value#flag` presentation. */
-export function parseImageParameters(target: string, alias: string | null = null, tableCell = false): ImageParameters {
-  const source = legacyTarget(target), parts = aliasParts(alias, tableCell);
-  const attributes: Record<string, string | true> = { ...source.attributes };
-  if (parts.width !== undefined) attributes.width = String(parts.width);
-  if (parts.height !== undefined) attributes.height = String(parts.height);
+export function parseImageParameters(target: string, alias: string | null = null): ImageParameters {
+  const parts = aliasParts(alias);
+  const attributes: Record<string, string | true> = {};
   for (const token of parts.tokens) if (token.name && token.value !== undefined) attributes[token.name] = token.value;
   const number = (key: 'width' | 'height' | 'scale') => {
     const value = attributes[key];
@@ -123,7 +106,7 @@ export function parseImageParameters(target: string, alias: string | null = null
   };
   const align = attributes.align;
   const fit = attributes.fit;
-  return { target: source.target, alias: parts.alias, attributes,
+  return { target, alias: parts.alias, attributes,
     dark: attributes.dark === true, full: attributes.full === true,
     width: number('width'), height: number('height'), scale: number('scale') ?? 1,
     align: align === 'center' || align === 'right' ? align : 'left', fit: fit === 'cover' ? fit : 'contain' };
@@ -158,7 +141,7 @@ export function imageEmbeds(model: MarkdownModel): ImageEmbed[] {
         if (alt) aliasRange = { from: link.from + 2, to: link.from + 2 + alt[1].length };
       }
     }
-    const parameters = parseImageParameters(rawTarget, rawAlias, tableCell);
+    const parameters = parseImageParameters(rawTarget, rawAlias);
     for (let next = model.text.indexOf('\n', lineFrom); next >= 0 && next < link.from; next = model.text.indexOf('\n', lineFrom)) {
       line++; lineFrom = next + 1;
     }
@@ -201,7 +184,7 @@ export function rewriteImageAttribute(model: MarkdownModel, from: number, name: 
   if (!validateImageAttribute(name, value)) throw new Error(`图片属性 ${name} 的值无效`);
   const image = imageAt(model, from);
   if (!image || !image.aliasRange) throw new Error('图片已改变，请重新打开菜单');
-  const parts = aliasParts(image.rawAlias, image.tableCell), recognized = new Set(imagePropertyDefinitions.map(item => item.name));
+  const parts = aliasParts(image.rawAlias), recognized = new Set(imagePropertyDefinitions.map(item => item.name));
   const attributes = { ...image.parameters.attributes };
   if (value === undefined || value === false) delete attributes[name];
   else attributes[name] = value === true ? true : String(value);

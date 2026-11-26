@@ -115,14 +115,16 @@ test('one persisted dark command applies to PPT and PDF while panes retain indep
     return colored;
   });
   expect(pixels).toBeGreaterThan(300);
+  // PDFs default to dark (PRD 1.63); the shared command remembers turning it off.
   await page.evaluate(() => (window as any).presentationFixture.useStore.getState().openFile('paper.pdf'));
   await expect(page.locator('.main-pane .pdf-page-surface.is-ready').first()).toBeVisible();
-  await page.evaluate(() => (window as any).presentationFixture.commands.executeCommandById('pdf:toggle-dark'));
   await expect(page.locator('.main-pane [data-pdf-page="1"]')).toHaveAttribute('data-pdf-dark', 'true');
+  await page.evaluate(() => (window as any).presentationFixture.commands.executeCommandById('pdf:toggle-dark'));
+  await expect(page.locator('.main-pane [data-pdf-page="1"]')).not.toHaveAttribute('data-pdf-dark');
   await page.evaluate(() => (window as any).presentationFixture.useStore.getState().openFile('slides.PPTX'));
   await expect(page.locator('.main-pane .pdf-page-surface.is-ready').first()).toBeVisible();
   await expect(page.locator('.main-pane [data-pdf-page="1"]')).toHaveAttribute('data-pdf-dark', 'true');
-  expect(await page.evaluate(() => (window as any).presentationFixture.useStore.getState().pdfDarkPaths)).toEqual(['slides.PPTX', 'paper.pdf']);
+  expect(await page.evaluate(() => (window as any).presentationFixture.useStore.getState().pdfDarkOverrides)).toEqual({ 'slides.PPTX': true, 'paper.pdf': false });
 });
 
 test('damaged and replaced presentations release their sessions without affecting Markdown', async ({ page }) => {

@@ -7,7 +7,7 @@ const errorClass = 'latex-suite-mismatched-bracket';
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/writing', route => route.fulfill({ json: {
-    version: 1, migration: 'fixture', linter: {}, hotkeys: {},
+    version: 1, linter: {}, hotkeys: {},
     latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false, snippets: '[]', snippetVariables: '{}' },
   } }));
 });

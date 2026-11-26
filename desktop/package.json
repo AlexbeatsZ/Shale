@@ -54,8 +54,7 @@
         "to": "input-method",
         "filter": [
           "im-select*",
-          "LICENSE*",
-          "migrate-keychain"
+          "LICENSE*"
         ]
       }
     ],

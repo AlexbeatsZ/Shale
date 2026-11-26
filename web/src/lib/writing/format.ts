@@ -13,7 +13,6 @@ import {
   changesBetween,
   compileReplacement,
   replacementCallback,
-  REPLACEMENT_SYNTAX,
   removeMathTags,
   type DocumentSession,
 } from '@shale/markdown-core';
@@ -27,8 +26,6 @@ let correctionCache = new Map<string, { text: string; map: Map<string, string> }
 let defaults: Map<string, string> | undefined;
 const formattedVersions = new WeakMap<DocumentSession, number>();
 export function compileFormattingSettings(raw: Record<string, any>) {
-  if (raw.replacementSyntax !== undefined && raw.replacementSyntax !== REPLACEMENT_SYNTAX)
-    throw new Error('不支持的替换语法：' + raw.replacementSyntax);
   for (const key of ['ruleConfigs', 'commonStyles'])
     if (raw[key] !== undefined && (!raw[key] || typeof raw[key] !== 'object' || Array.isArray(raw[key])))
       throw new Error(`Invalid formatter ${key}`);

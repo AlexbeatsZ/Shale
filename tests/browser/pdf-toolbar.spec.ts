@@ -12,9 +12,9 @@ async function openFixture(page: Page) {
     if (url.pathname === '/api/settings/hotkeys') {
       if (request.method() === 'PUT') {
         const body = request.postDataJSON();
-        return route.fulfill({ json: { version: 1, bindings: { [body.command]: body.bindings }, imported: [], migration: '', vault: body.vault } });
+        return route.fulfill({ json: { version: 1, bindings: { [body.command]: body.bindings }, vault: body.vault } });
       }
-      return route.fulfill({ json: { version: 1, bindings: {}, imported: [], migration: '', vault: '' } });
+      return route.fulfill({ json: { version: 1, bindings: {}, vault: '' } });
     }
     if (url.pathname === '/api/files/content') {
       const path = url.searchParams.get('path');

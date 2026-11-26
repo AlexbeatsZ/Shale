@@ -192,8 +192,7 @@ test('change-word and its insertion undo together; dot repeats the last Vim edit
 });
 
 test('native snippets run in Insert and remain in the Vim insertion undo group', async ({ page }) => {
-  await page.route('**/api/writing', route => route.fulfill({ json: { version: 1, migration: 'vim fixture',
-    latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
+  await page.route('**/api/writing', route => route.fulfill({ json: { version: 1, latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
       snippets: '[{trigger:"mk",replacement:"\\\\($0\\\\)",options:"tA"}]', snippetVariables: '{}' }, linter: {}, hotkeys: {} } }));
   await editor(page);
   await page.evaluate(async () => {

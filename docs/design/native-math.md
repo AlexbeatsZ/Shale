@@ -37,9 +37,10 @@ second. TeX commands control explicit redefinitions; source is never rewritten.
 The settings draft does not take effect until a candidate parses successfully.
 Saving retains JSONC comments and unknown syntax data subject to the schema.
 
-When no native file exists, reading imports data from enabled
-Local LaTeX Renderer (`mathJaxPreamble`), or Extended MathJax (`preamblePath`).
-This is a data-only default: reading writes neither Vault nor plugin data.
+When no native file exists, reading returns the built-in defaults and writes nothing.
+2026-11-26 (PRD 1.71) removed the import from Local LaTeX Renderer (`mathJaxPreamble`) and
+Extended MathJax (`preamblePath`) plugin data, and the `migration` field; `math.jsonc`
+accepts only `version`/`packages`/`packageOptions`/`preambleFile`/`preamble`.
 The explicit Save action creates the native configuration. Original files stay
 intact. Local LaTeX Renderer's `compilerPreamble`, LuaLaTeX/dvisvgm execution and
 code-block processors remain separate. Its duplicated `initializeMathJaxPreamble`

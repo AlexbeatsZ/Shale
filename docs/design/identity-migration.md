@@ -1,5 +1,7 @@
 # Shale identity and data migration
 
+> 2026-11-26（PRD 1.71）已退役：所有设备完成迁移后，用户要求删除全部旧格式兼容。profile/运行时设置/Vault `.obsidian` 配置迁移、浏览器存储键改名、macOS 钥匙串迁移助手及 `migrate-user-data`/`migrate-equations` 脚本均已删除；以下内容仅为历史记录。删除前确认 Mac/OMEN/ROG 无旧 profile 或 `.obsidian`。
+
 Requested 2026-11-23: replace the previous product identity throughout the repository,
 installed native shells, application data, Vault configuration, note roots and services.
 Repository: `AlexbeatsZ/Shale`; npm scope: `@shale`; desktop identifier:

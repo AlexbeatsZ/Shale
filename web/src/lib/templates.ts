@@ -52,12 +52,6 @@ function expression(source: string): Expression {
   return { kind: 'call', id: argument, args: rest ? JSON.parse(rest) : {} };
 }
 function directive(source: string): Directive {
-  const legacy: Record<string, string> = { 'tp.file.title': 'title', 'tp.file.path()': 'path',
-    'tp.file.folder()': 'folder', 'tp.file.selection()': 'selection' };
-  source = legacy[source] ?? source;
-  source = source.replace(/^tp\.date\.now\(("(?:[^"\\]|\\.)*")?\)$/, (_, format) => 'date ' + (format ?? '"YYYY-MM-DD"'))
-    .replace(/^tp\.file\.cursor\((\d*)\)$/, (_, order) => 'cursor ' + (order || '1'))
-    .replace(/^tp\.frontmatter\.([\w]+)$/, 'property "$1"');
   if (source.startsWith('include ')) {
     const [path, rest] = quoted(source.slice(8).trim());
     if (rest) throw new Error('include 只接受一个 Vault 相对路径');

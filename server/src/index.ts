@@ -1,5 +1,3 @@
-import { migrateRuntimeSettings } from '../../scripts/identity-migration.mjs';
-import { migrateSearchSettings } from './services/searchmigration.js';
 import { writingRouter } from './routes/writing.js';
 import express from 'express';
 import helmet from 'helmet';
@@ -100,7 +98,6 @@ process.on('message', message => {
 if (process.connected) process.on('disconnect', () => { void shutdown(); });
 
 async function main() {
-  await migrateRuntimeSettings(config.dataDir);
   await loadSettings();
   // A native first-use choice is committed before any index/watcher/client
   // exists. Subsequent selections use the normal settings maintenance path.
@@ -226,7 +223,6 @@ async function main() {
   // Build search index + link graph
   const indexStarted = Date.now();
   console.log('[boot] indexing vault...');
-  await migrateSearchSettings().catch((error) => console.warn('[search migration]', error));
   enableFileUpdates();
   // The saved index is independent of live Vault state; load it while the watcher scans.
   const searchCache = loadSearchCache();

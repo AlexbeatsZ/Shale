@@ -57,11 +57,10 @@ unlinked mentions. The main search panel explicitly opts in. Match results may
 include `matchedField`/`matchKind`. Existing links, sharing and resource access
 checks are unchanged.
 
-Native Search settings own supported preferences. Startup reads legacy plugin,
-template and shortcut JSON once if no native settings were saved; original files
-are never rewritten. Malformed legacy JSON is reported, not overwritten. The
-plugin loader refuses duplicate `fuzzy-chinese-pinyin` execution. Imported hotkeys
-map to native actions and yield to existing application/plugin bindings.
+Native Search settings own supported preferences. 2026-11-26 (PRD 1.71) removed the
+startup import of Fuzzy Chinese Pinyin/template/shortcut JSON and the `templateFolder`,
+`shortcuts` and `migration` settings fields. The plugin loader still refuses duplicate
+`fuzzy-chinese-pinyin` execution.
 
 Templates insert raw source at the captured editor selection; a changed editor
 state during fetch cancels insertion. No Templater script evaluation is added.

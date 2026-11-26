@@ -9,22 +9,13 @@ import { FilePlacementSchema } from '../contracts/filePlacement.js';
 /** ---- Schema (PRD §6) ---------------------------------------------------- */
 
 const SettingsSchema = z.object({
-  hotkeys: z.record(z.object({ version: z.literal(1), bindings: z.record(z.array(z.object({ modifiers: z.array(z.string()), key: z.string() }))),
-    imported: z.array(z.string()).default([]), migration: z.string().default('') })).default({}),
   nativeFeatures: z.record(z.object({
-    // Retained for explicit migration; active definitions belong to Vault files.
-    automation: z.record(z.unknown()).optional(),
-    tags: z.object({ batchEnabled: z.boolean(), wranglerEnabled: z.boolean(), migration: z.string().optional(),
+    tags: z.object({ batchEnabled: z.boolean(), wranglerEnabled: z.boolean(),
       folderTags: z.object({ enabled: z.boolean(), pruneAncestors: z.boolean(), rules: z.array(z.object({
         folder: z.string(), tags: z.array(z.string()), recursive: z.boolean(),
       })) }).default({ enabled: false, pruneAncestors: true, rules: [] }),
     }),
     attachments: z.object({ excludeDirectories: z.array(z.string()), excludeExtensions: z.array(z.string()) }),
-  })).default({}),
-  writing: z.record(z.object({
-    version: z.literal(1), migration: z.string(),
-    latex: z.record(z.unknown()), linter: z.record(z.unknown()),
-    hotkeys: z.record(z.array(z.object({modifiers:z.array(z.string()),key:z.string()}))).default({}),
   })).default({}),
   version: z.number().default(1),
   vault: z
@@ -53,12 +44,9 @@ const SettingsSchema = z.object({
           tagFilter: z.boolean().default(true),
           showFirstHeading: z.boolean().default(true),
           headingIndent: z.boolean().default(true),
-          templateFolder: z.string().default(''),
           pinnedCommands: z.array(z.string()).default([]),
           recentCommands: z.array(z.string()).max(100).default([]),
           historyKeys: z.string().default('1234567890'),
-          shortcuts: z.record(z.string()).default({}),
-          migration: z.string().default(''),
         })
         .default({}),
       fuzzy: z.number().default(0.2),
@@ -166,8 +154,8 @@ export function updateSettings(mutator: (draft: Settings) => void | Promise<void
 
 /** Redact secrets for sending to the client. */
 export function redactSettings(s: Settings) {
-  // Writing rules have a dedicated Vault-scoped endpoint, not every settings payload.
-  const {writing,nativeFeatures,hotkeys,...publicSettings}=s;
+  // Native feature settings have a dedicated Vault-scoped endpoint, not every settings payload.
+  const {nativeFeatures,...publicSettings}=s;
   return {
     ...publicSettings,
   };

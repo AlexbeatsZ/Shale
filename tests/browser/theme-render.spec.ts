@@ -156,7 +156,7 @@ test('native table fragments keep header and callout surfaces when reading and e
 });
 
 test('Markdown and HTML image rows preserve captions, aliases, sizing and source', async ({ page }) => {
-  const source = '![[/theme-media/one.png|图一|140]] ![图二|100](/theme-media/two.png)\n\n![plain.png|80](/theme-media/plain.png)\n\n<div><img src="/theme-media/html.png" alt="HTML 说明" width="120"><img src="/theme-media/html2.png" alt="second.png" width="80"></div>\n\nend';
+  const source = '![[/theme-media/one.png|图一#width=140]] ![图二#width=100](/theme-media/two.png)\n\n![plain.png#width=80](/theme-media/plain.png)\n\n<div><img src="/theme-media/html.png" alt="HTML 说明" width="120"><img src="/theme-media/html2.png" alt="second.png" width="80"></div>\n\nend';
   await reset(page, source);
   for (const slot of [0, 1]) {
     const host = page.locator(`[data-slot="${slot}"]`);
@@ -183,14 +183,14 @@ test('Markdown and HTML image rows preserve captions, aliases, sizing and source
   await page.screenshot({ path: test.info().outputPath('image-rows.png') });
 });
 
-test('image presentation fragments survive resolution and theme changes', async ({ page }) => {
-  const source = '![[/theme-media/center.png#center|居中|120]]\n\n![[/theme-media/scale.png#x1.5|缩放|100]]\n\n![[/theme-media/full.svg#full|原始矢量图]]\n\n> [!note] 图片\n> ![[/theme-media/inside.png|亮度|80]] ![[/theme-media/inside-dark.png#dark|反色|80]]\n\nend';
+test('image presentation attributes survive resolution and theme changes', async ({ page }) => {
+  const source = '![[/theme-media/center.png|居中#width=120#align=center]]\n\n![[/theme-media/scale.png|缩放#width=100#scale=1.5]]\n\n![[/theme-media/full.svg|原始矢量图#full]]\n\n> [!note] 图片\n> ![[/theme-media/inside.png|亮度#width=80]] ![[/theme-media/inside-dark.png|反色#width=80#dark]]\n\nend';
   await reset(page, source);
   const host = page.locator('[data-slot="1"]');
   const center = host.locator('[data-image-center]');
   const rect = await center.boundingBox(), content = await host.locator('.cm-content').first().boundingBox();
   expect(Math.abs(rect!.x + rect!.width / 2 - content!.x - content!.width / 2)).toBeLessThan(1);
-  await expect(host.locator('[data-image-source*="#x1.5"] img')).toHaveCSS('zoom', '1.5');
+  await expect(host.locator('[data-image-source="/theme-media/scale.png"] img')).toHaveCSS('zoom', '1.5');
   await expect(host.locator('[data-image-svg] img')).toHaveCSS('max-width', 'none');
   await page.evaluate(() => { document.querySelector('.theme-light')!.className = 'theme-dark'; });
   await expect(host.locator('[data-image-source="/theme-media/inside.png"] img')).toHaveCSS('filter', 'none');
@@ -235,7 +235,7 @@ test('Mermaid uses document typography and native surface colors inside callouts
 test('wide blocks keep intrinsic width and print retains image presentation', async ({ page }) => {
   const row = (values: string[]) => '| ' + values.join(' | ') + ' |';
   const table = [row(Array.from({ length: 24 }, (_, i) => '列' + i)), row(Array(24).fill('---')), row(Array(24).fill('WW'))].join('\n');
-  const source = table + '\n\n> [!note] 宽内容\n>\n' + table.split('\n').map(line => '> ' + line).join('\n') + '\n\n==公式 $x^2$==\n\n![[/theme-media/print.png#dark|打印说明|100]]\n\nend';
+  const source = table + '\n\n> [!note] 宽内容\n>\n' + table.split('\n').map(line => '> ' + line).join('\n') + '\n\n==公式 $x^2$==\n\n![[/theme-media/print.png|打印说明#width=100#dark]]\n\nend';
   await reset(page, source);
   const host = page.locator('[data-slot="1"]');
   const content = await host.locator('.cm-content').first().boundingBox();
@@ -253,7 +253,7 @@ test('wide blocks keep intrinsic width and print retains image presentation', as
 
 
 test('resizing a magnified image patches only its source width', async ({ page }) => {
-  const source = '![[/theme-media/resize.png#x2|图示|100]]\n\nend';
+  const source = '![[/theme-media/resize.png|图示#width=100#scale=2]]\n\nend';
   await reset(page, source);
   const host = page.locator('[data-slot="0"]');
   const handle = host.locator('.cm-image-resize-right');

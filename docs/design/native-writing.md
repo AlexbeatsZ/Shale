@@ -64,18 +64,10 @@ create new tabstops or captures. Templates compile once with their settings.
 Match-prefix/suffix strings are lazy, avoiding full-prefix copies for ordinary
 snippet expansion and ordinary regex replacements.
 
-`legacyReplacement.ts` is exported only by the explicit `markdown-core/migration`
-entry for historical fixtures and offline conversion, outside runtime loading. It reproduces the
-old Linter escape-decoding order and JavaScript substitution rules, then emits
-native templates: `$1` becomes `[[0]]`, `$&` becomes `${MATCH}`, and `$$` becomes
-a literal dollar with an explicit escape only when needed. Named substitutions,
-two-digit capture fallback, prefix/suffix substitutions and literal tokens are
-preserved. For the configured formula rules, `$1$$$2$$` becomes `[[0]]$[[1]]$`
-and `$$$$$1$$$$` becomes `$$[[0]]$$`.
-
-Native configuration uses `linter.replacementSyntax: "latex-suite-v1"` (also the
-default for an omitted marker). Runtime reads never reinterpret replacement
-strings as legacy syntax. Unknown versions produce an error. Old plugin/app
+2026-11-26 (PRD 1.71) deleted `legacyReplacement.ts`, the `markdown-core/migration`
+entry and the `linter.replacementSyntax` marker: LaTeX Suite templates (`[[0]]`, `${MATCH}`)
+are the only replacement language. The Linter fixture was converted once and stored in
+the native syntax. `writing.jsonc` accepts only `version`/`latex`/`linter`/`hotkeys`. Old plugin/app
 files remain untouched and are not startup configuration sources.
 
 ## Shared ownership

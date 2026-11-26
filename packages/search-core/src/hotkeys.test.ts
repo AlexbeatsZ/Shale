@@ -44,8 +44,10 @@ it('uses Control only for reserved inherited Mac combinations and preserves expl
   expect(hotkeyLabel(resolveHotkeys(prefs, 'test', [], true)[0], true)).toBe('⌘ + H');
 });
 
-it('migrates level 7 heading aliases and rejects malformed platform maps without silently resetting', () => {
-  expect(hotkeyCommandId('obsidian-heading-shifter:apply-heading7')).toBe('editor:set-heading-7');
+it('rejects removed fields and malformed platform maps without silently resetting', () => {
+  expect(hotkeyCommandId('obsidian-heading-shifter:apply-heading7')).toBe('obsidian-heading-shifter:apply-heading7');
+  for (const extra of [{ migration: '' }, { imported: [] }])
+    expect(() => normalizeHotkeyPreferences({ version: 1, bindings: {}, ...extra })).toThrow('不支持的字段');
   for (const platforms of [[], { linux: {} }, { mac: [] }, { mac: { save: [{ modifiers: ['Unknown'], key: 'S' }] } }])
     expect(() => normalizeHotkeyPreferences({ version: 1, platforms })).toThrow();
 });

@@ -1,4 +1,3 @@
-import { migrateDesktopProfile } from '../../../scripts/identity-migration.mjs';
 import { InputMethodService } from '../../../desktop/src/inputMethod';
 import { desktopActions } from '../../../desktop/src/bridge';
 import { performNativeEdit } from '../../../desktop/src/editShortcuts';
@@ -79,7 +78,7 @@ function fixture(platform = 'win32', switches: string[] = []) {
   });
   runInNewContext(compiled + '\nexports.fixture = { createWindow, requestWindowClose, initialize: (launcher, server) => { serverPort = 8787; serverProcess = server; registerDesktopRequests(); mcpLauncher = launcher; } };', {
     exports: moduleExports,
-    require: (id: string) => id === './editShortcuts' ? { performNativeEdit } : id === '../../scripts/identity-migration.mjs' ? { migrateDesktopProfile } : id === 'electron' ? electron : id === './inputMethod' ? { InputMethodService, inputMethodBackend: () => inputBackend } : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
+    require: (id: string) => id === './editShortcuts' ? { performNativeEdit } : id === 'electron' ? electron : id === './inputMethod' ? { InputMethodService, inputMethodBackend: () => inputBackend } : id === './nativeActions' ? actionExports : id === './mcpLauncher' ? { McpLauncher } : id === './paths' ? {} : id === './files' ? { writeJson } : id === './serverProcess' || id === './userscripts/service' ? {} : id === './webViewer' ? { configureWebViewer: () => {} } : nativeRequire(id),
     process: { platform, arch: 'x64', execPath: 'Shale' },
     __dirname: fileURLToPath(new URL('../../../desktop/src', import.meta.url)),
     URL, Buffer, setTimeout, clearTimeout, console,

@@ -49,8 +49,7 @@ const test = base.extend<{ backend: Backend }>({
     await fs.writeFile(path.join(data, 'uistate.json'), JSON.stringify({ tabs: [{ path: 'main.md', title: 'main.md' }], activePath: 'main.md' }));
     // Formatting distinguishes an explicit Save from the registry's 900ms autosave.
     await fs.writeFile(path.join(configuration, 'writing.jsonc'), JSON.stringify({
-      version: 1, migration: 'split-editing-fixture',
-      latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false, snippets: '[]', snippetVariables: '{}' },
+      version: 1, latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false, snippets: '[]', snippetVariables: '{}' },
       linter: { lintOnSave: true, customRegexes: [{ find: '，', replace: ',', flags: 'g', enabled: true }] },
       hotkeys: {},
     }));

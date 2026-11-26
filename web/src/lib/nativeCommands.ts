@@ -9,7 +9,7 @@ import type { NativeCommand } from './commands';
 import { nativeEditorCommands } from './nativeEditorCommands';
 import { nativeWorkspaceCommands } from './nativeWorkspaceCommands';
 import { configuredMenuCommands } from './configuredMenus/commands';
-import { attachmentCleanupCommands, attachmentCleanupLegacyCommandIds } from './attachments/commands';
+import { attachmentCleanupCommands } from './attachments/commands';
 import { tagCommands } from './tags/commands';
 import { headingLevelCommands } from './headingLevelCommands';
 import { debugStatus, updateDebug, captureDebug, flushDebug, exportDebug } from './debug';
@@ -98,6 +98,5 @@ export const nativeCommands: NativeCommand[] = [
   },
 ];
 export function resolveNativeCommandId(id: string): string {
-  if ((attachmentCleanupLegacyCommandIds as readonly string[]).includes(id)) id = attachmentCleanupCommands[0].id;
   return hotkeyCommandId(id);
 }

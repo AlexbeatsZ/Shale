@@ -1,7 +1,6 @@
 import { vaultPathKey } from './vaultFile.js';
 import { vaultConfigurationIdentity } from './vaultConfiguration.js';
 import { getSettings, updateSettings } from './settings.js';
-import { readLegacyTagPreferences } from './tags/migration.js';
 import { normalizeFolderTags } from '@shale/markdown-core';
 import type { TagPreferences } from '@shale/markdown-core';
 
@@ -10,15 +9,14 @@ export async function nativeFeatureSettings() {
   if (identity.key !== key) throw Object.assign(new Error('Vault changed; reopen settings'), { status: 409 });
   let value = settings.nativeFeatures[key];
   if (!value) {
-    const tags = await readLegacyTagPreferences();
     const updated = await updateSettings(draft => {
-      if (vaultPathKey(draft.vault.path) !== key) throw Object.assign(new Error('Vault changed during feature settings import'), { status: 409 });
-      draft.nativeFeatures[key] ??= { tags: { ...tags, folderTags: tags.folderTags ?? { enabled: false, pruneAncestors: true, rules: [] } }, attachments: { excludeDirectories: [], excludeExtensions: [] } };
+      if (vaultPathKey(draft.vault.path) !== key) throw Object.assign(new Error('Vault changed during feature settings initialization'), { status: 409 });
+      draft.nativeFeatures[key] ??= { tags: { batchEnabled: true, wranglerEnabled: true, folderTags: { enabled: false, pruneAncestors: true, rules: [] } },
+        attachments: { excludeDirectories: [], excludeExtensions: [] } };
     });
     value = updated.nativeFeatures[key];
   }
-  const { automation: _legacyAutomation, ...preferences } = value;
-  return { vault: identity.vault, ...preferences };
+  return { vault: identity.vault, ...value };
 }
 
 export async function patchNativeFeatureSettings(input: {

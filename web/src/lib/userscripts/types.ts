@@ -21,7 +21,7 @@ export interface ScriptRecord extends ScriptBundle {
     validators?: Record<string, { etag?: string; modified?: string }>; pending?: ScriptBundle; pendingSourceUrl?: string; candidateId?: string };
 }
 export interface ScriptSnapshot {
-  scripts: ScriptRecord[]; migration: string; autoUpdate: boolean; intervalHours: number;
+  scripts: ScriptRecord[]; autoUpdate: boolean; intervalHours: number;
   vault: string; statuses: GuestStatus[];
 }
 export interface GuestStatus {

@@ -15,11 +15,9 @@ core/frontmatter regression sources and `docs/design/tag-wrangler-safety.md`.
 The implementation is native source-range operations and application UI; the
 plugin runtime, DOM patching and frontmatter serializer were not copied.
 
-`readLegacyTagPreferences` strictly reads the original JSON once when native
-per-Vault settings are absent. It imports `modules.multiTag` as `batchEnabled`
-and `modules.tagWrangler` as `wranglerEnabled`; malformed JSON/flags report an
-error and remain unchanged. Native preferences live in the existing settings
-service under the current Vault key. No original plugin file or flag is rewritten.
+Native preferences live in the existing settings service under the current Vault key;
+absent settings start with both features enabled. 2026-11-26 (PRD 1.71) removed the
+one-time Plus `data.json` import (`readLegacyTagPreferences`) and the `migration` field.
 The coordinator's pinned Plus adapter suppresses only these two child modules
 (other separately migrated children have their own adapters), preserving STEM
 references, translation, live references and all original configuration. AnyBlock

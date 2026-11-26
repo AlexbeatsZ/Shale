@@ -1,13 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { compileFormattingSettings, formatText, ignoresFormatting, formatRules } from './format';
-import legacy from '../../../../tests/fixtures/writing-linter-settings.json';
-import { migrateLinterReplacements } from '@shale/markdown-core/migration';
-const native = migrateLinterReplacements(legacy);
+import native from '../../../../tests/fixtures/writing-linter-settings.json';
 const now = Date.UTC(2026, 9, 22, 12, 0);
 describe('native formatting compatibility', () => {
   it('retains the installed rule inventory and ordered custom replacements', () => {
     expect(formatRules).toHaveLength(68);
-    expect(Object.values(legacy.ruleConfigs).filter((r) => r.enabled)).toHaveLength(29);
+    expect(Object.values(native.ruleConfigs).filter((r) => r.enabled)).toHaveLength(29);
     const settings = compileFormattingSettings(native);
     expect(settings.customRegexes).toHaveLength(46);
     expect(ignoresFormatting('09插件/rules.md', settings)).toBe(true);

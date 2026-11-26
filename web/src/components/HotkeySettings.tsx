@@ -86,7 +86,6 @@ export default function HotkeySettings() {
     <p className="hotkey-summary" role="status">显示 {filtered.length} / {catalog.length} 项 · {catalog.filter(command => command.installed).length} 个可用命令 · {catalog.filter(conflicted).length} 项冲突</p>
     {error && <p className="hotkey-error" role="alert">{error}</p>}
     {hotkeyError && <p className="hotkey-error" role="alert">{hotkeyError}</p>}
-    {hotkeys.migration && <p className="hotkey-migration">{hotkeys.migration}</p>}
     <SettingGroup className="hotkey-list">
       {filtered.map(command => <SettingRow key={command.id} className={command.installed ? '' : 'hotkey-unavailable'} name={<><span>{command.name}</span>{!command.installed && <span className="hotkey-status">不可用</span>}</>} desc={<code>{command.id}</code>}>
         <div className="hotkey-platforms">

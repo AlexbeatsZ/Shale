@@ -8,7 +8,7 @@ async function workspace(page: Page, source: string, reading = false) {
     const request = route.request(), url = new URL(request.url());
     if (url.pathname === '/api/vault-identity') return route.fallback();
     if (url.pathname === '/api/writing') return route.fulfill({ json: {
-      version: 1, migration: 'fixture', latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
+      version: 1, latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
         snippets: '[]', snippetVariables: '{}' }, hotkeys: {},
       linter: { lintOnSave: true, customRegexes: [{ find: '，', replace: ',', flags: 'g', enabled: true }] },
     } });
@@ -45,8 +45,7 @@ async function workspace(page: Page, source: string, reading = false) {
 
 test('dm display snippets highlight while typing without Enter or leaving the formula', async ({ page }) => {
   await page.route('**/api/writing', route => route.fulfill({ json: {
-    version: 1, migration: 'fixture',
-    latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
+    version: 1, latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
       snippets: '[{trigger:"dm", replacement:"$$$0$$", options:"tA"}]', snippetVariables: '{}' },
     linter: {}, hotkeys: {},
   } }));
@@ -86,8 +85,7 @@ for (const { trigger, opener, closer, keys, tex } of [
       { trigger: '(', replacement: '($0)$1', options: 'mA' },
     ]);
     await page.route('**/api/writing', route => route.fulfill({ json: {
-      version: 1, migration: 'fixture',
-      latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
+      version: 1, latex: { loadSnippetsFromFile: false, loadSnippetVariablesFromFile: false,
         snippets, snippetVariables: '{}' },
       linter: {}, hotkeys: {},
     } }));

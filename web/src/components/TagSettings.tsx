@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { TagPreferences } from '@shale/markdown-core';
 import { emptyFolderTags, normalizeFolderTags } from '@shale/markdown-core';
-import { importLegacyFolderRules } from '../lib/tags/importFolderRules';
-import { importFolderTagNote } from '../lib/nativeFeaturePreferences';
 import { openTagOperation } from '../lib/tags/actions';
 import { useStore } from '../lib/store';
 import { useSearch } from '../lib/search';
@@ -33,15 +31,6 @@ export default function TagSettings({ value, vault, onChange }: TagSettingsProps
       await onChange({ folderTags }); setMessage('文件夹规则已保存。自动补齐在之后的新建和保存时生效。');
     } catch (error) { setError(String(error)); } finally { setBusy(false); }
   }
-  async function importRules() {
-    setBusy(true); setError(''); setMessage('');
-    try {
-      const settings = importLegacyFolderRules((await importFolderTagNote(vault)).content);
-      setEnabled(false); setPruneAncestors(settings.pruneAncestors);
-      setRules(settings.rules.map(rule => ({ ...rule, text: rule.tags.join(', ') })));
-      setMessage('旧规则已读入草稿，尚未保存；请检查目录、标签和自动补齐开关。原笔记未修改。');
-    } catch (error) { setError(String(error)); } finally { setBusy(false); }
-  }
   async function change(patch: Partial<TagPreferences>) {
     setBusy(true); setError('');
     try { await onChange(patch); } catch (error) { setError(String(error)); } finally { setBusy(false); }
@@ -66,7 +55,6 @@ export default function TagSettings({ value, vault, onChange }: TagSettingsProps
       </div>)}
       <div className="setting-actions">
         <button className="btn secondary" onClick={() => { setRules(current => [...current, { folder: '', tags: [], text: '', recursive: true }]); setMessage(''); }}>添加规则</button>
-        <button className="btn secondary" onClick={() => { void importRules(); }}>从旧配置笔记读入草稿</button>
         <button className="btn" onClick={() => { void saveRules(); }}>保存文件夹规则</button>
         <button className="btn secondary" disabled={!value.folderTags?.rules.length} onClick={() => {
           useStore.getState().setSettings(false);

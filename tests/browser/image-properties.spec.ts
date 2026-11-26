@@ -219,7 +219,7 @@ test('dark also maps white to a colored paper without changing image source byte
 
 test('table images keep escaped aliases, figure links and cell boundaries after property menu edits', async ({ page }) => {
   const source = '| Image | References |\n| --- | --- |\n'
-    + '| ![[/image-properties/figure.png\\|别名\\|部分\\|120x80#dark#mystery=a\\#b]] | '
+    + '| ![[/image-properties/figure.png\\|别名\\|部分#width=120#height=80#dark#mystery=a\\#b]] | '
     + '[[/image-properties/figure.png]] [[/image-properties/figure.png\\|]] [[/image-properties/figure.png\\|参见\\|示意]] |\n\nend';
   await reset(page, source);
   // Existing cells mounted before the harness injected Vault/menu services.
@@ -241,7 +241,7 @@ test('table images keep escaped aliases, figure links and cell boundaries after 
   await expect(dark).toBeEnabled();
   await expect(dark).toHaveAttribute('aria-checked', 'true');
   await dark.click();
-  const changed = source.replace('别名\\|部分\\|120x80#dark#mystery', '别名\\|部分#width=120#height=80#mystery');
+  const changed = source.replace('#height=80#dark#mystery', '#height=80#mystery');
   await expect.poll(() => page.evaluate(() => window.renderHarness.source(0))).toBe(changed);
   for (const index of [0, 1]) {
     const host = slot(page, index);

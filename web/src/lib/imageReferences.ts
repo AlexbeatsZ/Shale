@@ -1,4 +1,4 @@
-import { analyzeMarkdown, imageEmbeds, imageName, imageReferenceText, isTableCellRange, parseImageParameters, parseLinkTarget, SourceDocument, TargetIndex, wikiLinkParts,
+import { analyzeMarkdown, imageEmbeds, imageName, imageReferenceText, isTableCellRange, parseLinkTarget, SourceDocument, TargetIndex, wikiLinkParts,
   type ImageEmbed, type MarkdownModel } from '@shale/markdown-core';
 import { api, vaultRequestIdentity } from './api';
 import { documents } from './documents';
@@ -104,7 +104,7 @@ export async function resolveImageReference(target: string, sourcePath: string, 
   signal.throwIfAborted();
   const tableCell = isTableCellRange(model, at), parts = wikiLinkParts(target, tableCell), raw = parts.destination;
   const alias = parseLinkTarget(target, tableCell).alias?.trim() ?? null;
-  const clean = parseImageParameters(raw).target, index = fileIndex(files), resolved = index.resolve(clean, sourcePath);
+  const clean = raw, index = fileIndex(files), resolved = index.resolve(clean, sourcePath);
   const targetPath = resolved.status === 'resolved' ? resolved.path : undefined;
   const fallback = imageReferenceText(undefined, alias, clean);
   if (!targetPath) {

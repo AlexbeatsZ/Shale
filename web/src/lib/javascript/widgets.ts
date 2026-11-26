@@ -2,7 +2,7 @@
 import type { TFile, TFolder } from '../shale/vault';
 import type { JavascriptRun } from './lifetime';
 import { createEl } from '../shale/dom';
-import { parseLegacyFolderRuleData } from '../tags/importFolderRules';
+import { parseFolderRuleData } from '../tags/folderRuleData';
 import { blockContainers, extractMetadata, BODY_HEADING_LEVEL } from '@shale/markdown-core';
 type WidgetHost = Pick<JavascriptRun, 'app' | 'container' | 'context' | 'sourcePath' | 'note' | 'watch' | 'watchDirectory' | 'renderMarkdown' | 'targetContext'>;
 const collator = new Intl.Collator('zh-Hans-CN', { numeric: true, sensitivity: 'base' });
@@ -140,7 +140,7 @@ async function parseFolderTagConfig(host: WidgetHost, marker: string): Promise<F
   const block = blockContainers(note.analysis).find(block => block.kind === 'code' &&
     /^(js|javascript)$/i.test(block.language) && block.body.match(/^[\t ]*\/\/[\t ]*([^\r\n]*)/)?.[1].trim() === marker);
   if (!block) throw new Error('找不到 ' + marker + ' 代码块.');
-  return parseLegacyFolderRuleData(block.body.split('\n').slice(1).join('\n')) as FolderTagConfig;
+  return parseFolderRuleData(block.body.split('\n').slice(1).join('\n')) as FolderTagConfig;
 }
 
 function renderTag(tagTitle: string, tagConfig: Record<string, string>): string {

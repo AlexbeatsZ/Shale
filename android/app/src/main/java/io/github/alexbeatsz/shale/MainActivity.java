@@ -165,11 +165,6 @@ public final class MainActivity extends Activity {
                 dialog.dismiss(); startWorkspace(vault.getAbsolutePath());
             })); dialog.show();
         }); choices.addView(create);
-        java.io.File legacy = new java.io.File(getFilesDir(), "Vault");
-        if (legacy.isDirectory()) {
-            Button old = new Button(this); old.setText("选择旧版应用内笔记库（保留的 Vault）");
-            old.setOnClickListener(view -> confirmVault(legacy)); choices.addView(old);
-        }
         Button cancel = new Button(this); cancel.setText("取消"); cancel.setOnClickListener(view -> finish()); choices.addView(cancel);
         content.removeAllViews(); content.addView(choices, new FrameLayout.LayoutParams(-1, -1));
     }
