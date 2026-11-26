@@ -42,9 +42,10 @@ export default function SyncConflictPanel({ file }: { file: SyncConflictFile }) 
     <header className="sync-conflict-title">
       <span className={`sync-conflict-badge is-${file.action}`}>{actionLabels[file.action]}</span>
       <span className="sync-conflict-toggle">同步冲突</span>
-      <button className="btn secondary" disabled={busy} onClick={() => void choose('local')}>保留本机</button>
-      <button className="btn" disabled={busy} onClick={() => void choose('remote')}>采用服务器</button>
+      <button className="btn secondary" disabled={busy} onClick={() => void choose('local')}>{file.relatedPaths?.length ? '整组保留本机' : '保留本机'}</button>
+      <button className="btn" disabled={busy} onClick={() => void choose('remote')}>{file.relatedPaths?.length ? '整组采用服务器' : '采用服务器'}</button>
     </header>
+    {!!file.relatedPaths?.length && <p>关联路径 {file.relatedPaths.join('、')}</p>}
     {file.image && <Preview file={file} />}
     {file.text && <Diff file={file} />}
   </section>;

@@ -29,7 +29,8 @@ async function hub(name = 'hub'): Promise<string> {
   return listen(service.server);
 }
 
-async function client(name: string, options: Partial<FileSyncPreferences> = {}, publish = async <T>(work: () => Promise<T>) => work()) {
+async function client(name: string, options: Partial<FileSyncPreferences> = {},
+  publish = async <T>(work: (blocked?: ReadonlySet<string>) => Promise<T>) => work()) {
   const root = path.join(directory, name);
   const state = path.join(directory, `${name}-state`);
   await fs.mkdir(root, { recursive: true });
@@ -121,31 +122,31 @@ describe('native file synchronization', () => {
     expect(await fs.readFile(path.join(second.root, 'image.png'))).toEqual(Buffer.from([3]));
   });
 
-  it('fast-forwards a first connection whose stale files the server already knows, and still stops on unknown work', async () => {
+  it('preserves first-connection differences and deletion intent when v1 cannot prove a same-path ancestor', async () => {
     const first = await client('first');
-    await first.write('theme.svg', '<svg>old</svg>'); await first.write('gone.js', 'old()'); await first.write('kept.md', 'base\n');
+    await first.write('theme.svg', '<svg>base</svg>');
+    await first.write('same-bytes-at-other-path.svg', '<svg>unrelated</svg>');
+    await first.write('gone.js', 'old()');
+    await first.write('kept.md', 'base\n');
     await first.engine.run();
-    await first.write('theme.svg', '<svg>new</svg>'); await fs.rm(path.join(first.root, 'gone.js')); first.engine.noteChanged('gone.js');
+    await first.write('theme.svg', '<svg>new</svg>');
+    await fs.rm(path.join(first.root, 'gone.js')); first.engine.noteChanged('gone.js');
     expect((await first.engine.run()).phase).toBe('idle');
-    // A device restored from an older copy (no checkpoint) holding only previously synchronized bytes.
+
     const tablet = await client('tablet');
-    await tablet.write('theme.svg', '<svg>old</svg>'); await tablet.write('gone.js', 'old()'); await tablet.write('kept.md', 'base\n');
+    await tablet.write('theme.svg', '<svg>unrelated</svg>');
+    await tablet.write('gone.js', 'old()');
+    await tablet.write('kept.md', 'base\n');
     const status = await tablet.engine.run();
-    expect(status.phase).toBe('idle');
-    expect(status.message).toContain('自动处理 2 个文件');
-    expect(await fs.readFile(path.join(tablet.root, 'theme.svg'), 'utf8')).toBe('<svg>new</svg>');
-    await expect(fs.access(path.join(tablet.root, 'gone.js'))).rejects.toThrow();
-    expect(status.recentResolutions.map(item => [item.path, item.kind]).sort()).toEqual([['gone.js', 'deleted'], ['theme.svg', 'fast-forward']]);
-    const recovery = path.join(tablet.state, 'recovery', new Date().toISOString().slice(0, 10));
-    expect(await fs.readFile(path.join(recovery, 'theme.svg'), 'utf8')).toBe('<svg>old</svg>');
-    // Unknown local bytes without a base remain a manual decision.
-    const fresh = await client('fresh');
-    await fresh.write('theme.svg', '<svg>never synchronized</svg>');
-    const conflict = await fresh.engine.run();
-    expect(conflict.phase).toBe('conflict'); expect(conflict.conflictCount).toBe(1);
-    const details = await fresh.engine.conflictDetails();
-    expect(details!.files[0]).toMatchObject({ path: 'theme.svg', action: 'modify', hasBase: false, text: true });
-    expect(details!.files[0].diff).toEqual([{ type: 'del', lines: ['<svg>never synchronized</svg>'] }, { type: 'add', lines: ['<svg>new</svg>'] }]);
+    expect(status).toMatchObject({ phase: 'conflict', conflictCount: 2, lastSuccess: null });
+    expect(await fs.readFile(path.join(tablet.root, 'theme.svg'), 'utf8')).toBe('<svg>unrelated</svg>');
+    expect(await fs.readFile(path.join(tablet.root, 'gone.js'), 'utf8')).toBe('old()');
+    const details = await tablet.engine.conflictDetails();
+    expect(details!.files).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'theme.svg', action: 'modify', hasBase: false }),
+      expect.objectContaining({ path: 'gone.js', action: 'delete', hasBase: false }),
+    ]));
+    expect((await new OrderedSyncTransport([endpoint], token).select()).files['gone.js'].hash).toBeNull();
   });
 
   it('merges edits to different paragraphs and keeps overlapping edits as a reviewable conflict', async () => {
@@ -228,6 +229,62 @@ describe('native file synchronization', () => {
     expect(await fs.readFile(path.join(second.root, 'b.md'), 'utf8')).toBe('B 服务器');
   });
 
+  it('keeps an unrelated journal while choosing a conflict and replays it after restart', async () => {
+    let blocked = new Set<string>();
+    const first = await client('first');
+    const second = await client('second', {}, async work => work(blocked));
+    await first.write('choice.md', 'base'); await first.engine.run(); await second.engine.run();
+    await first.write('choice.md', 'remote choice'); await first.write('incoming.md', 'deferred'); await first.engine.run();
+    await second.write('choice.md', 'local choice');
+    blocked = new Set(['incoming.md']);
+    const status = await second.engine.run();
+    expect(status).toMatchObject({ phase: 'recovery', pendingIncoming: 1, conflictCount: 1 });
+    const selected = await second.engine.resolveConflict({ 'choice.md': 'remote' });
+    expect(selected).toMatchObject({ phase: 'recovery', pendingIncoming: 1, conflictCount: 0, lastSuccess: status.lastSuccess });
+    const checkpoint = JSON.parse(await fs.readFile(path.join(second.state, 'checkpoint.json'), 'utf8'));
+    expect(checkpoint.incoming.map((item: { path: string }) => item.path)).toEqual(['incoming.md']);
+    expect(await fs.readFile(path.join(second.root, 'choice.md'), 'utf8')).toBe('remote choice');
+    const restarted = new FileSyncEngine(second.root, second.state, second.preferences, { publish: async work => work(), changed: async () => {} });
+    await restarted.recover();
+    expect(await fs.readFile(path.join(second.root, 'incoming.md'), 'utf8')).toBe('deferred');
+    expect((await restarted.run()).phase).toBe('idle');
+  });
+
+  it('defers both ends of a dirty rename and publishes independent groups', async () => {
+    let blocked = new Set<string>();
+    const first = await client('first');
+    const second = await client('second', {}, async work => work(blocked));
+    await first.write('old.md', 'rename'); await first.engine.run(); await second.engine.run();
+    await fs.rename(path.join(first.root, 'old.md'), path.join(first.root, 'new.md'));
+    first.engine.noteChanged('old.md'); first.engine.noteChanged('new.md');
+    await first.write('unrelated.md', 'independent'); await first.engine.run();
+    blocked = new Set(['old.md']);
+    expect(await second.engine.run()).toMatchObject({ phase: 'recovery', pendingIncoming: 2 });
+    expect(await fs.readFile(path.join(second.root, 'old.md'), 'utf8')).toBe('rename');
+    await expect(fs.access(path.join(second.root, 'new.md'))).rejects.toThrow();
+    expect(await fs.readFile(path.join(second.root, 'unrelated.md'), 'utf8')).toBe('independent');
+    blocked.clear();
+    expect(await second.engine.run()).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
+    await expect(fs.access(path.join(second.root, 'old.md'))).rejects.toThrow();
+    expect(await fs.readFile(path.join(second.root, 'new.md'), 'utf8')).toBe('rename');
+  });
+
+  it('publishes a file-to-directory change and its inverse as grouped shapes', async () => {
+    const first = await client('first'); const second = await client('second');
+    await first.write('shape', 'single'); await first.engine.run(); await second.engine.run();
+    await fs.unlink(path.join(first.root, 'shape')); first.engine.noteChanged('shape');
+    await first.write('shape/nested.md', 'inside');
+    expect((await first.engine.run()).phase).toBe('idle');
+    expect((await second.engine.run()).phase).toBe('idle');
+    expect(await fs.readFile(path.join(second.root, 'shape/nested.md'), 'utf8')).toBe('inside');
+    await fs.unlink(path.join(first.root, 'shape/nested.md'));
+    await fs.rmdir(path.join(first.root, 'shape'));
+    first.engine.noteChanged('shape/nested.md'); await first.write('shape', 'single again');
+    expect((await first.engine.run()).phase).toBe('idle');
+    expect((await second.engine.run()).phase).toBe('idle');
+    expect(await fs.readFile(path.join(second.root, 'shape'), 'utf8')).toBe('single again');
+  });
+
   it('restarts cleanly after resolving part of a conflict recorded behind the checkpoint revision', async () => {
     const first = await client('first'); const second = await client('second');
     await first.write('a.md', 'a'); await first.write('b.md', 'b'); await first.engine.run(); await second.engine.run();
@@ -236,7 +293,7 @@ describe('native file synchronization', () => {
     expect((await second.engine.run()).conflictCount).toBe(2);
     // Older builds kept the revision from before the conflict, as on OMEN (445 vs. 469).
     const filename = path.join(second.state, 'checkpoint.json');
-    const saved = JSON.parse(await fs.readFile(filename, 'utf8')); saved.revision = 1; await fs.writeFile(filename, JSON.stringify(saved));
+    const saved = JSON.parse(await fs.readFile(filename, 'utf8')); saved.revision = 1; delete saved.queuedThrough; await fs.writeFile(filename, JSON.stringify(saved));
     const restart = () => new FileSyncEngine(second.root, second.state, second.preferences, { publish: async work => work(), changed: async () => {} });
     await first.write('c.md', '新文件'); await first.engine.run();
     expect((await restart().resolveConflict({ 'a.md': 'remote' })).conflictCount).toBe(1);

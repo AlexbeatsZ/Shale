@@ -3,15 +3,25 @@ import { useStore } from './store';
 import { pendingMutations } from './api';
 
 export function workspaceMaintenanceBlockers(): string[] {
+  return maintenanceBlockers(false).blockers;
+}
+
+function maintenanceBlockers(syncPaths: boolean): { blockers: string[]; pathBlockers?: string[] } {
   const blockers: string[] = [];
-  if (useStore.getState().vaultSessionStale) blockers.push('Vault 已切换，请重新加载应用后扫描');
-  if (documents.snapshots().some(snapshot => snapshot.dirty || snapshot.conflict || snapshot.saving || snapshot.locked))
+  const state = useStore.getState();
+  if (state.vaultSessionStale) blockers.push('Vault 已切换，请重新加载应用后扫描');
+  const documentPaths = documents.snapshots().filter(snapshot => snapshot.dirty || snapshot.conflict || snapshot.saving || snapshot.locked)
+    .map(snapshot => snapshot.id);
+  if (!syncPaths && documentPaths.length)
     blockers.push('有未保存或冲突的文档，请先保存');
-  if (useStore.getState().dirty) blockers.push('当前文件有未保存内容');
+  if (state.dirty) {
+    if (syncPaths && state.activePath) documentPaths.push(state.activePath);
+    else blockers.push('当前文件有未保存内容');
+  }
   if (pendingMutations()) blockers.push('仍有写入请求未完成');
   if ((window as any).shaleDesktop?.nativePlugins)
     blockers.push('可信原生插件可直接写入文件，请关闭该模式并在下次启动后清理');
-  return blockers;
+  return { blockers, pathBlockers: syncPaths ? [...new Set(documentPaths)] : undefined };
 }
 
 /** Coordinate the existing document registry over the existing application socket. */
@@ -32,7 +42,7 @@ export function bindVaultMaintenance(socket: WebSocket): () => void {
     banner = undefined;
   };
   const receive = async (event: MessageEvent) => {
-    let msg: { type?: string; phase?: string; token?: string; check?: string };
+    let msg: { type?: string; phase?: string; token?: string; check?: string; syncPaths?: boolean };
     try { msg = JSON.parse(String(event.data)); } catch { return; }
     if (msg.type !== 'maintenance' || typeof msg.token !== 'string') return;
     if (msg.phase === 'release') { if (token === msg.token) release(); return; }
@@ -59,7 +69,7 @@ export function bindVaultMaintenance(socket: WebSocket): () => void {
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     if (token !== msg.token || socket.readyState !== WebSocket.OPEN) return;
     socket.send(JSON.stringify({ type: 'maintenance-ack', token, check: msg.check,
-      blockers: workspaceMaintenanceBlockers() }));
+      ...maintenanceBlockers(msg.syncPaths === true) }));
   };
   socket.addEventListener('message', receive);
   socket.addEventListener('close', release);

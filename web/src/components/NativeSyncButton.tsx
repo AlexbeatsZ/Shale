@@ -19,7 +19,8 @@ export default function NativeSyncButton() {
   if (!status?.enabled) return null;
   const busy = running || status.phase === 'syncing';
   const label = busy ? '同步中' : status.phase === 'conflict' ? `${status.conflictCount} 个冲突`
-    : status.phase === 'error' || status.phase === 'recovery' ? '同步失败' : '已同步';
+    : status.phase === 'recovery' ? `待接收 ${status.pendingIncoming ?? 0}`
+      : status.phase === 'error' ? status.pendingOutgoing ? `待发送 ${status.pendingOutgoing}` : '同步失败' : '已同步';
   const icon = status.phase === 'conflict' ? 'triangle-alert' : status.phase === 'error' ? 'cloud-off' : 'refresh-cw';
   const sync = async () => {
     setRunning(true);
@@ -28,7 +29,8 @@ export default function NativeSyncButton() {
     finally { setRunning(false); }
   };
   return <button type="button" className={`clickable native-sync-button is-${status.phase}`} disabled={busy} onClick={() => void sync()}
-    title={[status.message, status.lastSuccess && `上次完成 ${new Date(status.lastSuccess).toLocaleString()}`].filter(Boolean).join('\n') || '立即同步'}>
+    title={[status.message, status.lastProgress && `最近进展 ${new Date(status.lastProgress).toLocaleString()}`,
+      status.lastSuccess && `上次完整同步 ${new Date(status.lastSuccess).toLocaleString()}`].filter(Boolean).join('\n') || '立即同步'}>
     <Icon name={icon} size={13} className={busy ? 'icon-spin' : undefined} />{label}
   </button>;
 }

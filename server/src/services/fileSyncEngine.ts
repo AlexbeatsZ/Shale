@@ -11,16 +11,20 @@ import { atomicSyncJson, fileSignature, stageLocalFile, stageSyncBlob, withSyncL
 import { OrderedSyncTransport, SyncHttpError } from './syncTransport.js';
 import { mergeReview } from '@shale/markdown-core';
 import { decodeText, describeChange, textExtension, type DiffBlock } from './syncMerge.js';
+import { groupIncoming, planSyncPath, relatedSyncPaths } from './fileSyncGroups.js';
 
 const hash = z.string().regex(hashPattern);
 const identifier = z.string().regex(idPattern);
 const entry = z.object({ hash: hash.nullable(), version: z.number().int().positive().safe() });
 const change = z.object({ path: z.string().refine(validPath), hash: hash.nullable(), expectedVersion: z.number().int().nonnegative().safe() });
 // `content` is the bytes to publish when they differ from the acknowledged remote entry (a merge result).
-const incoming = z.object({ path: z.string().refine(validPath), expected: hash.nullable(), entry, content: hash.optional() });
+const incoming = z.object({ path: z.string().refine(validPath), expected: hash.nullable(), entry,
+  previousHash: hash.nullable().optional(), content: hash.optional() });
 const checkpoint = z.object({
   version: z.literal(1), root: z.string(), deviceId: identifier, workspaceId: identifier.nullable(), revision: z.number().int().nonnegative().safe(),
+  queuedThrough: z.number().int().nonnegative().safe().default(0),
   base: z.record(entry), cache: z.record(z.object({ signature: z.string(), hash })), lastSuccess: z.string().nullable(),
+  lastProgress: z.string().nullable().default(null),
   outbox: z.object({ workspaceId: identifier, deviceId: identifier, operationId: identifier, changes: z.array(change).min(1).max(20000) }).optional(),
   incoming: z.array(incoming).optional(),
   conflict: z.object({ id: identifier, changes: z.array(incoming), local: z.record(hash.nullable()), branches: z.array(z.string()) }).optional(),
@@ -35,12 +39,12 @@ export type ConflictSnapshot = { id: string; files: { path: string; local: strin
 export type Resolution = { at: string; path: string; kind: 'fast-forward' | 'deleted' | 'merged'; local: string | null;
   remote: string | null; content: string | null; recovery: string | null };
 export type ConflictFile = {
-  path: string; conflictId: string; localText: string | null; remoteText: string | null; action: 'add' | 'delete' | 'modify'; hasBase: boolean; localChanged: boolean; remoteChanged: boolean;
+  path: string; conflictId: string; relatedPaths?: string[]; localText: string | null; remoteText: string | null; action: 'add' | 'delete' | 'modify'; hasBase: boolean; localChanged: boolean; remoteChanged: boolean;
   localSize: number | null; remoteSize: number | null; image: boolean; text: boolean; diff: DiffBlock[] | null; truncated: boolean;
 };
 const imagePattern = /\.(png|jpe?g|gif|webp|svg|bmp|avif|ico)$/i;
 type Hooks = {
-  publish<T>(work: () => Promise<T>): Promise<T>;
+  publish<T>(work: (blocked?: ReadonlySet<string>) => Promise<T>, paths: string[]): Promise<T>;
   changed(relative: string, deleted: boolean): Promise<void>;
   conflict?(snapshot: ConflictSnapshot): Promise<string[]>;
 };
@@ -67,6 +71,9 @@ export class FileSyncEngine {
 
   status(): FileSyncStatus {
     return { ...this.snapshot, endpoints: [...this.snapshot.endpoints], conflictBranches: [...this.snapshot.conflictBranches],
+      seen: this.state?.revision ?? 0, queuedThrough: this.state?.queuedThrough ?? 0,
+      pendingIncoming: this.state?.incoming?.length ?? 0, pendingOutgoing: this.state?.outbox?.changes.length ?? 0,
+      lastProgress: this.state?.lastProgress ?? null,
       recentResolutions: this.resolutions.slice(-20).reverse().map(({ at, path: name, kind }) => ({ at, path: name, kind })) };
   }
   get busy(): boolean { return this.running !== null; }
@@ -78,13 +85,15 @@ export class FileSyncEngine {
     try { this.state = checkpoint.parse(JSON.parse(await fs.readFile(this.filename, 'utf8'))); }
     catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw new Error('同步检查点损坏，已停止；请保留恢复目录');
-      this.state = { version: 1, root: vaultPathKey(this.root), deviceId: randomUUID(), workspaceId: null, revision: 0, base: {}, cache: {}, lastSuccess: null };
+      this.state = { version: 1, root: vaultPathKey(this.root), deviceId: randomUUID(), workspaceId: null,
+        revision: 0, queuedThrough: 0, base: {}, cache: {}, lastSuccess: null, lastProgress: null };
     }
     if (this.state.root !== vaultPathKey(this.root)) throw new Error('同步检查点属于另一个 Vault');
     // `revision` is only the newest server revision seen (the rollback watermark). Every base entry came from a
     // server manifest or receipt, so an entry newer than the watermark (written by builds that resolved part of a
     // conflict without recording the revision) proves the server reached it: raise the watermark, never brick.
     for (const entry of Object.values(this.state.base)) this.state.revision = Math.max(this.state.revision, entry.version);
+    if (this.state.queuedThrough > this.state.revision) throw new Error('同步检查点的入队版本无效');
     if (this.state.workspaceId) validateManifest({ workspaceId: this.state.workspaceId, revision: this.state.revision, files: this.state.base });
     if (Object.keys(this.state.cache).some(name => !validPath(name)) || Object.keys(this.state.conflict?.local ?? {}).some(name => !validPath(name)))
       throw new Error('同步检查点包含无效路径');
@@ -138,37 +147,49 @@ export class FileSyncEngine {
     }
     const changes: SyncOperation['changes'] = [];
     const downloads: Incoming[] = []; const conflicts: Incoming[] = [];
-    // Paths this device never acknowledged and the server deleted: an upload unless the content is known stale.
-    const resurrections: Incoming[] = [];
     const acknowledgements: Record<string, SyncEntry> = {};
     // A conflicted or still-journaled path is held back on its own; every other path keeps synchronizing.
-    const held = new Set([...(this.state.incoming ?? []), ...(this.state.conflict?.changes ?? [])].map(item => item.path));
+    const held = new Map([...(this.state.incoming ?? []), ...(this.state.conflict?.changes ?? [])].map(item => [item.path, item.entry]));
+    let allRemoteChangesQueued = true;
     for (const name of new Set([...this.files.keys(), ...Object.keys(this.state.base), ...Object.keys(manifest.files)])) {
       const local = this.files.get(name) ?? null;
-      const base = this.state.base[name]?.hash ?? null;
+      const base = this.state.base[name];
       const remote = Object.hasOwn(manifest.files, name) ? manifest.files[name] : { hash: null, version: 0 };
       if (remote.version < (this.state.base[name]?.version ?? 0)) throw new Error('远端文件版本回退，已停止同步');
       if (this.state.base[name]?.version === remote.version && this.state.base[name].hash !== remote.hash)
         throw new Error('远端文件内容与已确认版本不一致，已停止同步');
-      if (held.has(name)) continue;
-      if (local === remote.hash) { if (remote.version) acknowledgements[name] = remote; continue; }
-      if (local === base) downloads.push({ path: name, expected: local, entry: remote });
-      else if (!this.state.base[name] && local && remote.version && !remote.hash) resurrections.push({ path: name, expected: local, entry: remote });
-      else if (remote.hash === base) changes.push({ path: name, expectedVersion: remote.version, hash: local });
-      else conflicts.push({ path: name, expected: local, entry: remote });
+      const blocked = [...held.keys()].some(heldPath => relatedSyncPaths(name, heldPath));
+      const queued = held.get(name);
+      if (blocked && remote.version !== base?.version && (queued?.version !== remote.version || queued.hash !== remote.hash)) allRemoteChangesQueued = false;
+      const plan = planSyncPath(base ?? null, local, remote.version ? remote : null, blocked);
+      const transfer = { path: name, expected: local, previousHash: base?.hash ?? null, entry: remote };
+      switch (plan.decision) {
+        case 'adopt': acknowledgements[name] = remote; break;
+        case 'download': downloads.push(transfer); break;
+        case 'upload': changes.push({ path: name, expectedVersion: plan.expectedVersion, hash: local }); break;
+        case 'conflict': conflicts.push(transfer); break;
+      }
     }
     const automatic: Resolution[] = []; const unresolved: Incoming[] = [];
-    for (const item of [...conflicts, ...resurrections]) {
+    const conflictsByPath = new Set(conflicts.map(item => item.path));
+    for (const group of groupIncoming([...conflicts, ...downloads])) {
+      if (group.length < 2 || !group.some(item => conflictsByPath.has(item.path))) continue;
+      unresolved.push(...group);
+    }
+    const grouped = new Set(unresolved.map(item => item.path));
+    const independentDownloads = downloads.filter(item => !grouped.has(item.path));
+    for (const item of conflicts) {
+      if (grouped.has(item.path)) continue;
       const resolved = await this.autoResolve(transport, item);
-      if (resolved) { downloads.push(resolved.incoming); automatic.push(resolved.record); }
-      else if (resurrections.includes(item)) changes.push({ path: item.path, expectedVersion: item.entry.version, hash: item.expected });
+      if (resolved) { independentDownloads.push(resolved.incoming); automatic.push(resolved.record); }
       else unresolved.push(item);
     }
     if (unresolved.length) await this.retainConflicts(transport, unresolved);
-    for (const item of downloads) if (item.entry.hash && !item.content) await this.download(transport, item.entry.hash);
+    for (const item of independentDownloads) if (item.entry.hash && !item.content) await this.download(transport, item.entry.hash);
     Object.assign(this.state.base, acknowledgements);
     this.state.revision = Math.max(this.state.revision, manifest.revision);
-    if (downloads.length) this.state.incoming = [...(this.state.incoming ?? []), ...downloads];
+    if (allRemoteChangesQueued) this.state.queuedThrough = manifest.revision;
+    if (independentDownloads.length) this.state.incoming = [...(this.state.incoming ?? []), ...independentDownloads];
     if (changes.length) {
       if (changes.length > 20000) throw new Error('单批同步超过 20000 个文件，请分批导入');
       this.state.outbox = { workspaceId: manifest.workspaceId, deviceId: this.state.deviceId, operationId: randomUUID(), changes };
@@ -179,12 +200,16 @@ export class FileSyncEngine {
     if (this.state.outbox && !await this.submit(transport)) throw new Error('远端已有新修改，本机内容已保留，下次同步重新比较');
     await this.applyIncoming();
     // A merge result is now the local file on top of the remote base; the next pass uploads it.
-    if (automatic.some(item => item.kind === 'merged' && item.content !== item.remote) && followUp < 2) {
+    if ((automatic.some(item => item.kind === 'merged' && item.content !== item.remote) ||
+      this.state.queuedThrough < this.state.revision && !this.state.conflict) && followUp < 2) {
       const next = await this.pass(followUp + 1);
       if (next.phase === 'idle') next.message = this.automaticMessage(automatic);
       this.snapshot.message = next.message; return this.status();
     }
-    this.state.lastSuccess = new Date().toISOString(); await this.persist();
+    this.state.lastProgress = new Date().toISOString();
+    if (!this.state.incoming?.length && !this.state.outbox && !this.state.conflict && this.state.queuedThrough === this.state.revision)
+      this.state.lastSuccess = this.state.lastProgress;
+    await this.persist();
     this.snapshot.lastSuccess = this.state.lastSuccess; this.snapshot.phase = 'idle';
     this.snapshot.message = automatic.length ? this.automaticMessage(automatic) : '同步完成';
     if (this.state.conflict) {
@@ -200,12 +225,6 @@ export class FileSyncEngine {
     return `同步完成，自动处理 ${items.length} 个文件（${parts.filter(([kind]) => count(kind)).map(([kind, label]) => `${label} ${count(kind)}`).join('，')}），本机原版已保留`;
   }
 
-  /** Whether the server already holds these exact bytes, i.e. they were synchronized before. */
-  private async knownRemotely(transport: OrderedSyncTransport, digest: string): Promise<boolean> {
-    try { const response = await transport.request(`blobs/${digest}`); await response.body?.cancel(); return true; }
-    catch (error) { if (error instanceof SyncHttpError && error.status === 404) return false; throw error; }
-  }
-
   private async blobText(transport: OrderedSyncTransport, digest: string | null): Promise<string | null> {
     if (!digest) return '';
     await this.download(transport, digest);
@@ -214,16 +233,13 @@ export class FileSyncEngine {
 
   /**
    * Resolves a two-sided difference without asking when no edit can be lost:
-   * - the path has no acknowledged base on this device (first connection, a copy restored from another tool) and
-   *   the local bytes already exist on the server, so they are an older synchronized version rather than new work;
    * - both sides edited a text file and a line-based three-way merge against the base has no overlapping edits.
    * The local version is copied to the recovery directory first. Anything else stays a manual conflict.
    */
   private async autoResolve(transport: OrderedSyncTransport, item: Incoming): Promise<{ incoming: Incoming; record: Resolution } | null> {
     const base = this.state.base[item.path]; const local = item.expected; const remote = item.entry.hash;
     let kind: Resolution['kind'] | null = null; let content: string | undefined;
-    if (!base && local && await this.knownRemotely(transport, local)) kind = remote ? 'fast-forward' : 'deleted';
-    else if (base?.hash && local && remote && textExtension(item.path)) {
+    if (base?.hash && local && remote && textExtension(item.path)) {
       const [ancestor, ours, theirs] = [await this.blobText(transport, base.hash), await this.blobText(transport, local), await this.blobText(transport, remote)];
       if (ancestor === null || ours === null || theirs === null) return null;
       // Same line-hunk three-way merge that MCP review recovery uses.
@@ -286,18 +302,20 @@ export class FileSyncEngine {
       let info;
       try { info = await fs.lstat(absolute); }
       catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        if (!['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
         for (const name of this.files.keys()) if (name === relative || name.startsWith(`${relative}/`)) { this.files.delete(name); delete this.state.cache[name]; }
         return;
       }
       if (info.isSymbolicLink()) throw new Error('同步目录包含符号链接或联接，请移出后重试');
       if (info.isDirectory()) {
+        this.files.delete(relative); delete this.state.cache[relative];
         const names = await fs.readdir(absolute);
         if (names.includes('.stfolder')) throw new Error('同步目录包含 Syncthing 管理的文件夹');
         for (const name of names) await inspect(relative ? `${relative}/${name}` : name);
         return;
       }
       if (!info.isFile()) throw new Error('同步仅支持普通文件');
+      for (const name of this.files.keys()) if (name.startsWith(`${relative}/`)) { this.files.delete(name); delete this.state.cache[name]; }
       const signature = fileSignature(info);
       const previous = this.state.cache[relative];
       const cached = !this.scanned && previous?.signature === signature && await fs.access(path.join(this.blobs, previous.hash)).then(() => true, () => false);
@@ -319,42 +337,102 @@ export class FileSyncEngine {
   private async applyIncoming(): Promise<void> {
     if (!this.state.incoming?.length) return;
     const conflicted: Incoming[] = [];
-    await this.hooks.publish(async () => {
-      for (const item of this.state.incoming!) {
-        const absolute = await resolveVaultPath(this.root, item.path, true);
-        const actual = await hashFile(absolute);
-        const target = item.content ?? item.entry.hash;
-        if (actual !== target && actual !== item.expected) {
-          // Edited locally after this download was planned: retain both versions for this path only.
-          if (actual) {
-            const digest = await stageLocalFile(absolute, this.blobs, fileSignature(await fs.stat(absolute)));
-            if (digest !== actual) throw new Error('本机文件仍在修改，已暂停恢复');
-          }
-          conflicted.push({ path: item.path, expected: actual, entry: item.entry });
+    const groups = groupIncoming(this.state.incoming);
+    let snapshot: ConflictSnapshot | undefined;
+    await this.hooks.publish(async (blocked = new Set()) => {
+      const next = { ...this.state, base: Object.assign(Object.create(null), this.state.base) as Checkpoint['base'] };
+      const pending: Incoming[] = [];
+      for (const group of groups) {
+        if (group.some(item => [...blocked].some(name => relatedSyncPaths(item.path, name)))) {
+          pending.push(...group);
           continue;
         }
-        if (actual !== target) {
-          const source = target ? path.join(this.blobs, target) : null;
-          if (source && await hashFile(source) !== target) throw new Error('待恢复附件不完整，未修改笔记');
-          await writeFileFromSource(absolute, source, item.expected);
-        }
-        this.state.base[item.path] = item.entry;
-        if (target) {
-          this.files.set(item.path, target);
-          this.state.cache[item.path] = { signature: fileSignature(await fs.stat(absolute)), hash: target };
-        } else { this.files.delete(item.path); delete this.state.cache[item.path]; }
-        await this.hooks.changed(item.path, !item.entry.hash);
+        await this.applyIncomingGroup(next, group, conflicted);
       }
-      delete this.state.incoming; await this.persist();
-    });
-    if (conflicted.length) await this.retainConflicts(null, conflicted);
+      if (pending.length) next.incoming = pending;
+      else delete next.incoming;
+      if (pending.length !== this.state.incoming!.length) next.lastProgress = new Date().toISOString();
+      if (conflicted.length) snapshot = await this.captureConflicts(next, null, conflicted);
+      await this.saveState(next);
+    }, this.state.incoming.map(item => item.path));
+    if (snapshot) await this.recordConflictBranches(snapshot);
+    if (this.state.incoming?.length)
+      throw Object.assign(new Error('部分文件已同步，正在等待有关联的文档保存后继续'), { status: 409 });
   }
 
-  private async retainConflicts(transport: OrderedSyncTransport | null, changes: Incoming[]): Promise<void> {
+  private async applyIncomingGroup(next: Checkpoint, group: Incoming[], conflicted: Incoming[]): Promise<void> {
+    const prepared = await Promise.all(group.map(async item => {
+      const absolute = await resolveVaultPath(this.root, item.path, true);
+      const info = await fs.lstat(absolute).catch((error: NodeJS.ErrnoException) => {
+        if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return null;
+        throw error;
+      });
+      const directory = info?.isDirectory() === true;
+      const actual = info && !directory ? await hashFile(absolute) : null;
+      return { item, absolute, actual, directory, target: item.content ?? item.entry.hash };
+    }));
+    const deletions = new Set(prepared.filter(item => item.target === null).map(item => item.absolute));
+    const folders = new Map<string, string[]>();
+    for (const { absolute, directory, target } of prepared) {
+      if (directory && target) {
+        const emptyAfterDeletion = await this.emptiedDirectories(absolute, deletions);
+        if (emptyAfterDeletion) folders.set(absolute, emptyAfterDeletion);
+      }
+    }
+    if (prepared.some(({ item, absolute, directory, actual, target }) =>
+      (directory && target && !folders.has(absolute)) || (actual !== target && actual !== item.expected))) {
+      for (const { item, absolute, actual } of prepared) {
+        if (actual) {
+          const digest = await stageLocalFile(absolute, this.blobs, fileSignature(await fs.stat(absolute)));
+          if (digest !== actual) throw new Error('本机文件仍在修改，已暂停恢复');
+        }
+        conflicted.push({ ...item, expected: actual });
+      }
+      return;
+    }
+    for (const { target } of prepared) {
+      if (target && await hashFile(path.join(this.blobs, target)) !== target) throw new Error('待恢复附件不完整，未修改笔记');
+    }
+    for (const { item, absolute, actual, target } of prepared.sort((a, b) => Number(a.target !== null) - Number(b.target !== null))) {
+      for (const folder of folders.get(absolute) ?? []) await fs.rmdir(folder);
+      if (actual !== target) await writeFileFromSource(absolute, target ? path.join(this.blobs, target) : null, item.expected);
+      next.base[item.path] = item.entry;
+      if (target) {
+        this.files.set(item.path, target);
+        this.state.cache[item.path] = { signature: fileSignature(await fs.stat(absolute)), hash: target };
+      } else { this.files.delete(item.path); delete this.state.cache[item.path]; }
+      await this.hooks.changed(item.path, target === null);
+    }
+  }
+
+  private async emptiedDirectories(folder: string, deletions: ReadonlySet<string>): Promise<string[] | null> {
+    const nested: string[] = [];
+    for (const entry of await fs.readdir(folder, { withFileTypes: true })) {
+      const name = path.join(folder, entry.name);
+      if (entry.isDirectory()) {
+        const emptied = await this.emptiedDirectories(name, deletions);
+        if (!emptied) return null;
+        nested.push(...emptied);
+      } else if (!entry.isFile() || !deletions.has(name)) return null;
+    }
+    return [...nested, folder];
+  }
+
+  private async retainConflicts(transport: OrderedSyncTransport, changes: Incoming[]): Promise<void> {
+    const next = { ...this.state };
+    const snapshot = await this.captureConflicts(next, transport, changes);
+    await this.saveState(next);
+    await this.recordConflictBranches(snapshot);
+  }
+
+  private async captureConflicts(next: Checkpoint, transport: OrderedSyncTransport | null, changes: Incoming[]): Promise<ConflictSnapshot> {
+    const previous = next.conflict;
+    const retained = new Map(previous?.changes.map(item => [item.path, { ...item, expected: previous.local[item.path] ?? null }]));
+    for (const item of changes) retained.set(item.path, item);
     const id = randomUUID(); const directory = path.join(this.directory, 'conflicts', id);
-    const local: Record<string, string | null> = {};
+    const local: Record<string, string | null> = Object.create(null);
     const snapshot: ConflictSnapshot = { id, files: [] };
-    for (const item of changes) {
+    for (const item of retained.values()) {
       local[item.path] = item.expected;
       if (item.entry.hash && transport) await this.download(transport, item.entry.hash);
       for (const [side, digest] of [['local', item.expected], ['remote', item.entry.hash]] as const) {
@@ -365,16 +443,20 @@ export class FileSyncEngine {
       snapshot.files.push({ path: item.path, local: item.expected ? path.join(this.blobs, item.expected) : null,
         remote: item.entry.hash ? path.join(this.blobs, item.entry.hash) : null });
     }
-    await atomicSyncJson(path.join(directory, 'conflict.json'), { changes, local });
-    if (!transport) delete this.state.incoming;
-    const previous = this.state.conflict;
-    if (previous) for (const item of previous.changes) if (!changes.some(change => change.path === item.path)) {
-      changes.push(item); local[item.path] = previous.local[item.path] ?? null;
-    }
-    this.state.conflict = { id, changes, local, branches: [] }; await this.persist();
+    const retainedChanges = [...retained.values()];
+    await atomicSyncJson(path.join(directory, 'conflict.json'), { changes: retainedChanges, local });
+    next.conflict = { id, changes: retainedChanges, local, branches: previous?.branches ?? [] };
+    return snapshot;
+  }
+
+  private async recordConflictBranches(snapshot: ConflictSnapshot): Promise<void> {
     let branchError = '';
     if (this.hooks.conflict) {
-      try { this.state.conflict.branches = await this.hooks.conflict(snapshot); await this.persist(); }
+      try {
+        const branches = await this.hooks.conflict(snapshot);
+        const conflict = this.state.conflict!;
+        await this.saveState({ ...this.state, conflict: { ...conflict, branches: [...new Set([...conflict.branches, ...branches])] } });
+      }
       catch (error) { branchError = `；Git 分支保存失败：${(error as Error).message}`; }
     }
     this.setConflictStatus();
@@ -403,6 +485,8 @@ export class FileSyncEngine {
     // A subset may be resolved; the remaining files stay in the same conflict.
     const chosen = conflict.changes.filter(item => pick(item.path));
     const remaining = conflict.changes.filter(item => !pick(item.path));
+    if (groupIncoming(conflict.changes).some(group => group.some(item => pick(item.path)) && group.some(item => !pick(item.path))))
+      throw Object.assign(new Error('有关联的改名或目录冲突需要一起审阅'), { status: 400 });
     const transport = new OrderedSyncTransport(this.preferences.endpoints, this.preferences.token);
     const manifest = await transport.select({ workspaceId: this.state.workspaceId!, revision: this.state.revision });
     for (const item of chosen) {
@@ -410,18 +494,31 @@ export class FileSyncEngine {
       if ((pick(item.path) !== 'merged' && actual !== conflict.local[item.path]) || manifest.files[item.path]?.version !== item.entry.version || manifest.files[item.path]?.hash !== item.entry.hash)
         throw new Error(`${item.path} 在冲突后又有变化，请点同步重新比较`);
     }
-    for (const item of chosen) this.state.base[item.path] = item.entry;
+    const next = { ...this.state, base: Object.assign(Object.create(null), this.state.base) as Checkpoint['base'] };
+    for (const item of chosen) if (pick(item.path) !== 'remote') next.base[item.path] = item.entry;
     // The entries come from this manifest; record it with them, or a later load sees versions past the checkpoint.
-    this.state.revision = Math.max(this.state.revision, manifest.revision);
+    next.revision = Math.max(next.revision, manifest.revision);
     const incoming = chosen.filter(item => pick(item.path) === 'remote');
-    if (incoming.length) this.state.incoming = incoming;
-    else delete this.state.incoming;
+    if (incoming.length) next.incoming = [...(next.incoming ?? []), ...incoming];
     if (remaining.length) {
-      conflict.changes = remaining;
-      for (const item of chosen) delete conflict.local[item.path];
-    } else delete this.state.conflict;
-    await this.persist();
-    await this.applyIncoming();
+      const local = Object.assign(Object.create(null), conflict.local) as typeof conflict.local;
+      for (const item of chosen) delete local[item.path];
+      next.conflict = { ...conflict, changes: remaining, local };
+    } else delete next.conflict;
+    await this.saveState(next);
+    try { await this.applyIncoming(); }
+    catch (error) {
+      if (!gateBusy(error)) throw error;
+      if (this.state.conflict) this.setConflictStatus();
+      else {
+        this.snapshot.phase = 'recovery';
+        this.snapshot.conflictDirectory = null;
+        this.snapshot.conflictBranches = [];
+        this.snapshot.conflictCount = 0;
+      }
+      this.snapshot.message = '冲突选择已保存，待接收文件将在编辑闸门打开后继续同步';
+      return this.status();
+    }
     if (this.state.conflict) { this.setConflictStatus(); return this.status(); }
     this.scanned = false; this.snapshot.conflictDirectory = null; this.snapshot.conflictBranches = []; this.snapshot.conflictCount = 0;
     return this.pass();
@@ -434,6 +531,8 @@ export class FileSyncEngine {
     if (!conflict) return null;
     const read = async (digest: string | null) => digest ? fs.readFile(path.join(this.blobs, digest)).catch(() => null) : null;
     const files: ConflictFile[] = [];
+    const related = new Map(groupIncoming(conflict.changes).flatMap(group => group.map(item =>
+      [item.path, group.filter(other => other !== item).map(other => other.path)] as const)));
     for (const item of conflict.changes) {
       const local = conflict.local[item.path] ?? null; const remote = item.entry.hash; const base = this.state.base[item.path]?.hash;
       const [ours, theirs] = [await read(local), await read(remote)];
@@ -441,7 +540,7 @@ export class FileSyncEngine {
       const text = left !== null && right !== null && (textExtension(item.path) || !imagePattern.test(item.path));
       const change = text ? describeChange(left, right) : null;
       const full = text && left!.length + right!.length <= 1024 * 1024;
-      files.push({ path: item.path, conflictId: conflict.id, localText: full ? left : null, remoteText: full ? right : null,
+      files.push({ path: item.path, conflictId: conflict.id, relatedPaths: related.get(item.path), localText: full ? left : null, remoteText: full ? right : null,
         action: !local ? 'add' : !remote ? 'delete' : 'modify', hasBase: base !== undefined,
         localChanged: base === undefined || local !== base, remoteChanged: base === undefined || remote !== base,
         localSize: ours?.length ?? null, remoteSize: theirs?.length ?? null, image: imagePattern.test(item.path), text,
@@ -467,4 +566,8 @@ export class FileSyncEngine {
     this.snapshot.conflictBranches = [...conflict.branches];
   }
   private persist(): Promise<void> { return atomicSyncJson(this.filename, this.state); }
+  private async saveState(next: Checkpoint): Promise<void> {
+    await atomicSyncJson(this.filename, next);
+    this.state = next;
+  }
 }

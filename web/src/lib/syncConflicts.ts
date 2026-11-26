@@ -23,7 +23,9 @@ export function refreshSyncConflicts(): Promise<void> {
 export function clearSyncConflicts(): void { if (conflicts.size) publish(new Map()); }
 
 export async function resolveSyncConflict(path: string, choice: 'local' | 'remote' | 'merged'): Promise<void> {
-  await request('/api/file-sync/resolve', { method: 'POST', body: JSON.stringify({ choice: 'files', files: { [path]: choice } }) });
+  const paths = [path, ...(conflicts.get(path)?.relatedPaths ?? [])];
+  const files = Object.fromEntries(paths.map(name => [name, choice]));
+  await request('/api/file-sync/resolve', { method: 'POST', body: JSON.stringify({ choice: 'files', files }) });
   await refreshSyncConflicts();
 }
 

@@ -16,12 +16,13 @@ export type FileSyncStatus = {
   phase: 'disabled' | 'idle' | 'syncing' | 'error' | 'conflict' | 'recovery';
   message: string; lastSuccess: string | null; conflictDirectory: string | null; conflictBranches: string[];
   conflictCount: number;
+  seen?: number; queuedThrough?: number; pendingIncoming?: number; pendingOutgoing?: number; lastProgress?: string | null;
   /** Differences this device resolved without asking, newest first. */
   recentResolutions: { at: string; path: string; kind: 'fast-forward' | 'deleted' | 'merged' }[];
 };
 export type SyncDiffBlock = { type: 'same' | 'add' | 'del' | 'skip'; lines: string[]; skipped?: number };
 export type SyncConflictFile = {
-  path: string; conflictId: string;
+  path: string; conflictId: string; relatedPaths?: string[];
   /** Full text of both versions for in-editor review (text files up to 1 MiB), otherwise null. */
   localText: string | null; remoteText: string | null; action: 'add' | 'delete' | 'modify'; hasBase: boolean; localChanged: boolean; remoteChanged: boolean;
   localSize: number | null; remoteSize: number | null; image: boolean; text: boolean; diff: SyncDiffBlock[] | null; truncated: boolean;

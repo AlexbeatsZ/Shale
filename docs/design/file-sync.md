@@ -111,10 +111,9 @@ Manual pull/clone is blocked while native synchronization owns file transport.
 
 A two-sided difference is resolved without asking only when no edit can be lost, and the local
 version is first copied to `<state>/recovery/<date>/<path>` and logged in `resolutions.json`:
-- No acknowledged base for the path (first connection, a copy restored from Syncthing) and the
-  local bytes already exist as a server blob: they are a previously synchronized, older version,
-  so the device fast-forwards (or accepts the server's tombstone). This was the cause of the
-  tablet's 19 first-connection conflicts on 2026-11-19. Unknown local bytes still conflict.
+- On first connection, identical local and remote bytes acknowledge the path directly. Differing
+  local content, including content for a remotely deleted path, enters review when the client has
+  no acknowledged ancestor for that path. V1's global blob inventory cannot establish lineage.
 - Both sides edited a text file (`syncMerge.textExtension`, UTF-8, ≤ 8 MiB) and the line-hunk
   three-way merge `mergeReview` from `markdown-core/review.ts` (the same core MCP review recovery
   uses) finds no touching hunks. The merge result is published locally on top of the remote base
@@ -152,10 +151,18 @@ Mature tools (Syncthing, Dropbox, Obsidian Sync, Dayweave's own hub) isolate pro
   the outbox is submitted before the journal is applied.
 - A retained conflict holds back only its own paths (and paths still journaled). Every other path keeps
   synchronizing in both directions; status stays `conflict` with "其他文件已同步；N 个冲突文件待处理".
-- When applying the journal, only files edited locally after the download was planned become conflicts;
-  the other journaled files are applied in the same pass.
-Not yet done: per-path gate blockers. One unsaved or conflicted open document still refuses the whole
-download journal (uploads continue); narrowing that needs the acknowledgement to carry paths.
+- Windows report blocked document paths for sync and retain global blockers for stale Vault sessions,
+  active mutations and trusted native plugins. One maintenance lease keeps notifications and writes
+  paused while it publishes eligible groups. An older renderer that reports only global blockers
+  continues to block the lease conservatively.
+- A group joins affected parent/child names and unambiguous same-revision moves with identical bytes.
+  A dirty path defers its whole group. A local edit after planning retains both sides of the group
+  in the same checkpoint transition that retires its journal entries. Unrelated groups can continue.
+  Replacing a directory with a file checks that the journal accounts for every child before removing
+  empty directories. Case-only aliases still require explicit handling under the existing v1 contract.
+- Reviewing one conflict appends its incoming choice to existing journal work. The incoming path's
+  acknowledged base is set after application. The checkpoint keeps the seen revision separately
+  from the revision of fully queued work. Partial progress is distinct from last complete sync.
 
 ## Server-side Git backup (sync-server)
 

@@ -26,13 +26,13 @@ export async function fileSyncEngine(): Promise<FileSyncEngine> {
   if (current?.root === root && current.signature === signature) return current.engine;
   const directory = path.join(config.dataDir, 'file-sync', createHash('sha256').update(vaultPathKey(root)).digest('hex'));
   const engine = new FileSyncEngine(root, directory, preferences, {
-    publish: async work => {
+    publish: async (work, paths) => {
       if (vaultPathKey(await getVaultRoot()) !== vaultPathKey(root)) throw new Error('Vault 已切换，同步未写入文件');
       if (recovering) return work();
-      return withVaultMaintenance(drainFileUpdates, async () => {
+      return withVaultMaintenance(drainFileUpdates, async blocked => {
         if (vaultPathKey(await getVaultRoot()) !== vaultPathKey(root)) throw new Error('Vault 已切换，同步已停止');
-        return work();
-      }, { unattended: true });
+        return work(blocked);
+      }, { unattended: true, syncPaths: paths });
     },
     changed: async (relative, deleted) => { await queueFileUpdate(relative, deleted ? 'unlink' : 'change'); },
     conflict: async snapshot => {

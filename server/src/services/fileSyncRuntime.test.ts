@@ -117,12 +117,17 @@ describe('real application integration', () => {
         if (message.type === 'maintenance') {
           maintenance.push(message.phase);
           if (message.phase === 'inspect' || message.phase === 'prepare') socket!.send(JSON.stringify({ type: 'maintenance-ack', token: message.token, check: message.check,
-            blockers: blocked ? ['fixture editor has unsaved text'] : [] }));
+            blockers: blocked && !message.syncPaths ? ['fixture editor has unsaved text'] : [],
+            pathBlockers: blocked && message.syncPaths ? ['remote.png'] : undefined }));
         }
       });
       await new Promise<void>((resolve, reject) => { socket!.once('open', resolve); socket!.once('error', reject); });
-      const refused = await (await request('file-sync/run', 'POST', {})).json() as FileSyncStatus; expect(refused.phase, logs).toBe('recovery'); expect(refused.message).toContain('unsaved');
+      const unrelated = path.join(peerRoot, 'unrelated.md');
+      await fs.writeFile(unrelated, 'independent'); peer.noteChanged('unrelated.md'); await peer.run();
+      const refused = await (await request('file-sync/run', 'POST', {})).json() as FileSyncStatus;
+      expect(refused, logs).toMatchObject({ phase: 'recovery', pendingIncoming: 1, lastSuccess: null });
       await expect(fs.access(path.join(vault, 'remote.png'))).rejects.toThrow();
+      expect(await fs.readFile(path.join(vault, 'unrelated.md'), 'utf8')).toBe('independent');
       blocked = false;
       const completed = await (await request('file-sync/run', 'POST', {})).json() as FileSyncStatus; expect(completed.phase, logs).toBe('idle'); expect(completed.activeEndpoint).toBe(endpoint);
       expect(await fs.readFile(path.join(vault, 'remote.png'))).toEqual(image); expect(maintenance).toContain('release');

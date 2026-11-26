@@ -5,12 +5,14 @@ import type { WebSocket } from 'ws';
 import { vaultConfigurationIdentity } from './vaultConfiguration.js';
 import { holdVaultNotifications } from './realtime.js';
 import { isReadOnlyAdapterOperation } from '../contracts.js';
+import { validPath } from '../../../sync-server/protocol.mjs';
 
 let epoch = 0;
 let activeWrites = 0;
 let clients: () => Iterable<WebSocket> = () => [];
 type Lease = { token: string; failure?: string; released?: Promise<void>; unattended?: boolean;
-  checks: Map<WebSocket, { id: string; blockers?: string[] }> };
+  paths?: string[]; blockedPaths: Set<string>;
+  checks: Map<WebSocket, { id: string; blockers?: string[]; paths?: string[] }> };
 let lease: Lease | undefined;
 let inspection: Lease | undefined;
 const conflict = (message: string) => Object.assign(new Error(message), { status: 409 });
@@ -53,11 +55,15 @@ export function maintenanceClientConnected(): void {
   if (lease) lease.failure = '清理期间出现新的应用连接，请重新扫描';
 }
 export function maintenanceClientMessage(client: WebSocket, message: unknown): void {
-  const msg = message as { type?: string; token?: string; check?: string; blockers?: unknown };
+  const msg = message as { type?: string; token?: string; check?: string; blockers?: unknown; pathBlockers?: unknown };
   const current = msg?.token === lease?.token ? lease : inspection;
   const pending = current?.checks.get(client);
   if (!pending || msg?.type !== 'maintenance-ack' || msg.token !== current?.token || msg.check !== pending.id) return;
   if (!Array.isArray(msg.blockers) || msg.blockers.some(value => typeof value !== 'string')) return;
+  if (msg.pathBlockers !== undefined) {
+    if (!Array.isArray(msg.pathBlockers) || msg.pathBlockers.some(value => !validPath(value))) return;
+    pending.paths = msg.pathBlockers;
+  }
   pending.blockers = msg.blockers.slice(0, 30).map(value => String(value).slice(0, 300));
 }
 
@@ -97,7 +103,7 @@ async function checkWorkspace(current: Lease, freeze: boolean): Promise<string[]
   if (connected.some(client => client.readyState !== 1)) throw conflict('应用连接状态未知');
   const check = randomUUID();
   current.checks = new Map(connected.map(client => [client, { id: check }]));
-  for (const client of connected) client.send(JSON.stringify({ type: 'maintenance', phase: freeze ? 'prepare' : 'inspect', token: current.token, check }));
+  for (const client of connected) client.send(JSON.stringify({ type: 'maintenance', phase: freeze ? 'prepare' : 'inspect', token: current.token, check, syncPaths: current.paths !== undefined }));
   const deadline = Date.now() + 5000;
   while ([...current.checks.values()].some(state => state.blockers === undefined)) {
     if (current.failure || connected.some(client => client.readyState !== 1))
@@ -107,13 +113,14 @@ async function checkWorkspace(current: Lease, freeze: boolean): Promise<string[]
   }
   if (current.failure || connected.some(client => client.readyState !== 1))
     throw conflict(current.failure ?? '应用连接中断，清理已停止');
+  current.blockedPaths = new Set([...current.checks.values()].flatMap(state => state.paths ?? []));
   return [...new Set([...current.checks.values()].flatMap(state => state.blockers ?? []))];
 }
 
 export async function inspectMaintenanceWorkspace(): Promise<string[]> {
   if (lease) return checkWorkspace(lease, true);
   if (inspection) return ['另一个扫描正在确认编辑状态，请稍后重试'];
-  const current: Lease = { token: randomUUID(), checks: new Map() };
+  const current: Lease = { token: randomUUID(), checks: new Map(), blockedPaths: new Set() };
   inspection = current;
   try { return await checkWorkspace(current, false); }
   catch (error) { return [error instanceof Error ? error.message : String(error)]; }
@@ -130,11 +137,12 @@ export async function assertMaintenanceWorkspaceSafe(): Promise<void> {
  * `unattended` lets a publisher whose every write is revision-checked (native sync) run while no application
  * window is connected. Connected windows are still asked and their blockers still apply.
  */
-export async function withVaultMaintenance<T>(drainUpdates: () => Promise<void>, work: () => Promise<T>,
-  options: { unattended?: boolean } = {}): Promise<T> {
+export async function withVaultMaintenance<T>(drainUpdates: () => Promise<void>, work: (blockedPaths: ReadonlySet<string>) => Promise<T>,
+  options: { unattended?: boolean; syncPaths?: string[] } = {}): Promise<T> {
   if (lease) throw conflict('已有附件清理正在执行');
   let releaseReaders!: () => void;
   const current: Lease = { token: randomUUID(), checks: new Map(), unattended: options.unattended,
+    paths: options.syncPaths, blockedPaths: new Set(),
     released: new Promise<void>(resolve => { releaseReaders = resolve; }) };
   const flushNotifications = holdVaultNotifications();
   lease = current;
@@ -148,7 +156,7 @@ export async function withVaultMaintenance<T>(drainUpdates: () => Promise<void>,
     if (expected !== undefined) await assertVaultIdentity(expected);
     await drainUpdates();
     await assertMaintenanceWorkspaceSafe();
-    return await work();
+    return await work(current.blockedPaths);
   } finally {
     if (lease === current) lease = undefined;
     releaseReaders();

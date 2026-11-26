@@ -22,7 +22,7 @@ const subscribe = (listener: () => void) => {
 
 function candidate(path: string): ReviewCandidate | null {
   const file = syncConflictSnapshot().get(path);
-  if (!file || file.action !== 'modify' || file.localText === null || file.remoteText === null) { entries.delete(path); return null; }
+  if (!file || file.relatedPaths?.length || file.action !== 'modify' || file.localText === null || file.remoteText === null) { entries.delete(path); return null; }
   const key = `${file.conflictId}:${file.localText.length}:${file.remoteText.length}`;
   let entry = entries.get(path);
   if (entry?.key !== key) {
