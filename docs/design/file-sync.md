@@ -46,9 +46,14 @@ pages. Later syncs read changes against the previous remote snapshot and persist
 each continuation. An expired cursor allows one fresh snapshot per pass. Servers
 without these capabilities still use the original v1 manifest and blob endpoints.
 
-The incoming journal records hashes before fetching. Ready flags are saved in
-batches, then independent, verified groups can publish while an interrupted
-attachment retains its partial bytes. Resumed downloads verify the complete
+The incoming journal records hashes before fetching. The client first verifies
+cached blobs locally, then streams remaining distinct digests through up to four
+workers. A slow remote stream cannot hold cached files or independent files
+completed by other workers. Dependencies are fixed for the pass. Each complete
+group can publish through the existing edit gate once its ready flags are durable.
+The first complete group and worker drain points handle a short queue, while
+larger queues batch readiness in checkpoints. Each publish updates baselines and
+retires applied journal entries together. Unfinished streams retain partial bytes. Resumed downloads verify the complete
 digest. Uploads use server offsets in 8 MiB chunks and the existing operation
 receipt still guards manifest publication. Held paths and their ancestors are
 indexed once per pass. The status bar shows completion only after the first full

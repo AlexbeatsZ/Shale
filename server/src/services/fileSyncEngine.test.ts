@@ -46,7 +46,7 @@ async function hub(name = 'hub'): Promise<string> {
 }
 
 async function client(name: string, options: Partial<FileSyncPreferences> = {},
-  publish = async <T>(work: (blocked?: ReadonlySet<string>) => Promise<T>) => work()) {
+  publish = async <T>(work: (blocked?: ReadonlySet<string>) => Promise<T>, _paths: string[]) => work()) {
   const root = path.join(directory, name);
   const state = path.join(directory, `${name}-state`);
   await fs.mkdir(root, { recursive: true });
@@ -71,7 +71,8 @@ afterEach(async () => {
   await fs.rm(directory, { recursive: true, force: true });
 });
 
-describe('native file synchronization', () => {
+// Real disk and Git fixtures share I/O with the 12 MiB transfer cases; match the packaged runner limit.
+describe('native file synchronization', { timeout: 30000 }, () => {
   it('matches the shared TypeScript, Kotlin and C# per-path planning traces', () => {
     const { traces } = createRequire(import.meta.url)('@alexbeatsz/file-sync-core/sync-golden-traces.json');
     for (const trace of traces) for (const { event, expected } of trace.steps) {
@@ -128,6 +129,137 @@ describe('native file synchronization', () => {
     expect(await first.engine.run()).toMatchObject({ phase: 'idle', activeEndpoint: endpoint, seen: 1, queuedThrough: 1 });
     expect(resources.some(url => url.endsWith('/manifest'))).toBe(true);
     expect(resources.every(url => url.startsWith(endpoint))).toBe(true);
+  });
+
+  it.each(['a-attachment.bin', 'z-attachment.bin'])(
+    'publishes a short queue around a stalled %s while preserving rename and dirty groups',
+    async attachment => {
+      const sender = await client('sender');
+      const dirtyPaths = new Set<string>();
+      const receiver = await client('receiver', {}, async work => work(dirtyPaths));
+      const large = Buffer.alloc(12 * 1024 * 1024, 42);
+      const largeHash = digest(large);
+      const cacheHash = digest('cache hit');
+      await sender.write('old-name.bin', large);
+      await sender.write('dirty.md', 'original');
+      expect((await sender.engine.run()).phase).toBe('idle');
+      expect((await receiver.engine.run()).phase).toBe('idle');
+
+      // Delete and create the same content in one revision, but force the receiver to download it.
+      await fs.unlink(path.join(sender.root, 'old-name.bin'));
+      sender.engine.noteChanged('old-name.bin');
+      await sender.write(attachment, large);
+      await sender.write('dirty.md', 'remote dirty change');
+      await sender.write('m-independent.md', 'arrived via download');
+      await sender.write('n-cached.md', 'cache hit');
+      await sender.write('o-cached-copy.md', 'cache hit');
+      expect((await sender.engine.run()).phase).toBe('idle');
+      await fs.unlink(path.join(receiver.state, 'blobs', largeHash));
+      await fs.writeFile(path.join(receiver.state, 'blobs', cacheHash), 'cache hit');
+      dirtyPaths.add('dirty.md');
+      const original = globalThis.fetch;
+      let release!: () => void;
+      const waiting = new Promise<void>(resolve => { release = resolve; });
+      let paused = false;
+      const requests: string[] = [];
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
+        requests.push(String(url));
+        const response = await original(url, options);
+        if (!String(url).endsWith('/blobs/' + largeHash) || options?.method) return response;
+        const reader = response.body!.getReader();
+        let first = true;
+        return new Response(new ReadableStream({
+          async pull(controller) {
+            if (!first) { paused = true; await waiting; }
+            first = false;
+            const chunk = await reader.read();
+            if (chunk.done) controller.close();
+            else controller.enqueue(chunk.value);
+          },
+          cancel: reason => reader.cancel(reason),
+        }), { status: response.status, headers: response.headers });
+      });
+      const run = receiver.engine.run();
+      const read = (name: string) => fs.readFile(path.join(receiver.root, name), 'utf8');
+      try {
+        await expect.poll(() => paused, { timeout: 5000 }).toBe(true);
+        await expect.poll(() => read('m-independent.md').catch(() => null), { timeout: 5000 }).toBe('arrived via download');
+        await expect.poll(() => read('o-cached-copy.md').catch(() => null), { timeout: 5000 }).toBe('cache hit');
+        expect(await read('n-cached.md')).toBe('cache hit');
+        expect(requests.filter(url => url.endsWith('/blobs/' + cacheHash))).toHaveLength(0);
+        expect(requests.filter(url => url.endsWith('/blobs/' + largeHash))).toHaveLength(1);
+        expect(await read('dirty.md')).toBe('original');
+        expect((await fs.stat(path.join(receiver.root, 'old-name.bin'))).size).toBe(large.length);
+        await expect(fs.stat(path.join(receiver.root, attachment))).rejects.toMatchObject({ code: 'ENOENT' });
+        const checkpoint = async () => JSON.parse(await fs.readFile(path.join(receiver.state, 'checkpoint.json'), 'utf8'));
+        await expect.poll(async () => (await checkpoint()).incoming.map((item: { path: string }) => item.path).sort())
+          .toEqual([attachment, 'dirty.md', 'old-name.bin'].sort());
+        expect((await checkpoint()).base['m-independent.md'].hash).toBe(digest('arrived via download'));
+      } finally { release(); await run; }
+      expect(await run).toMatchObject({ phase: 'recovery', pendingIncoming: 1 });
+      expect((await fs.readFile(path.join(receiver.root, attachment))).equals(large)).toBe(true);
+      await expect(fs.stat(path.join(receiver.root, 'old-name.bin'))).rejects.toMatchObject({ code: 'ENOENT' });
+      dirtyPaths.clear();
+      const restarted = new FileSyncEngine(receiver.root, receiver.state, receiver.preferences,
+        { publish: async work => work(), changed: async () => {} });
+      await restarted.recover();
+      expect((await restarted.run())).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
+      expect(await read('dirty.md')).toBe('remote dirty change');
+    },
+  );
+
+  it('publishes cached work independently of four held network streams and retains conflicts across batches', async () => {
+    const sender = await client('sender');
+    const conflicted = new Set<string>();
+    const receiver = await client('receiver', {}, async (work, paths?) => {
+      // Simulate a newer local write after planning while entering the publication lease.
+      for (const name of ['z-cached-conflict.md', 'a-stream-0.bin']) {
+        if (!paths?.includes(name) || conflicted.has(name)) continue;
+        conflicted.add(name);
+        await fs.writeFile(path.join(receiver.root, name), 'local version');
+      }
+      return work();
+    });
+    const streams = Array.from({ length: 4 }, (_, i) => ({ name: `a-stream-${i}.bin`, bytes: Buffer.alloc(256 * 1024, i) }));
+    const hashes = new Set(streams.map(({ bytes }) => digest(bytes)));
+    await fs.mkdir(path.join(receiver.state, 'blobs'), { recursive: true });
+    const cached = 'cached bytes';
+    const cachedConflict = 'remote cached version';
+    for (const [name, bytes] of [['y-cached.md', cached], ['z-cached-conflict.md', cachedConflict]]) {
+      await sender.write(name, bytes);
+      await fs.writeFile(path.join(receiver.state, 'blobs', digest(bytes)), bytes);
+    }
+    for (const { name, bytes } of streams) await sender.write(name, bytes);
+    expect((await sender.engine.run()).phase).toBe('idle');
+
+    const original = globalThis.fetch;
+    let release!: () => void;
+    const hold = new Promise<void>(resolve => { release = resolve; });
+    let stalled = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
+      const address = new URL(String(url)).pathname;
+      if (!options?.method && hashes.has(address.split('/').at(-1)!)) { stalled++; await hold; }
+      return original(url, options);
+    });
+    const read = (name: string) => fs.readFile(path.join(receiver.root, name), 'utf8');
+    const run = receiver.engine.run();
+    try {
+      await expect.poll(() => stalled).toBe(4);
+      expect(await read('y-cached.md')).toBe(cached);
+      expect(await read('z-cached-conflict.md')).toBe('local version');
+      expect(receiver.engine.status().conflictCount).toBe(1);
+      expect((await receiver.engine.conflictDetails())?.files.map(item => item.path)).toEqual(['z-cached-conflict.md']);
+    } finally { release(); await run; }
+
+    expect(await run).toMatchObject({ phase: 'conflict', conflictCount: 2 });
+    const details = await receiver.engine.conflictDetails();
+    expect(details?.files.map(item => item.path).sort()).toEqual(['a-stream-0.bin', 'z-cached-conflict.md']);
+    expect(await read('a-stream-0.bin')).toBe('local version');
+    const reopened = new FileSyncEngine(receiver.root, receiver.state, receiver.preferences,
+      { publish: async work => work(), changed: async () => {} });
+    await reopened.recover();
+    expect((await reopened.conflictDetails())?.files.map(item => item.path).sort()).toEqual(['a-stream-0.bin', 'z-cached-conflict.md']);
+    for (const { name, bytes } of streams.slice(1)) expect((await fs.readFile(path.join(receiver.root, name))).equals(bytes)).toBe(true);
   });
 
   it('resumes interrupted upload and download using the same digest and durable operation', async () => {

@@ -28,7 +28,8 @@ afterEach(async () => {
   await fs.rm(directory, { recursive: true, force: true });
 });
 
-describe('Git as backup, not file transport', () => {
+// Real disk and Git fixtures share I/O with the 12 MiB transfer cases; match the packaged runner limit.
+describe('Git as backup, not file transport', { timeout: 30000 }, () => {
   it('never records token-bearing connection files and untracks copies from earlier backups', async () => {
     const client = simpleGit(fixture.root);
     await fs.writeFile(path.join(fixture.root, 'note.md'), 'note');

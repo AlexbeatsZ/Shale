@@ -211,9 +211,7 @@ export class FileSyncEngine {
     if (automatic.length) await this.recordResolutions(automatic);
     // Uploads and downloads touch disjoint paths, so uploading never waits for the local editing gate.
     if (this.state.outbox && !await this.submit(transport)) throw new Error('远端已有新修改，本机内容已保留，下次同步重新比较');
-    const transferError = await this.prepareIncoming(transport);
-    await this.applyIncoming();
-    if (transferError) throw transferError;
+    await this.receiveIncoming(transport);
     // A merge result is now the local file on top of the remote base; the next pass uploads it.
     if ((automatic.some(item => item.kind === 'merged' && item.content !== item.remote) ||
       this.state.queuedThrough < this.state.revision && !this.state.conflict) && followUp < 2) {
@@ -384,36 +382,99 @@ export class FileSyncEngine {
     await downloadSyncBlob(transport, this.blobs, digest);
   }
 
-  private async prepareIncoming(transport: OrderedSyncTransport): Promise<unknown> {
-    let transferError: unknown;
-    const verified = new Set<string>();
-    const ready = new Set<string>();
-    const saveReady = async () => {
-      if (!ready.size) return;
-      const incoming = this.state.incoming!.map(item => ready.has(item.path) ? { ...item, ready: true } : item);
-      await this.saveState({ ...this.state, incoming, lastProgress: new Date().toISOString() });
-      ready.clear();
-    };
-    for (const item of this.state.incoming ?? []) {
-      if (item.ready !== false) continue;
-      const digest = item.content ?? item.entry.hash;
-      if (digest && !verified.has(digest)) {
-        try { await this.download(transport, digest); }
-        catch (error) { transferError ??= error; continue; }
-        verified.add(digest);
+  private async receiveIncoming(transport: OrderedSyncTransport): Promise<void> {
+    const incoming = this.state.incoming ?? [];
+    if (!incoming.length) return;
+
+    // Compute dependencies before retiring any paths. In particular, completing one of several
+    // same-digest additions must not turn an ambiguous move into an inferred rename mid-pass.
+    const groups = groupIncoming(incoming);
+    const jobs = new Map<string | null, string[]>();
+    const outstanding = new Map<string, { count: number }>();
+    for (const group of groups) {
+      const unready = group.filter(item => item.ready === false);
+      const remaining = { count: unready.length };
+      for (const item of unready) {
+        const digest = item.content ?? item.entry.hash;
+        let paths = jobs.get(digest);
+        if (!paths) jobs.set(digest, paths = []);
+        paths.push(item.path);
+        outstanding.set(item.path, remaining);
       }
-      ready.add(item.path);
-      if (ready.size === 64) await saveReady();
     }
-    await saveReady();
-    return transferError;
+    // Each worker streams to disk. Distinct workers can keep progressing past one stalled response,
+    // and a digest shared by multiple paths has exactly one writer to its .part file.
+    const batchSize = Math.max(64, Math.ceil(incoming.length / 16));
+    let ready = new Set<string>();
+    let transferError: unknown;
+    let publicationError: unknown;
+    let checkpointError: unknown;
+    let publishedEarly = groups.some(group => group.every(item => item.ready !== false));
+    let publication = Promise.resolve();
+
+    const flush = () => {
+      const batch = ready;
+      ready = new Set();
+      publication = publication.then(async () => {
+        if (checkpointError) return;
+        if (batch.size) {
+          const incoming = this.state.incoming!.map(item => batch.has(item.path) ? { ...item, ready: true } : item);
+          await this.saveState({ ...this.state, incoming, lastProgress: new Date().toISOString() });
+        }
+        if (publicationError) return;
+        try { await this.applyIncoming(groups); }
+        catch (error) { if (!gateBusy(error)) publicationError = error; }
+      }).catch(error => { checkpointError = error; });
+      return publication;
+    };
+    if (publishedEarly) void flush();
+
+    const markReady = async (paths: string[]) => {
+      let completeGroup = false;
+      for (const name of paths) {
+        ready.add(name);
+        if (--outstanding.get(name)!.count === 0) completeGroup = true;
+      }
+      // Publish the first independent group even when the batch is small. Further
+      // checkpoints are bounded by batch size and by the number of workers that drain.
+      const firstGroup = completeGroup && !publishedEarly;
+      if (firstGroup) publishedEarly = true;
+      if (firstGroup || ready.size >= batchSize) await flush();
+    };
+    const runWorkers = async (process: (digest: string | null, paths: string[]) => Promise<void>) => {
+      const work = jobs.entries();
+      await Promise.all(Array.from({ length: Math.min(jobs.size, 4) }, async () => {
+        for (let job = work.next(); !job.done && !checkpointError; job = work.next()) await process(...job.value);
+        // Other workers may still be waiting on their current transfers.
+        if (ready.size) await flush();
+      }));
+    };
+
+    // Local blobs must be verified and released even when every remote stream stalls.
+    await runWorkers(async (digest, paths) => {
+      const cached = !digest || await hashFile(path.join(this.blobs, digest)).catch(() => null) === digest;
+      if (!cached) return;
+      jobs.delete(digest);
+      await markReady(paths);
+    });
+    await runWorkers(async (digest, paths) => {
+      try { await this.download(transport, digest!); }
+      catch (error) { transferError ??= error; return; }
+      await markReady(paths);
+    });
+    await publication;
+    if (checkpointError) throw checkpointError;
+    if (publicationError) throw publicationError;
+    await this.applyIncoming(groups);
+    if (transferError) throw transferError;
   }
 
-  private async applyIncoming(): Promise<void> {
+  private async applyIncoming(queuedGroups?: Incoming[][]): Promise<void> {
     if (!this.state.incoming?.length) return;
     const conflicted: Incoming[] = [];
-    const groups = groupIncoming(this.state.incoming);
-    if (!groups.some(group => group.every(item => item.ready !== false))) return;
+    const groups = queuedGroups ? this.remainingIncomingGroups(queuedGroups) : groupIncoming(this.state.incoming);
+    const readyPaths = groups.filter(group => group.every(item => item.ready !== false)).flatMap(group => group.map(item => item.path));
+    if (!readyPaths.length) return;
     let blockedByEditor = false;
     let snapshot: ConflictSnapshot | undefined;
     await this.hooks.publish(async (blocked = new Set()) => {
@@ -434,10 +495,15 @@ export class FileSyncEngine {
       if (pending.length !== this.state.incoming!.length) next.lastProgress = new Date().toISOString();
       if (conflicted.length) snapshot = await this.captureConflicts(next, null, conflicted);
       await this.saveState(next);
-    }, this.state.incoming.map(item => item.path));
+    }, readyPaths);
     if (snapshot) await this.recordConflictBranches(snapshot);
     if (blockedByEditor)
       throw Object.assign(new Error('部分文件已同步，正在等待有关联的文档保存后继续'), { status: 409 });
+  }
+
+  private remainingIncomingGroups(groups: Incoming[][]): Incoming[][] {
+    const entries = new Map(this.state.incoming!.map(item => [item.path, item]));
+    return groups.map(group => group.flatMap(({ path }) => entries.get(path) ?? [])).filter(group => group.length);
   }
 
   private async applyIncomingGroup(next: Checkpoint, group: Incoming[], conflicted: Incoming[]): Promise<void> {
