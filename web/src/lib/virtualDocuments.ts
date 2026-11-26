@@ -1,7 +1,9 @@
 import type { CatalogEntry } from '@shale/search-core';
 import type { TreeNode } from './api';
 export type { VirtualDocument, VirtualSource } from '../../../server/src/contracts/virtualDocument';
-import type { VirtualDocument } from '../../../server/src/contracts/virtualDocument';
+import type { VirtualDocument, VirtualSource } from '../../../server/src/contracts/virtualDocument';
+/** PDF and PowerPoint members share the paged reader; only Markdown members are editable sessions. */
+export const isPagedSource = (source: Pick<VirtualSource, 'kind'>) => source.kind !== 'markdown';
 
 let documents: readonly VirtualDocument[] = [], generation = 0;
 const memberTargets = new Map<string, string | null>();

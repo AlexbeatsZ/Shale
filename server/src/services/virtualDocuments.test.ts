@@ -56,7 +56,7 @@ it('treats a descriptor whose streams match nothing as an invalid document and k
 it('creates only a hidden automatic descriptor, naturally orders sources and excludes former indexes',async()=>{
   const tree=await listTree(),folder=tree.children!.find(node=>node.path==='Book')!;
   const manifest=defaultVirtualManifest(folder);
-  expect(manifest).toEqual({title:'Book',streams:[{title:'MD',pattern:'(?<!(?:^|[ /])索引)\\.(?:md|markdown)$'},{title:'PDF',pattern:'\\.pdf$'}]});
+  expect(manifest).toEqual({title:'Book',streams:[{title:'MD',pattern:'(?<!(?:^|[ /])索引)\\.(?:md|markdown)$'},{title:'PDF',pattern:'\\.pdf$'},{title:'PPT',pattern:'\\.pptx?$'}]});
   await saveVirtualManifest('Book',manifest);
   const projected=await describeVirtualDocuments(await listTree()),collection=projected.children!.find(node=>node.path==='Book')!.virtualDocument!;
   expect(collection.streams[0].files.map(file=>file.path)).toEqual(['Book/正文/第02章.md','Book/正文/第10章.md']);
@@ -178,4 +178,13 @@ it('renames automatic members without rewriting the descriptor and refuses names
   expect((await readVirtualManifest('Book'))!.content).toBe(current.content);
   await expect(prepareVirtualSourceRename('Book',current.revision,'Book/正文/第03章.md','Book/正文/附录.md')).rejects.toThrow('不符合');
   await expect(prepareVirtualSourceRename('Book',current.revision,'Book/Book 索引.md','Book/Other.md')).rejects.toThrow('不属于');
+});
+
+it('reads PowerPoint members as paged sources interleaved with PDFs in natural order', async () => {
+  for(const name of ['课件 02 b.pptx','课件 01 a.pdf','课件 10 c.PPT','课件 03 x.ppt.md'])await fs.writeFile(state.root+'/Book/'+name,'x');
+  await fs.writeFile(state.root+'/Book/.virtual-document.json',JSON.stringify({title:'Book',streams:[{title:'主线',pattern:'^课件 \\d{2} .*\\.(?:pdf|pptx?|PPT)$'},{title:'手动',files:['课件 02 b.pptx']}]}));
+  const streams=(await describeVirtualDocuments(await listTree())).children![0].virtualDocument!.streams;
+  expect(streams[0].files.map(file=>[file.title,file.kind])).toEqual([['课件 01 a','pdf'],['课件 02 b','ppt'],['课件 10 c','ppt']]);
+  expect(streams[1].files[0]).toMatchObject({kind:'ppt',missing:false});
+  expect(defaultVirtualManifest((await listTree()).children![0]).streams.map(stream=>stream.title)).toEqual(['MD','PDF','PPT']);
 });

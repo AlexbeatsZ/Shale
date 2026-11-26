@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { virtualManifestSchema, virtualSourcePath, compileVirtualPattern, VIRTUAL_DOCUMENT_FILE, type VirtualManifest } from '../contracts/virtualDocument.js';
+import { virtualManifestSchema, virtualSourcePath, compileVirtualPattern, virtualSourceKind, VIRTUAL_SOURCE_EXTENSION, VIRTUAL_DOCUMENT_FILE, type VirtualManifest } from '../contracts/virtualDocument.js';
 import type { TreeNode } from '../contracts.js';
 import { catalog } from './catalog.js';
 import { parseConfiguration } from './vaultConfiguration.js';
@@ -77,12 +77,12 @@ export async function describeVirtualDocuments(tree: TreeNode): Promise<TreeNode
       const source = await readVirtualManifest(node.path);
       if (!source) return;
       const streams = resolveVirtualStreams(source.manifest, folderSources(node)).filter(stream => stream.files.length);
-      if (!streams.length) throw failure('没有符合任何分组的 Markdown 或 PDF 来源');
+      if (!streams.length) throw failure('没有符合任何分组的 Markdown、PDF 或 PPT 来源');
       node.virtualDocument = { path: node.path, title: source.manifest.title, revision: source.revision,
         streams: streams.map(stream => ({ ...stream, files: stream.files.map(relative => {
           const filePath = node.path + '/' + relative, file = files.get(filePath), note = catalog.notes.get(filePath);
-          return { path: filePath, title: relative.split('/').pop()!.replace(/\.(md|markdown|pdf)$/i, ''),
-            kind: /\.pdf$/i.test(relative) ? 'pdf' as const : 'markdown' as const, size: file?.size ?? 0,
+          return { path: filePath, title: relative.split('/').pop()!.replace(VIRTUAL_SOURCE_EXTENSION, ''),
+            kind: virtualSourceKind(relative), size: file?.size ?? 0,
             headings: note?.outline ?? note?.headings.map(text => ({ text, level: 1 })) ?? [], missing: !file };
         }) })) };
     } catch (error) { node.virtualDocumentError = '连续文档配置无效：' + (error as Error).message; }
@@ -94,9 +94,9 @@ export async function describeVirtualDocuments(tree: TreeNode): Promise<TreeNode
 export function defaultVirtualManifest(folder: TreeNode): VirtualManifest {
   const sources = folderSources(folder), index = /(?:^|[ /])索引\.md$/i;
   const markdown = sources.some(file => index.test(file)) ? '(?<!(?:^|[ /])索引)\\.(?:md|markdown)$' : '\\.(?:md|markdown)$';
-  const streams = [{ title: 'MD', pattern: markdown }, { title: 'PDF', pattern: '\\.pdf$' }]
-    .filter(stream => sources.some(file => matches(stream.pattern, file)));
-  if (!streams.length) throw failure('此文件夹没有 Markdown 或 PDF 来源');
+  // Every stream is written even when currently empty: empty streams stay hidden until matching files arrive.
+  const streams = [{ title: 'MD', pattern: markdown }, { title: 'PDF', pattern: '\\.pdf$' }, { title: 'PPT', pattern: '\\.pptx?$' }];
+  if (!sources.length) throw failure('此文件夹没有 Markdown、PDF 或 PPT 来源');
   return { title: folder.name, streams };
 }
 

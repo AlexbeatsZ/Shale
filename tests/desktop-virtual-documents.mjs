@@ -83,7 +83,7 @@ try {
       if(!response.ok)throw new Error(await response.text());
     }
   },[[book,bookManifest],[slides,undefined]]);
-  assert.equal(JSON.parse(await fs.readFile(path.join(vault,slides,'.virtual-document.json'),'utf8')).streams[0].pattern,'\\.pdf$');
+  assert.deepEqual(JSON.parse(await fs.readFile(path.join(vault,slides,'.virtual-document.json'),'utf8')).streams.map(stream=>stream.pattern),['\\.(?:md|markdown)$','\\.pdf$','\\.pptx?$']);
   for(const folder of ['04资料','04资料/化学','04资料/化学/物理化学']) {
     await page.locator(`[data-path="${folder}"]`).first().click();
   }
@@ -256,11 +256,26 @@ try {
   await expect(slideIndex.getByRole('link',{name:'ZZ 自动发现验收'})).toBeVisible({timeout:30000});
   assert.equal(await slideIndex.getByRole('link').count(),linkCount+1);
   assert.equal(await fs.readFile(path.join(vault,slides,'.virtual-document.json'),'utf8'),slidesConfig);
+  // PowerPoint members use the packaged slide Worker inside the continuous reader.
+  const slideDeck=slides+'/ZZ 幻灯片验收.pptx';
+  await fs.copyFile(path.join(root,'tests/fixtures/presentation.pptx'),path.join(vault,slideDeck));
+  await expect(async()=>{
+    await page.getByRole('button',{name:/^切换分组：/}).click();
+    await page.getByRole('menuitemcheckbox',{name:'PPT',exact:true}).click({timeout:1500});
+  }).toPass({timeout:30000});
+  await expect(page.getByRole('button',{name:'切换分组：PPT',exact:true})).toBeVisible();
+  await slideIndex.getByRole('link',{name:'ZZ 幻灯片验收',exact:true}).click();
+  const deck=page.locator(`[data-virtual-source="${slideDeck}"]`);
+  await expect(deck.locator('.pdf-page-slot')).toHaveCount(7);
+  await expect(deck.locator('.pdf-page-surface.is-ready').first()).toBeVisible({timeout:60000});
+  await expect(deck.locator('.ppt-text-layer').first()).toContainText('预设形状库');
+  await page.screenshot({path:path.join(output,'native-ppt.png')});
+  assert.equal(await fs.readFile(path.join(vault,slides,'.virtual-document.json'),'utf8'),slidesConfig);
   for(const [file,bytes] of original)if(file!==editedPath)assert((await fs.readFile(path.join(vault,file))).equals(bytes),'Source changed: '+file);
   assert.deepEqual(errors,[]);
   const metrics=await app.evaluate(({app})=>app.getAppMetrics().map(({type,memory})=>({type,memory})));
   const result={executable,fixture,realMaterials:!!process.env.VIRTUAL_REAL_VAULT,sourceMarkdown:original.size,sourceMarkdownBytes:[...original.values()].reduce((sum,bytes)=>sum+bytes.length,0),
-    firstOpenMs,chapterJumpMs,pdfOpenMs,reversePositions,sourceTitleRenameAndManifest:true,automaticStreamDiscovery:true,markdownThumbnails:true,pdfThumbnailNavigation:true,markdownReadCount:mdReadCount,markdownMounted,pdfCanvases:canvases,unrelatedSourceBytesUnchanged:true,independentEditAndUndo:true,configurationValidSave:true,invalidConfigurationPreserved:true,jsonHighlightColors:highlightColors,nativePdfReveal:true,pdfDarkOffPersisted:true,nativeReveals:await app.evaluate(()=>globalThis.nativeReveals),rendererErrors:errors,processMetrics:metrics};
+    firstOpenMs,chapterJumpMs,pdfOpenMs,reversePositions,sourceTitleRenameAndManifest:true,automaticStreamDiscovery:true,continuousPowerPoint:true,markdownThumbnails:true,pdfThumbnailNavigation:true,markdownReadCount:mdReadCount,markdownMounted,pdfCanvases:canvases,unrelatedSourceBytesUnchanged:true,independentEditAndUndo:true,configurationValidSave:true,invalidConfigurationPreserved:true,jsonHighlightColors:highlightColors,nativePdfReveal:true,pdfDarkOffPersisted:true,nativeReveals:await app.evaluate(()=>globalThis.nativeReveals),rendererErrors:errors,processMetrics:metrics};
   await fs.writeFile(path.join(output,'native-result.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 } catch(error) {
   const page=await app.firstWindow();await page.screenshot({path:path.join(output,'native-failure.png')}).catch(()=>{});

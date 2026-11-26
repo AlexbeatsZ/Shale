@@ -3,6 +3,7 @@ import { useActivePage } from '../lib/useActivePage';
 import { useVirtualReading } from '../lib/virtualReading';
 import { MenuList } from './ContextMenu';
 import Icon from './Icon';
+import { isPagedSource } from '../lib/virtualDocuments';
 
 const noSubscribe = () => () => {};
 export default function VirtualGroupMenu() {
@@ -34,7 +35,7 @@ export default function VirtualGroupMenu() {
     }}>
       <MenuList items={[
         ...reader.document.streams.map(stream => ({ label: stream.title, checked: !state.configuration && stream.id === state.stream,
-          icon: stream.files.every(file => file.kind === 'pdf') ? 'file-text' : 'book-open', onClick: () => reader.selectStream(stream.id) })),
+          icon: stream.files.every(isPagedSource) ? 'file-text' : 'book-open', onClick: () => reader.selectStream(stream.id) })),
         { label: '', separator: true },
         { label: '配置', icon: 'code', checked: state.configuration, onClick: () => reader.selectConfiguration() },
       ]} onClose={() => { setOpen(false); trigger.current?.focus(); }} />

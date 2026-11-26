@@ -4,6 +4,7 @@ import { usePdfSession } from '../lib/pdf/react';
 import MarkdownMinimap from './MarkdownMinimap';
 import PdfThumbnailsPanel from './PdfThumbnailsPanel';
 import Icon from './Icon';
+import { isPagedSource } from '../lib/virtualDocuments';
 import '../styles/virtual-navigation.css';
 
 /** A collection navigator plus the current source's existing, resource-sharing preview. */
@@ -11,7 +12,7 @@ export default function VirtualThumbnailsPanel({ reader }: { reader: VirtualRead
   const state = useSyncExternalStore(reader.subscribe, reader.getSnapshot);
   const stream = reader.document.streams.find(stream => stream.id === state.stream)!;
   const source = stream.files.find(file => file.path === state.activeSource);
-  const pdf = usePdfSession(source?.kind === 'pdf' ? source.path : null, 'virtual:' + reader.viewId);
+  const pdf = usePdfSession(source && isPagedSource(source) ? source.path : null, 'virtual:' + reader.viewId);
   const goToLine = useCallback((line: number) => { if (source) reader.go({ path: source.path, line }); }, [reader, source?.path]);
   const goToPage = useCallback((page: number) => { if (source) reader.go({ path: source.path, page }); }, [reader, source?.path]);
   if (state.configuration) return null;
@@ -22,7 +23,7 @@ export default function VirtualThumbnailsPanel({ reader }: { reader: VirtualRead
         <Icon name="list" size={14} /><span>目录</span>
       </button>
       {stream.files.map(file => <button key={file.path} type="button" aria-current={file.path === source?.path ? 'location' : undefined}
-        onClick={() => reader.go({ path: file.path })}><Icon name={file.kind === 'pdf' ? 'file' : 'file-text'} size={14} /><span>{file.title}</span></button>)}
+        onClick={() => reader.go({ path: file.path })}><Icon name={isPagedSource(file) ? 'file' : 'file-text'} size={14} /><span>{file.title}</span></button>)}
     </nav>
     <div className="virtual-thumbnail-preview">
       {!source ? <button type="button" className="virtual-cover-thumbnail" aria-label="目录缩略图" onClick={() => reader.go({ path: reader.document.path })}>

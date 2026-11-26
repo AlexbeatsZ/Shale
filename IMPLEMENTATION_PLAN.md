@@ -4,7 +4,11 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-25 (虚拟文档自动分组 PRD 1.68)
+Cập nhật lần cuối: 2026-11-25 (连续文档 PPT 来源 PRD 1.69)
+
+### 连续文档 PPT 来源 (PRD 1.69)
+
+- [x] 来源类型增加 PPT/PPTX，复用分页章节/大纲/缩略图/链接预览；默认 MD/PDF/PPT 自动分组；STEM 11 课件模板匹配 pdf|pptx?；673单元、混合浏览器与Mac原生PPT回归通过。
 
 ### 虚拟文档自动分组 (PRD 1.68)
 
@@ -811,6 +815,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-25: PRD1.69连续文档支持PPT/PPTX来源并迁移课件规则；Mac0.1.99原生PPT回归通过并已安装。
 
 - 2026-11-25: PRD1.68虚拟文档分组pattern/files，运行时自然排序自动发现；STEM 27配置迁移；672单元、两端浏览器/原生通过，0.1.98发布，Mac/OMEN/ROG已更新，Android待设备在线。
 

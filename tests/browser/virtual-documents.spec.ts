@@ -1,4 +1,5 @@
 import { test, expect } from './test';
+import { readFileSync } from 'node:fs';
 import { makePdfFixture } from './fixtures/pdf';
 
 test.setTimeout(120_000);
@@ -248,4 +249,47 @@ test('multiple PDFs share a continuous scroll, generated index, bookmarks and a 
   await page.screenshot({path:testInfo.outputPath('virtual-pdf-pages.png')});
   await page.setViewportSize({width:420,height:850});
   await expect(host.getByRole('button',{name:'切换分组：PDF',exact:true})).toBeVisible();
+});
+
+test('PowerPoint members read inline between PDFs with slide titles, outline and thumbnails', async ({page})=>{
+  const folder='化学/课件',pdf=makePdfFixture({pages:2}),pptx=readFileSync('tests/fixtures/presentation.pptx'),ppt=readFileSync('tests/fixtures/presentation-legacy.ppt');
+  const files=[['课件 01 绪论.pdf','pdf',pdf],['课件 02 形状.pptx','ppt',pptx],['课件 03 旧版.ppt','ppt',ppt]].map(([name,kind,body])=>({path:`${folder}/${name}`,title:(name as string).replace(/\.[^.]+$/,''),kind,size:(body as Buffer).length,headings:[]}));
+  const collection={path:folder,title:'课件',revision:'ppt-v1',streams:[{id:'主线',title:'主线',files}]};
+  await page.route('**/api/**',async route=>{
+    const url=new URL(route.request().url());
+    if(url.pathname==='/api/vault-identity'||url.pathname==='/api/writing')return route.fallback();
+    if(url.pathname==='/api/files/content'){const path=url.searchParams.get('path')??'';return route.fulfill({contentType:'application/octet-stream',body:path.endsWith('.pptx')?pptx:path.endsWith('.ppt')?ppt:pdf});}
+    if(url.pathname.replace(/\/$/,'')==='/api/uistate')return route.fulfill({json:{}});
+    return route.fulfill({json:{hits:[],matches:[],backlinks:[],types:{},enabled:false}});
+  });
+  await page.goto('/__render-test');await page.waitForFunction(()=>!!window.renderHarness);
+  await page.evaluate(async({folder,collection})=>{
+    const load=(path:string)=>import(path);
+    const [React,ReactDOM,{default:Workspace},{default:RightSidebar},store]=await Promise.all([
+      load('/node_modules/.vite/deps/react.js'),load('/node_modules/.vite/deps/react-dom_client.js'),load('/src/components/Workspace.tsx'),load('/src/components/RightSidebar.tsx'),load('/src/lib/store.ts')]);
+    document.getElementById('root')!.hidden=true;const host=document.createElement('div');host.id='virtual-ppt-fixture';host.style.cssText='position:fixed;inset:0';document.body.append(host);
+    await store.useStore.getState().loadUiState();
+    store.useStore.setState({tree:{name:'Fixture',path:'',type:'folder',children:[{name:collection.title,path:folder,type:'folder',virtualDocument:collection}]},rightOpen:true,rightPanel:'outline',rightTabs:[],rightActiveId:null});
+    await store.useStore.getState().openFile(folder);
+    const h=(React.default??React).createElement;(ReactDOM.createRoot??ReactDOM.default.createRoot)(host).render(h('div',{className:'app theme-dark'},h(Workspace),h(RightSidebar,{open:true})));
+    (window as any).virtualPptStore=store.useStore;
+  },{folder,collection});
+  const host=page.locator('#virtual-ppt-fixture'),index=host.getByRole('navigation',{name:'文档索引'});
+  await expect(index.getByRole('link')).toHaveCount(3);
+  await index.getByRole('link',{name:'课件 02 形状',exact:true}).click();
+  const slides=host.locator(`[data-virtual-source="${folder}/课件 02 形状.pptx"]`);
+  await expect(slides.locator('.cm-inline-title, .virtual-source-title').first()).toContainText('课件 02 形状');
+  await expect(slides.locator('.pdf-page-slot')).toHaveCount(7);
+  await expect(slides.locator('.pdf-page-surface.is-ready').first()).toBeInViewport();
+  await expect(slides.locator('.ppt-text-layer').first()).toContainText('预设形状库');
+  const outline=host.getByRole('navigation',{name:'连续文档大纲'});
+  await expect(outline.locator(`[data-outline-source="${folder}/课件 02 形状.pptx"]`)).toContainText('预设形状库');
+  const legacy=host.locator(`[data-virtual-source="${folder}/课件 03 旧版.ppt"]`);
+  await legacy.scrollIntoViewIfNeeded();
+  await expect(legacy.locator('.pdf-page-slot')).toHaveCount(2);
+  await expect(legacy.locator('.pdf-page-surface.is-ready').first()).toBeVisible();
+  await page.evaluate(()=>(window as any).virtualPptStore.getState().setRightPanel('minimap'));
+  await index.page().locator('.virtual-thumbnail-sources').getByRole('button',{name:'课件 02 形状'}).click();
+  await expect(host.locator('.virtual-thumbnail-preview canvas').first()).toBeVisible();
+  await expect(slides.locator('[role=alert]')).toHaveCount(0);
 });

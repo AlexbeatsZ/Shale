@@ -64,7 +64,7 @@ export function mountLinkPreview(host: HTMLElement, context: RenderContext, targ
   };
   const destination = parseLinkTarget(target);
   const local = !isGlobalContentTarget(target) && (!destination.path || destination.path === context.sourcePath);
-  if (resolved.status === 'resolved' && /\.pdf$/i.test(resolved.path)) {
+  if (resolved.status === 'resolved' && /\.(pdf|pptx?)$/i.test(resolved.path)) {
     // A binary attachment is not a Markdown DocumentSession. Share only the
     // read-only resource, with cancellation and the same per-file appearance.
     void Promise.all([import('./pdf/resource'), import('./pdf/preferences'), import('./mediaFilter'), import('./store')]).then(async ([{ acquirePdfResource }, { pdfDarkPreference }, { bindDarkMedia }, { useStore }]) => {

@@ -1,10 +1,15 @@
 import { z } from 'zod';
 
 export const VIRTUAL_DOCUMENT_FILE = '.virtual-document.json';
+export const VIRTUAL_SOURCE_EXTENSION = /\.(md|markdown|pdf|pptx?)$/i;
+export type VirtualSourceKind = 'markdown' | 'pdf' | 'ppt';
+export const virtualSourceKind = (path: string): VirtualSourceKind => /\.pdf$/i.test(path) ? 'pdf' : /\.pptx?$/i.test(path) ? 'ppt' : 'markdown';
+/** PDF and PowerPoint sources share the paged reader; only Markdown is an editable session. */
+export const isPagedVirtualSource = (source: { kind: VirtualSourceKind }) => source.kind !== 'markdown';
 export const virtualSourcePath = z.string().min(1).max(1000).refine(value =>
   !value.startsWith('/') && !value.includes('\\') && !/[\x00-\x1f:*?"<>|#]/.test(value) &&
-  value.split('/').every(part => !!part && !part.startsWith('.') && part !== '..') && /\.(md|markdown|pdf)$/i.test(value),
-  '来源必须是此文件夹内的 Markdown 或 PDF 相对路径');
+  value.split('/').every(part => !!part && !part.startsWith('.') && part !== '..') && VIRTUAL_SOURCE_EXTENSION.test(value),
+  '来源必须是此文件夹内的 Markdown、PDF 或 PPT 相对路径');
 /** Automatic streams match folder-relative paths (a top-level file is just its name). */
 export const compileVirtualPattern = (pattern: string) => new RegExp(pattern, 'u');
 const virtualPattern = z.string().min(1).max(500).superRefine((pattern, context) => {
@@ -34,7 +39,7 @@ export const virtualManifestSchema = z.object({
 export type VirtualManifest = z.infer<typeof virtualManifestSchema>;
 
 export interface VirtualSource {
-  path: string; title: string; kind: 'markdown' | 'pdf'; size: number;
+  path: string; title: string; kind: VirtualSourceKind; size: number;
   headings: { text: string; level: number }[];
   missing?: boolean;
 }

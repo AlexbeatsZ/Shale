@@ -3,7 +3,8 @@ import { DocumentSession, fragmentRange, resolveTarget } from '@shale/markdown-c
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
 import { useStore } from '../lib/store';
 import { createVaultRenderContext } from '../lib/vaultRenderContext';
-import { readingWindow, type VirtualDocument, type VirtualSource } from '../lib/virtualDocuments';
+import { isPagedSource, readingWindow, type VirtualDocument, type VirtualSource } from '../lib/virtualDocuments';
+import { pagedDocumentLabel } from '../lib/pdf/documentResource';
 import { VirtualReadingSession, registerVirtualReading, type ReadingTarget } from '../lib/virtualReading';
 import { PdfSession } from '../lib/pdf/session';
 import { registerPdfSession, usePdfSnapshot } from '../lib/pdf/react';
@@ -190,7 +191,7 @@ function PdfChapter({ source, reader, root, width, target, layoutVersion, onLayo
     event.preventDefault(); event.stopPropagation();
     useStore.getState().openContextMenu({ x: event.clientX, y: event.clientY, items: pdfMenuItems(session) });
   }}>
-    {state.status !== 'ready' ? <p role="status" data-virtual-loading>正在打开 PDF…</p> : Array.from({ length: state.pageCount }, (_, index) =>
+    {state.status !== 'ready' ? <p role="status" data-virtual-loading>正在打开 {pagedDocumentLabel(source.path)}…</p> : Array.from({ length: state.pageCount }, (_, index) =>
       <PageSlot key={index} page={index + 1} session={session} width={width} root={root} anchorWithin={host} onLayoutScroll={onLayoutScroll} />)}
   </div>;
 }
@@ -229,7 +230,7 @@ function SourceSlot({ source, mounted, estimate, onMeasure, reader, root, width,
   }, [mounted]);
   return <section className="virtual-source" data-virtual-source={source.path} data-mounted={mounted} style={mounted ? { minHeight: estimate } : { height: estimate }}>
     {mounted && <div ref={body} className="virtual-source-body">
-      {source.kind === 'pdf' && <SourceTitle source={source} reader={reader} />}
+      {isPagedSource(source) && <SourceTitle source={source} reader={reader} />}
       {source.missing ? <p role="alert">来源文件已不存在：{source.path}</p> : source.kind === 'markdown'
         ? <VirtualTextEditor path={source.path} reader={reader} mode={mode} target={target} layoutVersion={layoutVersion} layoutScroll={editorLayoutScroll} />
         : <PdfChapter source={source} reader={reader} root={root} width={width} target={target} layoutVersion={layoutVersion} onLayoutScroll={onLayoutScroll} />}
@@ -253,13 +254,13 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
   const progress = reader.progress();
   const [layout, setLayout] = useState(() => ({ zoom: state.pdfZoom,
     heights: progress?.stream === stream.id && progress.heights.length === stream.files.length ? progress.heights
-      : stream.files.map(file => file.kind === 'pdf' ? 1400 : Math.max(800, Math.min(16000, file.size / 2))) }));
+      : stream.files.map(file => isPagedSource(file) ? 1400 : Math.max(800, Math.min(16000, file.size / 2))) }));
   const measuredLayout = useRef(layout);
   // An external-store zoom update renders synchronously. Derive placeholders in
   // that same render, retaining measurements whose normal state commit is pending.
   // PDF outline updates can re-render between ResizeObserver entries in one batch.
   const heights = measuredLayout.current.zoom === state.pdfZoom ? measuredLayout.current.heights : measuredLayout.current.heights.map((height, index) =>
-    stream.files[index].kind === 'pdf' ? height * state.pdfZoom / measuredLayout.current.zoom : height);
+    isPagedSource(stream.files[index]) ? height * state.pdfZoom / measuredLayout.current.zoom : height);
   const heightRef = useRef(heights); heightRef.current = heights;
   const layoutVersion = useRef(0);
   const [window, setWindow] = useState({ first: 0, last: 1 });
