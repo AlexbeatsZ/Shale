@@ -113,9 +113,9 @@ test('virtual Markdown chapters stay bounded, jump through one outline and edit 
 
 test('status groups include highlighted JSON configuration, retain edits through refresh and reveal native locations', async ({page},testInfo)=>{
   const folder='Book',configPath=folder+'/.virtual-document.json';
-  let manifest={version:1,title:'Book',streams:[{id:'text',title:'MD',files:['chapter.md']},{id:'pdf',title:'PDF',files:['量子 #1 100% (A).pdf']}]};
+  let manifest={title:'Book',streams:[{title:'MD',files:['chapter.md']},{title:'PDF',files:['量子 #1 100% (A).pdf']}]};
   let raw=JSON.stringify(manifest,null,2);const writes:{path:string;content:string}[]=[];
-  const collection=()=>({path:folder,title:'Book',revision:raw,streams:manifest.streams.map(stream=>({...stream,files:stream.files.map(file=>({path:folder+'/'+file,title:file,kind:file.endsWith('.pdf')?'pdf':'markdown',size:200,headings:[]}))}))});
+  const collection=()=>({path:folder,title:'Book',revision:raw,streams:manifest.streams.map(stream=>({id:stream.title,title:stream.title,files:stream.files.map(file=>({path:folder+'/'+file,title:file,kind:file.endsWith('.pdf')?'pdf':'markdown',size:200,headings:[]}))}))});
   const tree=()=>({name:'Fixture',path:'',type:'folder',children:[{name:'Book',path:folder,type:'folder',virtualDocument:collection()}]});
   await page.route('**/api/**',async route=>{
     const url=new URL(route.request().url());
@@ -151,11 +151,11 @@ test('status groups include highlighted JSON configuration, retain edits through
   const host=page.locator('#virtual-config-fixture');await expect(host.getByRole('button',{name:'切换分组：MD'})).toBeVisible();
   await host.getByRole('button',{name:'切换分组：MD'}).click();await host.getByRole('menuitemcheckbox',{name:'配置',exact:true}).click();
   const editor=host.locator('.virtual-configuration-editor .cm-content');await expect(editor).toHaveAttribute('contenteditable','true');
-  await expect(editor).toContainText('"version"');
+  await expect(editor).toContainText('"streams"');
   const colors=await editor.locator('.cm-line span').evaluateAll(spans=>[...new Set(spans.map(span=>getComputedStyle(span).color))]);expect(colors.length).toBeGreaterThan(1);
   await editor.click({button:'right'});await host.getByRole('menuitem',{name:'在 Finder 中显示',exact:true}).click();
   expect(await page.evaluate(()=>(window as any).nativeReveals)).toEqual([configPath]);
-  const updated={...manifest,streams:manifest.streams.map(stream=>({...stream,title:stream.id==='text'?'MD 新分组':stream.title}))};
+  const updated={...manifest,streams:manifest.streams.map(stream=>({...stream,title:stream.title==='MD'?'MD 新分组':stream.title}))};
   await editor.click();await editor.press('ControlOrMeta+a');await page.keyboard.insertText(JSON.stringify(updated,null,2));
   await expect.poll(()=>writes.some(write=>write.path===configPath&&write.content.includes('MD 新分组'))).toBe(true);
   expect(writes.every(write=>write.path===configPath&&write.content.startsWith('{'))).toBe(true);

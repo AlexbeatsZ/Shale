@@ -74,8 +74,8 @@ await fs.writeFile(path.join(vault, 'Native standalone.pdf'), pdf);
 const book = 'Native PDF collection';
 await fs.mkdir(path.join(vault, book));
 for (const filename of ['Slides 1.pdf', 'Slides 2.pdf', 'Slides 3.pdf']) await fs.writeFile(path.join(vault, book, filename), pdf);
-await fs.writeFile(path.join(vault, book, '.virtual-document.json'), JSON.stringify({ version: 1, title: book,
-  streams: [{ id: 'pdf', title: 'PDF', files: ['Slides 1.pdf', 'Slides 2.pdf', 'Slides 3.pdf'] }] }, null, 2));
+await fs.writeFile(path.join(vault, book, '.virtual-document.json'), JSON.stringify({ title: book,
+  streams: [{ title: 'PDF', pattern: '^Slides \\d+\\.pdf$' }] }, null, 2));
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: false }));
 
 const executablePath = process.argv[2] ? path.resolve(process.argv[2])

@@ -11,6 +11,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-25 PRD1.68 / 0.1.98：虚拟文档分组改为 `pattern`（正则自动发现，运行时自然排序）或 `files`（手动）二选一，标题即分组身份，旧 version/id 兼容读取。STEM Vault 27 个配置已迁移（课件主线/补充资料/MD 自动、教材手动），Vault 提交fc68ea1。Mac 日用已原位更新0.1.98；正式发布与 Windows/Android 部署见 Active Work。
 - 2026-11-25 PRD1.67 / 桌面与Android0.1.97已交付（运行源码efc0ccc）：Mac个人Vault实体Control+Shift+Z/X切换同组前/后页面，Windows明确空绑定，原Option左右窗格聚焦保留。分组动作默认未绑定，workspace作用域覆盖Vim各模式；668单元、Mac19/Windows7浏览器、Mac两组后台与Windows五组原生通过。五设备原位更新；Mac/OMEN健康及工作区通过，ROG未选库保留，Android两端服务健康仍待验收。报告 `tests/reports/tab-group-control-20261125.md`。
 - 2026-11-25 PRD1.66 / 桌面与Android0.1.96已发布（运行源码d9db5fb），并原位更新五设备。修复0.1.95单页分组键只改标签顺序：现在同组目标直接显示到当前页，分屏替换聚焦栏，侧栏选中目标，首尾循环；668单元、Mac52/Windows6浏览器、Mac两组后台与Windows五组原生通过。Mac/OMEN healthz通过，ROG未选库保留；K70/平板安装与当前进程端点已确认，但本轮服务未就绪，不能宣称Android服务验收完成。报告 `tests/reports/tab-group-foreground-20261125.md`。
 - 2026-11-25 PRD1.65 / 桌面与Android0.1.95已发布并原位更新全部五台设备（运行源码12c2e08）。新增中央/两侧颜色分组、Command/Ctrl多选、按加入顺序的Option/Alt+Shift+Z/X循环单页交换、复制标签与独立身份恢复，网页实例/草稿/滚动/history保持。666单元、Mac50+Windows4浏览器、Mac两组后台实包及Windows五组完整原生回归通过。Mac固定证书/identifier/certificate leaf/deep/strict通过；Mac/OMEN/K70 healthz通过，ROG未选Vault保留，平板启动但healthz仍超时。报告 `tests/reports/tab-groups-20261125.md`。
@@ -32,6 +33,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
+- 0.1.98：桌面 Release、OMEN/ROG Windows 与 Android 原位更新进行中；完成后在此更新结果。
 - Android0.1.97：K70/平板已原位安装code97且首次安装时间保留，当前进程与starting端点匹配；K70healthz503、平板超时，服务健康仍未通过（0.1.96亦未就绪）。真实长按/软键盘/完整同步仍延期，后续在设备前台确认。Mac既有完整输入法往返仍未完成；本轮Control回归为后台DOM/访客输入，不代表物理IME。
 - Android真机PPT/图表显示与触摸待后续验收。K70返回键/剪贴板/导出交互尚未验收，11月13日用户要求停止进一步设备检查，相关记录见 `tests/reports/host-lifecycle-20261113.md`。
 - MCP说明笔记已交付源码与本机安装，最近记录中用户尚未在设置 › MCP选择笔记，真实MCP客户端遵守情况待验收。

@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-25 (Mac实体Control分组键 PRD 1.67)
+Cập nhật lần cuối: 2026-11-25 (虚拟文档自动分组 PRD 1.68)
+
+### 虚拟文档自动分组 (PRD 1.68)
+
+- [~] 配置简化为 title+streams，分组 pattern/files 二选一，运行时自然排序计算自动分组；旧 version/id 兼容读取，聚合改名只改写手动列表。
+- [ ] 迁移个人 STEM Vault：课件转主线/补充资料/MD 自动分组，教材保持手动；单元、浏览器与原生回归，构建发布并原位更新。
 
 ### Mac实体Control分组键 (PRD 1.67)
 

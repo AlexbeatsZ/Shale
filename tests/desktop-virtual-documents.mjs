@@ -72,13 +72,18 @@ try {
   });
   await page.waitForURL(/^http:\/\/127\.0\.0\.1:\d+\//,{timeout:120000});
   await expect(page.getByRole('button',{name:'大纲',exact:true})).toBeVisible({timeout:60000});
+  // Textbooks keep an explicit reading order; course slides use the default automatic streams.
+  const bookFiles=(await walk(path.join(vault,book))).sort((a,b)=>a.localeCompare(b,'zh-Hans-CN',{numeric:true}));
+  const bookManifest={title:path.posix.basename(book),streams:[['MD',/\.md$/i],['PDF',/\.pdf$/i]]
+    .map(([title,pattern])=>({title,files:bookFiles.filter(file=>pattern.test(file)&&!/索引\.md$/.test(file))})).filter(stream=>stream.files.length)};
   await page.evaluate(async folders=>{
     const identity=await (await fetch('/api/vault-identity')).json();
-    for(const folder of folders) {
-      const response=await fetch('/api/files/virtual-document',{method:'PUT',headers:{'Content-Type':'application/json','X-Vault-Identity':identity.vault},body:JSON.stringify({folder})});
+    for(const [folder,manifest] of folders) {
+      const response=await fetch('/api/files/virtual-document',{method:'PUT',headers:{'Content-Type':'application/json','X-Vault-Identity':identity.vault},body:JSON.stringify({folder,manifest})});
       if(!response.ok)throw new Error(await response.text());
     }
-  },[book,slides]);
+  },[[book,bookManifest],[slides,undefined]]);
+  assert.equal(JSON.parse(await fs.readFile(path.join(vault,slides,'.virtual-document.json'),'utf8')).streams[0].pattern,'\\.pdf$');
   for(const folder of ['04资料','04资料/化学','04资料/化学/物理化学']) {
     await page.locator(`[data-path="${folder}"]`).first().click();
   }
@@ -168,7 +173,7 @@ try {
   await expect(page.locator('.virtual-group-trigger > span')).toBeInViewport();
   assert.equal(await page.locator('.virtual-group-trigger').evaluate(element=>getComputedStyle(element).display),'flex');
   const configEditor=page.locator('.virtual-configuration-editor .cm-content[contenteditable="true"]');
-  await expect(configEditor).toContainText('"version"');
+  await expect(configEditor).toContainText('"streams"');
   const highlightColors=await configEditor.locator('.cm-line span').evaluateAll(spans=>[...new Set(spans.map(span=>getComputedStyle(span).color))]);
   assert(highlightColors.length>1);
   await configEditor.click();await configEditor.press('ControlOrMeta+Home');
@@ -241,11 +246,21 @@ try {
   await page.locator('.virtual-thumbnails-panel [data-thumbnail-page="2"]').click();
   await expect(page.locator('.virtual-document-scroll [data-page-number="2"] .pdf-page-surface').filter({visible:true})).toBeInViewport();
   await page.screenshot({path:path.join(output,'native-pdf-thumbnails.png')});
+  // Automatic streams follow the folder: a newly added slide joins the generated index without touching the descriptor.
+  const slidesConfig=await fs.readFile(path.join(vault,slides,'.virtual-document.json'),'utf8');
+  const slideIndex=page.getByRole('navigation',{name:'文档索引'});
+  await page.getByRole('button',{name:'大纲',exact:true}).click();await page.getByRole('button',{name:'目录',exact:true}).click();
+  await expect(slideIndex.getByRole('link').first()).toBeVisible();
+  const linkCount=await slideIndex.getByRole('link').count();
+  await fs.writeFile(path.join(vault,slides,'ZZ 自动发现验收.pdf'),makePdfFixture({pages:1}));
+  await expect(slideIndex.getByRole('link',{name:'ZZ 自动发现验收'})).toBeVisible({timeout:30000});
+  assert.equal(await slideIndex.getByRole('link').count(),linkCount+1);
+  assert.equal(await fs.readFile(path.join(vault,slides,'.virtual-document.json'),'utf8'),slidesConfig);
   for(const [file,bytes] of original)if(file!==editedPath)assert((await fs.readFile(path.join(vault,file))).equals(bytes),'Source changed: '+file);
   assert.deepEqual(errors,[]);
   const metrics=await app.evaluate(({app})=>app.getAppMetrics().map(({type,memory})=>({type,memory})));
   const result={executable,fixture,realMaterials:!!process.env.VIRTUAL_REAL_VAULT,sourceMarkdown:original.size,sourceMarkdownBytes:[...original.values()].reduce((sum,bytes)=>sum+bytes.length,0),
-    firstOpenMs,chapterJumpMs,pdfOpenMs,reversePositions,sourceTitleRenameAndManifest:true,markdownThumbnails:true,pdfThumbnailNavigation:true,markdownReadCount:mdReadCount,markdownMounted,pdfCanvases:canvases,unrelatedSourceBytesUnchanged:true,independentEditAndUndo:true,configurationValidSave:true,invalidConfigurationPreserved:true,jsonHighlightColors:highlightColors,nativePdfReveal:true,pdfDarkOffPersisted:true,nativeReveals:await app.evaluate(()=>globalThis.nativeReveals),rendererErrors:errors,processMetrics:metrics};
+    firstOpenMs,chapterJumpMs,pdfOpenMs,reversePositions,sourceTitleRenameAndManifest:true,automaticStreamDiscovery:true,markdownThumbnails:true,pdfThumbnailNavigation:true,markdownReadCount:mdReadCount,markdownMounted,pdfCanvases:canvases,unrelatedSourceBytesUnchanged:true,independentEditAndUndo:true,configurationValidSave:true,invalidConfigurationPreserved:true,jsonHighlightColors:highlightColors,nativePdfReveal:true,pdfDarkOffPersisted:true,nativeReveals:await app.evaluate(()=>globalThis.nativeReveals),rendererErrors:errors,processMetrics:metrics};
   await fs.writeFile(path.join(output,'native-result.json'),JSON.stringify(result,null,2));console.log(JSON.stringify(result));
 } catch(error) {
   const page=await app.firstWindow();await page.screenshot({path:path.join(output,'native-failure.png')}).catch(()=>{});

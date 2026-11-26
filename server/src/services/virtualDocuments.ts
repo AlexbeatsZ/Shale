@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { virtualManifestSchema, VIRTUAL_DOCUMENT_FILE, type VirtualManifest } from '../contracts/virtualDocument.js';
+import { virtualManifestSchema, virtualSourcePath, compileVirtualPattern, VIRTUAL_DOCUMENT_FILE, type VirtualManifest } from '../contracts/virtualDocument.js';
 import type { TreeNode } from '../contracts.js';
 import { catalog } from './catalog.js';
 import { parseConfiguration } from './vaultConfiguration.js';
@@ -45,6 +45,25 @@ export async function readVirtualManifest(folder: string) {
   }
 }
 
+/** Folder-relative member candidates from the physical tree: visible Markdown/PDF only. */
+function folderSources(folder: TreeNode) {
+  const files: string[] = [];
+  const visit = (node: TreeNode) => {
+    if (node.type === 'file') {
+      const relative = node.path.slice(folder.path.length + 1);
+      if (virtualSourcePath.safeParse(relative).success) files.push(relative);
+    } else node.children?.forEach(visit);
+  };
+  folder.children?.forEach(visit);
+  return files.sort(compare.compare);
+}
+const matches = (pattern: string, relative: string) => compileVirtualPattern(pattern).test(relative.normalize('NFC'));
+/** Automatic streams are computed from current files on every projection; manual lists are used as written. */
+export function resolveVirtualStreams(manifest: VirtualManifest, sources: readonly string[]) {
+  return manifest.streams.map(stream => ({ id: stream.title, title: stream.title,
+    files: stream.pattern !== undefined ? sources.filter(file => matches(stream.pattern!, file)) : stream.files! }));
+}
+
 /** A projection of the existing physical tree/catalog, never a second file index. */
 export async function describeVirtualDocuments(tree: TreeNode): Promise<TreeNode> {
   const files = new Map<string, TreeNode>(), folders: TreeNode[] = [];
@@ -57,8 +76,10 @@ export async function describeVirtualDocuments(tree: TreeNode): Promise<TreeNode
     try {
       const source = await readVirtualManifest(node.path);
       if (!source) return;
+      const streams = resolveVirtualStreams(source.manifest, folderSources(node)).filter(stream => stream.files.length);
+      if (!streams.length) throw failure('没有符合任何分组的 Markdown 或 PDF 来源');
       node.virtualDocument = { path: node.path, title: source.manifest.title, revision: source.revision,
-        streams: source.manifest.streams.map(stream => ({ ...stream, files: stream.files.map(relative => {
+        streams: streams.map(stream => ({ ...stream, files: stream.files.map(relative => {
           const filePath = node.path + '/' + relative, file = files.get(filePath), note = catalog.notes.get(filePath);
           return { path: filePath, title: relative.split('/').pop()!.replace(/\.(md|markdown|pdf)$/i, ''),
             kind: /\.pdf$/i.test(relative) ? 'pdf' as const : 'markdown' as const, size: file?.size ?? 0,
@@ -69,20 +90,17 @@ export async function describeVirtualDocuments(tree: TreeNode): Promise<TreeNode
   return tree;
 }
 
+/** Enabling a folder writes automatic streams, so later files join without editing the descriptor. */
 export function defaultVirtualManifest(folder: TreeNode): VirtualManifest {
-  const files: string[] = [];
-  const visit = (node: TreeNode) => {
-    if (node.type === 'file' && /\.(md|markdown|pdf)$/i.test(node.path) && !/(?:^|[ /])索引\.md$/i.test(node.path))
-      files.push(node.path.slice(folder.path.length + 1));
-    node.children?.forEach(visit);
-  };
-  visit(folder); files.sort(compare.compare);
-  const streams = ([['text', 'MD', /\.(md|markdown)$/i], ['pdf', 'PDF', /\.pdf$/i]] as const)
-    .map(([id, title, extension]) => ({ id, title, files: files.filter(file => extension.test(file)) })).filter(stream => stream.files.length);
+  const sources = folderSources(folder), index = /(?:^|[ /])索引\.md$/i;
+  const markdown = sources.some(file => index.test(file)) ? '(?<!(?:^|[ /])索引)\\.(?:md|markdown)$' : '\\.(?:md|markdown)$';
+  const streams = [{ title: 'MD', pattern: markdown }, { title: 'PDF', pattern: '\\.pdf$' }]
+    .filter(stream => sources.some(file => matches(stream.pattern, file)));
   if (!streams.length) throw failure('此文件夹没有 Markdown 或 PDF 来源');
-  return { version: 1, title: folder.name, streams };
+  return { title: folder.name, streams };
 }
 
+const manualSources = (manifest: VirtualManifest) => manifest.streams.flatMap(stream => stream.files ?? []);
 export async function saveVirtualManifest(folder: string, raw: unknown, revision?: string) {
   const manifest = virtualManifestSchema.parse(raw), relative = configPath(folder);
   const stat = await fs.stat(await resolveInVault(folder));
@@ -90,7 +108,7 @@ export async function saveVirtualManifest(folder: string, raw: unknown, revision
   const current = await readVirtualManifest(folder);
   if (current && revision !== current.revision) throw failure('连续文档配置已变化，请重新打开', 409);
   if (!current && revision) throw failure('连续文档配置已移除，请重新打开', 409);
-  for (const stream of manifest.streams) for (const source of stream.files) {
+  for (const source of manualSources(manifest)) {
     const sourceStat = await fs.stat(await resolveInVault(folder + '/' + source));
     if (!sourceStat.isFile()) throw failure('来源不是文件：' + source);
   }
@@ -102,7 +120,7 @@ export async function validateVirtualManifestText(folder: string, content: strin
   configPath(folder);
   if (Buffer.byteLength(content, 'utf8') > 1024 * 1024) throw failure('连续文档配置最多 1 MiB');
   const manifest = virtualManifestSchema.parse(parseConfiguration(content));
-  for (const stream of manifest.streams) for (const source of stream.files) {
+  for (const source of manualSources(manifest)) {
     const stat = await fs.stat(await resolveInVault(folder + '/' + source));
     if (!stat.isFile()) throw failure('来源不是文件：' + source);
   }
@@ -126,13 +144,19 @@ export async function prepareVirtualSourceRename(folder: string, revision: strin
     throw failure('修改来源标题时不能更改文件类型');
   const before = from.slice(folder.length + 1), after = to.slice(folder.length + 1);
   const bom = current.content.startsWith('\uFEFF') ? '\uFEFF' : '';
-  let content = current.content.slice(bom.length), found = false;
-  current.manifest.streams.forEach((stream, streamIndex) => stream.files.forEach((file, fileIndex) => {
+  let content = current.content.slice(bom.length), listed = false;
+  current.manifest.streams.forEach((stream, streamIndex) => stream.files?.forEach((file, fileIndex) => {
     if (file !== before) return;
-    found = true;
+    listed = true;
     content = applyEdits(content, modify(content, ['streams', streamIndex, 'files', fileIndex], after, {}));
   }));
-  if (!found) throw failure('此来源不属于当前连续文档');
+  const automatic = current.manifest.streams.filter(stream => stream.pattern !== undefined);
+  const matched = virtualSourcePath.safeParse(before).success && automatic.some(stream => matches(stream.pattern!, before));
+  if (!listed && !matched) throw failure('此来源不属于当前连续文档');
+  // Automatic membership follows the name; refuse a title that would silently drop the file from the document.
+  if (!listed && !automatic.some(stream => matches(stream.pattern!, after)))
+    throw failure('新文件名不符合任何分组的匹配规则，改名后会离开此连续文档');
+  if (!listed) return async () => {};
   virtualManifestSchema.parse(parseConfiguration(content));
   return async () => { await writeFileText(configPath(folder), bom + content, revision); };
 }

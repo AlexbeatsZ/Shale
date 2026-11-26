@@ -24,13 +24,39 @@ beforeEach(async()=>{
 afterEach(async()=>{ if(path.dirname(state.root)!==base)throw new Error('Unsafe cleanup');await fs.rm(state.root,{recursive:true,force:true}); });
 it('rejects traversal, hidden source paths, unsupported files and duplicate identities',()=>{
   for(const source of ['../secret.md','/secret.md','.shale/config.md','a/../../b.pdf','a\\b.md','x.js','a.md#heading'])
-    expect(virtualManifestSchema.safeParse({version:1,title:'Book',streams:[{id:'text',title:'Text',files:[source]}]}).success).toBe(false);
-  expect(virtualManifestSchema.safeParse({version:1,title:'Book',streams:[{id:'text',title:'Text',files:['A.md','a.md']}]}).success).toBe(false);
+    expect(virtualManifestSchema.safeParse({title:'Book',streams:[{title:'Text',files:[source]}]}).success).toBe(false);
+  expect(virtualManifestSchema.safeParse({title:'Book',streams:[{title:'Text',files:['A.md','a.md']}]}).success).toBe(false);
 });
-it('creates only a hidden descriptor, naturally orders sources and excludes former indexes',async()=>{
+it('requires exactly one of pattern or files, unique stream titles and valid expressions, and still reads legacy descriptors',()=>{
+  for(const stream of [{title:'X'},{title:'X',pattern:'\\.md$',files:['a.md']},{title:'X',pattern:'('}])
+    expect(virtualManifestSchema.safeParse({title:'Book',streams:[stream]}).success).toBe(false);
+  expect(virtualManifestSchema.safeParse({title:'Book',streams:[{title:'A',pattern:'x'},{title:'A',files:['a.md']}]}).success).toBe(false);
+  expect(virtualManifestSchema.safeParse({title:'Book',streams:[{title:'A',pattern:'\\.pdf$'},{title:'B',files:['a.md']}]}).success).toBe(true);
+  expect(virtualManifestSchema.safeParse({version:1,title:'Book',streams:[{id:'text',title:'MD',files:['a.md']}]}).success).toBe(true);
+});
+it('resolves automatic streams from current files on every projection, naturally ordered and mixed with manual lists',async()=>{
+  for(const name of ['课件 10 光谱.pdf','课件 02 绪论.pdf','课件 练习.pdf','课件 02 绪论.md','课件 x.ppt'])await fs.writeFile(state.root+'/Book/'+name,'x');
+  await fs.writeFile(state.root+'/Book/.virtual-document.json',JSON.stringify({title:'课件',streams:[
+    {title:'主线',pattern:'^课件 \\d{2} .*\\.pdf$'},{title:'补充资料',pattern:'^课件 (?!\\d).*\\.pdf$'},{title:'空',pattern:'^nothing$'},
+    {title:'MD',pattern:'\\.md$'},{title:'手动',files:['original.pdf','课件 02 绪论.md']}]}));
+  const project=async()=>(await describeVirtualDocuments(await listTree())).children!.find(node=>node.path==='Book')!.virtualDocument!;
+  const streams=(await project()).streams;
+  expect(streams.map(stream=>[stream.id,stream.files.map(file=>file.path.slice(5))])).toEqual([
+    ['主线',['课件 02 绪论.pdf','课件 10 光谱.pdf']],['补充资料',['课件 练习.pdf']],
+    ['MD',['课件 02 绪论.md','正文/第02章.md','正文/第10章.md','Book 索引.md']],['手动',['original.pdf','课件 02 绪论.md']]]);
+  await fs.writeFile(state.root+'/Book/课件 03 新章.pdf','x');await fs.rm(state.root+'/Book/课件 10 光谱.pdf');clearVaultStats();
+  expect((await project()).streams[0].files.map(file=>file.title)).toEqual(['课件 02 绪论','课件 03 新章']);
+  expect(JSON.parse(await fs.readFile(state.root+'/Book/.virtual-document.json','utf8')).streams[0]).toEqual({title:'主线',pattern:'^课件 \\d{2} .*\\.pdf$'});
+});
+it('treats a descriptor whose streams match nothing as an invalid document and keeps the folder',async()=>{
+  await fs.writeFile(state.root+'/Book/.virtual-document.json',JSON.stringify({title:'Book',streams:[{title:'PDF',pattern:'^none\\.pdf$'}]}));
+  const folder=(await describeVirtualDocuments(await listTree())).children![0];
+  expect(folder.virtualDocument).toBeUndefined();expect(folder.virtualDocumentError).toContain('没有符合');
+});
+it('creates only a hidden automatic descriptor, naturally orders sources and excludes former indexes',async()=>{
   const tree=await listTree(),folder=tree.children!.find(node=>node.path==='Book')!;
   const manifest=defaultVirtualManifest(folder);
-  expect(manifest.streams[0].files).toEqual(['正文/第02章.md','正文/第10章.md']);
+  expect(manifest).toEqual({title:'Book',streams:[{title:'MD',pattern:'(?<!(?:^|[ /])索引)\\.(?:md|markdown)$'},{title:'PDF',pattern:'\\.pdf$'}]});
   await saveVirtualManifest('Book',manifest);
   const projected=await describeVirtualDocuments(await listTree()),collection=projected.children!.find(node=>node.path==='Book')!.virtualDocument!;
   expect(collection.streams[0].files.map(file=>file.path)).toEqual(['Book/正文/第02章.md','Book/正文/第10章.md']);
@@ -63,7 +89,7 @@ it('resolves a virtual document as a link target without replacing member file i
 it('validates JSON editor drafts without overwriting the last valid descriptor', async () => {
   const manifest=defaultVirtualManifest((await listTree()).children![0]);expect(manifest.streams[0].title).toBe('MD');
   await saveVirtualManifest('Book',manifest);const current=(await readVirtualManifest('Book'))!;
-  for (const raw of ['{', '{"version":1,"streams":[]}', JSON.stringify({...manifest,streams:[{id:'bad',title:'MD',files:['../outside.md']}]})])
+  for (const raw of ['{', '{"title":"Book","streams":[]}', JSON.stringify({...manifest,streams:[{title:'MD',files:['../outside.md']}]}), JSON.stringify({...manifest,streams:[{title:'MD',pattern:'['}]})])
     await expect(validateVirtualManifestText('Book',raw)).rejects.toThrow();
   expect((await readVirtualManifest('Book'))!.revision).toBe(current.revision);
   const valid='// Keep this comment\n'+JSON.stringify(manifest,null,2);
@@ -71,8 +97,7 @@ it('validates JSON editor drafts without overwriting the last valid descriptor',
 });
 
 async function renameFixture() {
-  const manifest=defaultVirtualManifest((await listTree()).children![0]);
-  manifest.streams.push({id:'review',title:'Review',files:['正文/第02章.md']});
+  const manifest={title:'Book',streams:[{title:'MD',files:['正文/第02章.md','正文/第10章.md']},{title:'PDF',files:['original.pdf']},{title:'Review',files:['正文/第02章.md']}]};
   const content='\uFEFF// Keep configuration comments\r\n'+JSON.stringify(manifest,null,2).replaceAll('\n','\r\n')+'\r\n';
   await fs.writeFile(state.root+'/Book/.virtual-document.json',content);
   return (await readVirtualManifest('Book'))!;
@@ -134,7 +159,7 @@ it('keeps both source and existing target if the destination is already occupied
 it('restores the exact original filename after a case-only rename cannot save its configuration', async () => {
   const current=await renameFixture();
   await fs.writeFile(state.root+'/Book/正文/Original.md','case-only source');
-  const manifest={...current.manifest,streams:[{id:'text',title:'MD',files:['正文/Original.md']}]};
+  const manifest={...current.manifest,streams:[{title:'MD',files:['正文/Original.md']}]};
   await fs.writeFile(state.root+'/Book/.virtual-document.json',JSON.stringify(manifest));
   const ready=(await readVirtualManifest('Book'))!;
   const update=await prepareVirtualSourceRename('Book',ready.revision,'Book/正文/Original.md','Book/正文/original.md');
@@ -143,4 +168,14 @@ it('restores the exact original filename after a case-only rename cannot save it
   const names=await fs.readdir(state.root+'/Book/正文');
   expect(names).toContain('Original.md');expect(names).not.toContain('original.md');
   expect(await fs.readFile(state.root+'/Book/正文/Original.md','utf8')).toBe('case-only source');
+});
+
+it('renames automatic members without rewriting the descriptor and refuses names that would leave every stream', async () => {
+  await fs.writeFile(state.root+'/Book/.virtual-document.json',JSON.stringify({title:'Book',streams:[{title:'正文',pattern:'^正文/第\\d+章'},{title:'PDF',files:['original.pdf']}]}));
+  const current=(await readVirtualManifest('Book'))!;
+  const update=await prepareVirtualSourceRename('Book',current.revision,'Book/正文/第02章.md','Book/正文/第03章.md');
+  await rename('Book/正文/第02章.md','Book/正文/第03章.md',undefined,update);
+  expect((await readVirtualManifest('Book'))!.content).toBe(current.content);
+  await expect(prepareVirtualSourceRename('Book',current.revision,'Book/正文/第03章.md','Book/正文/附录.md')).rejects.toThrow('不符合');
+  await expect(prepareVirtualSourceRename('Book',current.revision,'Book/Book 索引.md','Book/Other.md')).rejects.toThrow('不属于');
 });
