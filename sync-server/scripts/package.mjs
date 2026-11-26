@@ -31,7 +31,7 @@ try {
   // Copy the installed, pinned package. The release never resolves a sibling checkout.
   const bundledCore = path.join(target, 'node_modules/@alexbeatsz/file-sync-core');
   await mkdir(bundledCore, { recursive: true });
-  for (const name of ['package.json', 'src', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'provenance.json']) {
+  for (const name of ['package.json', 'src', 'test', 'docs', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'provenance.json']) {
     await cp(path.join(coreRoot, name), path.join(bundledCore, name), { recursive: true, dereference: true });
   }
   await cp(path.join(root, '..', 'LICENSE'), path.join(stage, 'LICENSE'));

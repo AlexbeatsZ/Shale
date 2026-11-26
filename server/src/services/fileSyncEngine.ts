@@ -4,14 +4,16 @@ import { createHash, randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { z } from 'zod';
 import { validPath, validateManifest, hashPattern, idPattern } from '../../../sync-server/protocol.mjs';
-import type { FileSyncPreferences, FileSyncStatus, SyncEntry, SyncOperation } from '../contracts/fileSync.js';
+import type { FileSyncPreferences, FileSyncStatus, SyncEntry, SyncManifest, SyncOperation } from '../contracts/fileSync.js';
 import { resolveVaultPath, vaultPathKey } from './vaultFile.js';
 import { hashFile, writeFileFromSource } from './textFile.js';
 import { atomicSyncJson, fileSignature, stageLocalFile, stageSyncBlob, withSyncLock } from './syncStorage.js';
 import { OrderedSyncTransport, SyncHttpError } from './syncTransport.js';
 import { mergeReview } from '@shale/markdown-core';
 import { decodeText, describeChange, textExtension, type DiffBlock } from './syncMerge.js';
-import { groupIncoming, planSyncPath, relatedSyncPaths } from './fileSyncGroups.js';
+import { groupIncoming, planSyncPath, indexRelatedPaths } from './fileSyncGroups.js';
+import { discoveryReset, nextDiscoveryPage, selectDiscovery } from './syncDiscovery.js';
+import { downloadSyncBlob, uploadSyncBlob } from './syncTransfer.js';
 
 const hash = z.string().regex(hashPattern);
 const identifier = z.string().regex(idPattern);
@@ -19,10 +21,14 @@ const entry = z.object({ hash: hash.nullable(), version: z.number().int().positi
 const change = z.object({ path: z.string().refine(validPath), hash: hash.nullable(), expectedVersion: z.number().int().nonnegative().safe() });
 // `content` is the bytes to publish when they differ from the acknowledged remote entry (a merge result).
 const incoming = z.object({ path: z.string().refine(validPath), expected: hash.nullable(), entry,
-  previousHash: hash.nullable().optional(), content: hash.optional() });
+  previousHash: hash.nullable().optional(), content: hash.optional(), ready: z.boolean().optional() });
+const revisionNumber = z.number().int().nonnegative().safe();
+const discoveryFiles = z.object({ revision: revisionNumber, files: z.record(entry) });
 const checkpoint = z.object({
-  version: z.literal(1), root: z.string(), deviceId: identifier, workspaceId: identifier.nullable(), revision: z.number().int().nonnegative().safe(),
-  queuedThrough: z.number().int().nonnegative().safe().default(0),
+  version: z.literal(1), root: z.string(), deviceId: identifier, workspaceId: identifier.nullable(), revision: revisionNumber,
+  queuedThrough: revisionNumber.default(0),
+  remoteSnapshot: discoveryFiles.optional(),
+  discovery: discoveryFiles.extend({ since: revisionNumber.nullable(), cursor: z.string().min(1).max(4096) }).optional(),
   base: z.record(entry), cache: z.record(z.object({ signature: z.string(), hash })), lastSuccess: z.string().nullable(),
   lastProgress: z.string().nullable().default(null),
   outbox: z.object({ workspaceId: identifier, deviceId: identifier, operationId: identifier, changes: z.array(change).min(1).max(20000) }).optional(),
@@ -95,6 +101,13 @@ export class FileSyncEngine {
     for (const entry of Object.values(this.state.base)) this.state.revision = Math.max(this.state.revision, entry.version);
     if (this.state.queuedThrough > this.state.revision) throw new Error('同步检查点的入队版本无效');
     if (this.state.workspaceId) validateManifest({ workspaceId: this.state.workspaceId, revision: this.state.revision, files: this.state.base });
+    for (const progress of [this.state.remoteSnapshot, this.state.discovery]) {
+      if (!progress) continue;
+      validateManifest({ ...progress, workspaceId: this.state.workspaceId });
+      if (progress.revision > this.state.revision) throw new Error('同步检查点的远端快照版本无效');
+    }
+    if (this.state.discovery?.since != null && this.state.discovery.since !== this.state.remoteSnapshot?.revision)
+      throw new Error('同步增量的基准快照已丢失');
     if (Object.keys(this.state.cache).some(name => !validPath(name)) || Object.keys(this.state.conflict?.local ?? {}).some(name => !validPath(name)))
       throw new Error('同步检查点包含无效路径');
     this.state.base = Object.assign(Object.create(null), this.state.base);
@@ -136,13 +149,12 @@ export class FileSyncEngine {
     catch (error) { if (!gateBusy(error)) throw error; }
     await this.scan();
     const transport = new OrderedSyncTransport(this.preferences.endpoints, this.preferences.token);
-    let manifest = await transport.select(this.state.workspaceId ? { workspaceId: this.state.workspaceId, revision: this.state.revision } : undefined);
+    let manifest = await this.discover(transport);
     this.snapshot.activeEndpoint = transport.selected;
-    if (!this.state.workspaceId) { this.state.workspaceId = manifest.workspaceId; this.state.revision = manifest.revision; await this.persist(); }
     if (this.state.outbox) {
       const completed = await this.submit(transport);
       if (!completed) throw new Error('远端已有新修改，本机内容已保留，下次同步重新比较');
-      manifest = await transport.select({ workspaceId: this.state.workspaceId!, revision: this.state.revision });
+      manifest = await this.discover(transport);
       this.snapshot.activeEndpoint = transport.selected;
     }
     const changes: SyncOperation['changes'] = [];
@@ -150,6 +162,7 @@ export class FileSyncEngine {
     const acknowledgements: Record<string, SyncEntry> = {};
     // A conflicted or still-journaled path is held back on its own; every other path keeps synchronizing.
     const held = new Map([...(this.state.incoming ?? []), ...(this.state.conflict?.changes ?? [])].map(item => [item.path, item.entry]));
+    const isHeld = indexRelatedPaths(held.keys());
     let allRemoteChangesQueued = true;
     for (const name of new Set([...this.files.keys(), ...Object.keys(this.state.base), ...Object.keys(manifest.files)])) {
       const local = this.files.get(name) ?? null;
@@ -158,7 +171,7 @@ export class FileSyncEngine {
       if (remote.version < (this.state.base[name]?.version ?? 0)) throw new Error('远端文件版本回退，已停止同步');
       if (this.state.base[name]?.version === remote.version && this.state.base[name].hash !== remote.hash)
         throw new Error('远端文件内容与已确认版本不一致，已停止同步');
-      const blocked = [...held.keys()].some(heldPath => relatedSyncPaths(name, heldPath));
+      const blocked = isHeld(name);
       const queued = held.get(name);
       if (blocked && remote.version !== base?.version && (queued?.version !== remote.version || queued.hash !== remote.hash)) allRemoteChangesQueued = false;
       const plan = planSyncPath(base ?? null, local, remote.version ? remote : null, blocked);
@@ -185,11 +198,11 @@ export class FileSyncEngine {
       else unresolved.push(item);
     }
     if (unresolved.length) await this.retainConflicts(transport, unresolved);
-    for (const item of independentDownloads) if (item.entry.hash && !item.content) await this.download(transport, item.entry.hash);
     Object.assign(this.state.base, acknowledgements);
     this.state.revision = Math.max(this.state.revision, manifest.revision);
     if (allRemoteChangesQueued) this.state.queuedThrough = manifest.revision;
-    if (independentDownloads.length) this.state.incoming = [...(this.state.incoming ?? []), ...independentDownloads];
+    if (independentDownloads.length) this.state.incoming = [...(this.state.incoming ?? []),
+      ...independentDownloads.map(item => ({ ...item, ready: !!item.content || !item.entry.hash }))];
     if (changes.length) {
       if (changes.length > 20000) throw new Error('单批同步超过 20000 个文件，请分批导入');
       this.state.outbox = { workspaceId: manifest.workspaceId, deviceId: this.state.deviceId, operationId: randomUUID(), changes };
@@ -198,12 +211,14 @@ export class FileSyncEngine {
     if (automatic.length) await this.recordResolutions(automatic);
     // Uploads and downloads touch disjoint paths, so uploading never waits for the local editing gate.
     if (this.state.outbox && !await this.submit(transport)) throw new Error('远端已有新修改，本机内容已保留，下次同步重新比较');
+    const transferError = await this.prepareIncoming(transport);
     await this.applyIncoming();
+    if (transferError) throw transferError;
     // A merge result is now the local file on top of the remote base; the next pass uploads it.
     if ((automatic.some(item => item.kind === 'merged' && item.content !== item.remote) ||
       this.state.queuedThrough < this.state.revision && !this.state.conflict) && followUp < 2) {
       const next = await this.pass(followUp + 1);
-      if (next.phase === 'idle') next.message = this.automaticMessage(automatic);
+      if (automatic.length && next.phase === 'idle') next.message = this.automaticMessage(automatic);
       this.snapshot.message = next.message; return this.status();
     }
     this.state.lastProgress = new Date().toISOString();
@@ -212,11 +227,50 @@ export class FileSyncEngine {
     await this.persist();
     this.snapshot.lastSuccess = this.state.lastSuccess; this.snapshot.phase = 'idle';
     this.snapshot.message = automatic.length ? this.automaticMessage(automatic) : '同步完成';
+    if (this.state.queuedThrough < this.state.revision) this.snapshot.message = '部分文件已同步，下一轮继续入队';
     if (this.state.conflict) {
       this.setConflictStatus();
       this.snapshot.message = `其他文件已同步；${this.state.conflict.changes.length} 个冲突文件待处理，两版均已保留`;
     }
     return this.status();
+  }
+
+  private async discover(transport: OrderedSyncTransport, restarted = false): Promise<SyncManifest> {
+    const state = this.state;
+    const expected = state.workspaceId ? { workspaceId: state.workspaceId, revision: state.revision } : undefined;
+    const selected = await selectDiscovery(transport, expected, restarted ? null : state.remoteSnapshot?.revision ?? null,
+      restarted ? undefined : state.discovery);
+    const { workspaceId, revision, since, resumed, legacy } = selected;
+    const partial = resumed ? state.discovery : undefined;
+    if (partial && (revision !== partial.revision || since !== partial.since)) throw new Error('同步分页更换了固定快照');
+    let files: SyncManifest['files'] = Object.assign(Object.create(null), partial?.files);
+    const visited = new Set(partial ? [partial.cursor] : []);
+    let page = selected;
+    for (;;) {
+      if (page.workspaceId !== workspaceId || page.revision !== revision) throw new Error('同步分页更换了固定快照');
+      for (const [name, entry] of Object.entries(page.files)) {
+        if (Object.hasOwn(files, name) || (since !== null && entry.version <= since)) throw new Error('同步分页条目重复或早于基准');
+        files[name] = entry;
+      }
+      const next = { ...this.state, workspaceId, revision: Math.max(this.state.revision, revision) };
+      if (!page.nextCursor) {
+        if (since !== null) files = Object.assign(Object.create(null), state.remoteSnapshot!.files, files);
+        const manifest = { workspaceId, revision, files };
+        validateManifest(manifest);
+        delete next.discovery;
+        if (legacy) delete next.remoteSnapshot;
+        else next.remoteSnapshot = { revision, files };
+        await this.saveState(next);
+        return manifest;
+      }
+      if (visited.has(page.nextCursor)) throw new Error('同步分页游标循环');
+      visited.add(page.nextCursor);
+      next.discovery = { revision, since, files, cursor: page.nextCursor };
+      await this.saveState(next);
+      files = Object.assign(Object.create(null), files);
+      try { page = { ...page, ...(await nextDiscoveryPage(transport, since, page.nextCursor)) }; }
+      catch (error) { if (!restarted && discoveryReset(error)) return this.discover(transport, true); throw error; }
+    }
   }
 
   private automaticMessage(items: Resolution[]): string {
@@ -268,7 +322,7 @@ export class FileSyncEngine {
     const operation = this.state.outbox!;
     try {
       for (const value of new Set(operation.changes.map(item => item.hash).filter((value): value is string => !!value)))
-        await transport.upload(value, path.join(this.blobs, value));
+        await uploadSyncBlob(transport, value, path.join(this.blobs, value));
       const receipt = await transport.commit(operation);
       Object.assign(this.state.base, receipt.files);
       this.state.revision = Math.max(this.state.revision, receipt.revision);
@@ -327,23 +381,49 @@ export class FileSyncEngine {
   }
 
   private async download(transport: OrderedSyncTransport, digest: string): Promise<void> {
-    const filename = path.join(this.blobs, digest);
-    if (await hashFile(filename) === digest) return;
-    const response = await transport.request(`blobs/${digest}`);
-    if (!response.body) throw new Error('附件下载没有返回数据');
-    await stageSyncBlob(Readable.fromWeb(response.body as never), this.blobs, digest);
+    await downloadSyncBlob(transport, this.blobs, digest);
+  }
+
+  private async prepareIncoming(transport: OrderedSyncTransport): Promise<unknown> {
+    let transferError: unknown;
+    const verified = new Set<string>();
+    const ready = new Set<string>();
+    const saveReady = async () => {
+      if (!ready.size) return;
+      const incoming = this.state.incoming!.map(item => ready.has(item.path) ? { ...item, ready: true } : item);
+      await this.saveState({ ...this.state, incoming, lastProgress: new Date().toISOString() });
+      ready.clear();
+    };
+    for (const item of this.state.incoming ?? []) {
+      if (item.ready !== false) continue;
+      const digest = item.content ?? item.entry.hash;
+      if (digest && !verified.has(digest)) {
+        try { await this.download(transport, digest); }
+        catch (error) { transferError ??= error; continue; }
+        verified.add(digest);
+      }
+      ready.add(item.path);
+      if (ready.size === 64) await saveReady();
+    }
+    await saveReady();
+    return transferError;
   }
 
   private async applyIncoming(): Promise<void> {
     if (!this.state.incoming?.length) return;
     const conflicted: Incoming[] = [];
     const groups = groupIncoming(this.state.incoming);
+    if (!groups.some(group => group.every(item => item.ready !== false))) return;
+    let blockedByEditor = false;
     let snapshot: ConflictSnapshot | undefined;
     await this.hooks.publish(async (blocked = new Set()) => {
+      const isBlocked = indexRelatedPaths(blocked);
       const next = { ...this.state, base: Object.assign(Object.create(null), this.state.base) as Checkpoint['base'] };
       const pending: Incoming[] = [];
       for (const group of groups) {
-        if (group.some(item => [...blocked].some(name => relatedSyncPaths(item.path, name)))) {
+        if (group.some(item => item.ready === false)) { pending.push(...group); continue; }
+        if (group.some(item => isBlocked(item.path))) {
+          blockedByEditor = true;
           pending.push(...group);
           continue;
         }
@@ -356,7 +436,7 @@ export class FileSyncEngine {
       await this.saveState(next);
     }, this.state.incoming.map(item => item.path));
     if (snapshot) await this.recordConflictBranches(snapshot);
-    if (this.state.incoming?.length)
+    if (blockedByEditor)
       throw Object.assign(new Error('部分文件已同步，正在等待有关联的文档保存后继续'), { status: 409 });
   }
 

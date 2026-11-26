@@ -12,10 +12,26 @@ export function planSyncPath(base: Entry | null, localHash: string | null, remot
   return { decision: 'conflict' } as const;
 }
 
-export function relatedSyncPaths(first: string, second: string): boolean {
-  const a = first.toLowerCase();
-  const b = second.toLowerCase();
-  return a === b || a.startsWith(`${b}/`) || b.startsWith(`${a}/`);
+/** Index held paths once so each candidate only visits its own ancestors. */
+export function indexRelatedPaths(held: Iterable<string>) {
+  const exact = new Set<string>();
+  const ancestors = new Set<string>();
+  for (const path of held) {
+    const name = path.toLowerCase();
+    exact.add(name);
+    for (let slash = name.indexOf('/'); slash >= 0; slash = name.indexOf('/', slash + 1)) {
+      ancestors.add(name.slice(0, slash));
+    }
+  }
+  return (path: string): boolean => {
+    if (!exact.size) return false;
+    const name = path.toLowerCase();
+    if (exact.has(name) || ancestors.has(name)) return true;
+    for (let slash = name.indexOf('/'); slash >= 0; slash = name.indexOf('/', slash + 1)) {
+      if (exact.has(name.slice(0, slash))) return true;
+    }
+    return false;
+  };
 }
 
 /** Shape changes share an ancestor; infer a rename only for an unambiguous same-revision move. */

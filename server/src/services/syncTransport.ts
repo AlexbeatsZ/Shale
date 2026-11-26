@@ -30,6 +30,8 @@ export class SyncHttpError extends Error {
   constructor(readonly status: number, readonly details: unknown) { super(`同步服务返回 ${status}`); }
 }
 
+const unavailable = (error: unknown) => error instanceof TypeError || ['TimeoutError', 'AbortError'].includes((error as Error)?.name);
+
 export async function syncJson(response: Response): Promise<unknown> {
   if (!response.body) throw new Error('同步服务未返回数据');
   const chunks: Buffer[] = []; let length = 0;
@@ -39,6 +41,13 @@ export async function syncJson(response: Response): Promise<unknown> {
     chunks.push(Buffer.from(chunk));
   }
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+}
+
+function errorJson(response: Response): Promise<unknown> {
+  return syncJson(response).catch(error => {
+    if (error instanceof SyntaxError || !response.body) return undefined;
+    throw error;
+  });
 }
 
 export class OrderedSyncTransport {
@@ -51,37 +60,48 @@ export class OrderedSyncTransport {
   }
 
   async select(expected?: { workspaceId: string; revision: number }): Promise<SyncManifest> {
+    return this.selectResource([{ resource: 'manifest', decode: value => { validateManifest(value); return value as SyncManifest; } }], expected);
+  }
+
+  async selectResource<T extends SyncManifest>(resources: { resource: string; decode(value: unknown): T; skip?(error: SyncHttpError): boolean }[],
+    expected?: { workspaceId: string; revision: number }): Promise<T> {
     this.selected = null;
-    for (const endpoint of this.endpoints) {
-      let response: Response;
-      try {
-        response = await fetch(`${endpoint}manifest`, { redirect: 'error', headers: { Authorization: `Bearer ${this.token}` }, signal: AbortSignal.timeout(this.probeTimeoutMs) });
-      } catch (error) {
-        if (error instanceof TypeError || ['TimeoutError', 'AbortError'].includes((error as Error).name)) continue;
-        throw error;
+    endpointLoop: for (const endpoint of this.endpoints) {
+      for (const { resource, decode, skip } of resources) {
+        let payload: unknown;
+        let response: Response;
+        try {
+          response = await fetch(`${endpoint}${resource}`, { redirect: 'error', headers: { Authorization: `Bearer ${this.token}` }, signal: AbortSignal.timeout(this.probeTimeoutMs) });
+          if ([502, 503, 504].includes(response.status)) { await response.body?.cancel(); continue endpointLoop; }
+          payload = await (response.ok ? syncJson(response) : errorJson(response));
+        } catch (error) {
+          if (unavailable(error)) continue endpointLoop;
+          throw error;
+        }
+        if (!response.ok) {
+          const error = new SyncHttpError(response.status, payload);
+          if (skip?.(error)) continue;
+          throw error;
+        }
+        const result = decode(payload);
+        if (expected && (result.workspaceId !== expected.workspaceId || result.revision < expected.revision))
+          throw new Error('同步地址的数据身份不一致或版本回退，已停止以保护笔记');
+        this.selected = endpoint;
+        return result;
       }
-      if ([502, 503, 504].includes(response.status)) { await response.body?.cancel(); continue; }
-      if (!response.ok) throw new SyncHttpError(response.status, await syncJson(response));
-      let manifest: unknown;
-      try { manifest = await syncJson(response); }
-      catch (error) {
-        if (error instanceof TypeError || ['TimeoutError', 'AbortError'].includes((error as Error).name)) continue;
-        throw error;
-      }
-      validateManifest(manifest);
-      if (expected && (manifest.workspaceId !== expected.workspaceId || manifest.revision < expected.revision))
-        throw new Error('同步地址的数据身份不一致或版本回退，已停止以保护笔记');
-      this.selected = endpoint;
-      return manifest;
     }
     throw new Error('所有同步地址均不可用；本机修改已保留');
+  }
+
+  async fetchJson(resource: string): Promise<unknown> {
+    return syncJson(await this.request(resource));
   }
 
   async request(resource: string, options: RequestInit & { duplex?: string } = {}): Promise<Response> {
     if (!this.selected) throw new Error('尚未连接同步服务');
     const response = await fetch(`${this.selected}${resource}`, { ...options, redirect: 'error',
       headers: { ...options.headers, Authorization: `Bearer ${this.token}` }, signal: AbortSignal.timeout(10 * 60 * 1000) });
-    if (!response.ok) throw new SyncHttpError(response.status, await syncJson(response));
+    if (!response.ok) throw new SyncHttpError(response.status, await errorJson(response));
     return response;
   }
 

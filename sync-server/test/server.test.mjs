@@ -121,6 +121,37 @@ test('preserves shared-gateway exports, handler order and dedicated route bounda
   assert.throws(() => addFileSyncRoute(unexpected, () => false), /Unexpected/);
 });
 
+test('forwards only supported capability routes and preserves byte offsets through the gateway', async t => {
+  const data = await fixture(t); const hub = await data.start();
+  const port = new URL(hub.base).port;
+  const gateway = http.createServer((request, response) => {
+    if (!routeShale(request, response, { port })) response.writeHead(404).end();
+  });
+  await new Promise(resolve => gateway.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => gateway.close(resolve)));
+  const base = `http://127.0.0.1:${gateway.address().port}/shale-sync/v1/`;
+  const request = (resource, init = {}) => fetch(base + resource, {
+    ...init, headers: { Authorization: `Bearer ${token}`, ...init.headers },
+  });
+  const manifest = await (await request('manifest')).json();
+  assert.deepEqual(await (await request('manifest/pages?limit=1')).json(), { ...manifest, nextCursor: null });
+  assert.equal((await request('changes?since=0&limit=1')).status, 200);
+  assert.equal((await request('manifest/pages?limit=1', { headers: { Origin: 'https://fixture.invalid' } })).status, 403);
+  assert.equal((await request('manifest?limit=1')).status, 404);
+  const dataBytes = Buffer.from('two chunks');
+  const hash = digest(dataBytes);
+  const upload = (start, end) => request('uploads/' + hash, {
+    method: 'PUT', headers: { 'Content-Range': `bytes ${start}-${end}/${dataBytes.length}` }, body: dataBytes.subarray(start, end + 1),
+  });
+  assert.deepEqual(await (await upload(0, 2)).json(), { offset: 3, total: dataBytes.length, complete: false });
+  assert.deepEqual(await (await request('uploads/' + hash)).json(), { offset: 3, total: dataBytes.length, complete: false });
+  assert.deepEqual(await (await upload(3, dataBytes.length - 1)).json(), { offset: dataBytes.length, total: dataBytes.length, complete: true });
+  const range = await request('blobs/' + hash, { headers: { Range: 'bytes=3-' } });
+  assert.equal(range.status, 206);
+  assert.equal(range.headers.get('Content-Range'), `bytes 3-${dataBytes.length - 1}/${dataBytes.length}`);
+  assert.deepEqual(Buffer.from(await range.arrayBuffer()), dataBytes.subarray(3));
+});
+
 test('rejects malformed/oversize commits, missing blobs, path aliases and wrong workspace without advancing state', async t => {
   const data = await fixture(t); const hub = await data.start();
   const initial = await (await hub.request('manifest')).json();

@@ -13,7 +13,8 @@ export async function createSyncServer({ root, token, maxBlobBytes = 1024 * 1024
         throw new Error('SHALE_SYNC_TOKEN must contain 32-512 printable ASCII characters');
       }
     },
-    validateRequest: (request, url) => !request.headers.origin && !url.search && !request.url.includes('#'),
+    validateRequest: (request, url) => !request.headers.origin && !request.url.includes('#') &&
+      (!url.search || request.method === 'GET' && [`${prefix}/manifest/pages`, `${prefix}/changes`].includes(url.pathname)),
     onError: ({ code }) => console.error('Shale sync request failed:', code),
   });
   // Import-only route for devices that have not installed the migration release yet.

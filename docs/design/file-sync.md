@@ -37,6 +37,23 @@ and license/notices ship inside each server package; Node 22+ needs no runtime i
 or sibling source checkout. `core-source.json` and `BUILD-INFO.json` record provenance.
 Server releases never change desktop/mobile versions or the client's latest Release.
 
+## Discovery and interrupted transfers
+
+With file-sync-core 0.2.0, the server exposes paged snapshots, changes and
+resumable blobs. Clients probe these endpoints on their selected address. Shale binds discovery to the workspace identity and checks
+high-water revisions before accepting data. The first snapshot stays pinned across
+pages. Later syncs read changes against the previous remote snapshot and persist
+each continuation. An expired cursor allows one fresh snapshot per pass. Servers
+without these capabilities still use the original v1 manifest and blob endpoints.
+
+The incoming journal records hashes before fetching. Ready flags are saved in
+batches, then independent, verified groups can publish while an interrupted
+attachment retains its partial bytes. Resumed downloads verify the complete
+digest. Uploads use server offsets in 8 MiB chunks and the existing operation
+receipt still guards manifest publication. Held paths and their ancestors are
+indexed once per pass. A folder/file shape change remains grouped across case
+aliases without blocking unrelated siblings.
+
 ## Personal deployment
 
 The user's deployment requires only

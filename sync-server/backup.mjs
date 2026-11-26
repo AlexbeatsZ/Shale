@@ -2,6 +2,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir, stat, link, copyFile, rm, open, rename, readdir } from 'node:fs/promises';
+import { validateManifest } from './protocol.mjs';
 
 // Connection files carry access tokens; they never enter Git history.
 const CREDENTIAL_PATHS = new Set(['.shale/sync.jsonc', '.shale/git.jsonc', '.obsidian/webobsidian/sync.jsonc', '.obsidian/webobsidian/git.jsonc']);
@@ -89,7 +90,7 @@ async function readManifest(dataRoot) {
   for (const [name, pick] of [['state.json', value => value?.manifest], ['manifest.json', value => value]]) {
     try {
       const manifest = pick(JSON.parse(await readFile(path.join(dataRoot, name), 'utf8')));
-      if (!manifest || !Number.isSafeInteger(manifest.revision) || !manifest.files || typeof manifest.files !== 'object') throw new Error('Invalid sync manifest');
+      validateManifest(manifest);
       return manifest;
     } catch (error) { if (error.code !== 'ENOENT') throw error; }
   }
@@ -168,7 +169,8 @@ export async function runBackup({ dataRoot, options, dryRun = false }) {
       if (parent && !dryRun) await git(repository, ['update-ref', localRef, parent]);
     }
     const pushed = await resolve(remoteRef);
-    if (!dryRun && cache.revision === manifest.revision && parent === pushed) return { status: 'unchanged', revision: manifest.revision, commit: parent };
+    if (!dryRun && cache.workspaceId === manifest.workspaceId && cache.revision === manifest.revision && parent === pushed)
+      return { status: 'unchanged', revision: manifest.revision, commit: parent };
 
     const live = Object.entries(manifest.files).filter(([name, entry]) => entry?.hash && !CREDENTIAL_PATHS.has(name)).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
     const rules = live.filter(([name]) => RULE_FILE.test(name));
@@ -249,6 +251,7 @@ export async function runBackup({ dataRoot, options, dryRun = false }) {
       head = (await git(repository, ['commit-tree', tree, ...(parent ? ['-p', parent] : []), '-F', '-'], { env: identity, input: describe(changes, manifest.revision) })).trim();
       await git(repository, ['update-ref', localRef, head, parent ?? '0'.repeat(40)]);
     }
+    cache.workspaceId = manifest.workspaceId;
     cache.revision = manifest.revision;
     await writeFile(cacheFile, JSON.stringify(cache));
     if (head && head !== pushed) {

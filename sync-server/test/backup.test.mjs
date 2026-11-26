@@ -68,12 +68,25 @@ test('continues client history byte-for-byte, then commits and pushes later revi
 
   const larger = Buffer.concat([png, Buffer.from('second image')]);
   await apply(hub, { '笔记/化学 动力学.md': Buffer.from('# 动力学\n\n速率方程\n'), 'img/q.png': larger, 'img/p.png': null });
+  const authoritative = JSON.parse(await readFile(path.join(hub.root, 'state.json'), 'utf8')).manifest;
+  const listing = {};
+  let next = 'manifest/pages?limit=2';
+  while (next) {
+    const response = await hub.request(next);
+    assert.equal(response.status, 200);
+    const page = await response.json();
+    assert.deepEqual([page.workspaceId, page.revision], [authoritative.workspaceId, authoritative.revision]);
+    Object.assign(listing, page.files);
+    next = page.nextCursor ? 'manifest/pages?cursor=' + encodeURIComponent(page.nextCursor) : null;
+  }
+  assert.deepEqual(listing, authoritative.files);
   const second = await runBackup({ dataRoot: hub.root, options });
   assert.equal(second.status, 'committed');
+  assert.equal(second.revision, authoritative.revision);
   assert.deepEqual([second.added, second.modified, second.deleted], [1, 1, 1]);
   assert.equal(git(remote, 'rev-parse', 'main'), second.commit);
   assert.equal(git(remote, 'rev-parse', 'main^'), head);
-  assert.match(git(remote, 'log', '-1', '--format=%B', 'main'), /Sync-Revision: \d+/);
+  assert.match(git(remote, 'log', '-1', '--format=%B', 'main'), new RegExp(`Sync-Revision: ${authoritative.revision}$`));
   assert.equal(git(remote, 'log', '-1', '--format=%an <%ae>', 'main'), 'Fixture Backup <backup@localhost>');
 
   const clone = path.join(data.directory, 'restore');

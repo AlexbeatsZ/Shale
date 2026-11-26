@@ -16,11 +16,13 @@ export function routeShale(request, response, { port = defaultPort, maxBlobBytes
     request.resume();
   };
   const manifest = request.url === `${prefix}manifest` && request.method === 'GET';
+  const discovery = /^\/shale-sync\/v1\/(?:manifest\/pages|changes)(?:\?[^#]*)?$/.test(request.url) && request.method === 'GET';
   const commit = request.url === `${prefix}commit` && request.method === 'POST';
   const blob = /^\/shale-sync\/v1\/blobs\/[a-f0-9]{64}$/.test(request.url) && ['GET', 'PUT'].includes(request.method);
-  if (!manifest && !commit && !blob) { reject(404); return true; }
+  const upload = /^\/shale-sync\/v1\/uploads\/[a-f0-9]{64}$/.test(request.url) && ['GET', 'PUT'].includes(request.method);
+  if (!manifest && !discovery && !commit && !blob && !upload) { reject(404); return true; }
   if (request.headers.origin) { reject(403); return true; }
-  const limit = commit ? 4 * 1024 * 1024 : request.method === 'PUT' ? maxBlobBytes : 0;
+  const limit = commit ? 4 * 1024 * 1024 : request.method === 'PUT' ? Math.min(maxBlobBytes, upload ? 8 * 1024 * 1024 : maxBlobBytes) : 0;
   if (Number(request.headers['content-length'] ?? 0) > limit) { reject(413); return true; }
   const upstream = http.request({
     hostname: '127.0.0.1', port, method: request.method, path: request.url,

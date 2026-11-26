@@ -9,11 +9,12 @@ import { runCli } from '../cli.mjs';
 import { createSyncServer } from '../server.mjs';
 import { fixture, token } from './fixtures.mjs';
 
-test('supports help/version without configuration, secrets or a data directory', () => {
+test('supports help/version without configuration, secrets or a data directory', async () => {
   const entry = fileURLToPath(new URL('../server.mjs', import.meta.url));
   const options = { encoding: 'utf8', env: { ...process.env, SHALE_SYNC_TOKEN: '' } };
   assert.match(execFileSync(process.execPath, [entry, '--help'], options), /18744/);
-  assert.equal(execFileSync(process.execPath, [entry, '--version'], options).trim(), '0.3.0');
+  const { version } = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.equal(execFileSync(process.execPath, [entry, '--version'], options).trim(), version);
 });
 
 test('preserves config/env precedence, cwd-relative dataDir and graceful lock release', async t => {

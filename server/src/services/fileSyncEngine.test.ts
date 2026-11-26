@@ -5,7 +5,9 @@ import os from 'node:os';
 import http from 'node:http';
 import { createHash, randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
+import { createRequire } from 'node:module';
 import { FileSyncEngine } from './fileSyncEngine.js';
+import { indexRelatedPaths, planSyncPath } from './fileSyncGroups.js';
 import { OrderedSyncTransport, normalizeSyncEndpoint } from './syncTransport.js';
 import { createSyncServer } from '../../../sync-server/server.mjs';
 import { prefix, validPath } from '../../../sync-server/protocol.mjs';
@@ -17,6 +19,20 @@ let directory: string;
 let closes: (() => Promise<void>)[];
 let endpoint: string;
 const digest = (bytes: string | Buffer) => createHash('sha256').update(bytes).digest('hex');
+
+it('isolates 4,000 held paths by full component, including folded names and shape changes', () => {
+  const matches = indexRelatedPaths(Array.from({ length: 4000 }, (_, i) => `Books/Unit-${i}/Page.md`));
+  let related = 0;
+  for (let i = 0; i < 20000; i++) {
+    if (matches(`books/unit-${i}/PAGE.md`)) related++;
+  }
+  expect(related).toBe(4000);
+  expect(matches('BOOKS')).toBe(true);
+  expect(matches('books/Unit-1/page.md/attachment')).toBe(true);
+  expect(matches('books/unit-1/other.md')).toBe(false);
+  expect(matches('Bookshelf')).toBe(false);
+  expect(indexRelatedPaths([])('Books')).toBe(false);
+});
 
 async function listen(server: http.Server): Promise<string> {
   await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -56,6 +72,114 @@ afterEach(async () => {
 });
 
 describe('native file synchronization', () => {
+  it('matches the shared TypeScript, Kotlin and C# per-path planning traces', () => {
+    const { traces } = createRequire(import.meta.url)('@alexbeatsz/file-sync-core/sync-golden-traces.json');
+    for (const trace of traces) for (const { event, expected } of trace.steps) {
+      if (event.type !== 'plan') continue;
+      expect(planSyncPath(event.base, event.localHash, event.remote, event.blockedGroups.includes(event.group)), trace.id).toEqual(expected);
+    }
+  });
+
+  it('restarts a durable paged discovery and takes the next revision from delta', async () => {
+    const writer = new OrderedSyncTransport([endpoint], token);
+    const manifest = await writer.select();
+    const hash = digest('same');
+    const blob = path.join(directory, 'payload'); await fs.writeFile(blob, 'same');
+    await writer.upload(hash, blob);
+    const changes = Array.from({ length: 257 }, (_, n) => ({ path: `folder/file-${String(n).padStart(3, '0')}.md`, hash, expectedVersion: 0 }));
+    const write = (updates: typeof changes) => writer.commit({ workspaceId: manifest.workspaceId, operationId: randomUUID(), deviceId: randomUUID(), changes: updates });
+    await write(changes);
+    const second = await client('second');
+    const original = globalThis.fetch;
+    const resources: string[] = [];
+    let drop = true;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
+      resources.push(String(url));
+      if (drop && String(url).includes('manifest/pages?cursor=')) throw new Error('fixture interrupted second page');
+      return original(url, options);
+    });
+    expect(await second.engine.run()).toMatchObject({ phase: 'error', seen: 1, queuedThrough: 0 });
+    const filename = path.join(second.state, 'checkpoint.json');
+    const partial = JSON.parse(await fs.readFile(filename, 'utf8'));
+    expect(Object.keys(partial.discovery.files)).toHaveLength(256);
+    expect(partial.discovery.cursor).toBeTruthy();
+    await write([{ path: 'late.md', hash, expectedVersion: 0 }]);
+    drop = false;
+    const restarted = new FileSyncEngine(second.root, second.state, second.preferences, { publish: async work => work(), changed: async () => {} });
+    expect(await restarted.run()).toMatchObject({ phase: 'idle', seen: 1, queuedThrough: 1 });
+    await expect(fs.access(path.join(second.root, 'late.md'))).rejects.toThrow();
+    expect(await restarted.run()).toMatchObject({ phase: 'idle', seen: 2, queuedThrough: 2 });
+    expect(resources.some(url => url.includes('changes?since=1&limit='))).toBe(true);
+    expect(resources.some(url => url.endsWith('/manifest'))).toBe(false);
+    expect(await fs.readFile(path.join(second.root, 'late.md'), 'utf8')).toBe('same');
+    expect(await fs.readdir(path.join(second.root, 'folder'))).toHaveLength(257);
+  });
+
+  it('negotiates legacy gateway responses without skipping the selected endpoint', async () => {
+    const original = globalThis.fetch;
+    const resources: string[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
+      const target = String(url); resources.push(target);
+      if (target.includes('manifest/pages?')) return new Response(null, { status: 404 });
+      return original(url, options);
+    });
+    const first = await client('first');
+    await first.write('legacy.md', 'legacy');
+    expect(await first.engine.run()).toMatchObject({ phase: 'idle', activeEndpoint: endpoint, seen: 1, queuedThrough: 1 });
+    expect(resources.some(url => url.endsWith('/manifest'))).toBe(true);
+    expect(resources.every(url => url.startsWith(endpoint))).toBe(true);
+  });
+
+  it('resumes interrupted upload and download using the same digest and durable operation', async () => {
+    const bytes = Buffer.alloc(8 * 1024 * 1024 + 512, 41);
+    const hash = digest(bytes);
+    const first = await client('first'); const second = await client('second');
+    await first.write('big.bin', bytes);
+    const original = globalThis.fetch;
+    const uploads: string[] = []; const ranges: string[] = [];
+    let dropUpload = true; let dropDownload = false;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
+      const address = String(url); const headers = new Headers(options?.headers);
+      if (address.endsWith(`/uploads/${hash}`) && options?.method === 'PUT') uploads.push(headers.get('Content-Range')!);
+      const response = await original(url, options);
+      if (dropUpload && uploads.length === 1 && options?.method === 'PUT' && address.endsWith(`/uploads/${hash}`)) {
+        dropUpload = false;
+        await response.body?.cancel();
+        throw new Error('fixture lost uploaded chunk response');
+      }
+      if (address.endsWith(`/blobs/${hash}`) && !options?.method) {
+        if (headers.get('Range')) ranges.push(headers.get('Range')!);
+        if (dropDownload) {
+          dropDownload = false;
+          await response.body?.cancel();
+          let sent = false;
+          return new Response(new ReadableStream({ async pull(controller) {
+            if (!sent) { sent = true; controller.enqueue(bytes.subarray(0, 1024 * 1024)); return; }
+            await new Promise(resolve => setTimeout(resolve, 25));
+            controller.error(new Error('fixture lost download stream'));
+          } }));
+        }
+      }
+      return response;
+    });
+    expect(await first.engine.run()).toMatchObject({ phase: 'error', pendingOutgoing: 1 });
+    const before = JSON.parse(await fs.readFile(path.join(first.state, 'checkpoint.json'), 'utf8'));
+    const sender = new FileSyncEngine(first.root, first.state, first.preferences, { publish: async work => work(), changed: async () => {} });
+    expect((await sender.run()).phase).toBe('idle');
+    expect(uploads).toEqual([`bytes 0-8388607/${bytes.length}`, `bytes 8388608-${bytes.length - 1}/${bytes.length}`]);
+    const serverState = JSON.parse(await fs.readFile(path.join(directory, 'hub', 'state.json'), 'utf8'));
+    expect(Object.keys(serverState.receipts).some(key => key.includes(before.outbox.operationId))).toBe(true);
+    dropDownload = true;
+    expect(await second.engine.run()).toMatchObject({ phase: 'recovery', pendingIncoming: 1 });
+    await expect(fs.access(path.join(second.root, 'big.bin'))).rejects.toThrow();
+    const partial = path.join(second.state, 'blobs', `${hash}.part`);
+    expect((await fs.stat(partial)).size).toBe(1024 * 1024);
+    const receiver = new FileSyncEngine(second.root, second.state, second.preferences, { publish: async work => work(), changed: async () => {} });
+    expect(await receiver.run()).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
+    expect(ranges).toEqual(['bytes=1048576-']);
+    expect(await fs.readFile(path.join(second.root, 'big.bin'))).toEqual(bytes);
+  });
+
   it('round-trips exact Markdown, Canvas, images and PDF bytes without Git', async () => {
     const first = await client('first'); const second = await client('second');
     const files = { '笔记.md': Buffer.from('# 原文\r\n![[附件/图片.png]]\r\n'), '图.canvas': Buffer.from('{"nodes":[]}'),
@@ -293,7 +417,11 @@ describe('native file synchronization', () => {
     expect((await second.engine.run()).conflictCount).toBe(2);
     // Older builds kept the revision from before the conflict, as on OMEN (445 vs. 469).
     const filename = path.join(second.state, 'checkpoint.json');
-    const saved = JSON.parse(await fs.readFile(filename, 'utf8')); saved.revision = 1; delete saved.queuedThrough; await fs.writeFile(filename, JSON.stringify(saved));
+    const saved = JSON.parse(await fs.readFile(filename, 'utf8'));
+    saved.revision = 1;
+    delete saved.queuedThrough;
+    delete saved.remoteSnapshot;
+    await fs.writeFile(filename, JSON.stringify(saved));
     const restart = () => new FileSyncEngine(second.root, second.state, second.preferences, { publish: async work => work(), changed: async () => {} });
     await first.write('c.md', '新文件'); await first.engine.run();
     expect((await restart().resolveConflict({ 'a.md': 'remote' })).conflictCount).toBe(1);
@@ -371,6 +499,7 @@ describe('native file synchronization', () => {
     const first = await client('first'); await first.write('note.md', 'acknowledged'); await first.engine.run();
     const original = globalThis.fetch;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, options) => {
+      if (/\/changes\?|\/manifest\/pages\?/.test(String(input))) return new Response(null, { status: 404 });
       const response = await original(input, options);
       if (!String(input).endsWith('/manifest')) return response;
       const manifest = await response.json() as { files: Record<string, { hash: string; version: number }> };

@@ -40,6 +40,9 @@ for (const extension of ['zip', 'tar.gz']) {
     assert.equal(JSON.parse(await readFile(path.join(coreRoot, 'package.json'), 'utf8')).version, info.core.version);
     await readFile(path.join(coreRoot, 'LICENSE'));
     await readFile(path.join(coreRoot, 'THIRD_PARTY_NOTICES.md'));
+    const traces = JSON.parse(await readFile(path.join(coreRoot, 'test/fixtures/sync-golden-traces.json'), 'utf8'));
+    assert.equal(traces.schemaVersion, 1);
+    assert.ok(traces.traces.some(trace => trace.id === 'outbox-response-lost'));
     assert.deepEqual((await readdir(path.join(extracted, 'sync-server/node_modules'))), ['@alexbeatsz']);
     const env = { ...process.env, NODE_PATH: '', NODE_OPTIONS: '' };
     const entry = path.join(extracted, 'sync-server/server.mjs');
@@ -74,6 +77,7 @@ for (const extension of ['zip', 'tar.gz']) {
     assert.equal(reply.status, 200); assert.equal((await reply.json()).revision, 1);
     assert.deepEqual(Buffer.from(await (await request('blobs/' + hash)).arrayBuffer()), bytes);
     assert.equal((await request('manifest')).status, 200);
+    assert.deepEqual((await (await request('manifest/pages?limit=1')).json()).files, { 'isolated.bin': { hash, version: 1 } });
     const exited = once(child, 'exit'); child.kill(); await exited;
     // Restart the exported API on the very same data root, preserving the persisted receipt.
     const { createSyncServer } = await import(pathToFileURL(entry).href);
