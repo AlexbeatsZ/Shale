@@ -5,8 +5,8 @@ import type { VirtualDocument } from './virtualDocuments';
 import type { CatalogEntry } from '@shale/search-core';
 
 const document: VirtualDocument = { path: 'Book', title: '物理化学 第三版', revision: 'v1', streams: [
-  { id: 'text', title: '正文', files: [{ path: 'Book/ch01.md', title: '量子', kind: 'markdown', size: 300, headings: [] }] },
-  { id: 'pdf', title: '原版', files: [{ path: 'Book/original.pdf', title: '原版', kind: 'pdf', size: 200, headings: [] }] },
+  { title: '正文', files: [{ path: 'Book/ch01.md', title: '量子', kind: 'markdown', size: 300, headings: [] }] },
+  { title: '原版', files: [{ path: 'Book/original.pdf', title: '原版', kind: 'pdf', size: 200, headings: [] }] },
 ] };
 it('projects one picker entry, keeping member names searchable without changing the physical catalog', () => {
   const original: CatalogEntry[] = ['Book/ch01.md','Book/old 索引.md','outside.md'].map(path => ({ path, kind: 'file', title: path, aliases: ['alias'], tags: ['chemistry'], headings: ['H'] }));
@@ -31,15 +31,15 @@ it('bounds the loading window even when a document has thousands of tiny chapter
 it('prefetches neighbours and retains independent progress for each stream', () => {
   expect(readingWindow([1000,1000,1000,1000],1200,700)).toEqual({first:0,last:2});
   const session = new VirtualReadingSession(document, 'test');
-  session.remember('text', 500, [1000]); session.selectStream('pdf'); session.remember('pdf', 300, [2000]);
-  session.selectStream('text'); expect(session.progress()?.top).toBe(500);
+  session.remember('正文', 500, [1000]); session.selectStream('原版'); session.remember('原版', 300, [2000]);
+  session.selectStream('正文'); expect(session.progress()?.top).toBe(500);
   session.go({ path:'Book/original.pdf',page:4 });
-  expect(session.getSnapshot()).toMatchObject({stream:'pdf',target:{path:'Book/original.pdf',page:4}});
+  expect(session.getSnapshot()).toMatchObject({stream:'原版',target:{path:'Book/original.pdf',page:4}});
   session.releaseTarget(); expect(session.getSnapshot().target).toBeUndefined();
 });
 it('keeps configuration editing and mode through a saved manifest refresh', () => {
   const session=new VirtualReadingSession(document,'configuration-test');session.selectConfiguration();session.setMode('source');
-  session.replaceDocument({...document,revision:'v2',streams:document.streams.map(stream=>({...stream,title:stream.id==='text'?'MD':stream.title}))});
+  session.replaceDocument({...document,revision:'v2',streams:document.streams.map(stream=>({...stream,title:stream.title==='正文'?'MD':stream.title}))});
   expect(session.getSnapshot()).toMatchObject({configuration:true,mode:'source'});
-  session.selectStream('text');expect(session.getSnapshot().configuration).toBe(false);
+  session.selectStream('MD');expect(session.getSnapshot().configuration).toBe(false);
 });

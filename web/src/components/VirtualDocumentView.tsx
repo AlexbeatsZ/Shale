@@ -249,11 +249,11 @@ function SourceTitle({ source, reader }: { source: VirtualSource; reader: Virtua
 
 function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
   const state = useSyncExternalStore(reader.subscribe, reader.getSnapshot);
-  const stream = reader.document.streams.find(stream => stream.id === state.stream)!;
+  const stream = reader.document.streams.find(stream => stream.title === state.stream)!;
   const root = useRef<HTMLDivElement>(null), cover = useRef<HTMLElement>(null);
   const progress = reader.progress();
   const [layout, setLayout] = useState(() => ({ zoom: state.pdfZoom,
-    heights: progress?.stream === stream.id && progress.heights.length === stream.files.length ? progress.heights
+    heights: progress?.stream === stream.title && progress.heights.length === stream.files.length ? progress.heights
       : stream.files.map(file => isPagedSource(file) ? 1400 : Math.max(800, Math.min(16000, file.size / 2))) }));
   const measuredLayout = useRef(layout);
   // An external-store zoom update renders synchronously. Derive placeholders in
@@ -351,7 +351,7 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
   useLayoutEffect(() => {
     const element = root.current;
     if (!element) return;
-    if (progress?.stream === stream.id) element.scrollTop = progress.top;
+    if (progress?.stream === stream.title) element.scrollTop = progress.top;
     observedTop.current = element.scrollTop;
     captureAnchor();
     updateWindow();
@@ -375,7 +375,7 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
     };
     element.addEventListener('scroll', scroll, { passive: true });
     for (const event of ['wheel', 'touchstart', 'pointerdown', 'keydown']) element.addEventListener(event, userScroll, { passive: true });
-    return () => { reader.remember(stream.id, element.scrollTop, heightRef.current); observer.disconnect(); element.removeEventListener('scroll', scroll); for (const event of ['wheel', 'touchstart', 'pointerdown', 'keydown']) element.removeEventListener(event, userScroll); cancelAnimationFrame(frame); cancelAnimationFrame(correctionFrame.current); cancelAnimationFrame(releaseFrame.current); cancelAnimationFrame(navigationFrame.current); };
+    return () => { reader.remember(stream.title, element.scrollTop, heightRef.current); observer.disconnect(); element.removeEventListener('scroll', scroll); for (const event of ['wheel', 'touchstart', 'pointerdown', 'keydown']) element.removeEventListener(event, userScroll); cancelAnimationFrame(frame); cancelAnimationFrame(correctionFrame.current); cancelAnimationFrame(releaseFrame.current); cancelAnimationFrame(navigationFrame.current); };
   }, [reader]);
   useLayoutEffect(() => {
     if (!state.target || !root.current) return;
@@ -498,7 +498,7 @@ export default function VirtualDocumentView({ document, viewId = 'main' }: { doc
   useLayoutEffect(() => reader.replaceDocument(document), [reader, document]);
   useEffect(() => registerVirtualReading(reader), [reader]);
   const snapshot = useSyncExternalStore(reader.subscribe, reader.getSnapshot);
-  const stream = reader.document.streams.find(stream => stream.id === snapshot.stream)!;
+  const stream = reader.document.streams.find(stream => stream.title === snapshot.stream)!;
   const sourceIdentity = stream.files.map(file => file.path).join('\0');
   return <section className="virtual-document-view" data-virtual-document={document.path}>
     {snapshot.configuration

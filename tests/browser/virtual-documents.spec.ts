@@ -8,7 +8,7 @@ test('virtual Markdown chapters stay bounded, jump through one outline and edit 
   const folder = '化学/物理化学/物理化学 第三版';
   const files = Array.from({ length: 30 }, (_, index) => ({ path: `${folder}/正文/物理化学 第三版 第${String(index + 1).padStart(2,'0')}章.md`,
     title: `章节 ${index + 1}`, kind: 'markdown', size: 100000, headings: [{ text: `定义 ${index + 1}`, level: 1 }, { text: `应用 ${index + 1}`, level: 2 }] }));
-  const collection = { path: folder, title: '物理化学 第三版', revision: 'fixture-v1', streams: [{ id:'text',title:'MD',files }] };
+  const collection = { path: folder, title: '物理化学 第三版', revision: 'fixture-v1', streams: [{ title:'MD',files }] };
   const reads: string[] = [], writes: {path:string;content:string}[] = [];
   let releasePredecessor!: () => void;
   const predecessor = new Promise<void>(resolve => { releasePredecessor = resolve; });
@@ -116,7 +116,7 @@ test('status groups include highlighted JSON configuration, retain edits through
   const folder='Book',configPath=folder+'/.virtual-document.json';
   let manifest={title:'Book',streams:[{title:'MD',files:['chapter.md']},{title:'PDF',files:['量子 #1 100% (A).pdf']}]};
   let raw=JSON.stringify(manifest,null,2);const writes:{path:string;content:string}[]=[];
-  const collection=()=>({path:folder,title:'Book',revision:raw,streams:manifest.streams.map(stream=>({id:stream.title,title:stream.title,files:stream.files.map(file=>({path:folder+'/'+file,title:file,kind:file.endsWith('.pdf')?'pdf':'markdown',size:200,headings:[]}))}))});
+  const collection=()=>({path:folder,title:'Book',revision:raw,streams:manifest.streams.map(stream=>({title:stream.title,files:stream.files.map(file=>({path:folder+'/'+file,title:file,kind:file.endsWith('.pdf')?'pdf':'markdown',size:200,headings:[]}))}))});
   const tree=()=>({name:'Fixture',path:'',type:'folder',children:[{name:'Book',path:folder,type:'folder',virtualDocument:collection()}]});
   await page.route('**/api/**',async route=>{
     const url=new URL(route.request().url());
@@ -204,7 +204,7 @@ test('status groups include highlighted JSON configuration, retain edits through
 test('multiple PDFs share a continuous scroll, generated index, bookmarks and a bounded canvas window', async ({page},testInfo)=>{
   const folder='化学/课件',pdf=makePdfFixture({pages:40});
   const files=Array.from({length:8},(_,i)=>({path:`${folder}/课件 第${i+1}章.pdf`,title:`课件 ${i+1}`,kind:'pdf',size:pdf.length,headings:[]}));
-  const collection={path:folder,title:'物理化学 课件',revision:'pdf-v1',streams:[{id:'pdf',title:'PDF',files}]};
+  const collection={path:folder,title:'物理化学 课件',revision:'pdf-v1',streams:[{title:'PDF',files}]};
   await page.route('**/api/**',async route=>{
     const url=new URL(route.request().url());
     if(url.pathname==='/api/vault-identity'||url.pathname==='/api/writing')return route.fallback();
@@ -254,7 +254,7 @@ test('multiple PDFs share a continuous scroll, generated index, bookmarks and a 
 test('PowerPoint members read inline between PDFs with slide titles, outline and thumbnails', async ({page})=>{
   const folder='化学/课件',pdf=makePdfFixture({pages:2}),pptx=readFileSync('tests/fixtures/presentation.pptx'),ppt=readFileSync('tests/fixtures/presentation-legacy.ppt');
   const files=[['课件 01 绪论.pdf','pdf',pdf],['课件 02 形状.pptx','ppt',pptx],['课件 03 旧版.ppt','ppt',ppt]].map(([name,kind,body])=>({path:`${folder}/${name}`,title:(name as string).replace(/\.[^.]+$/,''),kind,size:(body as Buffer).length,headings:[]}));
-  const collection={path:folder,title:'课件',revision:'ppt-v1',streams:[{id:'主线',title:'主线',files}]};
+  const collection={path:folder,title:'课件',revision:'ppt-v1',streams:[{title:'主线',files}]};
   await page.route('**/api/**',async route=>{
     const url=new URL(route.request().url());
     if(url.pathname==='/api/vault-identity'||url.pathname==='/api/writing')return route.fallback();

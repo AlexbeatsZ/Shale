@@ -31,7 +31,7 @@ export default function ViewModeMenu() {
   const host = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menuId = useId();
-  const isMarkdown = reading ? !reading.configuration && !!reader?.document.streams.find(stream => stream.id === reading.stream)?.files.some(file => file.kind === 'markdown')
+  const isMarkdown = reading ? !reading.configuration && !!reader?.document.streams.find(stream => stream.title === reading.stream)?.files.some(file => file.kind === 'markdown')
     : !!activePath && /\.(md|markdown)$/i.test(activePath);
   const current = modes.find((item) => item.mode === viewMode)!;
 

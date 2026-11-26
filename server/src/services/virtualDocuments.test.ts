@@ -27,12 +27,13 @@ it('rejects traversal, hidden source paths, unsupported files and duplicate iden
     expect(virtualManifestSchema.safeParse({title:'Book',streams:[{title:'Text',files:[source]}]}).success).toBe(false);
   expect(virtualManifestSchema.safeParse({title:'Book',streams:[{title:'Text',files:['A.md','a.md']}]}).success).toBe(false);
 });
-it('requires exactly one of pattern or files, unique stream titles and valid expressions, and still reads legacy descriptors',()=>{
+it('requires exactly one of pattern or files, unique stream titles and valid expressions, and rejects removed fields',()=>{
   for(const stream of [{title:'X'},{title:'X',pattern:'\\.md$',files:['a.md']},{title:'X',pattern:'('}])
     expect(virtualManifestSchema.safeParse({title:'Book',streams:[stream]}).success).toBe(false);
   expect(virtualManifestSchema.safeParse({title:'Book',streams:[{title:'A',pattern:'x'},{title:'A',files:['a.md']}]}).success).toBe(false);
   expect(virtualManifestSchema.safeParse({title:'Book',streams:[{title:'A',pattern:'\\.pdf$'},{title:'B',files:['a.md']}]}).success).toBe(true);
-  expect(virtualManifestSchema.safeParse({version:1,title:'Book',streams:[{id:'text',title:'MD',files:['a.md']}]}).success).toBe(true);
+  for(const raw of [{version:1,title:'Book',streams:[{title:'MD',files:['a.md']}]},{title:'Book',streams:[{id:'text',title:'MD',files:['a.md']}]}])
+    expect(virtualManifestSchema.safeParse(raw).success).toBe(false);
 });
 it('resolves automatic streams from current files on every projection, naturally ordered and mixed with manual lists',async()=>{
   for(const name of ['课件 10 光谱.pdf','课件 02 绪论.pdf','课件 练习.pdf','课件 02 绪论.md','课件 x.ppt'])await fs.writeFile(state.root+'/Book/'+name,'x');
@@ -41,7 +42,7 @@ it('resolves automatic streams from current files on every projection, naturally
     {title:'MD',pattern:'\\.md$'},{title:'手动',files:['original.pdf','课件 02 绪论.md']}]}));
   const project=async()=>(await describeVirtualDocuments(await listTree())).children!.find(node=>node.path==='Book')!.virtualDocument!;
   const streams=(await project()).streams;
-  expect(streams.map(stream=>[stream.id,stream.files.map(file=>file.path.slice(5))])).toEqual([
+  expect(streams.map(stream=>[stream.title,stream.files.map(file=>file.path.slice(5))])).toEqual([
     ['主线',['课件 02 绪论.pdf','课件 10 光谱.pdf']],['补充资料',['课件 练习.pdf']],
     ['MD',['课件 02 绪论.md','正文/第02章.md','正文/第10章.md','Book 索引.md']],['手动',['original.pdf','课件 02 绪论.md']]]);
   await fs.writeFile(state.root+'/Book/课件 03 新章.pdf','x');await fs.rm(state.root+'/Book/课件 10 光谱.pdf');clearVaultStats();

@@ -8,7 +8,7 @@ test('collection sidebar folds file/heading trees, returns to the cover and shar
   const files = Array.from({ length: 10 }, (_, index) => ({ path: `${folder}/Chapter ${index + 1}.md`, title: `Chapter ${index + 1}`,
     kind: 'markdown', size: 4000, headings: [{ text: `Section ${index + 1}`, level: 1 }, { text: `Detail ${index + 1}`, level: 2 }, { text: `Leaf ${index + 1}`, level: 3 }] }));
   const pdfFiles = Array.from({ length: 8 }, (_, index) => ({ path: `${folder}/Slides ${index + 1}.pdf`, title: `Slides ${index + 1}`, kind: 'pdf', size: pdf.length, headings: [] }));
-  const collection = { path: folder, title: 'A continuous book', revision: 'fixture', streams: [{ id: 'text', title: 'MD', files }, { id: 'pdf', title: 'PDF', files: pdfFiles }] };
+  const collection = { path: folder, title: 'A continuous book', revision: 'fixture', streams: [{ title: 'MD', files }, { title: 'PDF', files: pdfFiles }] };
   const reads: string[] = [];
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
@@ -69,7 +69,7 @@ test('collection sidebar folds file/heading trees, returns to the cover and shar
   await expect(thumbnails.getByRole('button', { name: '目录缩略图', exact: true })).toBeVisible();
   await expect.poll(() => host.locator('.virtual-document-scroll').evaluate(node => node.scrollTop)).toBe(0);
   await host.getByRole('button', { name: '大纲', exact: true }).click();
-  await page.evaluate(() => { (window as any).virtualSidebar.reader.selectStream('pdf'); });
+  await page.evaluate(() => { (window as any).virtualSidebar.reader.selectStream('PDF'); });
   await outline.getByRole('button', { name: 'Slides 5', exact: true }).click();
   const pdfSource = host.locator(`[data-virtual-source="${pdfFiles[4].path}"]`);
   await expect(pdfSource.locator('[data-page-number="1"] .pdf-page-surface')).toHaveClass(/is-ready/, { timeout: 30000 });

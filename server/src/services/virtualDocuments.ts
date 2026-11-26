@@ -60,7 +60,7 @@ function folderSources(folder: TreeNode) {
 const matches = (pattern: string, relative: string) => compileVirtualPattern(pattern).test(relative.normalize('NFC'));
 /** Automatic streams are computed from current files on every projection; manual lists are used as written. */
 export function resolveVirtualStreams(manifest: VirtualManifest, sources: readonly string[]) {
-  return manifest.streams.map(stream => ({ id: stream.title, title: stream.title,
+  return manifest.streams.map(stream => ({ title: stream.title,
     files: stream.pattern !== undefined ? sources.filter(file => matches(stream.pattern!, file)) : stream.files! }));
 }
 

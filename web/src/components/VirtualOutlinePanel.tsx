@@ -46,7 +46,7 @@ function PdfEntries({ entries, path, reader, folding, parent = 'pdf:' + path }: 
 }
 export default function VirtualOutlinePanel({ reader }: { reader: VirtualReadingSession }) {
   const state = useSyncExternalStore(reader.subscribe, reader.getSnapshot);
-  const stream = reader.document.streams.find(stream => stream.id === state.stream)!;
+  const stream = reader.document.streams.find(stream => stream.title === state.stream)!;
   const [, refresh] = useState(0);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => folds.get(reader) ?? new Set());
   const folding: Folding = { collapsed, toggle: key => setCollapsed(previous => {

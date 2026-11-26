@@ -7,7 +7,7 @@ async function mountPdfBook(page: Page, beforePdf?: (path: string) => Promise<vo
   const folder = 'Zoom book';
   const files = Array.from({ length: 5 }, (_, index) => ({ path: `${folder}/Slides ${index + 1}.pdf`, title: `Slides ${index + 1}`,
     kind: 'pdf', size: pdf.length, headings: [] }));
-  const collection = { path: folder, title: 'PDF zoom', revision: 'initial', streams: [{ id: 'pdf', title: 'PDF', files }] };
+  const collection = { path: folder, title: 'PDF zoom', revision: 'initial', streams: [{ title: 'PDF', files }] };
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/vault-identity' || url.pathname === '/api/writing') return route.fallback();

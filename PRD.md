@@ -1,7 +1,8 @@
 # PRD — Shale
 
 > Product Requirements Document
-> Phiên bản: 1.69 · Cập nhật: 2026-11-25 · Trạng thái: Draft
+> Phiên bản: 1.70 · Cập nhật: 2026-11-26 · Trạng thái: Draft
+> Changelog 1.70 (删除虚拟文档旧格式兼容) 用户要求格式变更时不保留旧格式兼容。`.virtual-document.json` 只接受 `title` + `streams`（分组 `title` + `pattern`/`files`），出现 `version` 或分组 `id` 即报配置无效；运行时投影也不再保留与标题重复的分组 `id`，界面状态以分组标题为键。现有配置须迁移，今后格式变更同样迁移文件，确需兼容先询问用户。
 > Changelog 1.69 (连续文档 PPT 来源) 用户要求课件文件夹中的 `.ppt` / `.pptx` 进入连续阅读。来源类型扩展为 Markdown/PDF/PPT，PPT 章节复用现有 PDF/PPT 共用分页会话、文件标题、大纲（幻灯片标题）、缩略图、缩放与反色，不另建阅读器。默认启用写入 MD/PDF/PPT 三个自动分组，空分组隐藏、新文件到来后自动出现；课件模板主线/补充资料匹配 `pdf|pptx?`，按命名自然排序与 PDF 交错。链接预览同时支持 PDF 与 PPT。
 > Changelog 1.68 (虚拟文档自动分组) 保留 `.virtual-document.json`，配置简化为 `title` + `streams`；每个分组用 `pattern`（正则筛选文件夹内相对路径，运行时按现有自然排序计算，不保存结果）或 `files`（显式列表）二选一，可混用，分组以标题为身份。旧 `version`/分组 `id` 只兼容读取。课件文件夹迁移为主线/补充资料/MD 自动分组，教材保持手动列表；PPT 不属于连续文档来源。聚合改名只改写手动列表，自动成员改名后不匹配任何分组时拒绝。见 docs/design/virtual-documents.md。
 > Changelog 1.67 (分组快捷键使用实体Control) 用户将分组前后切换改为Mac实体Control+Shift+Z/X，Windows暂不绑定。两动作默认不再占用Option/Alt，个人Vault的同一份hotkeys.jsonc明确保存Mac PhysicalCtrl与Windows空绑定；原Option+Shift+Z/X聚焦左右窗格保留。分组切换是工作区动作，在Vim Normal/Visual/Insert均可执行，Vim自己的编辑组合仍归Vim。验收使用包含原聚焦绑定的实际配置形状，检查Mac实体Control生效、Command/Option不误触发分组、Windows未绑定。

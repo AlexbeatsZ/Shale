@@ -30,7 +30,7 @@ export class VirtualReadingSession {
   constructor(public document: VirtualDocument, readonly viewId: string, mode: ViewMode = 'live') {
     this.progressKey = key(document.path, viewId);
     const selected = selectedStreams.get(this.progressKey);
-    this.state = { stream: document.streams.find(stream => stream.id === selected)?.id ?? document.streams[0].id,
+    this.state = { stream: document.streams.find(stream => stream.title === selected)?.title ?? document.streams[0].title,
       serial: 0, pdfOutlines: {}, pdfZoom: 1, configuration: false, mode };
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
@@ -39,7 +39,7 @@ export class VirtualReadingSession {
     this.state = { ...this.state, ...patch }; for (const listener of this.listeners) listener();
   }
   selectStream(id: string) {
-    if (!this.document.streams.some(stream => stream.id === id)) return;
+    if (!this.document.streams.some(stream => stream.title === id)) return;
     selectedStreams.set(this.progressKey, id);
     if (id !== this.state.stream || this.state.configuration) this.update({ stream: id, configuration: false, activeSource: undefined, target: undefined,
       pdfZoom: this.pdfZooms.get(id) ?? 1, serial: this.state.serial + 1 });
@@ -57,12 +57,12 @@ export class VirtualReadingSession {
   replaceDocument(document: VirtualDocument) {
     if (JSON.stringify(document) === JSON.stringify(this.document)) return;
     for (const stream of document.streams) {
-      const before = this.document.streams.find(item => item.id === stream.id);
+      const before = this.document.streams.find(item => item.title === stream.title);
       if (JSON.stringify(before?.files.map(file => file.path)) !== JSON.stringify(stream.files.map(file => file.path)))
-        progresses.delete(this.progressKey + '\0' + stream.id);
+        progresses.delete(this.progressKey + '\0' + stream.title);
     }
     this.document = document;
-    const stream = document.streams.some(stream => stream.id === this.state.stream) ? this.state.stream : document.streams[0].id;
+    const stream = document.streams.some(stream => stream.title === this.state.stream) ? this.state.stream : document.streams[0].title;
     this.update({ stream, pdfZoom: this.pdfZooms.get(stream) ?? 1 });
   }
   go = (target: ReadingTarget) => {
@@ -70,10 +70,10 @@ export class VirtualReadingSession {
       this.update({ configuration: false, activeSource: undefined, target, serial: this.state.serial + 1 });
       return;
     }
-    const stream = this.document.streams.find(stream => stream.id === this.state.stream && stream.files.some(file => file.path === target.path))
+    const stream = this.document.streams.find(stream => stream.title === this.state.stream && stream.files.some(file => file.path === target.path))
       ?? this.document.streams.find(stream => stream.files.some(file => file.path === target.path));
-    if (stream) this.update({ stream: stream.id, configuration: false, activeSource: target.path, target,
-      pdfZoom: this.pdfZooms.get(stream.id) ?? 1, serial: this.state.serial + 1 });
+    if (stream) this.update({ stream: stream.title, configuration: false, activeSource: target.path, target,
+      pdfZoom: this.pdfZooms.get(stream.title) ?? 1, serial: this.state.serial + 1 });
   };
   releaseTarget() { if (this.state.target) this.update({ target: undefined }); }
   outline(path: string, entries: readonly PdfOutlineEntry[]) {

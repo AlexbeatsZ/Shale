@@ -10,7 +10,7 @@ import '../styles/virtual-navigation.css';
 /** A collection navigator plus the current source's existing, resource-sharing preview. */
 export default function VirtualThumbnailsPanel({ reader }: { reader: VirtualReadingSession }) {
   const state = useSyncExternalStore(reader.subscribe, reader.getSnapshot);
-  const stream = reader.document.streams.find(stream => stream.id === state.stream)!;
+  const stream = reader.document.streams.find(stream => stream.title === state.stream)!;
   const source = stream.files.find(file => file.path === state.activeSource);
   const pdf = usePdfSession(source && isPagedSource(source) ? source.path : null, 'virtual:' + reader.viewId);
   const goToLine = useCallback((line: number) => { if (source) reader.go({ path: source.path, line }); }, [reader, source?.path]);

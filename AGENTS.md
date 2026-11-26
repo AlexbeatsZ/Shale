@@ -7,10 +7,12 @@
 - 中央与两侧主页提供同样的打开和新建动作，打开内容时在各自标签栏原位替换当前 Homepage。中央使用顶部标签，两侧使用各自竖排标签，侧栏专有固定面板继续归侧栏。桌面端须保留网页浏览、用户脚本文件/URL 导入及自动检查更新。修改宿主或工作区时运行桌面网页浏览回归。删除或停用任一能力需要用户明确同意。设计见 `docs/design/workspace-sidebars.md` 和 `docs/design/web-viewer.md`。
 
 ## Repository Records
+- 用户于 2026-11-26 明确要求：配置/数据格式变更时不保留旧格式兼容读取，直接迁移现有文件；确需兼容必须先询问用户（首例：PRD1.70 删除 `.virtual-document.json` 的 version/id）。
 - 用户于 2026-11-25 明确授权「部署,之后更新不需要我授权」：后续 Shale 构建、发布及已有设备原位更新无需再次确认；保留现有数据和工作区，其他程序与代理配置的权限边界不变。
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-26 PRD1.70（源码，未构建）：删除虚拟文档 version/分组id 兼容与运行时重复 id，阅读状态以分组标题为键。Mac Vault 28 个已是新格式；OMEN Vault 25 个旧格式（未同步），安装含此改动的版本前须先迁移/同步。
 - 2026-11-25 PRD1.69 / 0.1.99：连续文档来源增加 PPT/PPTX（复用分页章节），默认启用总写 MD/PDF/PPT 三个自动分组；STEM 11 个课件主线/补充资料匹配 pdf|pptx?。v0.1.99 latest 与 android-v0.1.99 预发布已发布（源码7092f80）；Mac/OMEN/ROG 原位更新，Mac/OMEN 健康通过。OMEN 的 STEM Vault 尚未同步到迁移后的配置（25 个旧格式，兼容有效）。
 - 2026-11-25 PRD1.68 / 0.1.98：虚拟文档分组改为 `pattern`（正则自动发现，运行时自然排序）或 `files`（手动）二选一，标题即分组身份，旧 version/id 兼容读取。STEM Vault 27 个配置已迁移（课件主线/补充资料/MD 自动、教材手动），Vault 提交fc68ea1。v0.1.98 latest七资产与 android-v0.1.98 预发布已发布（源码f6a2ca1）；Mac/OMEN/ROG 原位更新，Mac/OMEN 健康通过。报告 `tests/reports/virtual-document-streams-20261125.md`。
 - 2026-11-25 PRD1.67 / 桌面与Android0.1.97已交付（运行源码efc0ccc）：Mac个人Vault实体Control+Shift+Z/X切换同组前/后页面，Windows明确空绑定，原Option左右窗格聚焦保留。分组动作默认未绑定，workspace作用域覆盖Vim各模式；668单元、Mac19/Windows7浏览器、Mac两组后台与Windows五组原生通过。五设备原位更新；Mac/OMEN健康及工作区通过，ROG未选库保留，Android两端服务健康仍待验收。报告 `tests/reports/tab-group-control-20261125.md`。

@@ -20,7 +20,7 @@ export default function VirtualGroupMenu() {
     return () => window.removeEventListener('pointerdown', dismiss);
   }, [open]);
   if (!reader || !state) return null;
-  const title = state.configuration ? '配置' : reader.document.streams.find(stream => stream.id === state.stream)!.title;
+  const title = state.configuration ? '配置' : reader.document.streams.find(stream => stream.title === state.stream)!.title;
   return <div className="view-mode-control virtual-group-control" ref={host} onBlur={event => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOpen(false);
   }}>
@@ -34,8 +34,8 @@ export default function VirtualGroupMenu() {
       else if (event.key === 'Tab') setOpen(false);
     }}>
       <MenuList items={[
-        ...reader.document.streams.map(stream => ({ label: stream.title, checked: !state.configuration && stream.id === state.stream,
-          icon: stream.files.every(isPagedSource) ? 'file-text' : 'book-open', onClick: () => reader.selectStream(stream.id) })),
+        ...reader.document.streams.map(stream => ({ label: stream.title, checked: !state.configuration && stream.title === state.stream,
+          icon: stream.files.every(isPagedSource) ? 'file-text' : 'book-open', onClick: () => reader.selectStream(stream.title) })),
         { label: '', separator: true },
         { label: '配置', icon: 'code', checked: state.configuration, onClick: () => reader.selectConfiguration() },
       ]} onClose={() => { setOpen(false); trigger.current?.focus(); }} />

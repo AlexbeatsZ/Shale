@@ -19,15 +19,12 @@ const virtualStream = z.object({
   title: z.string().trim().min(1).max(100),
   pattern: virtualPattern.optional(),
   files: z.array(virtualSourcePath).min(1).max(2000).optional(),
-  /** Legacy (≤1.67) field; accepted for old descriptors, never written. Stream identity is its title. */
-  id: z.string().regex(/^[a-zA-Z0-9-]{1,80}$/).optional(),
 }).strict().superRefine((stream, context) => {
   if ((stream.pattern === undefined) === (stream.files === undefined))
     context.addIssue({ code: 'custom', message: `分组「${stream.title}」需要且只能使用 pattern 或 files 之一` });
 });
+/** A stream's title is its identity: unique within the document. */
 export const virtualManifestSchema = z.object({
-  /** Legacy (≤1.67) field; accepted, never written. */
-  version: z.literal(1).optional(),
   title: z.string().trim().min(1).max(200),
   streams: z.array(virtualStream).min(1).max(16),
 }).strict().superRefine((manifest, context) => {
@@ -46,5 +43,5 @@ export interface VirtualSource {
 /** Runtime projection: automatic streams are resolved against the current folder contents. */
 export interface VirtualDocument {
   path: string; title: string; revision: string;
-  streams: { id: string; title: string; files: VirtualSource[] }[];
+  streams: { title: string; files: VirtualSource[] }[];
 }
