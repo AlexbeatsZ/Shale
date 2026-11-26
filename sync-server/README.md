@@ -66,7 +66,7 @@ node sync-server/server.mjs --backup-once <配置文件>      # 立即备份一�
 node sync-server/shared-gateway.mjs <原Dayweave网关模块绝对路径> <现有Mojian gateway-route.mjs绝对路径>
 ```
 
-客户端地址可填写已有 Sakura Web 地址并加 `/shale-sync/v1/`。按行填写多个地址，每次从第一行开始严格顺序尝试；所有地址必须指向同一数据目录和工作区身份，不切换到其他独立服务器。网关只开放 manifest、blob、commit 三类接口，不开放应用 API 或 MCP。
+客户端地址可填写已有 Sakura Web 地址并加 `/shale-sync/v1/`。按行填写多个地址，每次从第一行开始严格顺序尝试；所有地址必须指向同一数据目录和工作区身份，不切换到其他独立服务器。网关开放 v1 清单和提交、分页快照与增量、原始 blob 传输和可恢复上传接口。
 
 修改共享网关任务/监听/防火墙或启用服务属于单独部署操作。本实现没有自动更改 ROG 任务、SakuraFrpService 或 Tailscale，也不自动启用客户端同步。
 

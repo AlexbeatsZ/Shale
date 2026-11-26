@@ -15,7 +15,7 @@ const configuration = { version: 1, bindings: {
   move: [{ modifiers: ['Ctrl'], key: 'M' }],
   'toggle-source': [{ modifiers: ['Ctrl'], key: 'Q' }],
   'app:toggle-left-sidebar': [{ modifiers: ['Ctrl', 'Shift'], key: 'Z' }],
-}, platforms: { mac: { settings: [{ modifiers: ['PhysicalCtrl'], key: '`' }] } }, imported: [], migration: 'native fixture' };
+}, platforms: { mac: { settings: [{ modifiers: ['PhysicalCtrl'], key: '`' }] } } };
 const filename = path.join(vault, '.shale/hotkeys.jsonc');
 await fs.writeFile(filename, JSON.stringify(configuration));
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: false }));

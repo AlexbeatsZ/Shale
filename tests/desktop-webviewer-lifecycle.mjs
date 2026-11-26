@@ -16,7 +16,7 @@ await fs.mkdir(path.join(vault,'.shale'));
 // production Windows preferences explicitly leave the group commands unbound.
 const groupMod = process.platform === 'darwin' ? 'Control' : 'Alt';
 const groupModifier = process.platform === 'darwin' ? 'PhysicalCtrl' : 'Alt';
-await fs.writeFile(path.join(vault,'.shale/hotkeys.jsonc'),JSON.stringify({version:1,imported:[],migration:'isolated lifecycle fixture',bindings:{
+await fs.writeFile(path.join(vault,'.shale/hotkeys.jsonc'),JSON.stringify({version:1,bindings:{
   ...(process.platform === 'darwin' ? { 'editor:focus-left':[{modifiers:['Alt','Shift'],key:'Z'}], 'editor:focus-right':[{modifiers:['Alt','Shift'],key:'X'}] } : {}),
   'workspace:swap-group-previous':[{modifiers:[groupModifier,'Shift'],key:'Z'}], 'workspace:swap-group-next':[{modifiers:[groupModifier,'Shift'],key:'X'}]
 }}));

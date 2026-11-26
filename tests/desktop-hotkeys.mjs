@@ -14,7 +14,7 @@ await fs.writeFile(path.join(vault, 'Note.md'), 'body title\n\nlast line\n');
 const filename = path.join(vault, '.shale/hotkeys.jsonc');
 await fs.writeFile(filename, JSON.stringify({ version: 1, bindings: {
   'editor:set-heading-7': [{ modifiers: ['Ctrl', 'Alt'], key: '7' }],
-}, platforms: {}, imported: [], migration: 'packaged fixture' }));
+}, platforms: {} }));
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: false }));
 const env = { ...process.env }; delete env.ELECTRON_RUN_AS_NODE;
 const primary = process.platform === 'darwin' ? 'Meta' : 'Control';

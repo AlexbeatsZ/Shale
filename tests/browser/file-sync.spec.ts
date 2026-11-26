@@ -66,3 +66,30 @@ test('shows retained conflict versions and sends an explicit resolution without 
   expect(requests.map((request: any) => request.path)).toEqual(['/api/file-sync', '/api/file-sync/run', '/api/file-sync/resolve']);
   expect(requests[2].body).toEqual({ choice: 'recheck' });
 });
+
+test('shows completed sync only after all work reaches the discovered revision', async ({ page }) => {
+  await page.evaluate(async () => {
+    const load = (module: string) => import(module);
+    const [React, ReactDOM, { default: Button }] = await Promise.all([
+      load('/node_modules/.vite/deps/react.js'), load('/node_modules/.vite/deps/react-dom_client.js'), load('/src/components/NativeSyncButton.tsx'),
+    ]);
+    const host = document.createElement('div'); host.id = 'sync-indicator-fixture'; document.body.append(host);
+    (ReactDOM.createRoot ?? ReactDOM.default.createRoot)(host).render((React.default ?? React).createElement(Button));
+  });
+  const button = page.locator('#sync-indicator-fixture button');
+  const update = async (fields: Record<string, unknown>, label: string) => {
+    await expect(async () => {
+      await page.evaluate(detail => window.dispatchEvent(new CustomEvent('file-sync-status', { detail })), {
+        enabled: true, phase: 'idle', seen: 5, queuedThrough: 5, lastSuccess: '2026-11-26T08:00:00Z', ...fields,
+      });
+      await expect(button).toHaveText(label, { timeout: 300 });
+    }).toPass();
+  };
+  await update({ lastSuccess: null }, '等待首次同步');
+  await update({ queuedThrough: 3 }, '待继续同步');
+  await update({ pendingIncoming: 4 }, '待接收 4');
+  await update({ pendingOutgoing: 1 }, '待发送 1');
+  await update({ phase: 'recovery' }, '等待恢复');
+  await update({ phase: 'conflict', conflictCount: 2 }, '2 个冲突');
+  await update({}, '已同步');
+});

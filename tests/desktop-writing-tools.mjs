@@ -17,7 +17,7 @@ await fs.writeFile(path.join(vault, '.shale/writing.jsonc'), JSON.stringify({ ve
 await fs.writeFile(path.join(vault, '.shale/hotkeys.jsonc'), JSON.stringify({ version: 1, bindings: {
   'editor:set-heading-2': [{ modifiers: ['Alt'], key: '2' }],
   'editor:set-heading-0': [{ modifiers: ['Alt'], key: '0' }],
-}, platforms: {}, imported: [], migration: 'packaged fixture' }));
+}, platforms: {} }));
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault, trustedPlugins: false }));
 const primary = process.platform === 'darwin' ? 'Meta' : 'Control';
 const [executablePath, ...args] = process.argv.slice(2);

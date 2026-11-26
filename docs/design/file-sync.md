@@ -51,7 +51,8 @@ batches, then independent, verified groups can publish while an interrupted
 attachment retains its partial bytes. Resumed downloads verify the complete
 digest. Uploads use server offsets in 8 MiB chunks and the existing operation
 receipt still guards manifest publication. Held paths and their ancestors are
-indexed once per pass. A folder/file shape change remains grouped across case
+indexed once per pass. The status bar shows completion only after the first full
+pass, with no pending items and a caught-up discovery watermark. A folder/file shape change remains grouped across case
 aliases without blocking unrelated siblings.
 
 ## Personal deployment

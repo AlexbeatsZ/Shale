@@ -177,7 +177,7 @@ describe('native file synchronization', () => {
     const receiver = new FileSyncEngine(second.root, second.state, second.preferences, { publish: async work => work(), changed: async () => {} });
     expect(await receiver.run()).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
     expect(ranges).toEqual(['bytes=1048576-']);
-    expect(await fs.readFile(path.join(second.root, 'big.bin'))).toEqual(bytes);
+    expect((await fs.readFile(path.join(second.root, 'big.bin'))).equals(bytes)).toBe(true);
   });
 
   it('round-trips exact Markdown, Canvas, images and PDF bytes without Git', async () => {
