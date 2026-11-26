@@ -41,3 +41,11 @@ PRD1.68，桌面/Android0.1.98，运行源码 f6a2ca1ba57ced6d02145e505f16811431
 - 默认启用改为总是写入 MD/PDF/PPT 三个自动分组：之前只写当时有匹配的分组，会让后来放入的 PPT 无法被发现。
 - STEM 11 个课件配置的主线/补充资料改为匹配 `\.(?:pdf|pptx?)$`，与 PDF 按命名交错（Vault 自带 git 同步自动提交 3a4ff8a）。0.1.99 服务读取 28 个有效文档、0 错误；无机化学 主线含 4 个 ppt，人工智能化学计算模拟 主线含 3 个 pptx，量子化学 补充资料含 1 个。期间用户正在整理 Vault，数量变化来自新增/改名文件被自动发现。
 - 验证：673 单元、14 个相关浏览器中 13 通过（新增 PDF+PPTX+PPT 混合连续阅读用例）。`presentation.spec.ts` 的“dark command”用例在改动前源码上同样失败：PRD1.63 起 PDF 默认反色，该用例仍按一次切换开启断言，属既有过期用例。Mac 0.1.99 实包真实教材原生回归通过，新增“放入 .pptx 后 PPT 分组出现、打包 Worker 绘制幻灯片、大纲显示幻灯片标题、配置不变”（截图核对）。
+
+### 0.1.99 发布与交付
+
+- Windows（OMEN 隔离构建 7092f80）：10 个虚拟文档浏览器（含 PPT 混合用例）与原生 `desktop-virtual-documents`（automaticStreamDiscovery、continuousPowerPoint）通过；Android assembleRelease/lintRelease 成功。
+- v0.1.99（Release 459091988）公开/latest 七资产，android-v0.1.99 公开预发布一个 APK；两 tag 指向 7092f80，资产名称/大小/uploaded 核对一致。
+- Mac 0.1.98→0.1.99（固定证书 identifier/certificate leaf、deep strict、healthz 65043）；OMEN 0.1.98→0.1.99（NSIS 0、healthz 51135、Vault/工作区保留）；ROG 0.1.98→0.1.99（首次 scp 断线后重试成功，保持未选 Vault）。
+- OMEN 的 STEM Vault 仍是旧状态：25 个配置、无一使用 `pattern`，也没有 `无机化学 课件` 配置，说明 Mac 侧迁移及近期整理尚未同步到 OMEN。旧格式在 0.1.99 下兼容读取，25 个均有效；未强制触发同步。
+- K70/平板 adb 仍不可达，0.1.98/0.1.99 均未安装。

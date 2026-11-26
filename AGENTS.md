@@ -11,7 +11,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-25 PRD1.69 / 0.1.99：连续文档来源增加 PPT/PPTX（复用分页章节），默认启用总写 MD/PDF/PPT 三个自动分组；STEM 11 个课件主线/补充资料匹配 pdf|pptx?。Mac 已原位更新0.1.99，服务读取28个有效文档。
+- 2026-11-25 PRD1.69 / 0.1.99：连续文档来源增加 PPT/PPTX（复用分页章节），默认启用总写 MD/PDF/PPT 三个自动分组；STEM 11 个课件主线/补充资料匹配 pdf|pptx?。v0.1.99 latest 与 android-v0.1.99 预发布已发布（源码7092f80）；Mac/OMEN/ROG 原位更新，Mac/OMEN 健康通过。OMEN 的 STEM Vault 尚未同步到迁移后的配置（25 个旧格式，兼容有效）。
 - 2026-11-25 PRD1.68 / 0.1.98：虚拟文档分组改为 `pattern`（正则自动发现，运行时自然排序）或 `files`（手动）二选一，标题即分组身份，旧 version/id 兼容读取。STEM Vault 27 个配置已迁移（课件主线/补充资料/MD 自动、教材手动），Vault 提交fc68ea1。v0.1.98 latest七资产与 android-v0.1.98 预发布已发布（源码f6a2ca1）；Mac/OMEN/ROG 原位更新，Mac/OMEN 健康通过。报告 `tests/reports/virtual-document-streams-20261125.md`。
 - 2026-11-25 PRD1.67 / 桌面与Android0.1.97已交付（运行源码efc0ccc）：Mac个人Vault实体Control+Shift+Z/X切换同组前/后页面，Windows明确空绑定，原Option左右窗格聚焦保留。分组动作默认未绑定，workspace作用域覆盖Vim各模式；668单元、Mac19/Windows7浏览器、Mac两组后台与Windows五组原生通过。五设备原位更新；Mac/OMEN健康及工作区通过，ROG未选库保留，Android两端服务健康仍待验收。报告 `tests/reports/tab-group-control-20261125.md`。
 - 2026-11-25 PRD1.66 / 桌面与Android0.1.96已发布（运行源码d9db5fb），并原位更新五设备。修复0.1.95单页分组键只改标签顺序：现在同组目标直接显示到当前页，分屏替换聚焦栏，侧栏选中目标，首尾循环；668单元、Mac52/Windows6浏览器、Mac两组后台与Windows五组原生通过。Mac/OMEN healthz通过，ROG未选库保留；K70/平板安装与当前进程端点已确认，但本轮服务未就绪，不能宣称Android服务验收完成。报告 `tests/reports/tab-group-foreground-20261125.md`。
@@ -34,7 +34,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
-- Android0.1.98：K70/平板本轮 Mac adb 不可达，APK 已发布（`android/release/0.1.98`），设备在线后 `adb install -r --user current` 并核对首次安装时间。
+- Android0.1.99：K70/平板 Mac adb 不可达，APK 已发布（`android/release/0.1.99`），设备在线后 `adb install -r --user current` 并核对首次安装时间。
 - `tests/browser/presentation.spec.ts` “dark command”用例自 PRD1.63 PDF 默认反色起过期（改动前即失败），需按默认开启重写断言。
 - `tests/desktop-image-properties.mjs` 已失效：读身份迁移前 `.shale/shale/blocks/` 与已改名真实笔记，需改用当前路径/素材。
 - Android0.1.97：K70/平板已原位安装code97且首次安装时间保留，当前进程与starting端点匹配；K70healthz503、平板超时，服务健康仍未通过（0.1.96亦未就绪）。真实长按/软键盘/完整同步仍延期，后续在设备前台确认。Mac既有完整输入法往返仍未完成；本轮Control回归为后台DOM/访客输入，不代表物理IME。
