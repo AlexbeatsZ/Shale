@@ -12,7 +12,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-26 PRD1.72 / 应用 0.1.100（8f1c016）与独立同步服务 0.4.0（d2b5ca2）已正式发布并部署至 Mac、OMEN、ROG、K70 和小米平板 6 Pro。Mac 真实库正常同步（28 连续文档、0 配置错误），OMEN 备份后等价迁移 73 个文件并用隔离库验收双向同步，真实同步现场保持暂停。ROG 客户端保持未选 Vault，独立服务生产快照（13,302 项）、增量、Range 和旧回执通过。K70 原生服务与真实库可打开，生产样本在待收；平板仅启动验证。见 [部署报告](tests/reports/central-sync-deployment-20261126.md) 与 [正式包报告](tests/reports/central-sync-20261126.md)。
+- 2026-11-26 PRD1.72 / 应用 0.1.100（8f1c016）与独立同步服务 0.4.0（d2b5ca2）已正式发布并部署至 Mac、OMEN、ROG、K70 和小米平板 6 Pro。Mac 真实库正常同步（28 连续文档、0 配置错误），OMEN 备份后等价迁移 73 个文件并用隔离库验收双向同步，真实同步现场保持暂停。ROG 客户端保持未选 Vault，独立服务生产快照（13,302 项）、增量、Range 和旧回执通过。K70 原生服务与真实库可打开，12,662/12,666 待接收项已就绪，两份已下载生产样本仍待应用到真实路径；平板仅启动验证。见 [部署报告](tests/reports/central-sync-deployment-20261126.md) 与 [正式包报告](tests/reports/central-sync-20261126.md)。
 - 2026-11-26 PRD1.71（源码，未构建）：删除全部旧格式兼容与一次性迁移代码（插件时代导入、`migration`/`imported`/`replacementSyntax` 字段、Linter 旧替换语法、Templater 别名、第三方命令 ID、旧图片 `|300`/`#dark`、旧 UI 状态、身份迁移与钥匙串助手）。STEM 41 篇笔记 344 处图片已改写并逐图核对等价，hotkeys/writing 配置已删旧字段。保留插件运行时、Obsidian 核心命令 ID、GM 旧式 API、搜索语法与同步协议。报告 `tests/reports/legacy-removal-20261126.md`。
 - 2026-11-26 PRD1.70（源码，未构建）：删除虚拟文档 version/分组id 兼容与运行时重复 id，阅读状态以分组标题为键。Mac Vault 28 个已是新格式；OMEN Vault 25 个旧格式（未同步），安装含此改动的版本前须先迁移/同步。
 - 2026-11-25 PRD1.69 / 0.1.99：连续文档来源增加 PPT/PPTX（复用分页章节），默认启用总写 MD/PDF/PPT 三个自动分组；STEM 11 个课件主线/补充资料匹配 pdf|pptx?。v0.1.99 latest 与 android-v0.1.99 预发布已发布（源码7092f80）；Mac/OMEN/ROG 原位更新，Mac/OMEN 健康通过。OMEN 的 STEM Vault 尚未同步到迁移后的配置（25 个旧格式，兼容有效）。
@@ -38,7 +38,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
-- 0.1.100 的 Mac/OMEN 旧 math、虚拟文档与图片格式迁移已执行。继续核对 K70 正常收到生产配置；平板未做实库前台检查。新版严格拒绝旧 math `migration` 字段，其他旧数据的适用边界见正式包与部署报告。
+- 0.1.100 的 Mac/OMEN 旧 math、虚拟文档与图片格式迁移已执行。K70 两份生产配置已进入待接收队列，真实路径仍为旧格式；平板未做实库前台检查。新版严格拒绝旧 math `migration` 字段，其他旧数据的适用边界见正式包与部署报告。
 - 2026-11-26 同步 P0 源码：冲突选择和待收日志同检查点保存，按依赖组和脏文档路径拦截，缺同路径基线的首连差异留审阅。验收环境使用隔离库，设备既有冲突继续保留。设计和用例见 `docs/design/file-sync.md`、当月日志。
 - 【暂停，用户 2026-11-26 要求仅记录设备故障】OMEN 同步检查点总 revision 445，部分已选配置的基线版本 469 导致重启拒载；两份 CSS 冲突保留，无 incoming/outbox。0.1.100 已发布检查点加载修复并更新 OMEN 应用，真实库现场恢复仍未执行。见 2026-11 日志。
 - Android0.1.99：K70/平板 Mac adb 不可达，APK 已发布（`android/release/0.1.99`），设备在线后 `adb install -r --user current` 并核对首次安装时间。
