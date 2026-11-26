@@ -8,8 +8,9 @@ Cập nhật lần cuối: 2026-11-25 (虚拟文档自动分组 PRD 1.68)
 
 ### 虚拟文档自动分组 (PRD 1.68)
 
-- [~] 配置简化为 title+streams，分组 pattern/files 二选一，运行时自然排序计算自动分组；旧 version/id 兼容读取，聚合改名只改写手动列表。
-- [ ] 迁移个人 STEM Vault：课件转主线/补充资料/MD 自动分组，教材保持手动；单元、浏览器与原生回归，构建发布并原位更新。
+- [x] 配置简化为 title+streams，分组 pattern/files 二选一，运行时自然排序计算自动分组；旧 version/id 兼容读取，聚合改名只改写手动列表。
+- [x] 迁移个人 STEM Vault 27 个配置：课件转主线/补充资料/MD 自动分组，教材保持手动；672单元、Mac/Windows各9浏览器与连续文档原生通过，0.1.98发布并更新Mac/OMEN/ROG。
+- [ ] K70/平板安装0.1.98（本轮adb不可达）。
 
 ### Mac实体Control分组键 (PRD 1.67)
 
@@ -810,6 +811,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-25: PRD1.68虚拟文档分组pattern/files，运行时自然排序自动发现；STEM 27配置迁移；672单元、两端浏览器/原生通过，0.1.98发布，Mac/OMEN/ROG已更新，Android待设备在线。
 
 - 2026-11-25: PRD1.67 Mac分组快捷键改为PhysicalCtrl+Shift+Z/X，Windows为空，原Option聚焦保留；668单元、Mac19/Windows7浏览器和两端原生通过，0.1.97发布并更新五设备；Android服务健康仍待验收。
 
