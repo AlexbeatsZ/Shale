@@ -41,9 +41,9 @@ async function openFixture(page: Page) {
     host.style.cssText = 'position:fixed;inset:0';
     document.body.append(host);
     await store.useStore.getState().loadUiState();
-    const tree = { name: 'Fixture', path: '', type: 'folder', children: ['note.md', 'paper.pdf'].map(path => ({ name: path, path, type: 'file' })) };
+    const tree = { name: 'Fixture', path: '', type: 'folder', children: ['note.md', 'paper.pdf', 'other.pdf'].map(path => ({ name: path, path, type: 'file' })) };
     store.useStore.setState({
-      tree, filePaths: ['note.md', 'paper.pdf'], tabs: [], activePath: null, splitPath: null, rightOpen: false, pdfToolbarOpen: false,
+      tree, filePaths: ['note.md', 'paper.pdf', 'other.pdf'], tabs: [], rightOpen: false,
     });
     plugins.sharedApp.vault.sync(tree);
     const h = (React.default ?? React).createElement;
@@ -199,14 +199,14 @@ test('native command is assignable, shares the button action and Ctrl+F reveals 
     const handled = fixture.commands.dispatchHotkey(new KeyboardEvent('keydown', {
       key: 'u', code: 'KeyU', ctrlKey: !mac, metaKey: mac, shiftKey: true, bubbles: true, cancelable: true,
     }));
-    return { available, handled, open: fixture.store.getState().pdfToolbarOpen, bindings: fixture.commands.getHotkeys('pdf:toggle-toolbar') };
+    return { available, handled, open: fixture.store.getState().viewOptions['paper.pdf']?.toolbarOpen, bindings: fixture.commands.getHotkeys('pdf:toggle-toolbar') };
   });
   expect(shortcut).toEqual({ available: true, handled: true, open: true, bindings: [{ modifiers: ['Mod', 'Shift'], key: 'U' }] });
   await expect(toolbar(page)).toBeVisible();
-  expect(await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().pdfToolbarOpen)).toBe(true);
+  expect(await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().viewOptions['paper.pdf']?.toolbarOpen)).toBe(true);
   await toggle(page).click();
   await expect(toolbar(page)).toHaveCount(0);
-  expect(await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().pdfToolbarOpen)).toBe(false);
+  expect(await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().viewOptions['paper.pdf']?.toolbarOpen)).toBe(false);
   expect(await page.evaluate(() => (window as any).pdfToolbarFixture.commands.executeCommandById('pdf:toggle-toolbar'))).toBe(true);
   await expect(toolbar(page)).toBeVisible();
   await toggle(page).click();
@@ -248,47 +248,39 @@ test('explicit PDF navigation yields to later scrolling after zoom and toolbar c
   await expect(pageNumber).toHaveValue('4');
 });
 
-test('narrow touch layout keeps the control, split and sidebar views do not steal main ownership', async ({ page }) => {
+test('narrow layout and independent toolbar commands for two split PDFs and a sidebar copy', async ({ page }) => {
   await page.setViewportSize({ width: 420, height: 740 });
-  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openFile('paper.pdf'));
+  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openFile('paper.pdf', true, 'main'));
   await expect(main(page).locator('.pdf-page-surface.is-ready').first()).toBeVisible();
-  const buttonBox = await toggle(page).boundingBox();
-  expect(buttonBox!.width).toBeGreaterThanOrEqual(44);
+  expect((await toggle(page).boundingBox())!.width).toBeGreaterThanOrEqual(44);
   await toggle(page).click();
   await expect(toolbar(page)).toBeVisible();
   expect((await toolbar(page).boundingBox())!.width).toBeLessThanOrEqual(420);
-  await expect(main(page).getByRole('textbox', { name: 'PDF 页码' })).toBeVisible();
-  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openToSide('note.md', 'right'));
+
+  await page.setViewportSize({ width: 1200, height: 760 });
+  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openToSide('other.pdf', 'right'));
   const split = page.locator('#pdf-toolbar-fixture .split-pane');
-  await expect(split.locator('.cm-editor')).toBeVisible();
+  await expect(split.locator('.pdf-page-surface.is-ready').first()).toBeVisible();
   await expect(split.locator('.pdf-toolbar')).toHaveCount(0);
   await expect(toolbar(page)).toBeVisible();
-  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openRightTab('markdown', { file: 'paper.pdf' }, 'pdf-side'));
+  await split.locator('.pdf-pages').focus();
+  await toggle(page).click();
+  await expect(split.locator('.pdf-toolbar')).toBeVisible();
+  await expect(toolbar(page)).toBeVisible();
+  await page.evaluate(() => (window as any).pdfToolbarFixture.commands.execute('pdf:toggle-toolbar'));
+  await expect(split.locator('.pdf-toolbar')).toHaveCount(0);
+  await expect(toolbar(page)).toBeVisible();
+
+  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openRightTab('file', { file: 'paper.pdf' }, 'pdf-side'));
   const side = page.locator('[data-sidebar-tab="pdf-side"]');
   await expect(side.locator('.pdf-page-surface.is-ready').first()).toBeVisible();
-  await expect(side.locator('.pdf-toolbar')).toBeVisible();
-  await expect(side.locator('.pdf-toolbar')).not.toHaveClass(/is-overlay/);
-  await toggle(page).click();
-  await expect(toolbar(page)).toHaveCount(0);
+  await expect(side.locator('.pdf-toolbar')).toHaveCount(0);
+  await side.locator('.pdf-pages').focus();
+  await page.keyboard.press('Control+f');
+  await expect(side.getByRole('searchbox', { name: '搜索 PDF' })).toBeFocused();
+  await expect(toolbar(page)).toBeVisible();
   await expect(split.locator('.pdf-toolbar')).toHaveCount(0);
-  await expect(side.locator('.pdf-toolbar')).toBeVisible();
-  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().toggleRight());
-  await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
-  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().toggleRight());
   await toggle(page).click();
-  await expect(toolbar(page)).toBeVisible();
-  const routed = await page.evaluate(async () => {
-    const store = (window as any).pdfToolbarFixture.store;
-    const target = store.getState().currentViewId();
-    await store.getState().openFile('note.md');
-    return { target, main: store.getState().activePath, split: store.getState().splitPath };
-  });
-  expect(routed).toEqual({ target: 'split', main: 'paper.pdf', split: 'note.md' });
-  await expect(toolbar(page)).toBeVisible();
-  // This assertion replaces the main PDF, independently of the focused split.
-  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openFile('note.md', true, 'main'));
-  await expect(toggle(page)).toHaveCount(0);
-  expect(await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().pdfToolbarOpen)).toBe(true);
-  await page.evaluate(() => (window as any).pdfToolbarFixture.store.getState().openFile('paper.pdf', true, 'main'));
+  await expect(side.locator('.pdf-toolbar')).toHaveCount(0);
   await expect(toolbar(page)).toBeVisible();
 });

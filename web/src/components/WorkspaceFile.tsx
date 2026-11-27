@@ -1,6 +1,6 @@
-import type { ComponentProps } from 'react';
+import { useRef, type ComponentProps } from 'react';
 import { useStore } from '../lib/store';
-import { findNode, isFolderPath } from '../lib/tree';
+import { workspaceContent } from '../lib/workspaceContent';
 import { api } from '../lib/api';
 import { AUDIO_EXT_RE, TEXT_EXT_RE, VIDEO_EXT_RE } from '../lib/media';
 import Editor from './Editor';
@@ -8,24 +8,35 @@ import FolderView from './FolderView';
 import SyncConflictPanel from './SyncConflictPanel';
 import { useSyncConflict } from '../lib/syncConflicts';
 
-export default function WorkspaceFile({ path, navigationId, onReady, active }: {
+interface WorkspaceFileProps {
   path: string;
   navigationId: string;
+  tabId?: string;
   onReady?: ComponentProps<typeof Editor>['onReady'];
   active?: boolean;
-}) {
-  const folder = useStore(state => isFolderPath(state.tree, path) && !findNode(state.tree, path)?.virtualDocument);
+}
+
+/** Identical text-view retention in each strip; other viewers release work on hide. */
+export function WorkspaceDocumentTab(props: WorkspaceFileProps) {
+  const retained = useStore(state => workspaceContent(state.tree, props.path) === 'text');
+  const opened = useRef(false);
+  if (props.active) opened.current = true;
+  return props.active || (retained && opened.current) ? <WorkspaceFile {...props} /> : null;
+}
+
+export default function WorkspaceFile({ path, navigationId, tabId, onReady, active }: WorkspaceFileProps) {
+  const folder = useStore(state => workspaceContent(state.tree, path) === 'folder');
   const conflict = useSyncConflict(path);
   if (folder) return <FolderView path={path} navigationId={navigationId} />;
   // Text conflicts are reviewed inside the editor like MCP candidates; the rest use the file-level panel.
   if (conflict && !(conflict.action === 'modify' && conflict.localText !== null && TEXT_EXT_RE.test(path))) return <div className="sync-conflict-view">
     <SyncConflictPanel file={conflict} />
-    {conflict.action !== 'add' && <div className="sync-conflict-content"><FileContent path={path} navigationId={navigationId} onReady={onReady} active={active} /></div>}
+    {conflict.action !== 'add' && <div className="sync-conflict-content"><FileContent path={path} navigationId={navigationId} tabId={tabId} onReady={onReady} active={active} /></div>}
   </div>;
-  return <FileContent path={path} navigationId={navigationId} onReady={onReady} active={active} />;
+  return <FileContent path={path} navigationId={navigationId} tabId={tabId} onReady={onReady} active={active} />;
 }
 
-function FileContent({ path, navigationId, onReady, active }: ComponentProps<typeof WorkspaceFile>) {
+function FileContent({ path, navigationId, tabId, onReady, active }: ComponentProps<typeof WorkspaceFile>) {
 
   const image = /\.(png|jpe?g|gif|svg|webp)$/i.test(path);
   const video = VIDEO_EXT_RE.test(path);
@@ -39,5 +50,5 @@ function FileContent({ path, navigationId, onReady, active }: ComponentProps<typ
       </div>
     </div>;
   }
-  return <Editor path={path} navigationId={navigationId} onReady={onReady} active={active} sidebar={navigationId.startsWith('sidebar:')} />;
+  return <Editor path={path} navigationId={navigationId} tabId={tabId} onReady={onReady} active={active} />;
 }

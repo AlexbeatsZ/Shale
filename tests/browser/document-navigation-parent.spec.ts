@@ -30,8 +30,9 @@ test('right sidebar shares PDF navigation and bounded page rendering across file
     const host = document.createElement('div'); host.id = 'parent-navigation'; host.style.cssText = 'position:fixed;inset:0'; document.body.append(host);
     await store.useStore.getState().loadUiState();
     store.useStore.setState({ tree: { name: 'Fixture', path: '', type: 'folder', children: ['note.md', 'paper.pdf', 'plain.pdf'].map(path => ({ name: path, path, type: 'file' })) },
-      rightOpen: true, rightPanel: 'outline', rightTabs: [], rightActiveId: null, pdfToolbarOpen: true });
+      rightOpen: true, rightPanel: 'outline', rightTabs: [], rightActiveId: null });
     await store.useStore.getState().openFile('paper.pdf');
+    store.useStore.getState().setPdfToolbarOpen(true, 'main');
     const h = (React.default ?? React).createElement;
     (ReactDOM.createRoot ?? ReactDOM.default.createRoot)(host).render(h('div', { className: 'app theme-dark' }, h(Workspace), h(RightSidebar, { open: true })));
     (window as any).parentNavigation = { ...store, documents };

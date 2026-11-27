@@ -201,18 +201,18 @@ test.describe('workspace navigation', () => {
         .map(entry => entry.name).filter(name => new URL(name).pathname === '/src/lib/store.ts'))];
       if (storeUrls.length !== 1) throw new Error(`Expected one loaded workspace store module, got ${JSON.stringify(storeUrls)}`);
       const { useStore } = await module(storeUrls[0]);
-      useStore.setState({ activePath: null, tabs: [], history: [], histIndex: -1, rightTabs: [], rightActiveId: null, rightOpen: true });
+      useStore.setState(s => ({ panes: { ...s.panes, main: { path: null, tabId: null, history: [], histIndex: -1 } }, tabs: [], rightTabs: [], rightActiveId: null, rightOpen: true }));
       await window.renderHarness.workspace('a.md');
       (window as any).navigationStore = useStore;
     });
     await expect(page.locator('.workspace .cm-content')).toContainText('Start');
-    expect(await page.evaluate(() => (window as any).navigationStore.getState().activePath)).toBe('a.md');
+    expect(await page.evaluate(() => (window as any).navigationStore.getState().panes.main.path)).toBe('a.md');
   });
 
   test('back and forward restore same-note and cross-note selection without adding entries', async ({ page }) => {
     await page.locator('.workspace [data-preview-link="#End"]').click();
     await expect(page.locator('.workspace .cm-navigation-target')).toContainText('End');
-    expect(await page.evaluate(() => (window as any).navigationStore.getState().history.length)).toBe(2);
+    expect(await page.evaluate(() => (window as any).navigationStore.getState().panes.main.history.length)).toBe(2);
     await page.evaluate(() => (window as any).navigationStore.getState().goBack());
     await expect.poll(() => page.evaluate(async () => {
       const module = (path: string) => import(path); const { captureLocation } = await module('/src/lib/fragmentNavigation.ts'); return captureLocation('a.md').anchor;
@@ -225,21 +225,21 @@ test.describe('workspace navigation', () => {
     await expect(page.locator('.workspace .cm-content')).toContainText('Other');
     await page.evaluate(() => (window as any).navigationStore.getState().goBack());
     await expect(page.locator('.workspace .cm-content')).toContainText('End');
-    expect(await page.evaluate(() => (window as any).navigationStore.getState().history.length)).toBe(3);
+    expect(await page.evaluate(() => (window as any).navigationStore.getState().panes.main.history.length)).toBe(3);
   });
 
   test('modifier opens a separate sidebar view and reuses its identity for following links', async ({ page }) => {
     await page.locator('.workspace [data-preview-link="#End"]').click({ modifiers: ['Control'] });
     const sidebar = page.locator('[data-sidebar-tab] .cm-content');
     await expect(sidebar).toContainText('End');
-    expect(await page.evaluate(() => (window as any).navigationStore.getState().activePath)).toBe('a.md');
+    expect(await page.evaluate(() => (window as any).navigationStore.getState().panes.main.path)).toBe('a.md');
     const id = await page.evaluate(() => (window as any).navigationStore.getState().rightActiveId);
     await page.evaluate(async id => {
       const store = (window as any).navigationStore.getState(); await store.openWikilink('b#Other', 'a.md', { viewId: 'sidebar:' + id });
     }, id);
     await expect(sidebar).toContainText('Other');
     expect(await page.evaluate(() => (window as any).navigationStore.getState().rightActiveId)).toBe(id);
-    expect(await page.evaluate(() => (window as any).navigationStore.getState().activePath)).toBe('a.md');
+    expect(await page.evaluate(() => (window as any).navigationStore.getState().panes.main.path)).toBe('a.md');
   });
   test('rapid back-forward keeps one history branch and restores the destination mode', async ({ page }) => {
     await page.evaluate(() => (window as any).navigationStore.getState().setViewMode('reading'));
@@ -249,8 +249,8 @@ test.describe('workspace navigation', () => {
       const state = (window as any).navigationStore.getState(); state.goBack(); state.goForward();
     });
     await expect(page.locator('.workspace .cm-content')).toContainText('Other');
-    await expect.poll(() => page.evaluate(() => (window as any).navigationStore.getState().histIndex)).toBe(1);
-    expect(await page.evaluate(() => (window as any).navigationStore.getState().history.length)).toBe(2);
+    await expect.poll(() => page.evaluate(() => (window as any).navigationStore.getState().panes.main.histIndex)).toBe(1);
+    expect(await page.evaluate(() => (window as any).navigationStore.getState().panes.main.history.length)).toBe(2);
     await page.evaluate(() => (window as any).navigationStore.getState().setViewMode('live'));
     await expect(page.locator('.workspace [data-mode="live"]')).toBeVisible();
     await page.evaluate(() => (window as any).navigationStore.getState().goBack());

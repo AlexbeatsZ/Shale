@@ -238,14 +238,15 @@ test('source width follows the document column, scales uniformly, and only grows
 test('scroll changes only viewport, and click/drag target the main view without changing cursor, source or Undo', async ({ page }) => {
   await page.evaluate(() => {
     const fixture = (window as any).minimapFixture;
-    fixture.store.setState({ splitPath: 'a.md' });
+    fixture.store.setState((state: any) => ({
+      panes: { ...state.panes, split: { ...state.panes.split, path: 'a.md', tabId: 'a.md' } },
+    }));
   });
   await expect(page.locator('[data-navigation-split] .cm-content')).toBeVisible();
   const before = await page.evaluate(async () => {
     const fixture = (window as any).minimapFixture;
     const main = fixture.navigation.navigationView('a.md', 'main');
     const split = fixture.navigation.navigationView('a.md', 'split');
-    split.focus();
     main.dispatch({ selection: { anchor: 5 } });
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     fixture.main = main; fixture.split = split;
@@ -340,7 +341,7 @@ test('panel persistence, full long-note sampling, themes, resize and fast file s
   await page.screenshot({ path: test.info().outputPath('minimap-narrow-dark.png') });
   await page.evaluate(async () => {
     const fixture = (window as any).minimapFixture;
-    fixture.store.setState({ activePath: 'b.md' });
+    await fixture.store.getState().openFile('b.md', true, 'main');
     await fixture.documents.open('b.md');
     fixture.store.getState().setRightPanel('outline');
   });

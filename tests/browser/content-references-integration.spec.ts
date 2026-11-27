@@ -83,7 +83,7 @@ test.beforeEach(async ({ page, backend }) => {
 async function activePath(page: Page) {
   return page.evaluate(async () => {
     const modulePath = '/src/lib/store.ts';
-    return (await import(modulePath)).useStore.getState().activePath;
+    return (await import(modulePath)).useStore.getState().panes.main.path;
   });
 }
 

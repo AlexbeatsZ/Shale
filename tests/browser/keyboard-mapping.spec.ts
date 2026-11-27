@@ -135,7 +135,7 @@ test('level 7 is available in the actual native command catalog and edits BodyHe
     const load = (path: string) => import(path);
     const { sharedApp } = await load('/src/lib/plugins.ts');
     const { useStore } = await load('/src/lib/store.ts');
-    useStore.setState({ activePath: 'a.md' });
+    useStore.setState(s => ({ panes: { ...s.panes, main: { ...s.panes.main, path: 'a.md', tabId: 'a.md' } } }));
     const command = sharedApp.commands.findCommand('editor:set-heading-7');
     if (!command) return null;
     window.renderHarness.focus(0);
@@ -151,7 +151,7 @@ test('body headings can become ordinary headings and plain paragraphs through th
     const load = (path: string) => import(path);
     const { sharedApp } = await load('/src/lib/plugins.ts');
     const { useStore } = await load('/src/lib/store.ts');
-    useStore.setState({ activePath: 'a.md' }); window.renderHarness.focus(0);
+    useStore.setState(s => ({ panes: { ...s.panes, main: { ...s.panes.main, path: 'a.md', tabId: 'a.md' } } })); window.renderHarness.focus(0);
     sharedApp.commands.executeCommandById('editor:set-heading-7');
     const body = window.renderHarness.source(0);
     sharedApp.commands.executeCommandById('editor:set-heading-2');

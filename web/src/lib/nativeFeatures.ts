@@ -29,7 +29,7 @@ export function initializeNativeMenus(): () => void {
   return initializeConfiguredMenus(configuredMenuStorage, {
     hasCommand: (id, context) => {
       if (!sharedApp.commands.findCommand(id)) return false;
-      if (context.paths?.length && !context.paths.includes(useStore.getState().activePath ?? '') &&
+      if (context.paths?.length && !context.paths.includes(useStore.getState().panes.main.path ?? '') &&
         /^(bookmark|move|save|split|reading|source|live|tags-batch-folder|editor:)/.test(id)) return false;
       return sharedApp.commands.canExecute(id, invocationContext(context));
     },
@@ -57,7 +57,7 @@ export const attachmentDialogHost: CleanupDialogHost = {
   subscribeSafety(changed) {
     const stopDocuments = documents.subscribe(changed);
     const stopStore = useStore.subscribe((next, before) => {
-      if (next.dirty !== before.dirty ||next.activePath !== before.activePath) changed();
+      if (next.vaultSessionStale !== before.vaultSessionStale) changed();
     });
     const stopMutations = subscribeMutations(changed);
     window.addEventListener('vault-changed', changed);

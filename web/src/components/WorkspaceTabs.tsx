@@ -1,24 +1,18 @@
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
-import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath, type ContextMenuItem, type Tab } from '../lib/store';
-import { api } from '../lib/api';
-import { documents } from '../lib/documents';
-import { printDocument } from '../lib/printDocument';
-import { createVaultRenderContext } from '../lib/vaultRenderContext';
-import { activateNavigation, editorFind, getActiveEditor, getActiveNavigationId, setActiveEditorMode, subscribeActiveNavigation } from '../lib/activeEditor';
+import { useStore, toolbarOpenFor, GRAPH_PATH, isHomepagePath, isWebViewerPath, type ContextMenuItem, type Tab } from '../lib/store';
+import { getActiveNavigationId, subscribeActiveNavigation } from '../lib/activeEditor';
 import { TAB_DRAG_TYPE, TAB_INSERT_DWELL_MS, TAB_TOUCH_LIFT_MS, tabDrag } from '../lib/tabDrag';
-import { triggerAddProperty } from '../lib/livePreview';
-import { extendFileMenu } from '../lib/shale/menus';
-import { nativeBatchTagMenuItems } from '../lib/tags/actions';
-import { menuModifiers } from '../lib/configuredMenus/transform';
 import { useIsMobile } from '../lib/useIsMobile';
-import { useMainPdfSession } from '../lib/pdf/react';
+import { useCurrentPdf } from '../lib/pdf/react';
+import { useActivePage } from '../lib/useActivePage';
+import { focusWorkspaceView } from '../lib/workspaceTarget';
+import { canOpenWorkspaceContent } from '../lib/workspaceContent';
+import { isTabMultiselect, openWorkspaceTabMenu } from '../lib/workspaceTabMenu';
+import DocumentTabIndicator from './DocumentTabIndicator';
 import Icon from './Icon';
-import { fileManagerMenuItems } from '../lib/revealInFileManager';
-import { findNode } from '../lib/tree';
 import { paneTabKey, tabKey } from '../lib/tabIdentity';
 import { groupColorValue, groupDescription } from '../lib/tabGroups';
-import { tabMenuItems, toggleTabSelection } from '../lib/tabMenu';
-import { isMacOS } from '../lib/platform';
+import { toggleTabSelection } from '../lib/tabMenu';
 
 type Pane = 'main' | 'split';
 /** One movable item of the tab bar: a tab, or a split group as a whole. */
@@ -32,31 +26,21 @@ export default function WorkspaceTabs() {
   const tabs = useStore((s) => s.tabs);
   const activePath = useStore(s => paneTabKey(s));
   const selectedTabs = useStore(s => s.selectedTabs);
-  const documentPath = useStore(s => s.activePath);
   const openFile = (path: string) => useStore.getState().showTab(path);
   const closeTab = useStore((s) => s.closeTab);
-  const dirty = useStore((s) => s.dirty);
-  const setViewMode = useStore((s) => s.setViewMode);
-  const bookmarks = useStore((s) => s.bookmarks);
-  const toggleBookmark = useStore((s) => s.toggleBookmark);
   const openToSide = useStore((s) => s.openToSide);
-  const notify = useStore((s) => s.notify);
+  const notify = useStore(s => s.notify);
+  const setMobileDrawer = useStore(s => s.setMobileDrawer);
   const toggleLeft = useStore((s) => s.toggleLeft);
   const toggleRight = useStore((s) => s.toggleRight);
   const leftOpen = useStore((s) => s.leftOpen);
   const rightOpen = useStore((s) => s.rightOpen);
   const mobileDrawer = useStore((s) => s.mobileDrawer);
-  const setMobileDrawer = useStore((s) => s.setMobileDrawer);
   const openHomepage = () => useStore.getState().openHomepage('main');
-  const openContextMenu = useStore((s) => s.openContextMenu);
-  const setMovePath = useStore((s) => s.setMovePath);
-  const setRightPanel = useStore((s) => s.setRightPanel);
-  const setVersionHistory = useStore((s) => s.setVersionHistory);
-  const revealInTree = useStore((s) => s.revealInTree);
-  const loadTree = useStore((s) => s.loadTree);
-  const pdfToolbarOpen = useStore((s) => s.pdfToolbarOpen);
+  const { path: focusedPath, viewId } = useActivePage();
+  const pdfToolbarOpen = useStore(s => toolbarOpenFor(s, viewId));
   const togglePdfToolbar = useStore((s) => s.togglePdfToolbar);
-  const mainPdf = useMainPdfSession(documentPath);
+  const pdf = useCurrentPdf(focusedPath, viewId);
   const splitPath = useStore(s => paneTabKey(s, 'split'));
   const splitDirection = useStore((s) => s.splitDirection);
   const closeSplit = useStore((s) => s.closeSplit);
@@ -90,181 +74,35 @@ export default function WorkspaceTabs() {
     scroll.current?.querySelector('.tab-split-group, .tab.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [activePath, tabs.length, splitPath]);
 
-  // A split group is one browser-style tab: selecting a member shows the whole
-  // group focused on it; any other tab is shown alone and the group is set aside.
   const focusedPane: Pane = splitPath && focusedView === 'split' ? 'split' : 'main';
-  const focusPane = (viewId: Pane) => {
-    activateNavigation(viewId);
-    getActiveEditor()?.focus();
-  };
-  const selectTab = async (path: string) => {
-    await useStore.getState().showTab(path);
+  const selectTab = async (key: string) => {
+    await useStore.getState().showTab(key);
     const s = useStore.getState();
-    if (s.splitPath && (path === paneTabKey(s) || path === paneTabKey(s, 'split'))) focusPane(path === paneTabKey(s) ? 'main' : 'split');
-  };
-
-  // Shale's "Add file property": focus a new property-key field in the
-  // Properties widget with the key suggester open (NOT a text prompt). The
-  // widget only renders in Live Preview, so switch out of source/reading first.
-  const addFileProperty = async (path: string) => {
-    await selectTab(path);
-    if (getActiveNavigationId() === 'split') setActiveEditorMode('live');
-    else if (useStore.getState().viewMode !== 'live') setViewMode('live');
-    // Let the editor swap modes / mount the Properties widget, then start the add.
-    window.setTimeout(() => {
-      const v = getActiveEditor();
-      if (v) triggerAddProperty(v);
-      else notify("打开笔记以添加属性");
-    }, 80);
-  };
-
-  const exportToPdf = async (path: string) => {
-    if (!documents.get(path)) await openFile(path);
-    const snapshot = documents.get(path)?.snapshot; if (!snapshot) return;
-    const context = createVaultRenderContext(path, { openLink: () => {}, openMenu: () => {}, files: () => [], reportError: notify });
-    void printDocument(snapshot, context).catch(error => notify(error.message));
-  };
-
-  // File actions now live on the tab context menu instead of a second header.
-  const openTabMenu = (e: React.MouseEvent, key: string, view?: Pane) => {
-    const path = tabs.find(tab => tabKey(tab) === key)?.path ?? key;
-    e.preventDefault();
-    e.stopPropagation();
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const isMd = /\.(md|markdown)$/i.test(path);
-    const canSplit = /\.(md|markdown|txt|json|csv|canvas|css|js|ya?ml)$/i.test(path);
-    const down = splitDirection === 'down';
-    // Splitting keeps this tab and opens a Homepage on the new side; inside a
-    // split group the same place offers the layout instead.
-    const splitItems: ContextMenuItem[] = view
-      ? [
-          { id: 'split:direction', label: down ? "改为左右分屏" : "改为上下分屏", icon: down ? 'columns' : 'rows',
-            onClick: () => void openToSide(paneTabKey(useStore.getState(), 'split') ?? key, down ? 'right' : 'down') },
-          { id: 'split:exit', label: "取消分屏", icon: 'layout-dashboard', onClick: () => void closeSplit() },
-        ]
-      : [
-          { id: 'file:split-right', label: "向右分屏", icon: 'columns', onClick: () => void splitWithHomepage(key, 'right') },
-          { id: 'file:split-down', label: "向下分屏", icon: 'rows', onClick: () => void splitWithHomepage(key, 'down') },
-        ];
-    const baseName = path.split('/').pop() ?? path;
-    const closeOthers = () => tabs.filter(tab => tabKey(tab) !== key).forEach(tab => void closeTab(tabKey(tab)));
-    const tabItems: ContextMenuItem[] = [
-      ...tabMenuItems(key, tabs.map(tab => ({ key: tabKey(tab), tab }))),
-      { id: 'tab:close', label: "关闭标签页", icon: 'x', onClick: () => void (view ? closePane(view) : closeTab(key)) },
-      { id: 'tab:close-others', label: "关闭其他标签页", onClick: closeOthers },
-    ];
-    let items: ContextMenuItem[];
-    if (isHomepagePath(path) || isWebViewerPath(path)) {
-      items = [...splitItems, { label: '', separator: true }, ...tabItems];
-    } else if (path === GRAPH_PATH) {
-      items = [
-        // GraphView owns the Pixi renderer — it listens for this event and
-        // extracts the stage to a PNG (a plain canvas read would be blank).
-        { id: 'tab:copy-screenshot', label: "复制截图", icon: 'camera', onClick: () => void inTab(key, () => window.dispatchEvent(new CustomEvent('wo-graph-screenshot'))) },
-        { label: '', separator: true },
-        ...splitItems,
-        { label: '', separator: true },
-        ...tabItems,
-      ];
-    } else {
-      const sep: ContextMenuItem = { label: '', separator: true };
-      const renameItem: ContextMenuItem = {
-        id: 'file:rename', label: "重命名…",
-        icon: 'pencil',
-        onClick: async () => {
-          const to = prompt("重命名 / 移动至（仓库相对路径）：", path);
-          if (to && to !== path) {
-            await useStore.getState().renamePath(path, to);
-          }
-        },
-      };
-      const moveItem: ContextMenuItem = {
-        id: 'file:move', label: "移动文件至…",
-        icon: 'folder',
-        onClick: () => setMovePath(path),
-      };
-      const copyItem: ContextMenuItem = {
-        id: 'file:duplicate', label: "创建副本",
-        icon: 'file-plus',
-        onClick: async () => {
-          const r = await api.read(path).catch(() => null);
-          if (!r) return;
-          const body = typeof r === 'string' ? r : r.content;
-          const dot = path.lastIndexOf('.');
-          const copyPath = dot > 0 ? `${path.slice(0, dot)} copy${path.slice(dot)}` : `${path} copy`;
-          await api.write(copyPath, body);
-          await loadTree();
-          notify("已创建副本");
-        },
-      };
-      items = [
-        ...(isMd ? [{ id: 'file:backlinks', label: "文档中的反向链接", icon: 'link', onClick: () => void inTab(key, () => setRightPanel('backlinks')) }, sep] : []),
-        ...splitItems,
-        sep,
-        renameItem,
-        moveItem,
-        copyItem,
-        { label: bookmarks.includes(path) ? "移除书签" : "添加书签", icon: 'bookmark', onClick: () => toggleBookmark(path) },
-        ...(isMd ? [{ id: 'file:add-property', label: "添加文件属性", icon: 'plus', onClick: () => void addFileProperty(key) }] : []),
-        ...(isMd ? [{ id: 'file:export-pdf', label: "导出为 PDF…", icon: 'file-pdf', onClick: () => void exportToPdf(path) }] : []),
-        ...(canSplit
-          ? [
-              sep,
-              {
-                id: 'editor:find', label: "查找…",
-                icon: 'search',
-                onClick: () => void inTab(key, () => {
-                  if (!editorFind()) notify("打开笔记以在其中搜索");
-                }),
-              },
-            ]
-          : []),
-        sep,
-        { id: 'file:history', label: "打开版本历史", icon: 'clock', onClick: () => setVersionHistory(path) },
-        ...(isMd
-          ? [
-              {
-                id: 'file:linked-view', label: "打开关联视图",
-                icon: 'arrow-up-right',
-                submenu: [
-                  { label: "反向链接", icon: 'link', onClick: () => void inTab(key, () => setRightPanel('backlinks')) },
-                  { label: "出链", icon: 'arrow-up-right', onClick: () => void inTab(key, () => setRightPanel('outgoing')) },
-                  { id: 'file:outline', label: "大纲", icon: 'list', onClick: () => void inTab(key, () => setRightPanel('outline')) },
-                ],
-              },
-            ]
-          : []),
-        sep,
-        {
-          id: 'file:reveal', label: "在文件列表中显示",
-          icon: 'folder',
-          onClick: () => {
-            revealInTree(path);
-            if (isMobile) setMobileDrawer('left');
-          },
-        },
-        sep,
-        ...tabItems,
-        sep,
-        {
-          id: 'file:delete', label: "删除",
-          danger: true,
-          icon: 'trash',
-          onClick: async () => {
-            if (confirm(`删除 "${baseName}"？`)) {
-              const r = await useStore.getState().removePath(path);
-              notify(r.deleted ? "已永久删除" : "已移至回收站");
-            }
-          },
-        },
-      ];
+    if (s.panes.split.path && (key === paneTabKey(s) || key === paneTabKey(s, 'split'))) {
+      focusWorkspaceView(key === paneTabKey(s) ? 'main' : 'split');
     }
-    items.push(...fileManagerMenuItems(path, findNode(useStore.getState().tree, path)?.type === 'folder', notify));
-    if (isMd) items.push(...nativeBatchTagMenuItems({ kind: 'files', paths: [path] }));
-    openContextMenu({ x: e.clientX || Math.round(rect.left), y: e.clientY || Math.round(rect.bottom),
-      items: extendFileMenu(items, [path], { kind: 'tab', source: 'workspace-tabs', paths: [path],
-        fileTypes: [path.split('.').at(-1) ?? ''], activePath: useStore.getState().activePath ?? undefined,
-        modifiers: menuModifiers(e.nativeEvent) }) });
+  };
+
+  const openTabMenu = (event: React.MouseEvent<HTMLElement>, key: string, view?: Pane) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const path = tabs.find(tab => tabKey(tab) === key)?.path ?? key;
+    const down = splitDirection === 'down';
+    const layout: ContextMenuItem[] = view ? [
+      { id: 'split:direction', label: down ? '改为左右分屏' : '改为上下分屏', icon: down ? 'columns' : 'rows',
+        onClick: () => void openToSide(paneTabKey(useStore.getState(), 'split') ?? key, down ? 'right' : 'down') },
+      { id: 'split:exit', label: '取消分屏', icon: 'layout-dashboard', onClick: () => void closeSplit() },
+    ] : [
+      { id: 'file:split-right', label: '向右分屏', icon: 'columns', onClick: () => void splitWithHomepage(key, 'right') },
+      { id: 'file:split-down', label: '向下分屏', icon: 'rows', onClick: () => void splitWithHomepage(key, 'down') },
+    ];
+    const custom: ContextMenuItem[] = path === GRAPH_PATH ? [{
+      id: 'tab:copy-screenshot', label: '复制截图', icon: 'camera', onClick: async () => {
+        await selectTab(key);
+        requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('wo-graph-screenshot')));
+      },
+    }] : [];
+    openWorkspaceTabMenu(event, key, layout, custom, isMobile);
   };
 
   // ---------- Dragging tabs: one model for mouse (HTML5 drag) and touch (hold, then drag) ----------
@@ -304,9 +142,9 @@ export default function WorkspaceTabs() {
     const view = element.closest<HTMLElement>('[data-pane]')?.dataset.pane as Pane | undefined;
     return { key: unit.dataset.tabUnit, view, path: element.closest<HTMLElement>('[data-tab-id]')?.dataset.tabId };
   };
-  const paneAccepts = (view: Pane, key: string | null) => {
+  const paneAccepts = (key: string | null) => {
     const path = tabs.find(tab => tabKey(tab) === key)?.path ?? key;
-    return !!path && (view === 'main' || isHomepagePath(path) || (path !== GRAPH_PATH && findNode(useStore.getState().tree, path)?.type !== 'folder'));
+    return !!path && canOpenWorkspaceContent(path);
   };
   const track = (hit: Hit) => {
     const from = source.current;
@@ -324,11 +162,11 @@ export default function WorkspaceTabs() {
     if (current?.key === hit.key && (current.mode === 'insert' || (current.view === hit.view && current.path === hit.path))) return;
     clearDwell();
     if (hit.key === END_KEY) { setHint({ key: END_KEY, mode: 'insert' }); return; }
-    const intoPane = hit.key === GROUP_KEY && hit.view && !from.group && paneAccepts(hit.view, from.path);
+    const intoPane = hit.key === GROUP_KEY && hit.view && !from.group && paneAccepts(from.path);
     const s = useStore.getState(), pair = s.parkedSplit;
     const side = paneTabKey(s, 'split') ?? pair?.sideId ?? pair?.side;
     const sideReplacement = from.path === side ? hit.path : hit.path === side ? from.path : undefined;
-    const canSwap = from.path && hit.path && (!sideReplacement || paneAccepts('split', sideReplacement));
+    const canSwap = from.path && hit.path && (!sideReplacement || paneAccepts(sideReplacement));
     setHint(intoPane ? { key: hit.key, mode: 'pane', view: hit.view, path: hit.path }
       : canSwap ? { key: hit.key, mode: 'swap', path: hit.path } : null);
     dwell.current = window.setTimeout(() => {
@@ -438,7 +276,7 @@ export default function WorkspaceTabs() {
           + `${selectedTabs.includes(key) ? ' is-multiselected' : ''}`}
         style={{ ['--tab-group-color' as string]: groupColorValue(tab) }}
         role="tab" aria-selected={selected} aria-description={groupDescription(tabs, tab) || undefined} tabIndex={selected ? 0 : -1}
-        onClick={event => { if (isMacOS() ? event.metaKey : event.ctrlKey) toggleTabSelection(key); else { useStore.getState().setSelectedTabs([]); void selectTab(key); } }}
+        onClick={event => { if (isTabMultiselect(event)) toggleTabSelection(key); else { useStore.getState().setSelectedTabs([]); void selectTab(key); } }}
         onAuxClick={(event) => { if (event.button === 1) { event.preventDefault(); close(); } }}
         onContextMenu={(event) => {
           // A touch hold opens the menu on release instead, so the same hold can become a drag.
@@ -463,7 +301,7 @@ export default function WorkspaceTabs() {
         {(tab.path === GRAPH_PATH || isHomepagePath(tab.path)) && <Icon name={tab.path === GRAPH_PATH ? 'graph' : 'home'} size={13} />}
         {isWebViewerPath(tab.path) && <Icon name="globe" size={13} />}
         <span className="title">{tab.title.replace(/\.(md|markdown)$/, '')}</span>
-        {dirty && view !== 'split' && activePath === key && <span className="dot" aria-label="未保存的更改">●</span>}
+        <DocumentTabIndicator path={tab.path} />
         <button type="button" className="close" title="关闭标签页" aria-label={`关闭 ${tab.title}`}
           onClick={(event) => { event.stopPropagation(); close(); }}>
           <Icon name="x" size={13} />
@@ -547,9 +385,9 @@ export default function WorkspaceTabs() {
         <Icon name="plus" size={16} />
       </button>
       <div className="titlebar-drag-space" />
-      {mainPdf && <button type="button" className={`tab-new tab-ctl pdf-toolbar-toggle${pdfToolbarOpen ? ' is-active' : ''}`}
-        title={`显示/隐藏 ${mainPdf.label} 工具栏`} aria-label={`显示/隐藏 ${mainPdf.label} 工具栏`} aria-expanded={pdfToolbarOpen}
-        onClick={togglePdfToolbar}>
+      {pdf && <button type="button" className={`tab-new tab-ctl pdf-toolbar-toggle${pdfToolbarOpen ? ' is-active' : ''}`}
+        title={`显示/隐藏 ${pdf.label} 工具栏`} aria-label={`显示/隐藏 ${pdf.label} 工具栏`} aria-expanded={pdfToolbarOpen}
+        onClick={() => togglePdfToolbar(viewId)}>
         <Icon name="panel-top" size={16} />
       </button>}
       <button type="button" className="tab-new tab-ctl" title="折叠/展开右侧边栏"

@@ -1,4 +1,5 @@
 import { useStore } from '../store';
+import { currentWorkspaceTarget } from '../workspaceTarget';
 import { deleteNativeTag, openTagOperation } from './actions';
 
 export const tagCommands = [
@@ -8,15 +9,16 @@ export const tagCommands = [
     useStore.getState().setRightPanel('tags');
   } },
   { id: 'tags-batch-selected', title: '批量修改所选文件的标签', run: () => {
-    const s = useStore.getState(), paths = s.selected.length ? s.selected : s.activePath ? [s.activePath] : [];
+    const s = useStore.getState(), { path } = currentWorkspaceTarget();
+    const paths = s.selected.length ? s.selected : path ? [path] : [];
     if (!paths.length) { s.notify('请先选择文件或文件夹'); return; }
     // Expand selected folders against saved file membership, not file contents.
     const targets = s.filePaths.filter((path) => paths.some((selected) => path === selected || path.startsWith(selected + '/')));
     openTagOperation({ scope: { kind: 'files', paths: targets }, title: '修改所选文件的标签' });
   } },
   { id: 'tags-batch-folder', title: '批量修改当前文件夹的标签', run: () => {
-    const path = useStore.getState().activePath;
-    openTagOperation({ scope: { kind: 'folder', path: path?.split('/').slice(0, -1).join('/') ?? '' } });
+    const { folder } = currentWorkspaceTarget();
+    if (folder !== null) openTagOperation({ scope: { kind: 'folder', path: folder } });
   } },
   { id: 'tags-rename', title: '重命名 / 合并 Vault 标签层级', run: () =>
     openTagOperation({ scope: { kind: 'vault' }, operation: { kind: 'rename', from: '', to: '' } }) },

@@ -7,7 +7,7 @@ export const test = base.extend<{ runtimeErrors: void; expectedErrors: string[] 
     await page.route('**/favicon.ico', route => route.fulfill({ status: 204 }));
     await page.route('**/api/vault-identity', route => route.fulfill({ json: { vault: 'browser-fixture' } }));
     await page.route('**/api/writing', route => route.fulfill({ json: {
-      version: 1, migration: 'fixture', latex: { snippets: '[]', snippetVariables: '{}' }, linter: {}, hotkeys: {},
+      version: 1, latex: { snippets: '[]', snippetVariables: '{}' }, linter: {}, hotkeys: {},
     } }));
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));

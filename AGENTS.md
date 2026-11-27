@@ -12,6 +12,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-27 PRD1.78 / 0.1.106：中央两栏使用同一 Pane 与 DocumentSession，编辑模式、工具栏按标签身份。格式化与批量标签跟随聚焦真实来源；普通/连续文档共用编辑器审阅、分页与大纲。三处标签共用文件动作、排序与邻居关闭。恢复分屏用显式网格轨道。正式发布和设备状态以当月日志为准。
 - 2026-11-27 PRD1.77 / 0.1.105（运行源码161cb96）已发布：中央 Markdown 标签保留滚动、光标、选区与折叠，暂存分屏两栏同时恢复。683 单元、Mac 60/Windows 10 浏览器、两端正式包启动与 WebViewer/生命周期通过；旧版实包复现网页先全宽。Mac/OMEN/ROG/平板已更新，K70 尾网在线但 ADB 不可达。见 `tests/reports/tab-restore-20261127.md`。
 - 2026-11-26 服务器数据生命周期：独立服务0.5.1/core0.3.4已发布并部署ROG，有限历史/GC与独立压缩DR、升级代码回滚均启用；真实恢复revision653/13302项通过。客户端0.1.103已发布，Mac/OMEN/ROG/K70已确认；平板安装Success后离线，回读未完成。682单元/14服务/2解包通过；原Windows拖放与Mac packaged-startup基线失败保留。见 `tests/reports/server-data-lifecycle-20261126.md`。
 - 2026-11-26 PRD1.76 / 0.1.104（运行源码0dd3447）已发布/latest并更新五设备：修复分屏标签组压缩后成员越界和「+」排位错误；Mac54/Windows8浏览器、Mac后台及Windows Session1完整WebViewer/生命周期通过。Mac健康及工作区保留，Windows保持原停止状态，Android首装时间保留。用户已撤回多分组需求，保留每标签单颜色组。见 `tests/reports/tab-layout-20261126.md`。
@@ -43,6 +44,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
+- PRD1.78 / 0.1.106 包装及原生设备验收进行中。
 - 0.1.100 的 Mac/OMEN 旧 math、虚拟文档与图片格式迁移已执行。K70 两份生产配置已进入待接收队列，真实路径仍为旧格式；平板未做实库前台检查。新版严格拒绝旧 math `migration` 字段，其他旧数据的适用边界见正式包与部署报告。
 - 2026-11-26 同步 P0 源码：冲突选择和待收日志同检查点保存，按依赖组和脏文档路径拦截，缺同路径基线的首连差异留审阅。验收环境使用隔离库，设备既有冲突继续保留。设计和用例见 `docs/design/file-sync.md`、当月日志。
 - 【暂停，用户 2026-11-26 要求仅记录设备故障】OMEN 同步检查点总 revision 445，部分已选配置的基线版本 469 导致重启拒载；两份 CSS 冲突保留，无 incoming/outbox。0.1.100 已发布检查点加载修复并更新 OMEN 应用，真实库现场恢复仍未执行。见 2026-11 日志。

@@ -62,7 +62,7 @@ test('floating right dock adds tabs without resizing the document or changing th
   await expect(page.getByRole('tab', { name: 'Homepage' })).toHaveCount(1);
   await page.evaluate(() => (window as any).sidebarFixture.store.getState().toggleRight());
   expect((await page.locator('.workspace').boundingBox())!.width).toBe(before);
-  expect(await page.evaluate(() => (window as any).sidebarFixture.store.getState().activePath)).toBe('a.md');
+  expect(await page.evaluate(() => (window as any).sidebarFixture.store.getState().panes.main.path)).toBe('a.md');
 });
 
 test('retained note editor is excluded from commands when hidden and saves before replacement', async ({ page }) => {
@@ -74,7 +74,7 @@ test('retained note editor is excluded from commands when hidden and saves befor
   expect(await page.evaluate(() => (window as any).sidebarFixture.active.getActiveEditor())).toBeNull();
   await page.evaluate(() => (window as any).sidebarFixture.store.getState().openRightTab('markdown', { file: 'a.md' }, 'side'));
   expect(await page.evaluate(() => (window as any).sidebarFixture.documents.get('b.md').snapshot.dirty)).toBe(false);
-  expect(await page.evaluate(() => (window as any).sidebarFixture.store.getState().activePath)).toBe('a.md');
+  expect(await page.evaluate(() => (window as any).sidebarFixture.store.getState().panes.main.path)).toBe('a.md');
 });
 
 test('custom view mounts once, keeps state when hidden, and closes exactly once', async ({ page }) => {
@@ -108,4 +108,25 @@ test('editing during an in-flight close save keeps the note tab and newest sourc
   await page.evaluate(() => (window as any).sidebarFixture.pendingClose);
   expect(await page.evaluate(() => (window as any).sidebarFixture.store.getState().rightTabs.some((tab: any) => tab.id === 'side'))).toBe(true);
   expect(await page.evaluate(() => (window as any).sidebarFixture.documents.get('b.md').snapshot.raw)).toBe('newest edit');
+});
+
+test('the side rail orders document views and exposes the shared file actions', async ({ page }) => {
+  await page.evaluate(async () => {
+    const { store } = (window as any).sidebarFixture, state = store.getState();
+    await state.openSidebarTab('right', 'markdown', { file: 'a.md' }, 'one');
+    await state.openSidebarTab('right', 'markdown', { file: 'b.md' }, 'two');
+    await state.openSidebarTab('right', 'markdown', { file: 'a.md' }, 'three');
+  });
+  const rail = page.getByRole('tablist', { name: '右侧标签页' });
+  const tab = (id: string) => rail.locator(`[data-tab-id="sidebar:${id}"]`);
+  await tab('three').dragTo(tab('one'));
+  await expect.poll(() => rail.getByRole('tab').evaluateAll(elements => elements.map(element => element.getAttribute('data-tab-id'))))
+    .toEqual(['sidebar:three', 'sidebar:two', 'sidebar:one']);
+  await expect(tab('three')).toHaveAttribute('aria-selected', 'true');
+  await tab('two').click({ button: 'right' });
+  // RightSidebar alone does not mount the menu outside the dock in this fixture.
+  const labels = await page.evaluate(() => (window as any).sidebarFixture.store.getState().contextMenu.items.map((item: { label: string }) => item.label));
+  expect(labels).toEqual(expect.arrayContaining(['重命名…', '移动文件至…', '添加书签', '复制标签页', '删除']));
+  await tab('three').press('Delete');
+  await expect(tab('two')).toHaveAttribute('aria-selected', 'true');
 });

@@ -1,5 +1,6 @@
-import { useSyncExternalStore } from 'react';
-import type { PdfSession } from './session';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { PdfSession } from './session';
+import { getVirtualReading, useVirtualReading } from '../virtualReading';
 import { useStore } from '../store';
 import { pdfDarkPreference } from './preferences';
 
@@ -52,3 +53,35 @@ export function usePdfSession(path: string | null, viewId: string) {
   return useSyncExternalStore(subscribeActivePdfSession, () => getPdfSession(path, viewId));
 }
 export function usePdfSnapshot(session: PdfSession) { return useSyncExternalStore(session.subscribe, session.getSnapshot); }
+
+/** One lifetime for readers and virtual chapters, including vault invalidation. */
+export function usePagedSession(path: string, viewId: string) {
+  const stale = useStore(state => state.vaultSessionStale);
+  const [session, setSession] = useState<PdfSession>();
+  useEffect(() => {
+    if (stale) return;
+    const current = new PdfSession(path, viewId);
+    setSession(current);
+    const unregister = registerPdfSession(current);
+    const invalidate = () => { unregister(); current.destroy(); };
+    window.addEventListener('vault-identity-invalidated', invalidate);
+    return () => { window.removeEventListener('vault-identity-invalidated', invalidate); invalidate(); };
+  }, [path, viewId, stale]);
+  return !stale && session?.path === path && session.viewId === viewId ? session : undefined;
+}
+
+export function currentPdfFor(path: string | null, viewId: string) {
+  const direct = getPdfSession(path, viewId);
+  if (direct) return direct;
+  const reading = getVirtualReading(path, viewId)?.getSnapshot();
+  return reading ? getPdfSession(reading.activeSource ?? null, 'virtual:' + viewId) : null;
+}
+
+export function useCurrentPdf(path: string | null, viewId: string) {
+  const reader = useVirtualReading(path, viewId);
+  const reading = useSyncExternalStore(reader?.subscribe ?? noopSubscribe, reader?.getSnapshot ?? emptyReading);
+  return usePdfSession(reader ? reading?.activeSource ?? null : path, reader ? 'virtual:' + viewId : viewId);
+}
+
+const noopSubscribe = () => () => {};
+const emptyReading = () => undefined;

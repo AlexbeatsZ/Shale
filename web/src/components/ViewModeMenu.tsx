@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
-import { useStore, type ViewMode } from '../lib/store';
+import { useStore, viewModeFor, type ViewMode } from '../lib/store';
 import Icon from './Icon';
 import { MenuList } from './ContextMenu';
 import { useActivePage } from '../lib/useActivePage';
@@ -12,7 +12,7 @@ const noSubscribe = () => () => {};
 const subscribeMode = (listener: () => void) => subscribeNavigationViews(() => listener());
 const currentMode = (): ViewMode => {
   const view = getActiveEditor();
-  return view ? view.state.field(livePreviewReadonly, false) ? 'reading' : view.state.field(livePreviewState, false) ? 'live' : 'source' : useStore.getState().viewMode;
+  return view ? view.state.field(livePreviewReadonly, false) ? 'reading' : view.state.field(livePreviewState, false) ? 'live' : 'source' : viewModeFor(useStore.getState(), useStore.getState().currentViewId());
 };
 
 const modes: { mode: ViewMode; label: string; icon: string }[] = [
@@ -74,7 +74,7 @@ export default function ViewModeMenu() {
       {open && (
         <div id={menuId} className="view-mode-menu" role="menu" aria-label="切换视图" onKeyDown={onKeyDown}>
           <MenuList items={modes.map(item => ({ label: item.label, icon: item.icon, checked: item.mode === viewMode,
-            onClick: () => { if (reader) reader.setMode(item.mode); else setActiveEditorMode(item.mode); } }))} onClose={() => { setOpen(false); trigger.current?.focus(); }} />
+            onClick: () => { if (reader) useStore.getState().setViewMode(item.mode); else setActiveEditorMode(item.mode); } }))} onClose={() => { setOpen(false); trigger.current?.focus(); }} />
         </div>
       )}
     </div>

@@ -1,15 +1,15 @@
-import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath, type Tab } from '../lib/store';
+import { memo, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath } from '../lib/store';
 import { paneTabKey, tabKey } from '../lib/tabIdentity';
 import { activateNavigation } from '../lib/activeEditor';
-import { isFolderPath } from '../lib/tree';
+import { canOpenWorkspaceContent, workspaceContent } from '../lib/workspaceContent';
 import { TAB_DRAG_TYPE, tabDrag } from '../lib/tabDrag';
 import GraphView from './GraphView';
 import Icon from './Icon';
 import StatusBar from './StatusBar';
 import WorkspaceLauncher from './WorkspaceLauncher';
 import WebViewerTab from './WebViewerTab';
-import WorkspaceFile from './WorkspaceFile';
+import { WorkspaceDocumentTab } from './WorkspaceFile';
 import { EditorView } from '@codemirror/view';
 import { insertImageFiles } from '../lib/attachmentImages';
 import { applySplitRatio, clampSplitRatio, loadSplitRatio, notifySplitLayout, saveSplitRatio } from '../lib/splitLayout';
@@ -20,7 +20,7 @@ function PaneDivider({ down }: { down: boolean }) {
   const lastTap = useRef<{ time: number; x: number; y: number } | null>(null);
   const swap = () => {
     const s = useStore.getState();
-    if (s.splitPath) void s.replacePane('main', paneTabKey(s, 'split')!).catch(error => s.notify(String(error)));
+    if (s.panes.split.path) void s.replacePane('main', paneTabKey(s, 'split')!).catch(error => s.notify(String(error)));
   };
   const area = (element: HTMLElement) => element.parentElement as HTMLElement;
   const ratioAt = (element: HTMLElement, x: number, y: number) => {
@@ -67,48 +67,43 @@ function PaneDivider({ down }: { down: boolean }) {
 
 type PaneId = 'main' | 'split';
 
-function WorkspacePane({ path, navigationId, active }: { path: string; navigationId: PaneId; active?: boolean }) {
+function WorkspacePane({ path, navigationId, tabId, active = true }: { path: string; navigationId: PaneId; tabId?: string; active?: boolean }) {
   const close = useStore((state) => state.closePane);
   const hidden = active === false;
-  return <div className={`pane${hidden ? '' : ` ${navigationId}-pane`}`} data-view-id={hidden ? undefined : navigationId} hidden={hidden}
+  return <div className={`pane${hidden ? '' : ` ${navigationId}-pane`}`} data-view-id={hidden ? undefined : navigationId} hidden={hidden} tabIndex={-1}
     onPointerDownCapture={() => activateNavigation(navigationId)} onFocusCapture={() => activateNavigation(navigationId)}>
     <button className="tool-btn pane-close" onClick={() => void close(navigationId)} title={navigationId === 'main' ? '关闭标签页' : '关闭分屏'}>
       <Icon name="x" size={16} />
     </button>
     {isHomepagePath(path) ? <div className="empty-state"><WorkspaceLauncher key={path} viewId={navigationId} /></div>
       : path === GRAPH_PATH ? <GraphView navigationId={navigationId} />
-      : <WorkspaceFile path={path} navigationId={navigationId} active={active} />}
+      : <WorkspaceDocumentTab path={path} navigationId={navigationId} tabId={tabId} active={active} />}
   </div>;
 }
 
-const WorkspaceNote = memo(function WorkspaceNote({ path, pane }: { path: string; pane?: PaneId }) {
+const WorkspaceNote = memo(function WorkspaceNote({ path, pane, tabId }: { path: string; pane?: PaneId; tabId: string }) {
   const lastPane = useRef<PaneId>();
   if (pane) lastPane.current = pane;
-  return lastPane.current && <WorkspacePane path={path} navigationId={lastPane.current} active={!!pane} />;
+  return lastPane.current && <WorkspacePane path={path} navigationId={lastPane.current} tabId={tabId} active={!!pane} />;
 });
 
-function noteTab(tab: Tab) { return /\.(?:md|markdown)$/i.test(tab.path); }
-
 export default function Workspace() {
-  const activePath = useStore((s) => s.activePath);
-  const splitPath = useStore((s) => s.splitPath);
+  const activePath = useStore((s) => s.panes.main.path);
+  const splitPath = useStore((s) => s.panes.split.path);
 
   const splitDirection = useStore((s) => s.splitDirection);
   const tree = useStore((s) => s.tree);
   const tabs = useStore((s) => s.tabs);
   const mainKey = useStore((s) => paneTabKey(s));
   const splitKey = useStore((s) => paneTabKey(s, 'split'));
-  const notes = tabs.filter(noteTab).sort((a, b) => tabKey(a).localeCompare(tabKey(b)));
+  const notes = tabs.filter(tab => workspaceContent(tree, tab.path) === 'text').sort((a, b) => tabKey(a).localeCompare(tabKey(b)));
   const mainNote = notes.find(tab => tabKey(tab) === mainKey);
   const splitNote = splitKey !== mainKey && notes.find(tab => tabKey(tab) === splitKey);
   const activeIsHome = isHomepagePath(activePath);
   const workspace = useRef<HTMLDivElement>(null);
-  const editorArea = useRef<HTMLDivElement>(null);
-  // Apply the saved split share and tell snapped sidebars whenever the boundary may move.
-  useLayoutEffect(() => {
-    if (editorArea.current) applySplitRatio(editorArea.current, loadSplitRatio());
-    else notifySplitLayout();
-  }, [splitPath, splitDirection, activePath]);
+  const ratio = loadSplitRatio();
+  const splitTracks = { '--split-main': `${ratio}fr`, '--split-side': `${1 - ratio}fr` } as CSSProperties;
+  useLayoutEffect(notifySplitLayout, [splitPath, splitDirection, activePath, ratio]);
   const [drop, setDrop] = useState<{ view: 'main' | 'split' | 'right' | 'down'; left: number; top: number; width: number; height: number } | null>(null);
 
   useEffect(() => {
@@ -133,18 +128,18 @@ export default function Workspace() {
     if (!host || !area || !path) return null;
     const origin = host.getBoundingClientRect(), box = area.getBoundingClientRect();
     const file = useStore.getState().tabs.find(tab => (tab.id ?? tab.path) === path)?.path ?? path;
-    const sideable = isHomepagePath(file) || (file !== GRAPH_PATH && !isFolderPath(tree, file));
+    if (!canOpenWorkspaceContent(file)) return null;
     const at = (view: 'main' | 'split' | 'right' | 'down', r: { left: number; top: number; width: number; height: number }) =>
       ({ view, left: r.left - origin.left, top: r.top - origin.top, width: r.width, height: r.height });
     if (splitPath) {
       const pane = (e.target as Element).closest<HTMLElement>('[data-view-id]');
-      const view = pane?.dataset.viewId === 'split' && sideable ? 'split' : 'main';
+      const view = pane?.dataset.viewId === 'split' ? 'split' : 'main';
       const element = area.querySelector<HTMLElement>(`:scope > [data-view-id="${view}"]`);
       return element ? at(view, element.getBoundingClientRect()) : null;
     }
     const x = (e.clientX - box.left) / box.width, y = (e.clientY - box.top) / box.height;
-    if (sideable && x > 0.5 && x >= y) return at('right', { left: box.left + box.width / 2, top: box.top, width: box.width / 2, height: box.height });
-    if (sideable && y > 0.5) return at('down', { left: box.left, top: box.top + box.height / 2, width: box.width, height: box.height / 2 });
+    if (x > 0.5 && x >= y) return at('right', { left: box.left + box.width / 2, top: box.top, width: box.width / 2, height: box.height });
+    if (y > 0.5) return at('down', { left: box.left, top: box.top + box.height / 2, width: box.width, height: box.height / 2 });
     return at('main', box);
   };
   const onTabDragOver = (e: React.DragEvent) => {
@@ -163,7 +158,7 @@ export default function Workspace() {
     if (!target || !path) return;
     const s = useStore.getState();
     if (target.view === 'right' || target.view === 'down') void s.openToSide(path, target.view);
-    else if (s.splitPath) void s.replacePane(target.view, path);
+    else if (s.panes.split.path) void s.replacePane(target.view, path);
     else if (paneTabKey(s) !== path) void s.showTab(path);
   };
 
@@ -180,28 +175,28 @@ export default function Workspace() {
   };
   return (
     <div className="workspace" ref={workspace} onDrop={onDrop} onDragOver={(e) => e.preventDefault()}>
-      <div ref={editorArea} className={`editor-area${splitPath ? ' is-split' : ''}${splitDirection === 'down' ? ' split-down' : ''}`}
-        onDragOverCapture={onTabDragOver} onDropCapture={onTabDrop}
+      <div className={`editor-area${splitPath ? ' is-split' : ''}${splitDirection === 'down' ? ' split-down' : ''}`}
+        style={splitTracks} onDragOverCapture={onTabDragOver} onDropCapture={onTabDrop}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDrop(null); }}>
         {(!activePath || activeIsHome) && (
-          <div className="empty-state" data-view-id="main" onPointerDownCapture={() => activateNavigation('main')} onFocusCapture={() => activateNavigation('main')}>
+          <div className="empty-state" data-view-id="main" tabIndex={-1} onPointerDownCapture={() => activateNavigation('main')} onFocusCapture={() => activateNavigation('main')}>
             <WorkspaceLauncher key={activePath} />
           </div>
         )}
         {activePath && !activeIsHome && !isWebViewerPath(activePath) && !mainNote && (
-          <WorkspacePane path={activePath} navigationId="main" />
+          <WorkspacePane path={activePath} navigationId="main" tabId={mainKey ?? undefined} />
         )}
         {splitPath && <PaneDivider down={splitDirection === 'down'} />}
         {/* Electron detaches a guest when React reorders its DOM ancestor. Keep
             hosts in identity order; CSS places the visible main/split panes. */}
         {tabs.filter(tab => isWebViewerPath(tab.path)).sort((a, b) => a.path.localeCompare(b.path)).map(tab => {
           const pane = tab.path === activePath ? 'main' : tab.path === splitPath ? 'split' : undefined;
-          return <div key={tab.path} className={`pane webviewer-pane${pane ? ' ' + pane + '-pane' : ''}`} data-view-id={pane} hidden={!pane}>
+          return <div key={tab.path} className={`pane webviewer-pane${pane ? ' ' + pane + '-pane' : ''}`} data-view-id={pane} hidden={!pane} tabIndex={-1}>
             <WebViewerTab id={tab.path} url={tab.webUrl ?? ''} active={!!pane} />
           </div>;
         })}
-        {splitPath && !isWebViewerPath(splitPath) && !splitNote && <WorkspacePane path={splitPath} navigationId="split" />}
-        {notes.map(tab => <WorkspaceNote key={tabKey(tab)} path={tab.path} pane={tab === mainNote ? 'main' : tab === splitNote ? 'split' : undefined} />)}
+        {splitPath && !isWebViewerPath(splitPath) && !splitNote && <WorkspacePane path={splitPath} navigationId="split" tabId={splitKey ?? undefined} />}
+        {notes.map(tab => <WorkspaceNote key={tabKey(tab)} tabId={tabKey(tab)} path={tab.path} pane={tab === mainNote ? 'main' : tab === splitNote ? 'split' : undefined} />)}
       </div>
       {drop && <div className="pane-drop-indicator" style={{ left: drop.left, top: drop.top, width: drop.width, height: drop.height }} />}
       <StatusBar />

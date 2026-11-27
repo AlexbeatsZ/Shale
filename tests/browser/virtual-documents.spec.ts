@@ -37,7 +37,7 @@ test('virtual Markdown chapters stay bounded, jump through one outline and edit 
     const tree={name:'Fixture',path:'',type:'folder',children:[{name:collection.title,path:folder,type:'folder',virtualDocument:collection,
       children:files.map(file=>({name:file.path.split('/').pop(),path:file.path,type:'file',ext:'.md'}))}]};
     await store.useStore.getState().loadUiState();publishVirtualDocuments(tree);
-    store.useStore.setState({tree,rightOpen:true,rightPanel:'outline',rightTabs:[],rightActiveId:null,viewMode:'live',filePaths:files.map(file=>file.path)});
+    store.useStore.setState({tree,rightOpen:true,rightPanel:'outline',rightTabs:[],rightActiveId:null,defaultViewMode:'live',filePaths:files.map(file=>file.path)});
     await store.useStore.getState().openFile(folder);
     const h=(React.default??React).createElement;
     (ReactDOM.createRoot??ReactDOM.default.createRoot)(host).render(h('div',{className:'app theme-dark'},h(Workspace),h(RightSidebar,{open:true})));
@@ -105,7 +105,7 @@ test('virtual Markdown chapters stay bounded, jump through one outline and edit 
   await expect.poll(()=>page.evaluate(path=>(window as any).virtualFixture.documents.get(path).snapshot.raw,files[28].path)).not.toContain('独立编辑验收29');
   await expect.poll(()=>page.evaluate(path=>(window as any).virtualFixture.documents.get(path).snapshot.raw,files[29].path)).toContain('独立编辑验收30');
   expect(writes.every(write=>[files[28].path,files[29].path].includes(write.path))).toBe(true);
-  expect(await page.evaluate(()=>(window as any).virtualFixture.useStore.getState().activePath)).toBe(folder);
+  expect(await page.evaluate(()=>(window as any).virtualFixture.useStore.getState().panes.main.path)).toBe(folder);
   await page.evaluate(async()=>{await (window as any).virtualFixture.useStore.getState().openFile('outside.md');});
   await expect.poll(()=>page.evaluate(()=>(window as any).virtualFixture.documents.snapshots().length)).toBe(3);
   await page.evaluate(async folder=>{await (window as any).virtualFixture.useStore.getState().openFile(folder);},folder);
@@ -143,7 +143,7 @@ test('status groups include highlighted JSON configuration, retain edits through
       load('/src/components/WorkspaceTabs.tsx'),load('/src/components/ContextMenu.tsx'),load('/src/lib/store.ts'),load('/src/lib/virtualDocuments.ts')]);
     (window as any).nativeReveals=[];(window as any).shaleDesktop={isDesktop:true,platform:'darwin',revealVaultPath:async(path:string)=>{(window as any).nativeReveals.push(path);}};
     document.getElementById('root')!.hidden=true;const host=document.createElement('div');host.id='virtual-config-fixture';host.style.cssText='position:fixed;inset:0';document.body.append(host);
-    await store.useStore.getState().loadUiState();publishVirtualDocuments(tree);store.useStore.setState({tree,rightOpen:false,viewMode:'live'});
+    await store.useStore.getState().loadUiState();publishVirtualDocuments(tree);store.useStore.setState({tree,rightOpen:false,defaultViewMode:'live'});
     await store.useStore.getState().openFile('Book');const h=(React.default??React).createElement;
     (ReactDOM.createRoot??ReactDOM.default.createRoot)(host).render(h('div',{className:'app theme-dark'},h(Tabs),h(Workspace),h(ContextMenu)));
     const {initializeNativeMenus}=await load('/src/lib/nativeFeatures.ts');initializeNativeMenus();

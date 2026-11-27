@@ -11,7 +11,7 @@ export default function VersionHistory() {
   const close = useStore((s) => s.setVersionHistory);
   const notify = useStore((s) => s.notify);
   const openFile = useStore((s) => s.openFile);
-  const activePath = useStore((s) => s.activePath);
+  const activePath = useStore((s) => s.panes.main.path);
 
   const [commits, setCommits] = useState<GitCommit[]>([]);
   const [selected, setSelected] = useState<string | null>(null);

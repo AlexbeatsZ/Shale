@@ -1,5 +1,5 @@
 import { desktopActionCommands } from './desktopActions';
-import { useStore } from './store';
+import { useStore, viewModeFor } from './store';
 import { showReviews } from './review/client';
 import { api } from './api';
 import { writingCommands } from './writing/commands';
@@ -18,8 +18,9 @@ import { debugStatus, updateDebug, captureDebug, flushDebug, exportDebug } from 
 function setMode(mode: 'live' | 'reading' | 'source' | 'toggle-preview' | 'toggle-source') {
   if (setActiveEditorMode(mode)) return;
   const state = useStore.getState();
-  state.setViewMode(mode === 'toggle-preview' ? (state.viewMode === 'reading' ? 'live' : 'reading')
-    : mode === 'toggle-source' ? (state.viewMode === 'source' ? 'live' : 'source') : mode);
+  const current = viewModeFor(state, state.currentViewId());
+  state.setViewMode(mode === 'toggle-preview' ? (current === 'reading' ? 'live' : 'reading')
+    : mode === 'toggle-source' ? (current === 'source' ? 'live' : 'source') : mode);
 }
 export const nativeCommands: NativeCommand[] = [
   ...desktopActionCommands,

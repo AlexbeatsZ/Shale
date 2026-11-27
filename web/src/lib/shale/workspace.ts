@@ -199,7 +199,7 @@ export class WorkspaceLeaf extends Events {
     else if (this.slot === 'split') void useStore.getState().closePane('split');
     else {
       const file = (this.view as MarkdownView).file, state = useStore.getState();
-      if (file) void (file.path === state.activePath ? state.closePane('main') : state.closeTab(file.path));
+      if (file) void (file.path === state.panes.main.path ? state.closePane('main') : state.closeTab(file.path));
     }
   }
   setEphemeralState(state: any) {

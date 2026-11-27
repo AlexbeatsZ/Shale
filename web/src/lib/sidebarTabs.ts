@@ -1,12 +1,12 @@
 import { parseWebViewerUrl } from '../../../desktop/src/webViewerAddress';
-import { restoreTabGrouping, type TabGrouping } from './tabGroups';
+import { restoreTabGrouping } from './tabGroups';
+import type { TabProperties } from './workspaceTabs';
 
 /** Persist only view identity/state. Document text belongs to its session. */
-export interface SidebarTab extends TabGrouping {
+export interface SidebarTab extends TabProperties {
   id: string;
   type: string;
   state: Record<string, any>;
-  title: string;
   icon: string;
   side?: 'left' | 'right';
 }

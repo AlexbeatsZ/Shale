@@ -21,7 +21,7 @@ export function subscribeActiveNavigation(listener: () => void) {
 export function activateNavigation(id: string) {
   const changed = activeNavigationId !== id;
   activeNavigationId = id;
-  if (active && contextOf(active).navigationId !== id) active = null;
+  if (active && editorNavigationId(active) !== id) active = null;
   if (changed) navigationListeners.forEach(listener => listener());
 }
 export function getActiveNavigationId(): string { return activeNavigationId; }
@@ -34,11 +34,16 @@ export function setActiveEditorMode(mode: ModeRequest): boolean {
 }
 export const isEditorAvailable = (view: EditorView) => view.dom.isConnected && !view.dom.closest('[hidden], [aria-hidden="true"]');
 
+function editorNavigationId(view: EditorView) {
+  const host = view.dom.closest<HTMLElement>('[data-view-id], [data-sidebar-tab]');
+  return host?.dataset.viewId ?? (host?.dataset.sidebarTab ? 'sidebar:' + host.dataset.sidebarTab : contextOf(view).navigationId);
+}
+
 export function registerEditor(view: EditorView, commands: EditorCommands): () => void {
   mounted.set(view, commands);
   const select = () => {
     active = view;
-    activateNavigation(contextOf(view).navigationId ?? activeNavigationId);
+    activateNavigation(editorNavigationId(view) ?? activeNavigationId);
   };
   if (view.hasFocus) select();
   const activate = (event: Event) => {
@@ -57,7 +62,7 @@ export function getActiveEditor(): EditorView | null {
   const page = document.activeElement?.closest('[data-sidebar-tab]');
   if (page && !active?.dom.closest('[data-sidebar-tab]')?.isSameNode(page)) return null;
   if (active && mounted.has(active) && isEditorAvailable(active)) return active;
-  return [...mounted.keys()].find(view => isEditorAvailable(view) && contextOf(view).navigationId === activeNavigationId) ?? null;
+  return [...mounted.keys()].find(view => isEditorAvailable(view) && editorNavigationId(view) === activeNavigationId) ?? null;
 }
 export function getEditorForPath(path: string): EditorView | null {
   if (active && mounted.has(active) && isEditorAvailable(active) && contextOf(active).sourcePath === path) return active;

@@ -34,7 +34,7 @@ test('collection sidebar folds file/heading trees, returns to the cover and shar
     const host = document.createElement('div'); host.id = 'virtual-sidebar-fixture'; host.style.cssText = 'position:fixed;inset:0'; document.body.append(host);
     const tree = { name: 'Fixture', path: '', type: 'folder', children: [{ name: folder, path: folder, type: 'folder', virtualDocument: collection }] };
     await store.useStore.getState().loadUiState(); publishVirtualDocuments(tree);
-    store.useStore.setState({ tree, rightOpen: true, rightPanel: 'outline', rightActiveId: null, rightTabs: [], viewMode: 'live' });
+    store.useStore.setState({ tree, rightOpen: true, rightPanel: 'outline', rightActiveId: null, rightTabs: [], defaultViewMode: 'live' });
     await store.useStore.getState().openFile(folder);
     (window as any).virtualSidebar = { store: store.useStore, getPdfSession };
     function Probe() { (window as any).virtualSidebar.reader = useVirtualReading(folder, 'main'); return null; }
@@ -52,6 +52,9 @@ test('collection sidebar folds file/heading trees, returns to the cover and shar
   await expect(first.getByRole('button', { name: '展开 Detail 1', exact: true })).toBeVisible();
   await first.getByRole('button', { name: '展开 Detail 1', exact: true }).click();
   await expect(first.getByRole('button', { name: 'Leaf 1', exact: true })).toBeVisible();
+  await first.getByRole('button', { name: 'Section 1', exact: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(first.getByRole('button', { name: 'Detail 1', exact: true })).toBeFocused();
   await outline.getByRole('button', { name: 'Chapter 8', exact: true }).click();
   const source = host.locator(`[data-virtual-source="${files[7].path}"]`);
   await expect(source.locator('.cm-content')).toContainText('Section 8', { timeout: 30000 });
@@ -71,6 +74,19 @@ test('collection sidebar folds file/heading trees, returns to the cover and shar
   await host.getByRole('button', { name: '大纲', exact: true }).click();
   await page.evaluate(() => { (window as any).virtualSidebar.reader.selectStream('PDF'); });
   await outline.getByRole('button', { name: 'Slides 5', exact: true }).click();
+  const paged = host.locator('[data-virtual-source="Sidebar Book/Slides 5.pdf"]');
+  await expect(paged.locator('.pdf-page-surface.is-ready').first()).toBeVisible();
+  await host.getByLabel('连续文档阅读').focus();
+  await page.keyboard.press('Control+f');
+  const query = host.getByRole('searchbox', { name: '搜索 PDF' });
+  await expect(query).toBeFocused();
+  await query.fill('needle');
+  await expect(host.locator('.pdf-search [role="status"]')).toContainText('/');
+  const input = host.getByRole('textbox', { name: 'PDF 页码' });
+  await input.fill('4'); await input.press('Enter');
+  await expect(paged.locator('[data-page-number="4"] canvas')).toBeInViewport();
+  await input.fill('1'); await input.press('Enter');
+
   const pdfSource = host.locator(`[data-virtual-source="${pdfFiles[4].path}"]`);
   await expect(pdfSource.locator('[data-page-number="1"] .pdf-page-surface')).toHaveClass(/is-ready/, { timeout: 30000 });
   await expect(host.locator('[data-mounted="true"] [data-virtual-loading]')).toHaveCount(0);

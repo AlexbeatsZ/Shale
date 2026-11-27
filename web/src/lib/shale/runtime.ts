@@ -756,7 +756,7 @@ export async function loadPlugins(): Promise<void> {
       if (state.lastFileChange !== prior.lastFileChange && state.lastFileChange) {
         sharedApp.vault.applyFileStat(state.lastFileChange.path, state.lastFileChange.stat);
       } else if (state.tree !== prior.tree) sharedApp.vault.sync(state.tree, true);
-      if (state.activePath !== prior.activePath) {
+      if (state.panes.main.path !== prior.panes.main.path) {
         sharedApp.workspace.trigger('file-open', sharedApp.workspace.getActiveFile());
         sharedApp.workspace.trigger('active-leaf-change', sharedApp.workspace.activeLeaf);
         sharedApp.workspace.trigger('layout-change');

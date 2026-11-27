@@ -18,11 +18,11 @@ export function saveSplitRatio(ratio: number) {
   try { localStorage.setItem(STORAGE, String(clampSplitRatio(ratio))); } catch { /* Device storage can be unavailable. */ }
 }
 
-/** Applies the ratio to the editor area's pane flex shares without a React render. */
+/** Applies the ratio to the editor area's independent grid tracks without a React render. */
 export function applySplitRatio(area: HTMLElement, ratio: number) {
   const main = clampSplitRatio(ratio);
-  area.style.setProperty('--split-main', String(main));
-  area.style.setProperty('--split-side', String(1 - main));
+  area.style.setProperty('--split-main', `${main}fr`);
+  area.style.setProperty('--split-side', `${1 - main}fr`);
   notifySplitLayout();
 }
 

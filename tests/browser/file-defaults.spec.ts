@@ -98,10 +98,10 @@ test('settings persist and default creation respects explicit folder choices', a
   await page.getByRole('button', { name: '关闭设置' }).click();
   const created = await page.evaluate(async () => {
     const name = '/src/lib/store.ts'; const { useStore } = await import(name);
-    await useStore.getState().newNote(); const first = useStore.getState().activePath;
-    await useStore.getState().newNote(); const second = useStore.getState().activePath;
+    await useStore.getState().newNote(); const first = useStore.getState().panes.main.path;
+    await useStore.getState().newNote(); const second = useStore.getState().panes.main.path;
     await useStore.getState().newNote('Notes');
-    return [first, second, useStore.getState().activePath];
+    return [first, second, useStore.getState().panes.main.path];
   });
   expect(created).toEqual(['Inbox/Nested/Untitled.md', 'Inbox/Nested/Untitled 1.md', 'Notes/Untitled.md']);
   for (const file of created) expect(await fs.stat(path.join(vault, file!)).then(stat => stat.isFile())).toBe(true);

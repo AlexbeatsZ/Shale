@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const host = vi.hoisted(() => ({ read: vi.fn(), write: vi.fn(), getUiState: vi.fn(), putUiState: vi.fn(), mutations: 0, navigation: 'main' }));
-vi.mock('./api', () => ({ api: { read: host.read, write: host.write, getUiState: host.getUiState, putUiState: host.putUiState }, pendingMutations: () => host.mutations }));
+vi.mock('./api', () => ({ ApiError: class ApiError extends Error { status = 404; }, api: { read: host.read, write: host.write, getUiState: host.getUiState, putUiState: host.putUiState }, pendingMutations: () => host.mutations }));
 vi.mock('./tags/folderSession', async () => ({ WorkspaceDocumentSession: (await import('@shale/markdown-core')).DocumentSession }));
 vi.mock('./writing/format', () => ({ manualSave: vi.fn() }));
 vi.mock('./fragmentNavigation', () => ({ navigateTo: vi.fn(), captureLocation: vi.fn(), cancelNavigation: vi.fn() }));
@@ -41,7 +41,7 @@ describe('workspace persistence acknowledgements', () => {
       { id: 'tab:copy', path: 'A.md', title: 'A', groupColor: 'blue', groupOrder: 0 }];
     host.getUiState.mockResolvedValue({ tabs, activePath: 'A.md', activeTabId: 'tab:copy', selectedTabs: ['A.md'] });
     await workspace.useStore.getState().loadUiState();
-    expect(workspace.useStore.getState().activeTabId).toBe('tab:copy');
+    expect(workspace.useStore.getState().panes.main.tabId).toBe('tab:copy');
     expect(workspace.useStore.getState().tabs).toEqual(tabs);
     expect(workspace.useStore.getState().selectedTabs).toEqual([]);
     workspace.useStore.getState().setSelectedTabs(['tab:copy']);
@@ -58,7 +58,7 @@ describe('workspace persistence acknowledgements', () => {
     await s.duplicateTab('A.md');
     const copy = workspace.useStore.getState().tabs[1];
     expect(copy.path).toBe('A.md'); expect(copy.id).toMatch(/^tab:/);
-    expect(workspace.useStore.getState().activeTabId).toBe(copy.id);
+    expect(workspace.useStore.getState().panes.main.tabId).toBe(copy.id);
     expect(documents.get('A.md')).toBe(session);
     expect(host.write).not.toHaveBeenCalled();
     await s.closeTab(copy.id!);
@@ -72,10 +72,10 @@ describe('workspace persistence acknowledgements', () => {
     const copy = workspace.useStore.getState().tabs[1].id!;
     await s.showTab('A.md'); await s.openToSide(copy);
     await s.swapTabs('A.md', copy);
-    expect(workspace.useStore.getState()).toMatchObject({ activePath: 'A.md', splitPath: 'A.md', activeTabId: copy, splitTabId: 'A.md' });
+    expect(workspace.useStore.getState()).toMatchObject({ panes: { main: { path: 'A.md', tabId: copy }, split: { path: 'A.md', tabId: 'A.md' } } });
     await s.closePane('split');
     expect(workspace.useStore.getState().tabs.map(tab => tab.id ?? tab.path)).toEqual([copy]);
-    expect(workspace.useStore.getState().activeTabId).toBe(copy);
+    expect(workspace.useStore.getState().panes.main.tabId).toBe(copy);
   });
 
   it('displays the next single page and cycles from that page without changing join order', async () => {
@@ -85,7 +85,7 @@ describe('workspace persistence acknowledgements', () => {
     await s.showTab('A.md');
     for (const [direction, path] of [[1,'B.md'],[1,'C.md'],[1,'A.md'],[-1,'C.md'],[-1,'B.md'],[-1,'A.md']] as const) {
       await s.swapGroupedTab(direction);
-      expect(workspace.useStore.getState()).toMatchObject({ activePath: path, activeTabId: path, splitPath: null });
+      expect(workspace.useStore.getState()).toMatchObject({ panes: { main: { path, tabId: path }, split: { path: null } } });
     }
     expect(workspace.useStore.getState().tabs.map(tab => tab.path)).toEqual(['A.md','B.md','C.md']);
   });
@@ -97,10 +97,10 @@ describe('workspace persistence acknowledgements', () => {
     await s.showTab('A.md'); await s.openToSide('B.md');
     host.navigation = 'split';
     await s.swapGroupedTab(-1);
-    expect(workspace.useStore.getState()).toMatchObject({ activePath: 'B.md', splitPath: 'A.md' });
+    expect(workspace.useStore.getState()).toMatchObject({ panes: { main: { path: 'B.md' }, split: { path: 'A.md' } } });
     expect(host.navigation).toBe('split');
     await s.swapGroupedTab(-1);
-    expect(workspace.useStore.getState()).toMatchObject({ activePath: 'B.md', splitPath: 'C.md' });
+    expect(workspace.useStore.getState()).toMatchObject({ panes: { main: { path: 'B.md' }, split: { path: 'C.md' } } });
     expect(host.navigation).toBe('split');
   });
 
@@ -109,13 +109,14 @@ describe('workspace persistence acknowledgements', () => {
     for (const path of ['A.md', 'B.md', 'C.md', 'D.md']) await s.openFile(path);
     s.setTabGroup(['C.md', 'A.md', 'D.md'], 'blue');
     await s.showTab('A.md'); await s.openToSide('B.md');
+    await s.showTab('A.md');
     s.arrangeTabs(['D.md'], ['A.md'], 'before');
     await s.swapGroupedTab(1);
-    expect(workspace.useStore.getState()).toMatchObject({ activePath: 'D.md', splitPath: 'B.md' });
+    expect(workspace.useStore.getState()).toMatchObject({ panes: { main: { path: 'D.md' }, split: { path: 'B.md' } } });
     await s.swapGroupedTab(1);
-    expect(workspace.useStore.getState().activePath).toBe('C.md');
+    expect(workspace.useStore.getState().panes.main.path).toBe('C.md');
     await s.swapGroupedTab(-1);
-    expect(workspace.useStore.getState().activePath).toBe('D.md');
+    expect(workspace.useStore.getState().panes.main.path).toBe('D.md');
     expect(workspace.useStore.getState().tabs.filter(tab => tab.groupColor).sort((a,b) => a.groupOrder! - b.groupOrder!).map(tab => tab.path)).toEqual(['C.md', 'A.md', 'D.md']);
   });
 
@@ -210,7 +211,7 @@ describe('workspace persistence acknowledgements', () => {
   it('keeps the newest remote snapshot when document saves delay earlier broadcasts', async () => {
     await workspace.useStore.getState().loadUiState();
     const session = await documents.open('active.md');
-    workspace.useStore.setState({ activePath: 'active.md' });
+    await workspace.useStore.getState().openFile('active.md');
     await workspace.flushWorkspaceState();
     session.setText('draft');
     const writer = deferred<{ revision: string }>();
@@ -303,5 +304,55 @@ describe('dirty exit save barrier', () => {
     await expect(workspace.saveWorkspaceBeforeExit()).rejects.toThrow('旧会话');
     expect(host.write).not.toHaveBeenCalled();
     expect(session.snapshot.raw).toBe('old Vault draft');
+  });
+});
+
+describe('pane operation symmetry', () => {
+  for (const pane of ['main', 'split'] as const) {
+    it(`opens, keeps the previous tab on read errors, and clears a missing restored ${pane} tab`, async () => {
+      const state = workspace.useStore.getState();
+      await state.openFile('A.md', true, 'main');
+      await state.openToSide('B.md');
+      host.read.mockRejectedValueOnce(new Error('read failed'));
+      await state.openFile('broken.md', true, pane);
+      const expected = pane === 'main' ? 'A.md' : 'B.md';
+      expect(workspace.useStore.getState().panes[pane].path).toBe(expected);
+      expect(workspace.useStore.getState().tabs.some(tab => tab.path === 'broken.md')).toBe(false);
+      const { ApiError } = await import('./api');
+      host.getUiState.mockResolvedValue({ tabs: [{ path: 'A.md' }, { path: 'B.md' }], activePath: 'A.md', splitPath: 'B.md' });
+      host.read.mockImplementation(path => path === expected
+        ? Promise.reject(new ApiError('missing', 404))
+        : Promise.resolve({ content: 'original', revision: 'base', vault: 'fixture' }));
+      await state.loadUiState();
+      const after = workspace.useStore.getState(), survivor = pane === 'main' ? 'B.md' : 'A.md';
+      expect(after.tabs.map(tab => tab.path)).toEqual([survivor]);
+      expect(after.panes.main.path).toBe(survivor);
+      expect(after.panes.split.path).toBeNull();
+    });
+  }
+
+  it('refuses stale loads in each pane and retains per-tab mode through layout persistence', async () => {
+    const state = workspace.useStore.getState();
+    await state.loadUiState();
+    await state.openFile('A.md', true, 'main');
+    await state.openToSide('B.md');
+    const pending = deferred<{ content: string; revision: string; vault: string }>(), started = deferred();
+    host.read.mockImplementation(path => {
+      if (path === 'slow.md') { started.resolve(); return pending.promise; }
+      return Promise.resolve({ content: 'original', revision: 'base', vault: 'fixture' });
+    });
+    const change = state.openFile('slow.md', true, 'split');
+    await started.promise;
+    await state.openFile('fast.md', true, 'split');
+    pending.resolve({ content: 'late', revision: 'base', vault: 'fixture' });
+    await change;
+    state.setViewMode('reading', 'main');
+    state.setViewMode('source', 'split');
+    expect(workspace.useStore.getState().panes.split.path).toBe('fast.md');
+    await workspace.flushWorkspaceState();
+    host.getUiState.mockResolvedValue(host.putUiState.mock.calls.at(-1)![0]);
+    await state.loadUiState();
+    expect(workspace.viewModeFor(workspace.useStore.getState(), 'main')).toBe('reading');
+    expect(workspace.viewModeFor(workspace.useStore.getState(), 'split')).toBe('source');
   });
 });

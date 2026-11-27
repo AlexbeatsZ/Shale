@@ -44,7 +44,7 @@ export default function App() {
   const rightOpen = useStore((s) => s.rightOpen);
   const mobileDrawer = useStore((s) => s.mobileDrawer);
   const setMobileDrawer = useStore((s) => s.setMobileDrawer);
-  const activePath = useStore((s) => s.activePath);
+  const activePath = useStore((s) => s.panes.main.path);
   const isMobile = useIsMobile();
   const setPalette = useStore((s) => s.setPalette);
   const save = useStore((s) => s.save);
@@ -287,7 +287,7 @@ export default function App() {
     };
     const beforeUnload = (event: BeforeUnloadEvent) => {
       const state = useStore.getState();
-      if (workspaceHasUnsavedChanges() || state.dirty ||
+      if (workspaceHasUnsavedChanges() ||
           documents.snapshots().some(snapshot => snapshot.dirty || snapshot.saving || snapshot.conflict || snapshot.locked)) {
         event.preventDefault();
         event.returnValue = '';

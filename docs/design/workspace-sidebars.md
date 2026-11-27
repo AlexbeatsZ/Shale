@@ -1,5 +1,13 @@
 # 双侧悬浮栏与视图归属
 
+## 文档与窗格（PRD 1.78）
+
+- 中央两栏各持有同一结构的 Pane，包括路径、标签身份及导航历史。打开、替换、交换、保存屏障与恢复使用相同的内容判定和异步请求代次。恢复暂存分屏时两个栏位同次提交。工作区仍沿用原有存储字段。
+- 中央分屏接受工作区支持的全部内容。连续文档按文档处理，文件树仍提供维护其物理目录和描述文件的动作。
+- 文档会话按文件身份共享正文、未保存状态、保存和撤销。中央与侧栏的重复标签按各自标签身份维护光标、选区、折叠、显示模式和工具栏。普通文本视图在第一次显示后保留，分页与连续阅读在隐藏时释放解析资源，连续阅读状态按标签记忆。
+- 三个标签栏共用选择、关闭、复制、分组、排序算法、文件菜单和文档未保存标记。同一栏关闭当前标签后优先选择紧邻的标签。侧栏固定入口与插件视图按其宿主管理。竖排拖动同样支持短停交换、停留插入和末尾放置。
+- 命令保留触发时的目标。普通文档使用当前页路径，连续文档使用当前真实来源。没有文件或文件夹目标时，当前文件夹批量命令不执行。左右聚焦也适用 PDF、课件、媒体与网页。
+
 ## 颜色分组与复制（PRD 1.67，2026-11-25）
 
 - Command 点击（非 Mac 为 Ctrl）依点击顺序多选，普通点击清空批选并激活页面。右键选中成员对整批设置颜色；右键未选中成员只作用于它。颜色为红/橙/黄/绿/蓝/紫/粉，左边界 3px 描线，另有独立的多选高亮；可从分组移出。颜色不折叠、不强制相邻。
@@ -100,9 +108,9 @@ App 保留左侧 Sidebar 外壳，只用 open 控制可见固定面板和动态�
 - 标签栏把 `activePath` 与 `splitPath` 两个标签合成 `.tab-split-group`(方向图标 + 两个同构 `.tab`)，副栏标签不在组外重复出现。组内点击只 `activateNavigation` 并聚焦编辑器。这取代了旧约定"主标签栏点击显式指定 main"。键盘左右按 `tabs` 顺序，通过 `data-tab-path` 定位焦点。
 - 分屏组是一个整体标签(用户 2026-11-01 纠正：不能把组外标签塞进聚焦栏)。`showTab` 调用中央 `openFile`，保存当前两栏并加载目标后，在同一次提交中暂存分屏和显示组外标签。选中暂存组任一成员时，保存当前页并准备组内两栏，再同时发布两个标签身份、路径和分屏方向，聚焦所选成员。快速切换器等直接调用 `openFile` 的入口使用同一恢复路径；等待、保存失败或过期请求期间维持当前布局。`parkedSplit` 只在 `splitPath === null` 时存在；`openToSide` 建立新分屏时丢弃旧暂存组(只支持一个分屏组)。`parkedSplit` 进入 PERSIST_KEYS，路径重命名/删除时随 remap 更新或解散。关闭暂存组成员 → 解散组；关闭当前标签后若下一个活动标签是暂存组成员则恢复整组。暂存组在标签栏以 `.is-parked`(细边框、无活动底色)渲染在 main 成员的位置。`workspace:next-tab` 等命令仍在聚焦栏内切换页面，不经过 showTab。
 - 中央新建标签页(+、`new-tab`)调用 `showTab(home://…)`：分屏时与点组外标签相同，暂存分屏组并单独显示新 Homepage，不替换组内任一栏(用户 2026-11-01 指出旧逻辑未改)。只有 `splitWithHomepage` 传 `openHomepage('split')` 在分屏内打开 Homepage。
-- `closePane(view)` 是关闭一栏的唯一入口：关闭副栏 = `closeSplit` 后移除其标签；关闭主栏 = 保存屏障后把副栏页面提升为 `activePath`，并把副栏 DOM 上的 `data-mode` 写入 workspace `viewMode`，保持存活页面的模式。同文件双栏关闭任一栏只退出分屏，不删标签。`closeTab`、正文 overlay ×、`workspace:close`、`WorkspaceLeaf.detach` 都走这条路径。`closeSplit` 只表示"取消分屏"，两页都保留为标签。
+- `closePane(view)` 是关闭一栏的唯一入口：关闭副栏 = `closeSplit` 后移除其标签；关闭主栏 = 保存屏障后把副栏页面提升为 `activePath`，并保留存活页面自身的视图模式和历史。同文件双栏关闭任一栏只退出分屏，不删标签。`closeTab`、正文 overlay ×、`workspace:close`、`WorkspaceLeaf.detach` 都走这条路径。`closeSplit` 只表示"取消分屏"，两页都保留为标签。
 - 标签右键"向右/向下分屏"、命令 `split`/`split-down` 调 `splitWithHomepage`：保留该页在主栏，新侧 `openHomepage('split')` 并聚焦。文件树/书签/链接的"在右侧打开"仍打开指定文件。
-- 拖拽：标签 `draggable`，数据类型 `TAB_DRAG_TYPE`，dragover 期间路径放在 `lib/tabDrag.ts`(dragover 读不到数据)。`.editor-area` 用 capture 阶段的 dragover/drop 并 stopPropagation，防止 CodeMirror 把标签当文本插入。分屏时落点为指针下的栏，交给 `replacePane(view, path)`：打开后在 `tabs` 中交换被拖标签与被替换页，使 [A,B],C 拖 C 到 B 得到 [A,C],B(用户 2026-11-01 指出旧行为让 C 原地不动、反直觉)；拖的是另一组员时交换两栏；副栏不接受 Graph/文件夹。分屏组中可见成员的标签也是落点(`.is-drop-target` 高亮)，行为相同。未分屏时右半/下半区域建立 right/down 分屏，其余替换主栏。指示层 `.pane-drop-indicator` 相对 `.workspace` 绝对定位，`.editor-area` 不加定位以免影响子元素。
+- 拖拽：标签 `draggable`，数据类型 `TAB_DRAG_TYPE`，dragover 期间路径放在 `lib/tabDrag.ts`(dragover 读不到数据)。`.editor-area` 用 capture 阶段的 dragover/drop 并 stopPropagation，防止 CodeMirror 把标签当文本插入。分屏时落点为指针下的栏，交给 `replacePane(view, path)`：打开后在 `tabs` 中交换被拖标签与被替换页，使 [A,B],C 拖 C 到 B 得到 [A,C],B(用户 2026-11-01 指出旧行为让 C 原地不动、反直觉)；拖的是另一组员时交换两栏；可打开的工作区内容可进入任一中央栏。分屏组中可见成员的标签也是落点(`.is-drop-target` 高亮)，行为相同。未分屏时右半/下半区域建立 right/down 分屏，其余替换主栏。指示层 `.pane-drop-indicator` 相对 `.workspace` 绝对定位，`.editor-area` 不加定位以免影响子元素。
 
 ## 标签排序与交换（2026-11-22）
 

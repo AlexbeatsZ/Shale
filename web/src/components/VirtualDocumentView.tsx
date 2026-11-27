@@ -1,21 +1,21 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { DocumentSession, fragmentRange, resolveTarget } from '@shale/markdown-core';
 import { EditorView, ViewPlugin, type ViewUpdate } from '@codemirror/view';
-import { useStore } from '../lib/store';
+import { useStore, viewModeFor } from '../lib/store';
 import { createVaultRenderContext } from '../lib/vaultRenderContext';
 import { isPagedSource, readingWindow, type VirtualDocument, type VirtualSource } from '../lib/virtualDocuments';
 import { pagedDocumentLabel } from '../lib/pdf/documentResource';
 import { VirtualReadingSession, registerVirtualReading, type ReadingTarget } from '../lib/virtualReading';
-import { PdfSession } from '../lib/pdf/session';
-import { registerPdfSession, usePdfSnapshot } from '../lib/pdf/react';
+import type { PdfSession } from '../lib/pdf/session';
+import { activatePdfSession, usePagedSession, usePdfSession, usePdfSnapshot } from '../lib/pdf/react';
+import { scrollToPdfPage, usePagedNavigation } from '../lib/pdf/navigation';
+import { PagedToolbar, usePagedToolbar } from './PagedToolbar';
 import { usePdfZoom } from '../lib/pdf/zoom';
 import { pdfMenuItems } from '../lib/pdf/menu';
 import { PageSlot } from './PdfViewer';
 import MarkdownView from './MarkdownView';
-import { useDocumentSession } from '../lib/useDocumentSession';
-import { registerEditor } from '../lib/activeEditor';
-import { bindPluginEditor } from '../lib/plugins';
-import { bindTimestampUpdates, manualSave } from '../lib/writing/format';
+import { MarkdownDocument } from './MarkdownDocument';
+import { useExistingDocumentSnapshot } from '../lib/useDocumentSession';
 import type { ViewMode } from '../lib/store';
 import { documents } from '../lib/documents';
 import { applyEdits, modify } from 'jsonc-parser';
@@ -81,7 +81,7 @@ function VirtualTextEditor({ path, reader, mode, target, layoutVersion = 0, conf
   path: string; reader: VirtualReadingSession; mode: ViewMode; target?: ReadingTarget; layoutVersion?: number; configuration?: boolean;
   layoutScroll?: EditorLayoutScroll;
 }) {
-  const { session, snapshot, error } = useDocumentSession(path, !configuration);
+  const snapshot = useExistingDocumentSnapshot(path);
   const [editor, setEditor] = useState<EditorView | null>(null);
   const scrollLifecycle = useRef(layoutScroll); scrollLifecycle.current = layoutScroll;
   const layoutExtensions = useMemo(() => configuration ? [] : [ViewPlugin.fromClass(class {
@@ -109,85 +109,49 @@ function VirtualTextEditor({ path, reader, mode, target, layoutVersion = 0, conf
     docViewUpdate(view: EditorView) { this.measure(view); }
     destroy() { this.disposed = true; }
   })], [configuration]);
-  const context = useMemo(() => ({ ...createVaultRenderContext(path, {
-    bindEditor: registerEditor,
-    files: () => useStore.getState().filePaths, openMenu: menu => useStore.getState().openContextMenu(menu),
-    reportError: message => useStore.getState().notify(message),
-    openLink: (link, source, intent) => { void useStore.getState().openWikilink(link, source, intent); },
-  }), navigationId: reader.viewId,
-    renameTitle: !configuration && session && !snapshot.locked ? renameSource(reader, session.id) : undefined,
-  }), [path, reader, configuration, session, snapshot.locked]);
   useEffect(() => {
-    if (!editor || !session) return;
-    const stop = registerEditor(editor, { undo: () => session.undo(), redo: () => session.redo() });
-    const stopPlugins = configuration ? undefined : bindPluginEditor(editor, path);
-    return () => { stopPlugins?.(); stop(); };
-  }, [editor, session, path, configuration]);
-  useEffect(() => session && !configuration && mode !== 'reading' ? bindTimestampUpdates(session, message => useStore.getState().notify(message)) : undefined,
-    [session, configuration, mode]);
-  useEffect(() => {
+    const session = documents.get(path);
     if (!target || !session || !editor) return;
     const range = target.fragment ? fragmentRange(session.analysis, target.fragment) : undefined;
     const from = range?.from ?? (target.line !== undefined ? editor.state.doc.line(Math.min(editor.state.doc.lines, Math.max(1, target.line + 1))).from : undefined);
     if (from !== undefined) editor.dispatch({ selection: { anchor: from }, effects: EditorView.scrollIntoView(from, { y: 'start' }) });
-  }, [target, session, editor, snapshot.version, layoutVersion]);
-  if (error) return <p role="alert">{error.message}</p>;
-  if (!session) return <p role="status" data-virtual-loading>正在载入…</p>;
-  return <div className={configuration ? 'virtual-configuration-editor' : 'virtual-text-source'} data-virtual-loading={editor ? undefined : true}
-    onFocusCapture={() => reader.activateSource(path)} onPointerDownCapture={() => reader.activateSource(path)}>
-    {snapshot.conflict && <p role="alert">此文件存在外部修改冲突，请处理后保存。</p>}
-    <MarkdownView snapshot={snapshot} documentSession={session} analysis={session.analysis} mode={mode}
-      layout={configuration ? 'page' : 'embedded'} showTitle={!configuration} context={context} extensions={layoutExtensions}
-      onChange={(changes, version, origin, model, history) => { session.edit(version, changes, origin, history); session.acceptAnalysis(model); return session.snapshot; }}
-      onUndo={() => { session.undo(); return session.snapshot; }} onRedo={() => { session.redo(); return session.snapshot; }}
-      onSave={() => { void (configuration ? session.save() : manualSave(path)).catch(cause => useStore.getState().notify(String(cause))); }}
-      onModeChange={configuration ? undefined : reader.setMode} onReady={setEditor} />
+  }, [target, path, editor, snapshot.version, layoutVersion]);
+  const setMode = (next: ViewMode) => useStore.getState().setViewMode(next, reader.viewId);
+  const rename = useMemo(() => configuration ? undefined : renameSource(reader, path), [configuration, reader, path]);
+  return <div onFocusCapture={() => reader.activateSource(path)} onPointerDownCapture={() => reader.activateSource(path)}>
+    <MarkdownDocument key={path} path={path} navigationId={reader.viewId} mode={mode} changeMode={setMode}
+      configuration={configuration} transient={!configuration} renameTitle={rename} extensions={layoutExtensions} onReady={setEditor} />
   </div>;
 }
 
-function scrollToPdfPage(host: HTMLElement | null, page: number) {
-  const slot = host?.querySelector<HTMLElement>(`[data-page-number="${page}"]`);
-  slot?.scrollIntoView({ block: 'start' });
-  return slot;
+interface PdfChapterProps {
+  source: VirtualSource; reader: VirtualReadingSession; root: RefObject<HTMLDivElement>; width: number;
+  target?: ReadingTarget; layoutVersion: number; onLayoutScroll: (delta: number) => void;
+}
+function PdfChapter(props: PdfChapterProps) {
+  const { source, reader } = props;
+  const session = usePagedSession(source.path, 'virtual:' + reader.viewId);
+  return session ? <PdfChapterPages {...props} session={session} />
+    : <p role="status" data-virtual-loading>正在打开 {pagedDocumentLabel(source.path)}…</p>;
 }
 
-function PdfChapter({ source, reader, root, width, target, layoutVersion, onLayoutScroll }: { source: VirtualSource; reader: VirtualReadingSession;
-  root: RefObject<HTMLDivElement>; width: number; target?: ReadingTarget; layoutVersion: number; onLayoutScroll: (delta: number) => void }) {
-  const session = useMemo(() => new PdfSession(source.path, 'virtual:' + reader.viewId), [source.path, reader.viewId]);
+function PdfChapterPages({ source, reader, root, width, target, layoutVersion, onLayoutScroll, session }: PdfChapterProps & { session: PdfSession }) {
   const state = usePdfSnapshot(session);
   const host = useRef<HTMLDivElement>(null);
-  useEffect(() => registerPdfSession(session), [session]);
-  useEffect(() => () => session.destroy(), [session]);
+  usePagedNavigation(session, root, host, page => reader.go({ path: source.path, page }));
   useEffect(() => { if (state.status === 'ready') reader.outline(source.path, state.outline); }, [reader, source.path, state.status, state.outline]);
   useEffect(() => {
     if (state.status !== 'ready' || !target?.page) return;
     const frame = requestAnimationFrame(() => {
-      scrollToPdfPage(host.current, target.page!);
+      scrollToPdfPage(root.current, host.current, target.page!, 0);
       session.observePage(target.page!);
     });
     return () => cancelAnimationFrame(frame);
-  }, [target, state.status, session, layoutVersion]);
-  useEffect(() => {
-    const element = root.current;
-    if (!element) return;
-    let frame = 0;
-    const observe = () => {
-      cancelAnimationFrame(frame); frame = requestAnimationFrame(() => {
-        const slots = host.current?.querySelectorAll<HTMLElement>('[data-page-number]');
-        if (!slots?.length) return;
-        const bounds = host.current!.getBoundingClientRect(), viewport = element.getBoundingClientRect();
-        if (bounds.bottom < viewport.top || bounds.top > viewport.bottom) return;
-        const top = element.getBoundingClientRect().top + 32;
-        let low = 0, high = slots.length - 1;
-        while (low < high) { const middle = Math.ceil((low + high) / 2); if (slots[middle].getBoundingClientRect().top <= top) low = middle; else high = middle - 1; }
-        session.observePage(Number(slots[low].dataset.pageNumber));
-      });
-    };
-    element.addEventListener('scroll', observe, { passive: true });
-    return () => { element.removeEventListener('scroll', observe); cancelAnimationFrame(frame); };
-  }, [root, session, state.pageCount]);
+  }, [target, root, state.status, session, layoutVersion]);
   if (state.status === 'error') return <p role="alert">{state.error}</p>;
-  return <div ref={host} className="virtual-pdf-pages" onContextMenu={event => {
+  return <div ref={host} className="virtual-pdf-pages" onPointerDown={() => {
+    reader.activateSource(source.path); activatePdfSession(session);
+  }} onContextMenu={event => {
     event.preventDefault(); event.stopPropagation();
     useStore.getState().openContextMenu({ x: event.clientX, y: event.clientY, items: pdfMenuItems(session) });
   }}>
@@ -337,7 +301,7 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
       if (element && current && slot) {
         const target = reader.getSnapshot().target;
         const page = navigationIndex.current === current.index && target?.path === stream.files[current.index]?.path && target.page;
-        if (page && scrollToPdfPage(slot, page)) {
+        if (page && scrollToPdfPage(element, slot, page, 0)) {
           current.offset = element.getBoundingClientRect().top - slot.getBoundingClientRect().top;
         } else element.scrollTop += slot.getBoundingClientRect().top - element.getBoundingClientRect().top + current.offset;
         observedTop.current = element.scrollTop;
@@ -493,14 +457,19 @@ function ContinuousReader({ reader }: { reader: VirtualReadingSession }) {
   </div>;
 }
 
-export default function VirtualDocumentView({ document, viewId = 'main' }: { document: VirtualDocument; viewId?: string }) {
-  const reader = useMemo(() => new VirtualReadingSession(document, viewId, useStore.getState().viewMode), [document.path, viewId]);
+export default function VirtualDocumentView({ document, viewId = 'main', tabId }: { document: VirtualDocument; viewId?: string; tabId?: string }) {
+  const mode = useStore(state => viewModeFor(state, viewId, tabId));
+  const reader = useMemo(() => new VirtualReadingSession(document, viewId, viewModeFor(useStore.getState(), viewId, tabId), tabId), [document.path, viewId, tabId]);
+  useLayoutEffect(() => reader.setMode(mode), [reader, mode]);
   useLayoutEffect(() => reader.replaceDocument(document), [reader, document]);
   useEffect(() => registerVirtualReading(reader), [reader]);
   const snapshot = useSyncExternalStore(reader.subscribe, reader.getSnapshot);
   const stream = reader.document.streams.find(stream => stream.title === snapshot.stream)!;
+  const pdf = usePdfSession(snapshot.configuration ? null : snapshot.activeSource ?? null, 'virtual:' + viewId);
+  const toolbar = usePagedToolbar(viewId, !!pdf, tabId);
   const sourceIdentity = stream.files.map(file => file.path).join('\0');
-  return <section className="virtual-document-view" data-virtual-document={document.path}>
+  return <section className="virtual-document-view" data-virtual-document={document.path} onKeyDown={toolbar.onFind}>
+    {pdf && <PagedToolbar key={pdf.path} session={pdf} viewId={viewId} zoom={snapshot.pdfZoom} setZoom={reader.setPdfZoom} {...toolbar} />}
     {snapshot.configuration
       ? <VirtualTextEditor path={document.path + '/.virtual-document.json'} reader={reader} mode="source" configuration />
       : <ContinuousReader key={snapshot.stream + sourceIdentity} reader={reader} />}

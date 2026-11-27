@@ -4,7 +4,7 @@ import { activateNavigation } from '../lib/activeEditor';
 import { sharedApp, subscribePlugins, pluginRevision } from '../lib/plugins';
 import type { SidebarTab } from '../lib/sidebarTabs';
 import { openFragment } from '../lib/fragmentNavigation';
-import WorkspaceFile from './WorkspaceFile';
+import { WorkspaceDocumentTab } from './WorkspaceFile';
 import GraphView from './GraphView';
 import Icon from './Icon';
 import BookmarksPanel from './BookmarksPanel';
@@ -12,15 +12,12 @@ import WorkspaceLauncher from './WorkspaceLauncher';
 import WebViewerTab from './WebViewerTab';
 
 const SidebarFile = memo(function SidebarFile({ tab, active }: { tab: SidebarTab; active: boolean }) {
-  const opened = useRef(false);
-  const editor = useRef<import('@codemirror/view').EditorView | null>(null);
-  if (active) opened.current = true;
-  return <div className="sidebar-note" hidden={!active} data-sidebar-tab={tab.id}
-    onPointerDownCapture={() => activateNavigation('sidebar:' + tab.id)} onFocusCapture={() => activateNavigation('sidebar:' + tab.id)}>
-    {opened.current && <WorkspaceFile path={tab.state.file} navigationId={'sidebar:' + tab.id} onReady={view => {
-      editor.current = view;
-      if (view && tab.state.fragment) void openFragment(tab.state.file, tab.state.fragment, view, { viewId: 'sidebar:' + tab.id });
-    }} />}
+  const navigationId = 'sidebar:' + tab.id;
+  return <div className="sidebar-note" hidden={!active} data-sidebar-tab={tab.id} tabIndex={-1}
+    onPointerDownCapture={() => activateNavigation(navigationId)} onFocusCapture={() => activateNavigation(navigationId)}>
+    <WorkspaceDocumentTab path={tab.state.file} navigationId={navigationId} tabId={navigationId} active={active} onReady={view => {
+      if (view && tab.state.fragment) void openFragment(tab.state.file, tab.state.fragment, view, { viewId: navigationId });
+    }} />
   </div>;
 });
 
@@ -42,7 +39,7 @@ const SidebarView = memo(function SidebarView({ tab, active }: { tab: SidebarTab
     return () => { cancelled = true; };
   }, [active, state, tab.type, revision]);
   useEffect(() => () => { void leaf.current?.closeView(); }, []);
-  return <section className="sidebar-view" hidden={!active} data-sidebar-tab={tab.id}
+  return <section className="sidebar-view" hidden={!active} data-sidebar-tab={tab.id} tabIndex={-1}
     onPointerDownCapture={() => activateNavigation('sidebar:' + tab.id)} onFocusCapture={() => activateNavigation('sidebar:' + tab.id)}>
     {error && <p className="editor-error" role="alert">{error}</p>}<div className="sidebar-view-host" ref={host} />
   </section>;
@@ -58,10 +55,10 @@ export default function SidebarTabPanels({ side, open }: { side: 'left' | 'right
   return <>
     {/* Notes and web pages carry their own title/toolbar; the rail closes them. */}
     {tab && !['webviewer', 'markdown', 'file'].includes(tab.type) && <div className="sidebar-tab-header"><Icon name={tab.icon} size={16} /><span>{tab.title}</span>
-      <button className="tool-btn" title="关闭标签页" aria-label={side === 'left' ? '关闭左侧标签页' : '关闭右侧标签页'} onClick={() => void useStore.getState().closeRightTab(tab.id)}><Icon name="x" size={16} /></button></div>}
-    {open && tab?.type === 'empty' && <WorkspaceLauncher key={tab.id} viewId={'sidebar:' + tab.id} />}
+      <button className="tool-btn" title="关闭标签页" aria-label={side === 'left' ? '关闭左侧标签页' : '关闭右侧标签页'} onClick={() => void useStore.getState().closeTab('sidebar:' + tab.id)}><Icon name="x" size={16} /></button></div>}
+    {open && tab?.type === 'empty' && <div data-sidebar-tab={tab.id} tabIndex={-1}><WorkspaceLauncher key={tab.id} viewId={'sidebar:' + tab.id} /></div>}
     {tabs.filter(tab => tab.type === 'markdown' || tab.type === 'file').map(tab => <SidebarFile key={tab.id} tab={tab} active={open && tab.id === activeId} />)}
-    {open && tab?.type === 'graph' && <div className="sidebar-view" data-sidebar-tab={tab.id}
+    {open && tab?.type === 'graph' && <div className="sidebar-view" data-sidebar-tab={tab.id} tabIndex={-1}
       onPointerDownCapture={() => activateNavigation('sidebar:' + tab.id)} onFocusCapture={() => activateNavigation('sidebar:' + tab.id)}>
       <GraphView navigationId={'sidebar:' + tab.id} />
     </div>}

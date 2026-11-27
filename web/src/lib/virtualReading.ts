@@ -27,8 +27,8 @@ export class VirtualReadingSession {
   private state: VirtualReadingSnapshot;
   private pdfZooms = new Map<string, number>();
   readonly progressKey: string;
-  constructor(public document: VirtualDocument, readonly viewId: string, mode: ViewMode = 'live') {
-    this.progressKey = key(document.path, viewId);
+  constructor(public document: VirtualDocument, readonly viewId: string, mode: ViewMode = 'live', tabId = viewId) {
+    this.progressKey = key(document.path, tabId);
     const selected = selectedStreams.get(this.progressKey);
     this.state = { stream: document.streams.find(stream => stream.title === selected)?.title ?? document.streams[0].title,
       serial: 0, pdfOutlines: {}, pdfZoom: 1, configuration: false, mode };

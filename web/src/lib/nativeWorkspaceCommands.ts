@@ -4,37 +4,33 @@ import { documents } from './documents';
 import { printDocument } from './printDocument';
 import { createVaultRenderContext } from './vaultRenderContext';
 import { requestHotkeySettings } from './search';
-import { getPdfSession } from './pdf/react';
-import { pdfFilterCommand } from './pdf/commands';
+import { currentPdf, pdfFilterCommand } from './pdf/commands';
 import { contentReferenceCommands } from './contentReferenceCommands';
 import { addCurrentMcpContext } from './review/client';
 import { openWebViewer } from './openWebViewer';
 import { hasWebViewer } from './platform';
 import { userscriptBridge } from './userscripts/client';
 import { userscriptCommands } from './userscripts/commands';
-import { paneTabKey, tabKey } from './tabIdentity';
+import { viewKey } from './store';
+import { tabStrip, tabStripFor } from './workspaceTabs';
+import { isPaneId, otherPane } from './workspacePane';
+import { currentWorkspaceTarget, focusAdjacentWorkspaceView } from './workspaceTarget';
+import { paneTabKey } from './tabIdentity';
 
 const activePath = () => useStore.getState().currentPath();
 function tabTargets() {
-  const state = useStore.getState(), id = state.currentViewId();
-  if (id.startsWith('sidebar:')) {
-    const active = state.rightTabs.find(tab => 'sidebar:' + tab.id === id);
-    const tabs = state.rightTabs.filter(tab => (tab.side ?? 'right') === (active?.side ?? 'right'));
-    return { length: tabs.length, index: tabs.indexOf(active!), select: (index: number) => { const tab = tabs.at(index); if (tab) state.selectRightTab(tab.id); } };
-  }
-  return { length: state.tabs.length, index: state.tabs.findIndex(tab => tabKey(tab) === paneTabKey(state, id === 'split' ? 'split' : 'main')),
-    select: (index: number) => { const tab = state.tabs.at(index); if (tab) return state.openFile(tab.path, true, id, { preserveHomepage: true, tabId: tabKey(tab) }); } };
+  const state = useStore.getState(), viewId = state.currentViewId(), key = viewKey(state, viewId);
+  const strip = tabStrip(state, tabStripFor(state, key ?? ''));
+  return { length: strip.length, index: strip.findIndex(entry => entry.key === key), select: (index: number) => {
+    const entry = strip.at(index);
+    if (!entry) return;
+    if (!isPaneId(viewId) || !state.panes.split.path || paneTabKey(state, otherPane(viewId)) === entry.key) return state.showTab(entry.key);
+    if (entry.path) return state.openFile(entry.path, true, viewId, { preserveHomepage: true, tabId: entry.key });
+  } };
 }
 const selectTab = (index: number) => tabTargets().select(index);
 function moveTab(direction: number) { const tabs = tabTargets(); if (tabs.length) return tabs.select((tabs.index + direction + tabs.length) % tabs.length); }
-async function focusPane(direction: number) {
-  const { sharedApp } = await import('./plugins');
-  const leaves = sharedApp.workspace.getLeavesOfType('markdown').filter(leaf => {
-    const element = leaf.view.containerEl; return element.isConnected && !element.closest('[hidden], [aria-hidden="true"]');
-  }).sort((a, b) => a.view.containerEl.getBoundingClientRect().left - b.view.containerEl.getBoundingClientRect().left || a.view.containerEl.getBoundingClientRect().top - b.view.containerEl.getBoundingClientRect().top);
-  const current = leaves.indexOf(sharedApp.workspace.activeLeaf), target = leaves[(current + direction + leaves.length) % leaves.length];
-  if (target) { const view = target.view as import('./shale/workspace').MarkdownView; view.editor?.focus(); }
-}
+
 export const nativeWorkspaceCommands: NativeCommand[] = [
   pdfFilterCommand,
   ...contentReferenceCommands,
@@ -45,12 +41,9 @@ export const nativeWorkspaceCommands: NativeCommand[] = [
   { id: 'new-tab', title: '新建标签页', hotkeys: [{ modifiers: ['Ctrl', 'Shift'], key: 'N' }], run: () => useStore.getState().openHomepage() },
   ...(hasWebViewer() ? [{ id: 'webviewer:open', title: '打开网页浏览器', run: () => openWebViewer() }] : []),
   ...(userscriptBridge() ? userscriptCommands : []),
-  { id: 'workspace:close', title: '关闭当前标签页', hotkeys: [{ modifiers: ['Ctrl'], key: 'W' }], run: async () => {
-    const { sharedApp } = await import('./plugins');
-    const leaf = sharedApp.workspace.activeLeaf, state = useStore.getState();
-    if (leaf.slot === 'right' || leaf.slot === 'custom') leaf.detach();
-    else if (leaf.slot === 'split') state.closePane('split');
-    else if (state.activePath) state.closePane('main');
+  { id: 'workspace:close', title: '关闭当前标签页', hotkeys: [{ modifiers: ['Ctrl'], key: 'W' }], run: () => {
+    const state = useStore.getState(), viewId = state.currentViewId();
+    return isPaneId(viewId) ? state.closePane(viewId) : state.closeTab(viewId);
   } },
   { id: 'workspace:next-tab', title: '转到下一个标签页', run: () => moveTab(1) },
   { id: 'workspace:previous-tab', title: '转到上一个标签页', run: () => moveTab(-1) },
@@ -63,7 +56,7 @@ export const nativeWorkspaceCommands: NativeCommand[] = [
   { id: 'app:go-forward', title: '前进', run: () => useStore.getState().goForward() },
   { id: 'app:toggle-left-sidebar', title: '显示或隐藏左侧栏', hotkeys: [{ modifiers: ['Ctrl'], key: '\\' }], run: () => useStore.getState().toggleLeft() },
   { id: 'app:toggle-right-sidebar', title: '显示或隐藏右侧栏', run: () => useStore.getState().toggleRight() },
-  { id: 'pdf:toggle-toolbar', title: '显示或隐藏 PDF / PPT 工具栏', available: () => { const state = useStore.getState(); return !!getPdfSession(state.currentPath(), state.currentViewId()); }, run: () => useStore.getState().togglePdfToolbar() },
+  { id: 'pdf:toggle-toolbar', title: '显示或隐藏 PDF / PPT 工具栏', available: () => !!currentPdf(), run: () => useStore.getState().togglePdfToolbar() },
   { id: 'file-explorer', title: '打开文件列表', run: () => useStore.getState().setLeftPanel('files') },
   { id: 'tags', title: '打开标签面板', run: () => useStore.getState().setRightPanel('tags') },
   { id: 'outline', title: '打开大纲', run: () => useStore.getState().setRightPanel('outline') },
@@ -71,11 +64,11 @@ export const nativeWorkspaceCommands: NativeCommand[] = [
   { id: 'outgoing', title: '打开出链面板', run: () => useStore.getState().setRightPanel('outgoing') },
   { id: 'mcp:open-panel', title: '打开 MCP 面板', run: () => useStore.getState().setRightPanel('mcp') },
   { id: 'mcp:add-context', title: '添加选中内容或当前页面到 MCP 上下文', hotkeys: [{ modifiers: ['Ctrl', 'Shift'], key: 'M' }], run: () => addCurrentMcpContext() },
-  { id: 'editor:focus-right', title: '聚焦右侧窗格', run: () => focusPane(1) },
-  { id: 'editor:focus-left', title: '聚焦左侧窗格', run: () => focusPane(-1) },
+  { id: 'editor:focus-right', title: '聚焦右侧窗格', run: () => focusAdjacentWorkspaceView(1) },
+  { id: 'editor:focus-left', title: '聚焦左侧窗格', run: () => focusAdjacentWorkspaceView(-1) },
   { id: 'workspace:edit-file-title', title: '重命名当前文件', run: () => { const path = activePath(); if (path) { useStore.getState().revealInTree(path); useStore.getState().setRenamingPath(path); } } },
   { id: 'workspace:export-pdf', title: '导出当前文档为 PDF…', available: context => /\.(?:md|markdown)$/i.test(context.path), run: async () => {
-    const path = activePath(); if (!path) return;
+    const { path } = currentWorkspaceTarget(); if (!path) return;
     const snapshot = documents.get(path)?.snapshot; if (!snapshot) return;
     const context = createVaultRenderContext(path, { openLink: () => {}, openMenu: () => {}, files: () => [], reportError: useStore.getState().notify });
     await printDocument(snapshot, context);

@@ -118,8 +118,8 @@ test('restoring a split waits for both documents and publishes both panes togeth
     await store.getState().showTab('c.md');
     const changes: unknown[] = [];
     store.subscribe((state: any, previous: any) => {
-      if (state.activePath !== previous.activePath || state.splitPath !== previous.splitPath) {
-        changes.push([state.activePath, state.splitPath, state.splitDirection]);
+      if (state.panes.main.path !== previous.panes.main.path || state.panes.split.path !== previous.panes.split.path) {
+        changes.push([state.panes.main.path, state.panes.split.path, state.splitDirection]);
       }
     });
     const open = documents.open.bind(documents);
@@ -193,7 +193,7 @@ test('real configured group commands uses fixed join order, wraps and leaves the
   await expect(main.locator('.cm-content')).toContainText('# C');
   await groupStep(page, 'Z');
   await expect(main.locator('.cm-content')).toContainText('# B');
-  expect(await page.evaluate(() => (window as any).groupFixture.store.getState().splitPath)).toBe('home://side');
+  expect(await page.evaluate(() => (window as any).groupFixture.store.getState().panes.split.path)).toBe('home://side');
 });
 
 test('focused split pane brings its neighbor forward even when that neighbor is already in the main pane', async ({ page }) => {
@@ -212,8 +212,8 @@ test('duplicate note menu creates a neighboring view, shares edits in split, res
   const original = page.locator('.tab[data-tab-id="a.md"]');
   await original.click({ button: 'right' }); await page.getByRole('menuitem', { name: '复制标签页', exact: true }).click();
   await expect(page.locator('.tab[data-tab-path="a.md"]')).toHaveCount(2);
-  await expect.poll(() => page.evaluate(() => (window as any).groupFixture.store.getState().activeTabId)).toMatch(/^tab:/);
-  const copy = await page.evaluate(() => (window as any).groupFixture.store.getState().activeTabId);
+  await expect.poll(() => page.evaluate(() => (window as any).groupFixture.store.getState().panes.main.tabId)).toMatch(/^tab:/);
+  const copy = await page.evaluate(() => (window as any).groupFixture.store.getState().panes.main.tabId);
   expect(copy).toMatch(/^tab:/);
   expect(await page.locator('.tab').evaluateAll(tabs=>tabs.map(tab=>tab.getAttribute('data-tab-id')))).toEqual(['a.md', copy, 'b.md', 'c.md']);
   await page.evaluate(async copy => { const s = (window as any).groupFixture.store.getState(); await s.showTab('a.md'); await s.openToSide(copy); }, copy);
@@ -221,9 +221,9 @@ test('duplicate note menu creates a neighboring view, shares edits in split, res
   await expect(side).toContainText('Draft A');
   await main.click(); await page.keyboard.press(process.platform === 'darwin' ? 'Meta+End' : 'Control+End'); await page.keyboard.type(' shared');
   await expect(side).toContainText('shared');
-  await page.evaluate(async () => { const f = (window as any).groupFixture; f.store.getState().setTabGroup([f.store.getState().splitTabId], 'purple'); await f.flushWorkspaceState(); await f.store.getState().loadUiState(); });
+  await page.evaluate(async () => { const f = (window as any).groupFixture; f.store.getState().setTabGroup([f.store.getState().panes.split.tabId], 'purple'); await f.flushWorkspaceState(); await f.store.getState().loadUiState(); });
   await expect(page.locator(`.tab[data-tab-id="${copy}"]`)).toHaveAttribute('data-tab-group','purple');
-  expect(await page.evaluate(() => (window as any).groupFixture.store.getState().splitTabId)).toBe(copy);
+  expect(await page.evaluate(() => (window as any).groupFixture.store.getState().panes.split.tabId)).toBe(copy);
   await page.locator(`.tab[data-tab-id="${copy}"] .close`).click();
   await expect(page.locator('.tab[data-tab-path="a.md"]')).toHaveCount(1);
   await expect(main).toContainText('shared');

@@ -272,7 +272,7 @@ export default function SearchPanel() {
         useStore.getState().openContextMenu({ x: event.clientX, y: event.clientY,
           items: extendFileMenu(nativeBatchTagMenuItems({ kind: 'files', paths }), paths,
             { kind: 'file', source: 'search-results', paths, fileTypes: paths.map(path => path.split('.').at(-1) ?? ''),
-              activePath: useStore.getState().activePath ?? undefined, modifiers: menuModifiers(event.nativeEvent) }) });
+              activePath: useStore.getState().panes.main.path ?? undefined, modifiers: menuModifiers(event.nativeEvent) }) });
       }}>
         {shown.slice(0, visible).map((h) => {
           const m = matches.get(h.path);

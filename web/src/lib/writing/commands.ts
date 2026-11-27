@@ -1,25 +1,25 @@
 import { host } from '../host';
 import { getActiveEditor } from '../activeEditor';
 import { useStore } from '../store';
-import { documents } from '../documents';
+import { currentWorkspaceTarget, workspaceSource } from '../workspaceTarget';
+import { paneIds } from '../workspacePane';
 import { ensureWriting, writingSettings, writingCMSettings, updateWriting } from './config';
 import { getContextPlugin } from './latex/editor_context/context';
 import { writingOperation } from './editing';
 
 async function formatCurrent() {
-  const view = getActiveEditor();
-  if (view?.state.readOnly) return;
-  const path = useStore.getState().activePath;
-  if (!path) return;
+  const { editor, path } = currentWorkspaceTarget();
+  if (!path || editor?.state.readOnly) return;
   await ensureWriting();
   const { formatPath, runAfterCommands } = await import('./format');
   await formatPath(path, true);
   await runAfterCommands();
 }
 async function formatBatch(folder: boolean) {
+  const parent = folder ? currentWorkspaceTarget().folder : '';
+  if (parent === null) return;
   await ensureWriting();
   const s = useStore.getState();
-  const parent = folder ? (s.activePath?.split('/').slice(0, -1).join('/') ?? '') : '';
   const { formatPath, ignoresFormatting } = await import('./format');
   let count = 0;
   const errors: string[] = [];
@@ -95,7 +95,7 @@ export const writingCommands = [
     id: 'format-ignore-file',
     title: '格式化：忽略当前文件',
     run: async () => {
-      const path = useStore.getState().activePath;
+      const { path } = currentWorkspaceTarget();
       if (!path) return;
       await ensureWriting();
       const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -113,7 +113,7 @@ export const writingCommands = [
     id: 'format-ignore-folder',
     title: '格式化：忽略当前文件夹',
     run: async () => {
-      const path = useStore.getState().activePath?.split('/').slice(0, -1).join('/');
+      const { folder: path } = currentWorkspaceTarget();
       if (!path) return;
       await ensureWriting();
       await updateWriting({
@@ -127,16 +127,15 @@ export const writingCommands = [
     id: 'paste-plain',
     title: '粘贴为纯文本并整理',
     run: async () => {
-      const view = getActiveEditor();
-      if (!view || view.state.readOnly) return;
+      const { editor: view, path } = currentWorkspaceTarget();
+      if (!view || !path || view.state.readOnly) return;
       const state = view.state;
-      const text = await host.readClipboardText();
-      if (view.state !== state) throw new Error('粘贴前选区已变化');
-      const { formatPaste } = await import('./format');
+      const [text, { formatPaste }] = await Promise.all([host.readClipboardText(), import('./format')]);
+      if (view.state !== state || currentWorkspaceTarget().editor !== view) throw new Error('粘贴前选区已变化');
       const s = state.selection.main;
       const result = formatPaste(
         text,
-        useStore.getState().activePath ?? '',
+        path,
         state.doc.lineAt(s.from).text,
         state.sliceDoc(s.from, s.to),
       );
@@ -165,19 +164,29 @@ export const writingCommands = [
 export function bindWritingNavigation() {
   let queue: Promise<unknown> = Promise.resolve();
   return useStore.subscribe((next, previous) => {
-    if (
-      next.activePath === previous.activePath ||
-      !previous.activePath ||
-      !writingSettings().linter.lintOnFileChange
-    )
-      return;
-    const path = previous.activePath;
-    queue = queue
-      .catch(() => {})
-      .then(async () => {
-        const { formatPath } = await import('./format');
-        await formatPath(path, true);
-      })
-      .catch((error) => useStore.getState().notify(String(error)));
+    if (!writingSettings().linter.lintOnFileChange) return;
+    const leaving = new Set<string>();
+    for (const id of paneIds) {
+      const path = previous.panes[id].path;
+      if (path === next.panes[id].path || paneIds.some(other => next.panes[other].path === path)) continue;
+      const source = workspaceSource(path, id);
+      if (source) leaving.add(source);
+    }
+    for (const [active, nextActive] of [[previous.leftActiveId, next.leftActiveId], [previous.rightActiveId, next.rightActiveId]]) {
+      const path = previous.rightTabs.find(tab => tab.id === active)?.state.file ?? null;
+      const nextPath = next.rightTabs.find(tab => tab.id === nextActive)?.state.file ?? null;
+      if (path === nextPath || !active) continue;
+      const source = workspaceSource(path, 'sidebar:' + active);
+      if (source) leaving.add(source);
+    }
+    if (!leaving.size) return;
+    queue = queue.then(async () => {
+      const { formatPath, ignoresFormatting } = await import('./format');
+      for (const path of leaving) {
+        if (ignoresFormatting(path)) continue;
+        try { await formatPath(path, true); }
+        catch (error) { useStore.getState().notify(String(error)); }
+      }
+    }).catch(error => useStore.getState().notify(String(error)));
   });
 }

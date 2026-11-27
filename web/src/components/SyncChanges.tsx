@@ -8,7 +8,7 @@ const letters = { add: 'A', delete: 'D', modify: 'M' } as const;
 /** VS Code style "merge changes" group at the top of the file list. */
 export default function SyncChanges() {
   const files = [...useSyncConflicts().values()];
-  const activePath = useStore(state => state.activePath);
+  const activePath = useStore(state => state.panes.main.path);
   const [busy, setBusy] = useState(false);
   if (!files.length) return null;
   const all = async (choice: 'local' | 'remote') => {

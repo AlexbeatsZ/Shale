@@ -12,7 +12,7 @@ export async function openWebViewer(viewId = useStore.getState().currentViewId()
   const path = `webviewer://${crypto.randomUUID()}`;
   if (viewId === 'split' && !popup) {
     await state.openToSide(path);
-  } else if (popup || !isHomepagePath(state.activePath)) {
+  } else if (popup || !isHomepagePath(state.panes.main.path)) {
     await state.showTab(path);
   } else {
     await state.openFile(path, true, 'main');

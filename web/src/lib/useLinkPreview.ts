@@ -10,7 +10,7 @@ export function useLinkPreview(sourcePath?: string | null) {
   useEffect(() => () => popover.close(), [popover, sourcePath]);
   return (target: string) => ({
     onMouseEnter: (event: React.MouseEvent<HTMLElement>) => {
-      const state = useStore.getState(), path = sourcePath ?? state.activePath ?? '';
+      const state = useStore.getState(), path = sourcePath ?? state.panes.main.path ?? '';
       const context = createVaultRenderContext(path, { openLink: (target, source, intent) => { void state.openWikilink(target, source, intent); },
         openMenu: state.openContextMenu, files: () => state.filePaths, reportError: state.notify });
       const model = documents.get(path)?.analysis;

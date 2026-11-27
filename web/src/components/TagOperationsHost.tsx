@@ -64,7 +64,7 @@ function TagOperationDialog({ request }: { request: TagOperationRequest }) {
         kind === 'merge' ? { kind, tags: inputTags, to, descendants } : kind === 'remove' ? { kind, tags: inputTags, descendants } : { kind, tags: inputTags });
       const snapshots = documents.snapshots().filter((s) => /\.(md|markdown)$/i.test(s.id));
       const state = useStore.getState();
-      const visible = new Set([...state.tabs.map((tab) => tab.path), state.activePath, state.splitPath]);
+      const visible = new Set([...state.tabs.map((tab) => tab.path), state.panes.main.path, state.panes.split.path]);
       const blocked = snapshots.filter((s) => inTagScope(s.id, request.scope) && (s.conflict || s.saving));
       if (blocked.length) throw new Error('请先解决冲突或等待保存完成：' + blocked.map((s) => s.id).join(', '));
       const result = await tagsApi.preview({ operation, scope: request.scope,

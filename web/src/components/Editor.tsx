@@ -1,117 +1,33 @@
-import { useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useStore } from '../lib/store';
-import { useDocumentSession } from '../lib/useDocumentSession';
-import { createVaultRenderContext } from '../lib/vaultRenderContext';
-import { getActiveNavigationId, registerEditor } from '../lib/activeEditor';
-import { bindPluginEditor } from '../lib/plugins';
-import { manualSave, bindTimestampUpdates } from '../lib/writing/format';
-import MarkdownView from './MarkdownView';
-import { analyzeMarkdown, fragmentRange, equationContext } from '@shale/markdown-core';
-import { nativeReviewExtension, reviewExtension } from '../lib/review/view';
-import { syncReviewSource } from '../lib/review/sync';
-import { propertyTypesSnapshot, subscribePropertyTypes } from '../lib/propertyTypes';
 import type { LinkIntent } from '../lib/fragmentNavigation';
-import { TEXT_EXT_RE } from '../lib/media';
+import { MarkdownDocument } from './MarkdownDocument';
+import { workspaceContent } from '../lib/workspaceContent';
 import AttachmentView from './AttachmentView';
 import PdfViewer from './PdfViewer';
-import { isPagedDocument } from '../lib/pdf/documentResource';
-import { BacklinksPanel, OutgoingPanel } from './NoteLinks';
 import { findNode } from '../lib/tree';
 import VirtualDocumentView from './VirtualDocumentView';
 
-/** Workspace adapter: rendering itself neither knows the store nor saves files. */
-export default function Editor({ path: suppliedPath, reading = false, embedded = false, fragment, sidebar = false, navigationId, onOpenLink, onReady, active }: {
-  path?: string; reading?: boolean; embedded?: boolean; fragment?: string; sidebar?: boolean;
+type Ready = (view: import('@codemirror/view').EditorView | null) => void;
+export interface EditorProps {
+  path?: string;
+  reading?: boolean;
+  embedded?: boolean;
+  fragment?: string;
   navigationId?: string;
+  tabId?: string;
   active?: boolean;
   onOpenLink?: (target: string, sourcePath?: string, intent?: LinkIntent) => Promise<void>;
-  onReady?: (view: import('@codemirror/view').EditorView | null) => void;
-}) {
-  const activePath = useStore((s) => suppliedPath ? null : s.activePath);
-  const path = suppliedPath ?? activePath;
-  const collection = useStore(state => findNode(state.tree, path ?? '')?.virtualDocument);
-  const localMode = sidebar || (!!suppliedPath && navigationId !== 'main');
-  const workspaceMode = useStore((s) => localMode ? 'live' : s.viewMode);
-  const workspaceSetMode = useStore((s) => s.setViewMode);
-  const [paneMode, setPaneMode] = useState<import('../lib/store').ViewMode>('live');
-  const mode = localMode ? paneMode : workspaceMode;
-  const setMode = localMode ? setPaneMode : workspaceSetMode;
-  const workspaceOpenLink = useStore((s) => s.openWikilink);
-  const openLink = onOpenLink ?? workspaceOpenLink;
-  const openMenu = useStore((s) => s.openContextMenu);
-  const setLeftPanel = useStore((s) => s.setLeftPanel);
-  const notify = useStore((s) => s.notify);
-  const files = useStore((s) => s.filePaths);
-  const propertyTypes = useSyncExternalStore(subscribePropertyTypes, propertyTypesSnapshot);
-  const textPath = path && TEXT_EXT_RE.test(path) ? path : null;
-  const { session, snapshot, error } = useDocumentSession(textPath);
-  const reviewExtensions = useMemo(() => path && !embedded && !fragment
-    ? [nativeReviewExtension(path), reviewExtension(path, syncReviewSource)] : [], [path, embedded, fragment]);
-  useEffect(() => session && !reading ? bindTimestampUpdates(session, notify) : undefined, [session, reading, notify]);
-  const [editorView, setEditorView] = useState<import('@codemirror/view').EditorView | null>(null);
-  useLayoutEffect(() => {
-    if (!active || !editorView) return;
-    editorView.requestMeasure();
-    if (!reading && navigationId === getActiveNavigationId()) editorView.focus();
-  }, [active, editorView, navigationId, reading]);
-  useEffect(() => {
-    if (!editorView || !session) return;
-    const stopEditor = registerEditor(editorView, { undo: () => session.undo(), redo: () => session.redo() });
-    const stopPlugins = bindPluginEditor(editorView, path ?? '');
-    return () => { stopPlugins(); stopEditor(); };
-  }, [editorView, session]);
-  const context = useMemo(() => ({ ...createVaultRenderContext(path ?? '', {
-    bindEditor: registerEditor, openLink: (target, sourcePath, intent) => { void openLink(target, sourcePath ?? path ?? undefined, intent); }, openMenu, reportError: notify,
-    files: () => [...files],
-  }), navigationId: navigationId ?? (suppliedPath ? 'split' : 'main'), recordNavigation: useStore.getState().recordNavigation,
-    renameTitle: !embedded && !fragment && session && !snapshot.locked && /\.(md|markdown)$/i.test(session.id)
-      ? async (value: string) => {
-        const title = value.trim();
-        if (!title || title === '.' || title === '..' || /[\/#<>:"\\|?*\u0000-\u001f]/.test(title) || /[. ]$/.test(title))
-          throw new Error('请输入有效的笔记标题，不能包含 #、斜杠或文件名保留字符');
-        const from = session.id, slash = from.lastIndexOf('/');
-        const extension = from.slice(from.lastIndexOf('.'));
-        await useStore.getState().renamePath(from, from.slice(0, slash + 1) + title + extension);
-      } : undefined,
-  }), [path, openLink, openMenu, files, propertyTypes, notify, navigationId, suppliedPath, embedded, fragment, session, snapshot.locked]);
-  const numberedContext = useMemo(() => {
-    const model = session?.analysis;
-    if (!model) return context;
-    const from = fragment ? fragmentRange(model, fragment)?.from ?? 0 : 0;
-    return { ...context, sourceFragment: !!fragment, equations: equationContext(model, from), mathSource: { model, from } };
-  }, [context, session, snapshot.version, fragment]);
-  if (collection) return <VirtualDocumentView document={collection} viewId={navigationId ?? (suppliedPath ? 'split' : 'main')} />;
-  if (path && isPagedDocument(path)) return <PdfViewer key={path} path={path} viewId={navigationId ?? (suppliedPath ? 'split' : 'main')} />;
-  if (path && !textPath) return <AttachmentView key={path} path={path} />;
-  if (error) return <div className="editor-error" role="alert">{error.message}</div>;
-  if (!session) return <div className="editor-loading">加载中…</div>;
-  const analysis = session.analysis;
-  const range = fragment ? fragmentRange(analysis, fragment) : null;
-  if (fragment && !range) return <div className="editor-error">未找到章节或块</div>;
-  const displayed = range ? { ...snapshot, text: snapshot.text.slice(range.from, range.to), raw: snapshot.text.slice(range.from, range.to) } : snapshot;
-  return <MarkdownView snapshot={displayed} documentSession={session} analysis={range ? fragmentAnalysis(analysis, range.from, range.to) : analysis} mode={reading ? 'reading' : mode} context={numberedContext}
-    footer={!embedded && !fragment && /\.(md|markdown)$/i.test(session.id)
-      ? <div className="note-footer-body"><BacklinksPanel path={session.id} /><OutgoingPanel path={session.id} /></div> : undefined}
-    extensions={reviewExtensions}
-    autoFocus={active === undefined && !reading} showTitle={!embedded} layout={embedded ? 'embedded' : 'page'}
-    onChange={(changes, version, origin, model, history) => { session.edit(version, changes, origin, history); session.acceptAnalysis(model); return session.snapshot; }}
-    onUndo={() => { session.undo(); return session.snapshot; }}
-    onRedo={() => { session.redo(); return session.snapshot; }}
-    onSave={() => { if (!reading) void manualSave(session.id).catch((cause) => notify(cause.message)); }}
-    onModeChange={reading ? undefined : setMode}
-    onSearch={() => setLeftPanel('search')}
-    onReady={(view) => {
-      setEditorView(view);
-      onReady?.(view);
-    }} />;
+  onReady?: Ready;
 }
 
-const fragments = new WeakMap<ReturnType<typeof analyzeMarkdown>, Map<string, ReturnType<typeof analyzeMarkdown>>>();
-function fragmentAnalysis(model: ReturnType<typeof analyzeMarkdown>, from: number, to: number) {
-  let cache = fragments.get(model);
-  if (!cache) { cache = new Map(); fragments.set(model, cache); }
-  const key = `${from}:${to}`;
-  let result = cache.get(key);
-  if (!result) { result = analyzeMarkdown(model.text.slice(from, to), model.id, model.version); cache.set(key, result); }
-  return result;
+export default function Editor({ path: suppliedPath, navigationId = 'main', ...props }: EditorProps) {
+  const activePath = useStore(s => suppliedPath ? null : s.panes.main.path);
+  const path = suppliedPath ?? activePath;
+  const kind = useStore(state => path ? workspaceContent(state.tree, path) : null);
+  const collection = useStore(state => kind === 'virtual' && path ? findNode(state.tree, path)?.virtualDocument : undefined);
+  if (!path) return null;
+  if (collection) return <VirtualDocumentView document={collection} viewId={navigationId} tabId={props.tabId} />;
+  if (kind === 'paged') return <PdfViewer key={path} path={path} viewId={navigationId} tabId={props.tabId} />;
+  if (kind !== 'text') return <AttachmentView key={path} path={path} />;
+  return <MarkdownDocument key={path} {...props} path={path} navigationId={navigationId} />;
 }

@@ -44,12 +44,12 @@ test('marks conflicted files in the tree, shows the diff in the open file and re
     useStore.setState({ tree: { name: 'STEM', path: '', type: 'folder', children: [
       folder('课程', [folder('课程/量子化学', [file('课程/量子化学/笔记.md'), file('课程/量子化学/作业 4.md')]), file('课程/目录.md')]),
       folder('snippets', [file('snippets/theme.css')]), file('首页.md')] } as any,
-      expanded: ['课程', '课程/量子化学', 'snippets'], activePath: '课程/量子化学/笔记.md', loadTree: async () => {},
-      openFile: async (path: string) => useStore.setState({ activePath: path }) } as any);
+      expanded: ['课程', '课程/量子化学', 'snippets'], panes: { ...useStore.getState().panes, main: { path: '课程/量子化学/笔记.md', tabId: null, history: [], histIndex: -1 } }, loadTree: async () => {},
+      openFile: async (path: string) => useStore.setState(s => ({ panes: { ...s.panes, main: { ...s.panes.main, path, tabId: path } } })) } as any);
     await refreshSyncConflicts();
     const h = (React.default ?? React).createElement;
     function Main() {
-      const path = useStore(state => state.activePath) as string;
+      const path = useStore(state => state.panes.main.path) as string;
       const conflict = useSyncConflict(path);
       return h('div', { className: 'sync-conflict-view' }, conflict && h(SyncConflictPanel, { file: conflict }),
         h('div', { className: 'sync-conflict-content markdown-source-view', style: { padding: '16px 32px', whiteSpace: 'pre-wrap' } },

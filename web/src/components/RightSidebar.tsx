@@ -5,7 +5,8 @@ import SidebarTabRail from './SidebarTabRail';
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Text } from '@codemirror/state';
 import { documents } from '../lib/documents';
-import { useStore } from '../lib/store';
+import { useStore, viewKey } from '../lib/store';
+import OutlineTree, { markdownOutline } from './OutlineTree';
 import { useActivePage } from '../lib/useActivePage';
 import { extractMetadata } from '@shale/markdown-core';
 import TagsPanel from './TagsPanel';
@@ -55,25 +56,14 @@ function useActiveMetadata() {
 }
 
 function OutlinePanel() {
+  const { path, viewId } = useActivePage();
+  const identity = useStore(state => viewKey(state, viewId));
   const heads = useActiveMetadata().headings;
-  return (
-    <>
-      <div className="nav-header">
-        <span className="nav-title">大纲</span>
-      </div>
-      <div className="sidebar-body">
-        {heads.length === 0 && <div className="panel-empty">无标题</div>}
-        {heads.map((h, i) => (
-          <div key={i} className="outline-item" style={{ paddingLeft: 10 + (h.level - 1) * 12 }} onClick={() => {
-            const path = useStore.getState().currentPath();
-            if (path) void useStore.getState().navigate(path, { range: { from: h.from, to: h.to } });
-          }}>
-            {h.text}
-          </div>
-        ))}
-      </div>
-    </>
-  );
+  if (!heads.length) return <div className="panel-empty">无标题</div>;
+  const nodes = markdownOutline(heads, path ?? '', ({ from, to }) => ({ from, to }));
+  return <OutlineTree key={identity ?? path} label="文档大纲" heading="大纲" nodes={nodes} onNavigate={range => {
+    if (path) void useStore.getState().navigate(path, { range, viewId });
+  }} />;
 }
 
 function formatSelectionRange(sel: McpSelection): string {

@@ -36,12 +36,12 @@ test.beforeEach(async ({ page, expectedErrors }) => {
     host.style.cssText = 'position:fixed;inset:0';
     const tree = { name: 'Fixture', path: '', type: 'folder', children: ['note.md', 'paper.pdf', 'archive.zip'].map(path => ({ name: path, path, type: 'file' })) };
     await store.useStore.getState().loadUiState();
-    store.useStore.setState({ tree, filePaths: ['note.md', 'paper.pdf', 'archive.zip'], pdfToolbarOpen: true });
+    store.useStore.setState({ tree, filePaths: ['note.md', 'paper.pdf', 'archive.zip'] });
     maintenance.bindVaultMaintenance(new EventTarget());
     await store.useStore.getState().openFile('note.md');
     const h = (React.default ?? React).createElement;
     function PdfPanels() {
-      const activePath = store.useStore((state: any) => state.activePath);
+      const activePath = store.useStore((state: any) => state.panes.main.path);
       const session = pdfReact.useMainPdfSession(activePath);
       return session ? h('aside', { id: 'pdf-right-panels', style: { width: 220, flex: 'none', display: 'flex', flexDirection: 'column', minHeight: 0 } },
         h(PdfOutlinePanel, { session }), h('div', { style: { flex: 1, minHeight: 0 } }, h(PdfThumbnailsPanel, { session }))) : null;
@@ -63,6 +63,7 @@ test('opening a PDF keeps layout saves and note sessions healthy without a neste
     const fixture = (window as any).pdfFixture;
     fixture.note = fixture.documents.get('note.md');
     await fixture.useStore.getState().openFile('paper.pdf');
+    fixture.useStore.getState().setPdfToolbarOpen(true, 'main');
   });
   const viewer = page.locator('#pdf-fixture .pdf-viewer');
   await expect(viewer.locator('.pdf-page-surface.is-ready').first()).toBeVisible();
@@ -97,7 +98,11 @@ test('rapid document/query replacement destroys old work and keeps newest search
   });
   await page.evaluate(() => (window as any).pdfFixture.useStore.getState().openFile('slow.pdf'));
   await loading;
-  await page.evaluate(() => (window as any).pdfFixture.useStore.getState().openFile('paper.pdf'));
+  await page.evaluate(async () => {
+    const state = (window as any).pdfFixture.useStore.getState();
+    await state.openFile('paper.pdf');
+    state.setPdfToolbarOpen(true, 'main');
+  });
   release();
   await expect(page.locator('.pdf-viewer')).toHaveAttribute('data-pdf-path', 'paper.pdf');
   await expect(page.locator('.pdf-viewer .pdf-page-surface.is-ready').first()).toBeVisible();
@@ -121,7 +126,7 @@ test('sidebar and restored split binary files cannot enter writable document ses
     session.setRawText('# Note\n\nunsaved draft');
     fixture.release = session.holdEdits();
     await fixture.useStore.getState().openRightTab('markdown', { file: 'paper.pdf' }, 'pdf-side');
-    fixture.useStore.setState({ splitPath: 'archive.zip' });
+    await fixture.useStore.getState().openToSide('archive.zip');
   });
   await expect(page.locator('[data-sidebar-tab="pdf-side"] .pdf-page-surface.is-ready').first()).toBeVisible();
   await expect(page.locator('#pdf-fixture .split-pane .attachment-view')).toContainText('此附件不支持文本编辑');
@@ -145,12 +150,14 @@ test('same-path sidebar focus cannot redirect main outline and closing it retain
   await page.evaluate(async () => {
     const fixture = (window as any).pdfFixture;
     await fixture.useStore.getState().openFile('paper.pdf');
+    fixture.useStore.getState().setPdfToolbarOpen(true, 'main');
   });
   await expect(page.locator('.main-pane .pdf-page-surface.is-ready').first()).toBeVisible();
   await page.evaluate(async () => {
     const fixture = (window as any).pdfFixture;
     fixture.main = fixture.pdfReact.getMainPdfSession('paper.pdf');
-    await fixture.useStore.getState().openRightTab('markdown', { file: 'paper.pdf' }, 'same-pdf');
+    await fixture.useStore.getState().openRightTab('file', { file: 'paper.pdf' }, 'same-pdf');
+    fixture.useStore.getState().setPdfToolbarOpen(true, 'sidebar:same-pdf');
   });
   const sidebar = page.locator('[data-sidebar-tab="same-pdf"]');
   await expect(sidebar.locator('.pdf-page-surface.is-ready').first()).toBeVisible();
@@ -175,7 +182,11 @@ test('same-path sidebar focus cannot redirect main outline and closing it retain
 
 test('a genuine Vault conflict still invalidates the workspace and hides attachment actions', async ({ page, expectedErrors }) => {
   expectedErrors.push('409 (Conflict)');
-  await page.evaluate(() => (window as any).pdfFixture.useStore.getState().openFile('paper.pdf'));
+  await page.evaluate(async () => {
+    const state = (window as any).pdfFixture.useStore.getState();
+    await state.openFile('paper.pdf');
+    state.setPdfToolbarOpen(true, 'main');
+  });
   await expect(page.locator('#pdf-fixture .pdf-page-surface.is-ready').first()).toBeVisible();
   await page.route('**/api/uistate/', route => route.fulfill({ status: 409, json: { error: 'Vault 已切换', code: 'VAULT_CHANGED' } }));
   const message = await page.evaluate(async () => {
@@ -193,7 +204,11 @@ test('a genuine Vault conflict still invalidates the workspace and hides attachm
 });
 
 test('native outline, named destinations, page thumbnails and search share page state and hit boxes', async ({ page }) => {
-  await page.evaluate(() => (window as any).pdfFixture.useStore.getState().openFile('paper.pdf'));
+  await page.evaluate(async () => {
+    const state = (window as any).pdfFixture.useStore.getState();
+    await state.openFile('paper.pdf');
+    state.setPdfToolbarOpen(true, 'main');
+  });
   await expect(page.getByRole('navigation', { name: 'PDF 内置目录' })).toBeVisible();
   await page.getByRole('button', { name: 'Chapter Two' }).click();
   await expect(page.getByRole('textbox', { name: 'PDF 页码' })).toHaveValue('2');
@@ -214,7 +229,11 @@ test('native outline, named destinations, page thumbnails and search share page 
 });
 
 test('distant page jumps stay on target when newly visible preceding pages have different sizes', async ({ page }) => {
-  await page.evaluate(() => (window as any).pdfFixture.useStore.getState().openFile('mixed.pdf'));
+  await page.evaluate(async () => {
+    const state = (window as any).pdfFixture.useStore.getState();
+    await state.openFile('mixed.pdf');
+    state.setPdfToolbarOpen(true, 'main');
+  });
   await expect(page.locator('.pdf-viewer .pdf-page-surface.is-ready').first()).toBeVisible();
   await page.getByRole('textbox', { name: 'PDF 页码' }).fill('70');
   await page.getByRole('textbox', { name: 'PDF 页码' }).press('Enter');
@@ -228,7 +247,11 @@ test('distant page jumps stay on target when newly visible preceding pages have 
 });
 
 test('80 page PDF keeps canvases bounded, jumps to distant pages and reports absent native outline', async ({ page }) => {
-  await page.evaluate(() => (window as any).pdfFixture.useStore.getState().openFile('large.pdf'));
+  await page.evaluate(async () => {
+    const state = (window as any).pdfFixture.useStore.getState();
+    await state.openFile('large.pdf');
+    state.setPdfToolbarOpen(true, 'main');
+  });
   await expect(page.locator('.pdf-viewer .pdf-page-surface.is-ready').first()).toBeVisible();
   await expect(page.locator('.pdf-page-slot')).toHaveCount(80);
   expect(await page.locator('#pdf-fixture canvas').count()).toBeLessThan(18);

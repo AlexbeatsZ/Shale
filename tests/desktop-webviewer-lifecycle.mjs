@@ -144,30 +144,110 @@ try {
   await unchanged();
   await page.getByRole('separator', { name: '调整分屏比例；双击交换两侧页面' }).press('Enter');
   await unchanged();
-  await tab('three').click();
-  await expect(page.locator('.workspace .split-pane')).toHaveCount(0);
-  // Sample the first visible layout as well as the settled layout, including
-  // commits that can occur between compositor frames.
-  const restoredLayout = await page.locator('.workspace .editor-area').evaluateHandle(area => {
-    const samples = [];
-    const sample = () => {
-      for (const pane of area.querySelectorAll(':scope > .webviewer-pane:not([hidden])')) {
-        const address = pane.querySelector('input[aria-label="网页地址"]').value;
-        if (!address.endsWith('/one') && !address.endsWith('/two')) continue;
-        samples.push({ address, split: area.classList.contains('is-split'), share: pane.clientWidth / area.clientWidth });
-      }
-    };
-    const observer = new MutationObserver(sample);
-    observer.observe(area, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
-    return { stop() { sample(); observer.disconnect(); return samples; } };
+  const area = page.locator('.workspace .editor-area');
+  const records = [];
+  const webGeometry = id => app.evaluate(({ webContents }, id) => webContents.fromId(id).executeJavaScript(
+    '({ width: innerWidth, height: innerHeight })'), id);
+  const visibleGuestGeometry = async () => area.evaluate(element => [...element.querySelectorAll(':scope > .webviewer-pane:not([hidden])')]
+    .map(pane => {
+      const guest = pane.querySelector('webview');
+      return { id: guest.getWebContentsId(), width: guest.clientWidth, height: guest.clientHeight, slot: pane.dataset.viewId };
+    }));
+  const verifyRestoration = async (ratio, vertical) => {
+    const divider = page.getByRole('separator', { name: '调整分屏比例；双击交换两侧页面' });
+    const bounds = await area.boundingBox(), handle = await divider.boundingBox();
+    const start = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2 };
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    await page.mouse.move(vertical ? start.x : bounds.x + bounds.width * ratio,
+      vertical ? bounds.y + bounds.height * ratio : start.y, { steps: 4 });
+    await page.mouse.up();
+    const beforeRestore = await visibleGuestGeometry();
+    for (const { id, width, height } of beforeRestore) {
+      await expect.poll(async () => {
+        const actual = await webGeometry(id);
+        return Math.max(Math.abs(actual.width - width), Math.abs(actual.height - height));
+      }).toBeLessThanOrEqual(2);
+    }
+    await tab('three').click();
+    await expect(area.locator('.split-pane')).toHaveCount(0);
+
+    const targetIds = ['one', 'two'].map(name => identities.get(name).id);
+    for (const id of targetIds) await app.evaluate(({ webContents }, id) => webContents.fromId(id).executeJavaScript(`
+      (() => {
+        const samples = [];
+        const sample = () => samples.push({ width: innerWidth, height: innerHeight });
+        const observer = new ResizeObserver(sample);
+        observer.observe(document.documentElement);
+        window.addEventListener('resize', sample);
+        window.stopGeometry = () => {
+          sample(); observer.disconnect(); window.removeEventListener('resize', sample); return samples;
+        };
+      })()
+    `), id);
+    const layout = await area.evaluateHandle((element, vertical) => {
+      const samples = [];
+      const measure = () => {
+        for (const pane of element.querySelectorAll(':scope > .webviewer-pane:not([hidden])')) {
+          const input = pane.querySelector('input[aria-label="网页地址"]');
+          if (!input.value.endsWith('/one') && !input.value.endsWith('/two')) continue;
+          const axis = vertical ? 'clientHeight' : 'clientWidth';
+          if (!pane[axis]) continue;
+          samples.push({ address: input.value, split: element.classList.contains('is-split'),
+            slot: pane.dataset.viewId, share: pane[axis] / element[axis] });
+        }
+      };
+      const observer = new MutationObserver(measure);
+      observer.observe(element, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'hidden', 'style'] });
+      return { stop() { measure(); observer.disconnect(); return samples; } };
+    }, vertical);
+    await tab('one').click();
+    await expect(area.locator('.split-pane')).toBeVisible();
+    const visibleLayouts = await layout.evaluate(record => record.stop());
+    await layout.dispose();
+    const layoutShares = { main: ratio, split: 1 - ratio };
+    assert.ok(visibleLayouts.some(item => item.address.endsWith('/one')) && visibleLayouts.some(item => item.address.endsWith('/two')));
+    assert.ok(visibleLayouts.every(item => item.split && Math.abs(item.share - layoutShares[item.slot]) < 0.015), JSON.stringify(visibleLayouts));
+    const settled = await visibleGuestGeometry();
+    for (const { id, width, height } of settled) {
+      await expect.poll(async () => {
+        const actual = await webGeometry(id);
+        return Math.max(Math.abs(actual.width - width), Math.abs(actual.height - height));
+      }).toBeLessThanOrEqual(2);
+      const samples = await app.evaluate(({ webContents }, id) =>
+        webContents.fromId(id).executeJavaScript('window.stopGeometry()'), id);
+      const axis = vertical ? 'height' : 'width', maximum = vertical ? height : width;
+      // While hidden Chromium can retain the previous size or report zero.
+      // Every positive observation during restoration must fit this track once
+      // the newly displayed geometry reaches it. The host assertion above also
+      // covers a transient before the guest renderer receives its resize.
+      assert.ok(samples.some(sample => Math.abs(sample[axis] - maximum) <= 2));
+      const visibleSamples = samples.filter(sample => sample[axis] > 0);
+      assert.ok(visibleSamples.every(sample => sample[axis] <= maximum + 3), JSON.stringify({ id, axis, maximum, samples }));
+    }
+    records.push({ ratio, orientation: vertical ? 'down' : 'right', visibleLayouts, settled });
+    await unchanged();
+  };
+  await verifyRestoration(0.5, false);
+
+  // A temporarily missing peer must not enlarge the other guest. This catches
+  // the flex fallback even when normal React commits happen between samples.
+  const independentTracks = await area.evaluate(element => {
+    const main = element.querySelector(':scope > .main-pane');
+    const split = element.querySelector(':scope > .split-pane');
+    const before = main.clientWidth;
+    split.style.setProperty('display', 'none', 'important');
+    const during = main.clientWidth;
+    split.style.removeProperty('display');
+    return { before, during };
   });
-  await tab('one').click();
-  await expect(page.locator('.workspace .split-pane')).toBeVisible();
-  const visibleLayouts = await restoredLayout.evaluate(record => record.stop());
-  await restoredLayout.dispose();
-  assert.ok(visibleLayouts.some(item => item.address.endsWith('/one')) && visibleLayouts.some(item => item.address.endsWith('/two')));
-  assert.ok(visibleLayouts.every(item => item.split && Math.abs(item.share - 0.5) < 0.01), JSON.stringify(visibleLayouts));
-  await unchanged();
+  assert.deepEqual(independentTracks.during, independentTracks.before, JSON.stringify(independentTracks));
+
+  await tab('one').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '改为上下分屏', exact: true }).click();
+  await verifyRestoration(0.62, true);
+  await tab('one').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '改为左右分屏', exact: true }).click();
   // Selection order is intentionally different from display order.
   for (const name of ['two', 'one', 'three']) await tab(name).click({ modifiers: [mod] });
   await tab('one').click({ button: 'right' });
@@ -196,7 +276,7 @@ try {
   await newTab.locator('.close').click();
   await expect(guests()).toHaveCount(3);
   await assertBackground();
-  console.log(JSON.stringify({ ok: true, background, loads: Object.fromEntries(loads), guests: Object.fromEntries(identities), colorGroups: true, singlePaneForeground: true, guestShortcutForwarding: true, cyclicSwap: true, duplicate: true }, null, 2));
+  console.log(JSON.stringify({ ok: true, background, loads: Object.fromEntries(loads), guests: Object.fromEntries(identities), colorGroups: true, singlePaneForeground: true, guestShortcutForwarding: true, cyclicSwap: true, duplicate: true, restoredLayouts: records, independentTracks }, null, 2));
 } finally {
   if (app) await app.close();
   await new Promise(resolve => server.close(resolve));

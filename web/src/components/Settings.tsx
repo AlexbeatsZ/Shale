@@ -766,7 +766,7 @@ function TypingPointerGuardSettings({ ui }: { ui: Partial<UiSettings> }) {
 }
 
 function EditorSettings() {
-  const viewMode = useStore(state => state.viewMode);
+  const viewMode = useStore(state => state.defaultViewMode);
   const lineNumbers = useLineNumbers();
   const [error, setError] = useState('');
   useEffect(() => { void ensureLineNumbers(); }, []);
@@ -783,7 +783,7 @@ function EditorSettings() {
           <option value="off">关闭</option><option value="absolute">绝对行号（1、2、3…）</option><option value="relative">相对行号（光标行 0）</option>
         </select>
       </Row>
-      <Row name="当前编辑视图" desc="工作区使用的视图模式，也可在文档右下角切换。"><select value={viewMode} onChange={event => useStore.getState().setViewMode(event.target.value as typeof viewMode)}>
+      <Row name="默认编辑视图" desc="新打开文档时使用的模式，可在文档右下角单独切换。"><select value={viewMode} onChange={event => useStore.setState({ defaultViewMode: event.target.value as typeof viewMode })}>
         <option value="live">实时预览</option><option value="source">源码模式</option><option value="reading">阅读视图</option>
       </select></Row>
     </SettingGroup>

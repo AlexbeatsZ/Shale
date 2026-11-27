@@ -154,7 +154,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
   const toggleFolder = useStore((s) => s.toggleFolder);
   const open = expanded.includes(node.path); // persisted across reloads
   const [dropping, setDropping] = useState(false);
-  const activePath = useStore((s) => s.activePath);
+  const activePath = useStore((s) => s.panes.main.path);
   const openFile = useStore((s) => s.openFile);
   const openToSide = useStore((s) => s.openToSide);
   const loadTree = useStore((s) => s.loadTree);
@@ -278,7 +278,7 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     e.stopPropagation();
     const sel = useStore.getState().selected;
     const menuContext = (paths: string[]) => ({ kind: paths.length === 1 && isFolder ? 'folder' : 'file', source: 'file-explorer', paths,
-      activePath: useStore.getState().activePath ?? undefined, modifiers: menuModifiers(e.nativeEvent),
+      activePath: useStore.getState().panes.main.path ?? undefined, modifiers: menuModifiers(e.nativeEvent),
       fileTypes: paths.map(path => findNode(useStore.getState().tree, path)?.type === 'folder' ? '' : path.split('.').at(-1) ?? '') });
     // Right-clicking a row that's part of a multi-selection → bulk actions.
     if (sel.length > 1 && sel.includes(node.path)) {
@@ -298,6 +298,10 @@ function Node({ node, depth }: { node: TreeNode; depth: number }) {
     if (!sel.includes(node.path)) { setSelected([node.path]); setSelectAnchor(node.path); }
     const items: ContextMenuItem[] = isFolder
       ? [
+          ...(node.virtualDocument ? [
+            { id: 'file:open', label: '打开', onClick: () => openFile(node.path) },
+            { id: 'file:open-to-side', label: '在右侧打开', onClick: () => openToSide(node.path) },
+          ] : []),
           { id: 'file:virtual-document', label: node.virtualDocument ? '停用连续文档' : '设为连续文档', onClick: async () => {
             try {
               if (node.virtualDocument) await api.disableVirtualDocument(node.path, node.virtualDocument.revision);
@@ -479,7 +483,7 @@ export default function FileTree() {
   const openContextMenu = useStore((s) => s.openContextMenu);
   const newNote = useStore((s) => s.newNote);
   const newFolder = useStore((s) => s.newFolder);
-  const activePath = useStore((s) => s.activePath);
+  const activePath = useStore((s) => s.panes.main.path);
   const autoReveal = useStore((s) => s.autoReveal);
   const setExpanded = useStore((s) => s.setExpanded);
   const selected = useStore((s) => s.selected);

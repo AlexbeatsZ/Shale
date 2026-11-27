@@ -17,7 +17,7 @@ test('Option digits turn inline-math prose into headings, change levels, clear a
     const { useStore } = await load('/src/lib/store.ts');
     const { refreshHotkeys } = await load('/src/lib/search.ts');
     await refreshHotkeys();
-    useStore.setState({ activePath: 'a.md' });
+    useStore.setState(s => ({ panes: { ...s.panes, main: { ...s.panes.main, path: 'a.md', tabId: 'a.md' } } }));
     window.addEventListener('keydown', event => {
       if (sharedApp.commands.dispatchHotkey(event)) { event.preventDefault(); event.stopImmediatePropagation(); }
     }, true);

@@ -61,7 +61,7 @@ function HarnessView({ session, mode, context, ready }: {
 
 /** Dev-only entry. No production vault, authentication, settings or save API. */
 function NavigationWorkspace() {
-  const split = useStore(state => state.splitPath), open = useStore(state => state.rightOpen);
+  const split = useStore(state => state.panes.split.path), open = useStore(state => state.rightOpen);
   return <div className="app theme-light"><main className="workspace" style={{ height: 700 }}><Editor /></main>
     {split && <section data-navigation-split style={{ height: 600 }}><Editor path={split} navigationId="split" reading /></section>}
     <RightSidebar open={open} />

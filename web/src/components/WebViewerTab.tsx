@@ -24,7 +24,7 @@ export default function WebViewerTab({ id, url, active, sidebar = false }: { id:
   const [controls, setControls] = useState({ ready: false, back: false, forward: false });
   if (active) opened.current = true;
   const mountGuest = opened.current && !!url;
-  const viewId = () => sidebar ? 'sidebar:' + id : useStore.getState().splitPath === id ? 'split' : 'main';
+  const viewId = () => sidebar ? 'sidebar:' + id : useStore.getState().panes.split.path === id ? 'split' : 'main';
   const select = () => activateNavigation(viewId());
   const updateTab = (address: string, title: string) => {
     if (!sidebar) return updateCentralWebViewer(id, address, title);

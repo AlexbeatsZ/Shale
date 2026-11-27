@@ -2,6 +2,7 @@ import { isMacOS } from '../lib/platform';
 import { useSearch, fileCandidates, matchName, remember, updateSearch, requestHotkeySettings } from '../lib/search';
 import MatchLabel from './MatchLabel';
 import { documents } from '../lib/documents';
+import { useExistingDocumentSnapshot } from '../lib/useDocumentSession';
 import { extractMetadata } from '@shale/markdown-core';
 import { getActiveEditor } from '../lib/activeEditor';
 import { useDeferredValue, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
@@ -47,7 +48,7 @@ export default function CommandPalette() {
   const pluginVersion = useSyncExternalStore(subscribePlugins, pluginRevision);
 
   const { entries, settings, hotkeys } = useSearch();
-  const content = useStore((s) => s.content);
+  const content = useExistingDocumentSnapshot(open && mode === 'headings' ? activePath : null).text;
   const recent = useStore((s) => s.recent);
 
   // Ranking follows the deferred query so typing is never blocked by a large catalog.

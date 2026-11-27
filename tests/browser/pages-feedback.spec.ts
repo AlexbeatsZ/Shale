@@ -35,7 +35,7 @@ async function workspace(page: Page, source: string, reading = false) {
     const files = ['note.md', 'target.md', 'ref.md'];
     const tree = { name: 'Fixture', path: '', type: 'folder', children: files.map(path => ({ name: path, path, type: 'file' })) };
     plugins.sharedApp.vault.sync(tree);
-    store.useStore.setState({ tree, filePaths: files, tabs: [], activePath: null, viewMode: reading ? 'reading' : 'live',
+    store.useStore.setState({ tree, filePaths: files, tabs: [], defaultViewMode: reading ? 'reading' : 'live',
       rightOpen: true, rightPanel: 'properties', rightActiveId: null });
     await window.renderHarness.workspace('note.md');
   }, reading);

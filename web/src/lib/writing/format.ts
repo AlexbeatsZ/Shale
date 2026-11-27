@@ -289,6 +289,7 @@ export async function runAfterCommands() {
 }
 export async function formatPath(path: string, save = false) {
   await ensureWriting();
+  if (ignoresFormatting(path)) return false;
   const session = documents.get(path) ?? (await documents.open(path));
   const changed = await formatSession(session);
   if (save) await session.save();

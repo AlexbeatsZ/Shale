@@ -353,7 +353,7 @@ test('MCP creates a reviewed note with exact bytes, skips templates, then rename
   expect(await page.evaluate(async () => {
     const { useStore } = await import('/src/lib/store.ts');
     const { documents } = await import('/src/lib/documents.ts');
-    return { active: useStore.getState().activePath, old: !!documents.get('MCP/新笔记.md'), next: !!documents.get('MCP/重命名.md') };
+    return { active: useStore.getState().panes.main.path, old: !!documents.get('MCP/新笔记.md'), next: !!documents.get('MCP/重命名.md') };
   })).toEqual({ active: 'MCP/重命名.md', old: false, next: true });
 });
 

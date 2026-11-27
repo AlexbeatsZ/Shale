@@ -34,8 +34,8 @@ test.beforeEach(async ({ page }) => {
     const host = document.createElement('div'); host.id = 'presentation-fixture'; host.style.cssText = 'position:fixed;inset:0'; document.body.append(host);
     const tree = { name: 'Fixture', path: '', type: 'folder', children: paths.map(path => ({ name: path, path, type: 'file' })) };
     await store.useStore.getState().loadUiState();
-    store.useStore.setState({ tree, filePaths: paths, tabs: [], activePath: null, splitPath: null,
-      pdfToolbarOpen: false, rightPanel: 'outline', rightOpen: true, rightActiveId: null, rightTabs: [], leftOpen: false });
+    store.useStore.setState({ tree, filePaths: paths, tabs: [],
+      rightPanel: 'outline', rightOpen: true, rightActiveId: null, rightTabs: [], leftOpen: false });
     plugins.sharedApp.vault.sync(tree);
     const h = (React.default ?? React).createElement;
     (ReactDOM.createRoot ?? ReactDOM.default.createRoot)(host).render(h('div', { className: 'app theme-dark', style: { height: '100%' } },

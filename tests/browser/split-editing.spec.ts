@@ -811,7 +811,7 @@ test('a new tab during split shows a Homepage alone and keeps the split group', 
   await expect(pane(page, 'split')).toHaveCount(0);
   const state = () => page.evaluate(async () => {
     const module = '/src/lib/store.ts'; const s = (await import(module)).useStore.getState();
-    return { active: s.activePath, split: s.splitPath, parked: s.parkedSplit && [s.parkedSplit.main, s.parkedSplit.side] };
+    return { active: s.panes.main.path, split: s.panes.split.path, parked: s.parkedSplit && [s.parkedSplit.main, s.parkedSplit.side] };
   });
   await expect.poll(async () => (await state()).active?.startsWith('home://')).toBe(true);
   expect((await state()).parked).toEqual(['main.md', 'side.md']);
@@ -1114,4 +1114,80 @@ test('focused page routing: new-note current folder follows split', async ({ pag
   await expect(host(page, 'split')).toHaveAttribute('data-document-id', 'sub/Untitled.md');
   await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'main.md');
   expect(await fs.readFile(path.join(backend.vault, 'sub', 'Untitled.md'), 'utf8')).toBe('');
+});
+
+for (const which of ['main', 'split'] as const) {
+  test(`formatting and tag commands address the focused ${which} file and folder`, async ({ page, backend }) => {
+    const left = 'Left/one.md', right = 'Right/two.md', sibling = 'Right/three.md';
+    for (const folder of ['Left', 'Right']) await fs.mkdir(path.join(backend.vault, folder));
+    await Promise.all([left, right, sibling].map(file => fs.writeFile(path.join(backend.vault, file), '# Note\n\nvalue，example\n')));
+    await page.evaluate(async ({ left, right }) => {
+      const module = '/src/lib/store.ts', { useStore } = await import(module);
+      await useStore.getState().loadTree();
+      await useStore.getState().openFile(left, true, 'main');
+      await useStore.getState().openToSide(right);
+    }, { left, right });
+    await content(page, which).click();
+    await runPageCommand(page, 'format');
+    const target = which === 'main' ? left : right, other = which === 'main' ? right : left;
+    expect(await fs.readFile(path.join(backend.vault, target), 'utf8')).toContain('value,example');
+    expect(await fs.readFile(path.join(backend.vault, other), 'utf8')).toContain('value，example');
+    await runPageCommand(page, 'format-folder');
+    expect(await fs.readFile(path.join(backend.vault, sibling), 'utf8')).toContain(which === 'split' ? 'value,example' : 'value，example');
+    await runPageCommand(page, 'format-ignore-file');
+    await runPageCommand(page, 'format-ignore-folder');
+    const settings = await page.evaluate(async () => {
+      const module = '/src/lib/writing/config.ts';
+      const { writingSettings } = await import(module);
+      return writingSettings().linter;
+    });
+    expect(settings.filesToIgnore.some((rule: { match: string }) => new RegExp(rule.match).test(target))).toBe(true);
+    expect(settings.filesToIgnore.some((rule: { match: string }) => new RegExp(rule.match).test(other))).toBe(false);
+    expect(settings.foldersToIgnore).toContain(target.split('/')[0]);
+    const scope = await page.evaluate(async () => {
+      const module = '/src/lib/workspaceTarget.ts';
+      return (await import(module)).currentWorkspaceTarget().folder;
+    });
+    expect(scope).toBe(target.split('/')[0]);
+    // The tag command must open a folder-scoped dialog before any user confirmation.
+    await runPageCommand(page, 'tags-batch-folder');
+    await expect(page.getByRole('dialog')).toContainText('标签');
+  });
+}
+
+test('the file tree and both drop targets open a continuous document in either pane', async ({ page, backend }) => {
+  const folder = 'Continuous', chapter = folder + '/Chapter.md';
+  await fs.mkdir(path.join(backend.vault, folder));
+  await fs.writeFile(path.join(backend.vault, chapter), '# Chapter\n\nThe real chapter body.');
+  await fs.writeFile(path.join(backend.vault, folder, '.virtual-document.json'),
+    JSON.stringify({ title: 'Continuous', streams: [{ title: 'MD', files: ['Chapter.md'] }] }));
+  await page.evaluate(async () => {
+    const module = '/src/lib/store.ts';
+    const state = (await import(module)).useStore.getState();
+    await state.loadTree();
+    state.setLeftPanel('files');
+  });
+  const row = page.locator('.tree-row[data-path="Continuous"]').first();
+  await row.click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '在右侧打开' }).click();
+  await expect(pane(page, 'split').locator('[data-virtual-document="Continuous"]')).toBeVisible();
+  await expect(pane(page, 'split').locator('[data-virtual-source]')).toHaveAttribute('data-virtual-source', chapter);
+  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'main.md');
+  await page.locator('.pane-divider').press('Enter');
+  await expect(pane(page, 'main').locator('[data-virtual-document="Continuous"]')).toBeVisible();
+  await expect(host(page, 'split')).toHaveAttribute('data-document-id', 'main.md');
+
+  await page.evaluate(async () => {
+    const module = '/src/lib/store.ts';
+    const state = (await import(module)).useStore.getState();
+    await state.closeSplit();
+    await state.showTab('replacement.md');
+    await state.openToSide('side.md');
+    state.toggleLeft();
+  });
+  const tab = page.locator('.tab[data-tab-path="Continuous"]');
+  const box = (await pane(page, 'split').boundingBox())!;
+  await tab.dragTo(pane(page, 'split'), { targetPosition: { x: Math.floor(box.width / 2), y: Math.floor(box.height / 2) } });
+  await expect(pane(page, 'split').locator('[data-virtual-document="Continuous"]')).toBeVisible();
+  await expect(host(page, 'main')).toHaveAttribute('data-document-id', 'replacement.md');
 });
