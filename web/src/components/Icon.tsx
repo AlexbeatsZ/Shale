@@ -1,10 +1,10 @@
 /**
- * Flat line icons (Lucide set — the same icon family Shale uses).
- * Stroke-based, 24x24 viewBox, currentColor. Add new glyphs to PATHS as needed.
+ * Material Symbols for application UI; custom/plugin glyphs retain their catalog.
  */
 import type { CSSProperties } from 'react';
 
 import { iconPaths } from '../lib/icons';
+import { materialIconPaths } from '../lib/materialIcons';
 
 export type IconName = keyof typeof iconPaths | string;
 
@@ -20,19 +20,22 @@ export default function Icon({
   style?: CSSProperties;
 }) {
   const path = iconPaths[name] ?? iconPaths['file'];
+  const material = materialIconPaths[name];
   return (
     <svg
       className={className}
       width={size}
       height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
+      viewBox={material ? '0 -960 960 960' : '0 0 24 24'}
+      fill={material ? 'currentColor' : 'none'}
+      stroke={material ? 'none' : 'currentColor'}
       strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
       style={style}
-      dangerouslySetInnerHTML={{ __html: path }}
+      aria-hidden="true"
+      focusable="false"
+      dangerouslySetInnerHTML={{ __html: material ?? path }}
     />
   );
 }

@@ -4,6 +4,7 @@ import { useStore } from '../lib/store';
 import { runFileSync } from '../lib/syncConflicts';
 import type { FileSyncStatus } from '../../../server/src/contracts/fileSync';
 import Icon from './Icon';
+import LoadingIndicator from './LoadingIndicator';
 
 function syncLabel(status: FileSyncStatus, busy: boolean) {
   if (busy) return '同步中';
@@ -43,6 +44,6 @@ export default function NativeSyncButton() {
   return <button type="button" className={`clickable native-sync-button is-${status.phase}`} disabled={busy} onClick={() => void sync()}
     title={[status.message, status.lastProgress && `最近进展 ${new Date(status.lastProgress).toLocaleString()}`,
       status.lastSuccess && `上次完整同步 ${new Date(status.lastSuccess).toLocaleString()}`].filter(Boolean).join('\n') || '立即同步'}>
-    <Icon name={icon} size={13} className={busy ? 'icon-spin' : undefined} />{label}
+    {busy ? <LoadingIndicator label="正在同步" compact /> : <Icon name={icon} size={18} />}{label}
   </button>;
 }

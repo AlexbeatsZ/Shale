@@ -207,7 +207,7 @@ export default function RightSidebar({ open }: { open: boolean; onTheme?: () => 
   }, [allTabs]);
   const rail = <nav className="ribbon ribbon-right" aria-label="右侧功能与标签页">
     <div className="ribbon-fixed">{TABS.map(item => <button key={item.id} title={item.title} aria-label={item.title}
-      className={!activeId && rightPanel === item.id ? 'active' : ''} onClick={() => setRightPanel(item.id)}><Icon name={item.icon} size={18} /></button>)}</div>
+      aria-pressed={!activeId && rightPanel === item.id} className={!activeId && rightPanel === item.id ? 'active' : ''} onClick={() => setRightPanel(item.id)}><Icon name={item.icon} size={24} /><span className="ribbon-label">{item.title}</span></button>)}</div>
     <SidebarTabRail side="right" />
   </nav>;
 

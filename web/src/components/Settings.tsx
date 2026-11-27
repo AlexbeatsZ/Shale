@@ -128,7 +128,7 @@ export default function Settings() {
           element.style.transform = `translate(${left - centeredLeft}px, ${top - centeredTop}px)`;
         }} onPointerUp={() => { drag.current = undefined; }} onPointerCancel={() => { drag.current = undefined; }} onLostPointerCapture={() => { drag.current = undefined; }}>
           <span id="settings-title">设置 — {vaultName}</span>
-          <button type="button" className={mac ? 'settings-close-macos' : undefined} title="关闭设置" aria-label="关闭设置" onClick={() => setOpen(false)}><Icon name="x" size={mac ? 8 : 16} /></button></div>
+          <button type="button" title="关闭设置" aria-label="关闭设置" onClick={() => setOpen(false)}><Icon name="x" size={24} /></button></div>
         <div className="settings-layout">
           <div className="settings-nav">
             <label className="settings-search"><Icon name="search" size={15} /><input aria-label="搜索设置" placeholder="搜索设置…" value={navQuery} onChange={event => setNavQuery(event.target.value)} /></label>

@@ -1,7 +1,8 @@
 # PRD — Shale
 
 > Product Requirements Document
-> Phiên bản: 1.75 · Cập nhật: 2026-11-26 · Trạng thái: Draft
+> Phiên bản: 1.77 · Cập nhật: 2026-11-26 · Trạng thái: Draft
+> Changelog 1.77（Material 3 Expressive 实验前端）独立分支重新设计共享原生渲染器。以 Google 官方颜色角色、Roboto 字阶、圆角形状、状态层、导航与组件规范为基准；色板由官方 Material Color Utilities 生成，应用图标使用 Material Symbols，几何加载复用经核对的开源移植。重构主页、双侧导航、标签、搜索、设置和公共控件，保留原有命令、编辑器、网页浏览/用户脚本及同步能力；支持深浅色、窄屏、键盘焦点与减少动态效果。实验版独立预发布，不切换日用安装。设计见 `docs/design/material-expressive.md`。
 > Changelog 1.75（服务器数据生命周期）正式状态、有限同步历史、独立灾难恢复快照和短期升级回滚点各自管理。服务器提供状态、dry-run、清理、验证恢复和自动日周月轮换；GC 与同步提交协调，保护活跃和新上传内容。普通代码更新只保留旧程序及必要配置。原 Git 归档改用 gitBackup 配置，独立于 backup 灾难恢复策略。
 > Changelog 1.74（query 搜索 callout 标记）内置 query 支持 `[!question]` 等完整 callout 标记及标签组合；全文搜索使用已有索引筛选候选，再按选定字段核对完整原文，保留方括号和感叹号，避免普通 question、近似词和其他标记误命中。沿用既有结果上限、刷新和取消机制。
 > Changelog 1.73（独立文件组优先落盘）本机已有有效附件时先应用就绪组；其他文件并行有限下载，单个慢流仍在传输时，无关联小文档可落盘。沿用持久检查点、按依赖组更新与脏编辑保护。

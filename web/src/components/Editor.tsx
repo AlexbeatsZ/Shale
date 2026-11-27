@@ -18,6 +18,7 @@ import { isPagedDocument } from '../lib/pdf/documentResource';
 import { BacklinksPanel, OutgoingPanel } from './NoteLinks';
 import { findNode } from '../lib/tree';
 import VirtualDocumentView from './VirtualDocumentView';
+import LoadingIndicator from './LoadingIndicator';
 
 /** Workspace adapter: rendering itself neither knows the store nor saves files. */
 export default function Editor({ path: suppliedPath, reading = false, embedded = false, fragment, sidebar = false, navigationId, onOpenLink, onReady }: {
@@ -78,7 +79,7 @@ export default function Editor({ path: suppliedPath, reading = false, embedded =
   if (path && isPagedDocument(path)) return <PdfViewer key={path} path={path} viewId={navigationId ?? (suppliedPath ? 'split' : 'main')} />;
   if (path && !textPath) return <AttachmentView key={path} path={path} />;
   if (error) return <div className="editor-error" role="alert">{error.message}</div>;
-  if (!session) return <div className="editor-loading">加载中…</div>;
+  if (!session) return <div className="editor-loading"><LoadingIndicator label="正在打开笔记" /><span>正在打开笔记…</span></div>;
   const analysis = session.analysis;
   const range = fragment ? fragmentRange(analysis, fragment) : null;
   if (fragment && !range) return <div className="editor-error">未找到章节或块</div>;

@@ -192,9 +192,14 @@ try {
   const noteTab = mainTabs.locator('[data-tab-path="Note.md"]');
   const guestBox = await main.locator('webview').boundingBox();
   const tabBox = await noteTab.boundingBox();
+  // Floating sidebars cover the guest. Choose an exposed point in its left
+  // half so this verifies replacement, regardless of navigation-rail density.
+  const leftDock = await left.boundingBox();
+  const targetX = Math.max(guestBox.x + guestBox.width * 0.25, leftDock.x + leftDock.width + 16);
+  const targetY = guestBox.y + guestBox.height * 0.25;
+  assert.ok(targetX < guestBox.x + guestBox.width * 0.5, 'The visible guest has a replacement drop target');
   await page.mouse.move(tabBox.x + tabBox.width / 2, tabBox.y + tabBox.height / 2);
   await page.mouse.down();
-  const targetX = guestBox.x + guestBox.width * 0.25, targetY = guestBox.y + guestBox.height * 0.25;
   for (const step of [0.2, 0.5, 0.8, 1]) await page.mouse.move(tabBox.x + (targetX - tabBox.x) * step, tabBox.y + (targetY - tabBox.y) * step);
   for (const offset of [2, 4, 6]) await page.mouse.move(targetX + offset, targetY + offset);
   await expect(page.locator('.pane-drop-indicator')).toBeVisible();

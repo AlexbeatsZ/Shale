@@ -61,7 +61,7 @@ test('file rows match the compact reference in dark, light and narrow windows', 
   await expect(page.locator('.palette-footer')).toContainText('#标签 · -#排除');
   const title = page.locator('.palette-result-title').first(), path = page.locator('.palette-result-path').first();
   expect((await title.boundingBox())!.y).toBeLessThan((await path.boundingBox())!.y);
-  expect(await page.locator('.palette-modal').evaluate(el => getComputedStyle(el).fontFamily)).toContain('Segoe UI');
+  expect(await page.locator('.palette-modal').evaluate(el => getComputedStyle(el).fontFamily)).toContain('Roboto Variable');
   await page.locator('.palette-modal').screenshot({ path: test.info().outputPath('files-dark.png') });
   await page.evaluate(() => document.querySelectorAll('.theme-dark').forEach(el => { el.classList.remove('theme-dark'); el.classList.add('theme-light'); }));
   await page.locator('.palette-modal').screenshot({ path: test.info().outputPath('files-light.png') });

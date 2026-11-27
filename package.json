@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "dev": "npm run desktop",
+    "preview:material": "node scripts/preview-material.mjs",
     "build": "npm run build:core && npm --workspace web run build && npm --workspace server run build",
     "cli": "npm --workspace server run cli --",
     "mcp": "npm --silent --workspace server run mcp",
