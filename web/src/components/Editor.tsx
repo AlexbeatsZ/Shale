@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { useStore } from '../lib/store';
 import { useDocumentSession } from '../lib/useDocumentSession';
 import { createVaultRenderContext } from '../lib/vaultRenderContext';
-import { registerEditor } from '../lib/activeEditor';
+import { getActiveNavigationId, registerEditor } from '../lib/activeEditor';
 import { bindPluginEditor } from '../lib/plugins';
 import { manualSave, bindTimestampUpdates } from '../lib/writing/format';
 import MarkdownView from './MarkdownView';
@@ -20,9 +20,10 @@ import { findNode } from '../lib/tree';
 import VirtualDocumentView from './VirtualDocumentView';
 
 /** Workspace adapter: rendering itself neither knows the store nor saves files. */
-export default function Editor({ path: suppliedPath, reading = false, embedded = false, fragment, sidebar = false, navigationId, onOpenLink, onReady }: {
+export default function Editor({ path: suppliedPath, reading = false, embedded = false, fragment, sidebar = false, navigationId, onOpenLink, onReady, active }: {
   path?: string; reading?: boolean; embedded?: boolean; fragment?: string; sidebar?: boolean;
   navigationId?: string;
+  active?: boolean;
   onOpenLink?: (target: string, sourcePath?: string, intent?: LinkIntent) => Promise<void>;
   onReady?: (view: import('@codemirror/view').EditorView | null) => void;
 }) {
@@ -48,6 +49,11 @@ export default function Editor({ path: suppliedPath, reading = false, embedded =
     ? [nativeReviewExtension(path), reviewExtension(path, syncReviewSource)] : [], [path, embedded, fragment]);
   useEffect(() => session && !reading ? bindTimestampUpdates(session, notify) : undefined, [session, reading, notify]);
   const [editorView, setEditorView] = useState<import('@codemirror/view').EditorView | null>(null);
+  useLayoutEffect(() => {
+    if (!active || !editorView) return;
+    editorView.requestMeasure();
+    if (!reading && navigationId === getActiveNavigationId()) editorView.focus();
+  }, [active, editorView, navigationId, reading]);
   useEffect(() => {
     if (!editorView || !session) return;
     const stopEditor = registerEditor(editorView, { undo: () => session.undo(), redo: () => session.redo() });
@@ -87,7 +93,7 @@ export default function Editor({ path: suppliedPath, reading = false, embedded =
     footer={!embedded && !fragment && /\.(md|markdown)$/i.test(session.id)
       ? <div className="note-footer-body"><BacklinksPanel path={session.id} /><OutgoingPanel path={session.id} /></div> : undefined}
     extensions={reviewExtensions}
-    autoFocus={!reading} showTitle={!embedded} layout={embedded ? 'embedded' : 'page'}
+    autoFocus={active === undefined && !reading} showTitle={!embedded} layout={embedded ? 'embedded' : 'page'}
     onChange={(changes, version, origin, model, history) => { session.edit(version, changes, origin, history); session.acceptAnalysis(model); return session.snapshot; }}
     onUndo={() => { session.undo(); return session.snapshot; }}
     onRedo={() => { session.redo(); return session.snapshot; }}

@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-26 (合并标签组布局)
+Cập nhật lần cuối: 2026-11-27 (标签切换与分屏恢复)
+
+### 标签切换与分屏恢复（PRD 1.77）
+
+- [x] 保留普通笔记每个标签的编辑器状态，单页、分屏与重复标签的滚动及选区回归通过。
+- [~] 一次提交暂存分屏的两个栏位，验证网页首次显示的尺寸、访客状态及打包运行。
 
 ### 合并标签组布局（PRD 1.76）
 
@@ -852,6 +857,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-27: PRD1.77 按标签身份保留中央 Markdown 编辑器，暂存分屏的两个栏位一起恢复。延迟加载、笔记滚动与选区、只读栏活动命令专项通过。
 
 - 2026-11-26: PRD1.74修复 query 对完整 callout 标记的拒绝与索引标点丢失，680单元、58浏览器、Mac/Windows正式包生产资源通过；0.1.102发布并原位更新五设备，Mac真实库 `[!question]` 返回42篇。
 

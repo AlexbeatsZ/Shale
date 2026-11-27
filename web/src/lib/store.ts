@@ -263,7 +263,7 @@ interface AppState {
   /** Show a toast. ms=0 keeps it until another notify() replaces it. */
   notify: (msg: string, ms?: number) => void;
 
-  openFile: (path: string, recordHistory?: boolean, viewId?: string, options?: { preserveHomepage?: boolean; tabId?: string }) => Promise<void>;
+  openFile: (path: string, recordHistory?: boolean, viewId?: string, options?: { preserveHomepage?: boolean; tabId?: string; parkSplit?: boolean }) => Promise<void>;
   openHomepage: (viewId?: string) => Promise<void>;
   openWikilink: (target: string, sourcePath?: string, intent?: LinkIntent) => Promise<void>;
   closeTab: (path: string) => Promise<void>;
@@ -715,26 +715,13 @@ export const useStore = create<AppState>()(
       },
       parkedSplit: null,
       showTab: async key => {
-        const s = get(), parked = s.parkedSplit;
+        const s = get();
         const tab = s.tabs.find(tab => tabKey(tab) === key), path = tab?.path ?? key;
-        if (!s.splitPath && parked && [parked.mainId ?? parked.main, parked.sideId ?? parked.side].includes(key)) {
-          set({ parkedSplit: null });
-          await get().openFile(parked.main, true, 'main', { preserveHomepage: true, tabId: parked.mainId });
-          if (get().activePath !== parked.main) return;
-          await get().openToSide(parked.sideId ?? parked.side, parked.direction);
-          if (get().splitPath === parked.side) activateNavigation(key === (parked.mainId ?? parked.main) ? 'main' : 'split');
-          return;
-        }
         if (s.splitPath && (key === paneTabKey(s) || key === paneTabKey(s, 'split'))) {
+          openGeneration++;
           activateNavigation(key === paneTabKey(s) ? 'main' : 'split'); return;
         }
-        if (s.splitPath && s.activePath) {
-          const group = { main: s.activePath, side: s.splitPath, mainId: paneTabKey(s)!, sideId: paneTabKey(s, 'split')!, direction: s.splitDirection };
-          await get().closeSplit();
-          if (get().splitPath !== null) return;
-          set({ parkedSplit: group });
-        }
-        await get().openFile(path, true, 'main', { preserveHomepage: true, tabId: tab ? tabKey(tab) : undefined });
+        await s.openFile(path, true, 'main', { preserveHomepage: true, tabId: tab ? key : undefined, parkSplit: !!s.splitPath });
       },
       replacePane: async (viewId, key) => {
         const s = get(), old = viewId === 'split' ? paneTabKey(s, 'split') : paneTabKey(s), other = viewId === 'split' ? paneTabKey(s) : paneTabKey(s, 'split');
@@ -976,37 +963,45 @@ export const useStore = create<AppState>()(
         }
         const home = isHomepagePath(path);
         const homepage = !options?.preserveHomepage && !home && isHomepagePath(origin) ? origin : null;
-        const parked = get().parkedSplit;
-        if (parked && !get().splitPath && [parked.mainId ?? parked.main, parked.sideId ?? parked.side].includes(options?.tabId ?? path)) {
-          await get().showTab(options?.tabId ?? path);
-          if (homepage && get().activePath === parked.main && get().splitPath === parked.side)
-            set(s => ({ tabs: s.tabs.filter(tab => tab.path !== homepage) }));
-          return;
-        }
+        const initial = get(), parked = initial.parkedSplit;
+        const requested = options?.tabId ?? path;
+        const restoring = !initial.splitPath && parked && [parked.mainId ?? parked.main, parked.sideId ?? parked.side].includes(requested) ? parked : null;
+        const parking = options?.parkSplit && initial.activePath && initial.splitPath ? {
+          main: initial.activePath, side: initial.splitPath, mainId: paneTabKey(initial)!, sideId: paneTabKey(initial, 'split')!, direction: initial.splitDirection,
+        } : null;
+        const targetId = restoring ? restoring.mainId ?? restoring.main : options?.tabId;
+        if (restoring) path = restoring.main;
         cancelNavigation('main', path);
         const generation = ++openGeneration;
-        await documents.saveLeaving(get().activePath);
+        const splitOperation = restoring || parking ? ++splitGeneration : null;
+        if (splitOperation !== null) cancelNavigation('split', restoring?.side);
+        if (parking && parking.side !== origin) await documents.saveLeaving(parking.side);
+        await documents.saveLeaving(origin);
         // A folder path (restored tab or folder link) opens a folder content
         // view — never read it as a note nor pollute Recent with it.
-        const isFolder = !home && findNode(get().tree, path)?.type === 'folder';
-        let content = '';
-        if (!isFolder && TEXT_EXT_RE.test(path)) {
-          const doc = await documents.open(path);
-          content = doc.snapshot.raw;
-        }
-        if (generation !== openGeneration) return;
-        activateNavigation('main');
+        const isFolder = findNode(get().tree, path)?.type === 'folder';
+        const openText = (file: string) => TEXT_EXT_RE.test(file) ? documents.open(file) : undefined;
+        const [doc, side] = await Promise.all([isFolder ? undefined : openText(path), restoring ? openText(restoring.side) : undefined]);
+        if (generation !== openGeneration || (splitOperation !== null && splitOperation !== splitGeneration)
+          || (restoring && get().parkedSplit !== restoring)) return;
+        activateNavigation(restoring && requested !== targetId ? 'split' : 'main');
         const title = tabTitle(path);
         set((s) => {
-          const target = s.tabs.find(tab => options?.tabId ? tabKey(tab) === options.tabId : tab.path === path);
+          const target = s.tabs.find(tab => targetId ? tabKey(tab) === targetId : tab.path === path);
           const existing = !!target;
           const replaceAt = homepage && s.activePath === homepage && s.splitPath !== homepage
             ? s.tabs.findIndex(tab => tabKey(tab) === paneTabKey(s)) : -1;
           const tabs = existing && replaceAt < 0 ? s.tabs : [...s.tabs];
           if (replaceAt >= 0) tabs.splice(replaceAt, 1, ...(existing ? [] : [{ path, title, ...restoreTabGrouping(tabs[replaceAt]) }]));
           else if (!existing) tabs.push({ path, title });
-          const recent = isFolder || home || path === GRAPH_PATH || isWebViewerPath(path) ? s.recent : [path, ...s.recent.filter((p) => p !== path)].slice(0, 20);
-          return { tabs, activePath: path, activeTabId: target ? tabKey(target) : path, content, dirty: documents.get(path)?.snapshot.dirty ?? false, recent, ...pushHistory(s, path, recordHistory) };
+          const recent = isFolder || isHomepagePath(path) || path === GRAPH_PATH || isWebViewerPath(path) ? s.recent : [path, ...s.recent.filter((p) => p !== path)].slice(0, 20);
+          const split = restoring ? { parkedSplit: null, splitPath: restoring.side, splitTabId: restoring.sideId ?? restoring.side,
+            splitDirection: restoring.direction, splitContent: side?.snapshot.raw ?? '' }
+            : parking ? { parkedSplit: parking, splitPath: null, splitTabId: null, splitContent: '',
+              viewHistories: Object.fromEntries(Object.entries(s.viewHistories).filter(([id]) => id !== 'split')) } : {};
+          // Publish both panes and the split direction in the same render.
+          return { ...split, tabs, activePath: path, activeTabId: target ? tabKey(target) : path, content: doc?.snapshot.raw ?? '',
+            dirty: doc?.snapshot.dirty ?? false, recent, ...pushHistory(s, path, recordHistory, 'main', before) };
         });
       },
 

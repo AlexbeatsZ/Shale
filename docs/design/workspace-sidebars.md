@@ -74,6 +74,10 @@ rightTabs 只保存 `{id,type,state,title,icon,side?}`，不保存正文、DOM�
 修改时保留原标签。每个异步替换/关闭有代次，过期结果不能覆盖较新的选择。
 
 左右笔记和插件视图首次选中才挂载；随后隐藏时保留实例，避免丢光标/滚动。
+中央普通 Markdown 笔记也按标签身份在首次显示时创建编辑器；切到其他标签时隐藏，关闭标签时释放。
+两个同路径标签共享 DocumentSession，分别保留滚动、光标、选区、折叠和视图内控件。
+隐藏的中央笔记不参与活动编辑器和插件 Workspace 的栏位定位。再次显示时请求 CodeMirror 重新测量，
+只把焦点交给所选栏。阅读状态下的正文支持程序聚焦，保持只读。
 App 保留左侧 Sidebar 外壳，只用 open 控制可见固定面板和动态内容；不再收起就卸载宿主。
 标签关闭才卸载。WorkspaceLeaf 串行化挂载、用代次取消过期结果；不重复调用 onOpen，
 相同状态的 setState 不重复执行。React StrictMode cleanup 后可以安全重新挂载。
@@ -94,7 +98,7 @@ App 保留左侧 Sidebar 外壳，只用 open 控制可见固定面板和动态�
 
 - `openToSide` 把副栏页面放进 `tabs`(紧跟当前主栏标签)。副栏原本是 Homepage 时，被打开的文件原位替换该 Homepage 标签，避免残留新标签页。旧 uistate 中不在 `tabs` 的 `splitPath` 仍可显示(组内临时合成标签)。
 - 标签栏把 `activePath` 与 `splitPath` 两个标签合成 `.tab-split-group`(方向图标 + 两个同构 `.tab`)，副栏标签不在组外重复出现。组内点击只 `activateNavigation` 并聚焦编辑器。这取代了旧约定"主标签栏点击显式指定 main"。键盘左右按 `tabs` 顺序，通过 `data-tab-path` 定位焦点。
-- 分屏组是一个整体标签(用户 2026-11-01 纠正：不能把组外标签塞进聚焦栏)。标签栏点击统一走 `showTab(path)`：分屏可见时点组外标签 C → `closeSplit`(保存屏障)后记录 `parkedSplit = { main, side, direction }`，再在主栏单独打开 C；点暂存组成员 → 清空 `parkedSplit`、主栏打开 main、`openToSide(side, direction)`，聚焦所点成员。`openFile(path, _, 'main')` 遇到暂存组成员也转给 showTab，所以快速切换器等入口同样恢复整组。不变式：`parkedSplit` 只在 `splitPath === null` 时存在；`openToSide` 建立新分屏时丢弃旧暂存组(只支持一个分屏组)。`parkedSplit` 进入 PERSIST_KEYS，路径重命名/删除时随 remap 更新或解散。关闭暂存组成员 → 解散组；关闭当前标签后若下一个活动标签是暂存组成员则恢复整组。暂存组在标签栏以 `.is-parked`(细边框、无活动底色)渲染在 main 成员的位置。`workspace:next-tab` 等命令仍在聚焦栏内切换页面，不经过 showTab。
+- 分屏组是一个整体标签(用户 2026-11-01 纠正：不能把组外标签塞进聚焦栏)。`showTab` 调用中央 `openFile`，保存当前两栏并加载目标后，在同一次提交中暂存分屏和显示组外标签。选中暂存组任一成员时，保存当前页并准备组内两栏，再同时发布两个标签身份、路径和分屏方向，聚焦所选成员。快速切换器等直接调用 `openFile` 的入口使用同一恢复路径；等待、保存失败或过期请求期间维持当前布局。`parkedSplit` 只在 `splitPath === null` 时存在；`openToSide` 建立新分屏时丢弃旧暂存组(只支持一个分屏组)。`parkedSplit` 进入 PERSIST_KEYS，路径重命名/删除时随 remap 更新或解散。关闭暂存组成员 → 解散组；关闭当前标签后若下一个活动标签是暂存组成员则恢复整组。暂存组在标签栏以 `.is-parked`(细边框、无活动底色)渲染在 main 成员的位置。`workspace:next-tab` 等命令仍在聚焦栏内切换页面，不经过 showTab。
 - 中央新建标签页(+、`new-tab`)调用 `showTab(home://…)`：分屏时与点组外标签相同，暂存分屏组并单独显示新 Homepage，不替换组内任一栏(用户 2026-11-01 指出旧逻辑未改)。只有 `splitWithHomepage` 传 `openHomepage('split')` 在分屏内打开 Homepage。
 - `closePane(view)` 是关闭一栏的唯一入口：关闭副栏 = `closeSplit` 后移除其标签；关闭主栏 = 保存屏障后把副栏页面提升为 `activePath`，并把副栏 DOM 上的 `data-mode` 写入 workspace `viewMode`，保持存活页面的模式。同文件双栏关闭任一栏只退出分屏，不删标签。`closeTab`、正文 overlay ×、`workspace:close`、`WorkspaceLeaf.detach` 都走这条路径。`closeSplit` 只表示"取消分屏"，两页都保留为标签。
 - 标签右键"向右/向下分屏"、命令 `split`/`split-down` 调 `splitWithHomepage`：保留该页在主栏，新侧 `openHomepage('split')` 并聚焦。文件树/书签/链接的"在右侧打开"仍打开指定文件。

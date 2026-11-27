@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath } from '../lib/store';
-import { paneTabKey } from '../lib/tabIdentity';
+import { memo, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useStore, GRAPH_PATH, isHomepagePath, isWebViewerPath, type Tab } from '../lib/store';
+import { paneTabKey, tabKey } from '../lib/tabIdentity';
 import { activateNavigation } from '../lib/activeEditor';
 import { isFolderPath } from '../lib/tree';
 import { TAB_DRAG_TYPE, tabDrag } from '../lib/tabDrag';
@@ -65,18 +65,29 @@ function PaneDivider({ down }: { down: boolean }) {
     }} />;
 }
 
-function WorkspacePane({ path, navigationId }: { path: string; navigationId: 'main' | 'split' }) {
+type PaneId = 'main' | 'split';
+
+function WorkspacePane({ path, navigationId, active }: { path: string; navigationId: PaneId; active?: boolean }) {
   const close = useStore((state) => state.closePane);
-  return <div className={`pane ${navigationId}-pane`} data-view-id={navigationId}
+  const hidden = active === false;
+  return <div className={`pane${hidden ? '' : ` ${navigationId}-pane`}`} data-view-id={hidden ? undefined : navigationId} hidden={hidden}
     onPointerDownCapture={() => activateNavigation(navigationId)} onFocusCapture={() => activateNavigation(navigationId)}>
     <button className="tool-btn pane-close" onClick={() => void close(navigationId)} title={navigationId === 'main' ? '关闭标签页' : '关闭分屏'}>
       <Icon name="x" size={16} />
     </button>
     {isHomepagePath(path) ? <div className="empty-state"><WorkspaceLauncher key={path} viewId={navigationId} /></div>
       : path === GRAPH_PATH ? <GraphView navigationId={navigationId} />
-      : <WorkspaceFile path={path} navigationId={navigationId} />}
+      : <WorkspaceFile path={path} navigationId={navigationId} active={active} />}
   </div>;
 }
+
+const WorkspaceNote = memo(function WorkspaceNote({ path, pane }: { path: string; pane?: PaneId }) {
+  const lastPane = useRef<PaneId>();
+  if (pane) lastPane.current = pane;
+  return lastPane.current && <WorkspacePane path={path} navigationId={lastPane.current} active={!!pane} />;
+});
+
+function noteTab(tab: Tab) { return /\.(?:md|markdown)$/i.test(tab.path); }
 
 export default function Workspace() {
   const activePath = useStore((s) => s.activePath);
@@ -85,6 +96,11 @@ export default function Workspace() {
   const splitDirection = useStore((s) => s.splitDirection);
   const tree = useStore((s) => s.tree);
   const tabs = useStore((s) => s.tabs);
+  const mainKey = useStore((s) => paneTabKey(s));
+  const splitKey = useStore((s) => paneTabKey(s, 'split'));
+  const notes = tabs.filter(noteTab).sort((a, b) => tabKey(a).localeCompare(tabKey(b)));
+  const mainNote = notes.find(tab => tabKey(tab) === mainKey);
+  const splitNote = splitKey !== mainKey && notes.find(tab => tabKey(tab) === splitKey);
   const activeIsHome = isHomepagePath(activePath);
   const workspace = useRef<HTMLDivElement>(null);
   const editorArea = useRef<HTMLDivElement>(null);
@@ -172,7 +188,7 @@ export default function Workspace() {
             <WorkspaceLauncher key={activePath} />
           </div>
         )}
-        {activePath && !activeIsHome && !isWebViewerPath(activePath) && (
+        {activePath && !activeIsHome && !isWebViewerPath(activePath) && !mainNote && (
           <WorkspacePane path={activePath} navigationId="main" />
         )}
         {splitPath && <PaneDivider down={splitDirection === 'down'} />}
@@ -184,7 +200,8 @@ export default function Workspace() {
             <WebViewerTab id={tab.path} url={tab.webUrl ?? ''} active={!!pane} />
           </div>;
         })}
-        {splitPath && !isWebViewerPath(splitPath) && <WorkspacePane path={splitPath} navigationId="split" />}
+        {splitPath && !isWebViewerPath(splitPath) && !splitNote && <WorkspacePane path={splitPath} navigationId="split" />}
+        {notes.map(tab => <WorkspaceNote key={tabKey(tab)} path={tab.path} pane={tab === mainNote ? 'main' : tab === splitNote ? 'split' : undefined} />)}
       </div>
       {drop && <div className="pane-drop-indicator" style={{ left: drop.left, top: drop.top, width: drop.width, height: drop.height }} />}
       <StatusBar />

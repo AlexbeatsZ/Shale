@@ -32,7 +32,7 @@ export function setActiveEditorMode(mode: ModeRequest): boolean {
   // An editor without a mode switch must never redirect the action to another pane.
   return true;
 }
-const available = (view: EditorView) => view.dom.isConnected && !view.dom.closest('[hidden], [aria-hidden="true"]');
+export const isEditorAvailable = (view: EditorView) => view.dom.isConnected && !view.dom.closest('[hidden], [aria-hidden="true"]');
 
 export function registerEditor(view: EditorView, commands: EditorCommands): () => void {
   mounted.set(view, commands);
@@ -56,12 +56,12 @@ export function registerEditor(view: EditorView, commands: EditorCommands): () =
 export function getActiveEditor(): EditorView | null {
   const page = document.activeElement?.closest('[data-sidebar-tab]');
   if (page && !active?.dom.closest('[data-sidebar-tab]')?.isSameNode(page)) return null;
-  if (active && mounted.has(active) && available(active)) return active;
-  return [...mounted.keys()].find(view => available(view) && contextOf(view).navigationId === activeNavigationId) ?? null;
+  if (active && mounted.has(active) && isEditorAvailable(active)) return active;
+  return [...mounted.keys()].find(view => isEditorAvailable(view) && contextOf(view).navigationId === activeNavigationId) ?? null;
 }
 export function getEditorForPath(path: string): EditorView | null {
-  if (active && mounted.has(active) && available(active) && contextOf(active).sourcePath === path) return active;
-  return [...mounted.keys()].find((view) => available(view) && contextOf(view).sourcePath === path) ?? null;
+  if (active && mounted.has(active) && isEditorAvailable(active) && contextOf(active).sourcePath === path) return active;
+  return [...mounted.keys()].find((view) => isEditorAvailable(view) && contextOf(view).sourcePath === path) ?? null;
 }
 const editable = () => {
   const view = getActiveEditor();

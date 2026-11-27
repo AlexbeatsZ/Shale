@@ -1,7 +1,7 @@
 import { Events, Component } from './events';
 import { createDiv, createEl } from './dom';
 import { useStore } from '../store';
-import { getActiveEditor } from '../activeEditor';
+import { getActiveEditor, isEditorAvailable } from '../activeEditor';
 import { contextOf } from '../renderContext';
 import { Editor, editorEntries, refreshPluginExtensions } from './editor';
 import type { TFile } from './vault';
@@ -312,7 +312,7 @@ export class Workspace extends Events {
       : undefined;
     if (slot === 'right' && !tab) return null;
     const navigationId = slot === 'right' ? 'sidebar:' + id : slot;
-    const entry = editorEntries().find(entry => contextOf(entry.cm).navigationId === navigationId);
+    const entry = editorEntries().find(entry => contextOf(entry.cm).navigationId === navigationId && (tab || isEditorAvailable(entry.cm)));
     if (!entry) return null;
     const leaf = tab ? this.rightLeaf(tab) : slot === 'split' ? this.split : this.main;
     const view = leaf.view as MarkdownView;

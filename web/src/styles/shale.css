@@ -485,6 +485,7 @@ html[data-desktop-titlebar][data-desktop-fullscreen] .tab-bar { padding-left: 0;
 
 .editor-area { flex: 1; overflow: hidden; display: flex; min-height: 0; }
 .pane { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+.pane[hidden] { display: none; }
 .editor-area > .split-pane { order: 2; }
 .editor-area.split-down { flex-direction: column; }
 /* Pane sizes follow the divider; each side grows by its share of the area. */

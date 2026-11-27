@@ -8,7 +8,8 @@ async function groupStep(page: Page, key: string) {
 
 test.beforeEach(async ({ page }) => {
   let persisted: Record<string, unknown> = {};
-  const contents: Record<string, string> = { 'a.md': '# A\n\nDraft A', 'b.md': '# B', 'c.md': '# C' };
+  const paragraphs = Array.from({ length: 240 }, (_, i) => `Row ${i} with enough text to select in the editor.\n`).join('\n');
+  const contents: Record<string, string> = { 'a.md': '# A\n\nDraft A\n\n' + paragraphs, 'b.md': '# B\n\n' + paragraphs, 'c.md': '# C' };
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/vault-identity' || url.pathname === '/api/writing') return route.fallback();
@@ -46,6 +47,98 @@ test.beforeEach(async ({ page }) => {
     (window as any).groupFixture = { store: useStore, flushWorkspaceState, documents, sharedApp, active };
   });
   await expect(page.locator('.tab-bar .tab')).toHaveCount(3);
+});
+
+test('central notes retain separate scroll and selection through single tabs and a parked split', async ({ page }) => {
+  const noteTab = (key: string) => page.locator(`.tab[data-tab-id="${key}"]`);
+  const pane = (id: 'main' | 'split') => page.locator(`.workspace .${id}-pane .cm-editor`);
+  const remember = async (id: 'main' | 'split', path: string, line: number) => {
+    await expect(pane(id)).toBeVisible();
+    await page.evaluate(({ path, line }) => {
+      const view = (window as any).groupFixture.active.getEditorForPath(path);
+      const from = view.state.doc.line(line).from;
+      view.dispatch({ selection: { anchor: from, head: from + 5 } });
+      view.scrollDOM.scrollTop = view.lineBlockAt(from).top;
+      return new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    }, { path, line });
+    return pane(id).locator('.cm-scroller').evaluate(el => el.scrollTop);
+  };
+  const check = async (id: 'main' | 'split', top: number, path: string, line: number) => {
+    expect(top).toBeGreaterThan(300);
+    await expect.poll(() => pane(id).locator('.cm-scroller').evaluate(el => el.scrollTop)).toBeCloseTo(top, 0);
+    await expect.poll(() => page.evaluate(({ path, line }) => {
+      const view = (window as any).groupFixture.active.getEditorForPath(path);
+      const from = view.state.doc.line(line).from;
+      return [view.state.selection.main.anchor - from, view.state.selection.main.head - from];
+    }, { path, line })).toEqual([0, 5]);
+  };
+  await noteTab('a.md').click();
+  const original = await remember('main', 'a.md', 130);
+  const editor = await pane('main').elementHandle();
+  await noteTab('b.md').click();
+  await noteTab('a.md').click();
+  await check('main', original, 'a.md', 130);
+  expect(await pane('main').evaluate((current, previous) => current === previous, editor)).toBe(true);
+  await editor?.dispose();
+
+  await noteTab('a.md').click({ button: 'right' });
+  await page.getByRole('menuitem', { name: '复制标签页', exact: true }).click();
+  const copy = page.locator('.tab[data-tab-path="a.md"]').last();
+  await expect(copy).toHaveClass(/active/);
+  const duplicate = await remember('main', 'a.md', 240);
+  await noteTab('a.md').click();
+  await check('main', original, 'a.md', 130);
+  await copy.click();
+  await check('main', duplicate, 'a.md', 240);
+
+  await noteTab('a.md').click();
+  await page.evaluate(() => (window as any).groupFixture.store.getState().openToSide('b.md', 'down'));
+  const main = await remember('main', 'a.md', 170);
+  const split = await remember('split', 'b.md', 200);
+  await noteTab('c.md').click();
+  await expect(pane('split')).toHaveCount(0);
+  await noteTab('b.md').click();
+  await check('main', main, 'a.md', 170);
+  await check('split', split, 'b.md', 200);
+  await expect(noteTab('b.md')).toHaveClass(/is-focused/);
+});
+
+test('restoring a split waits for both documents and publishes both panes together', async ({ page }) => {
+  await page.evaluate(async () => {
+    const { store, documents } = (window as any).groupFixture;
+    await store.getState().showTab('a.md');
+    await store.getState().openToSide('b.md', 'right');
+    await store.getState().showTab('c.md');
+    const changes: unknown[] = [];
+    store.subscribe((state: any, previous: any) => {
+      if (state.activePath !== previous.activePath || state.splitPath !== previous.splitPath) {
+        changes.push([state.activePath, state.splitPath, state.splitDirection]);
+      }
+    });
+    const open = documents.open.bind(documents);
+    let release!: () => void;
+    const blocked = new Promise<void>(resolve => { release = resolve; });
+    let start!: () => void;
+    const started = new Promise<void>(resolve => { start = resolve; });
+    documents.open = async (path: string) => {
+      if (path === 'b.md') { start(); await blocked; }
+      return open(path);
+    };
+    Object.assign((window as any).groupFixture, { changes, started, release, open });
+  });
+  await page.locator('.tab[data-tab-id="b.md"]').click();
+  await page.evaluate(() => (window as any).groupFixture.started);
+  await expect(page.locator('.workspace .main-pane [data-document-id="c.md"]')).toBeVisible();
+  await expect(page.locator('.workspace .split-pane')).toHaveCount(0);
+  await expect(page.locator('.tab-split-group')).toHaveClass(/is-parked/);
+  await page.evaluate(() => {
+    const { documents, open, release } = (window as any).groupFixture;
+    documents.open = open;
+    release();
+  });
+  await expect(page.locator('.workspace .main-pane [data-document-id="a.md"]')).toBeVisible();
+  await expect(page.locator('.workspace .split-pane [data-document-id="b.md"]')).toBeVisible();
+  expect(await page.evaluate(() => (window as any).groupFixture.changes)).toEqual([['a.md', 'b.md', 'right']]);
 });
 
 test('Command/Ctrl multi-selection groups in click order; single menus recolor and remove; left border is visible', async ({ page }) => {

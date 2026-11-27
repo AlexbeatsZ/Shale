@@ -80,7 +80,7 @@ export interface MarkdownViewProps {
 }
 const externalUpdate = Annotation.define<boolean>();
 const readonlyExt = (reading: boolean) => reading
-  ? [EditorView.editable.of(false), EditorState.readOnly.of(true)] : [];
+  ? [EditorView.editable.of(false), EditorState.readOnly.of(true), EditorView.contentAttributes.of({ tabindex: '-1' })] : [];
 const titleOf = (path: string) => (path.split('/').pop() ?? path).replace(/\.(md|markdown)$/i, '');
 
 export default function MarkdownView(props: MarkdownViewProps) {

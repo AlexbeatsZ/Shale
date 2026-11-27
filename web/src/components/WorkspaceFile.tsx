@@ -8,10 +8,11 @@ import FolderView from './FolderView';
 import SyncConflictPanel from './SyncConflictPanel';
 import { useSyncConflict } from '../lib/syncConflicts';
 
-export default function WorkspaceFile({ path, navigationId, onReady }: {
+export default function WorkspaceFile({ path, navigationId, onReady, active }: {
   path: string;
   navigationId: string;
   onReady?: ComponentProps<typeof Editor>['onReady'];
+  active?: boolean;
 }) {
   const folder = useStore(state => isFolderPath(state.tree, path) && !findNode(state.tree, path)?.virtualDocument);
   const conflict = useSyncConflict(path);
@@ -19,16 +20,12 @@ export default function WorkspaceFile({ path, navigationId, onReady }: {
   // Text conflicts are reviewed inside the editor like MCP candidates; the rest use the file-level panel.
   if (conflict && !(conflict.action === 'modify' && conflict.localText !== null && TEXT_EXT_RE.test(path))) return <div className="sync-conflict-view">
     <SyncConflictPanel file={conflict} />
-    {conflict.action !== 'add' && <div className="sync-conflict-content"><FileContent path={path} navigationId={navigationId} onReady={onReady} /></div>}
+    {conflict.action !== 'add' && <div className="sync-conflict-content"><FileContent path={path} navigationId={navigationId} onReady={onReady} active={active} /></div>}
   </div>;
-  return <FileContent path={path} navigationId={navigationId} onReady={onReady} />;
+  return <FileContent path={path} navigationId={navigationId} onReady={onReady} active={active} />;
 }
 
-function FileContent({ path, navigationId, onReady }: {
-  path: string;
-  navigationId: string;
-  onReady?: ComponentProps<typeof Editor>['onReady'];
-}) {
+function FileContent({ path, navigationId, onReady, active }: ComponentProps<typeof WorkspaceFile>) {
 
   const image = /\.(png|jpe?g|gif|svg|webp)$/i.test(path);
   const video = VIDEO_EXT_RE.test(path);
@@ -42,5 +39,5 @@ function FileContent({ path, navigationId, onReady }: {
       </div>
     </div>;
   }
-  return <Editor path={path} navigationId={navigationId} onReady={onReady} sidebar={navigationId.startsWith('sidebar:')} />;
+  return <Editor path={path} navigationId={navigationId} onReady={onReady} active={active} sidebar={navigationId.startsWith('sidebar:')} />;
 }

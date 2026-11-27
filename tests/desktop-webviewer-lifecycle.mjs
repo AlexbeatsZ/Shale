@@ -136,8 +136,29 @@ try {
   await unchanged();
   await page.getByRole('separator', { name: '调整分屏比例；双击交换两侧页面' }).press('Enter');
   await unchanged();
-  await tab('three').click(); await tab('one').click();
+  await tab('three').click();
+  await expect(page.locator('.workspace .split-pane')).toHaveCount(0);
+  // Sample the first visible layout as well as the settled layout, including
+  // commits that can occur between compositor frames.
+  const restoredLayout = await page.locator('.workspace .editor-area').evaluateHandle(area => {
+    const samples = [];
+    const sample = () => {
+      for (const pane of area.querySelectorAll(':scope > .webviewer-pane:not([hidden])')) {
+        const address = pane.querySelector('input[aria-label="网页地址"]').value;
+        if (!address.endsWith('/one') && !address.endsWith('/two')) continue;
+        samples.push({ address, split: area.classList.contains('is-split'), share: pane.clientWidth / area.clientWidth });
+      }
+    };
+    const observer = new MutationObserver(sample);
+    observer.observe(area, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+    return { stop() { sample(); observer.disconnect(); return samples; } };
+  });
+  await tab('one').click();
   await expect(page.locator('.workspace .split-pane')).toBeVisible();
+  const visibleLayouts = await restoredLayout.evaluate(record => record.stop());
+  await restoredLayout.dispose();
+  assert.ok(visibleLayouts.some(item => item.address.endsWith('/one')) && visibleLayouts.some(item => item.address.endsWith('/two')));
+  assert.ok(visibleLayouts.every(item => item.split && Math.abs(item.share - 0.5) < 0.01), JSON.stringify(visibleLayouts));
   await unchanged();
   // Selection order is intentionally different from display order.
   for (const name of ['two', 'one', 'three']) await tab(name).click({ modifiers: [mod] });
