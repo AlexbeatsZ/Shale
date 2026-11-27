@@ -21,7 +21,7 @@
 | 加载行为 | 真实 SVG 路径随帧变化；减少动态效果后形状与旋转稳定 |
 | Mac 正式包签名 | `Local Development Code Signing`；`codesign -d -r-` 含固定 identifier 与 `certificate leaf`；deep/strict 验证通过 |
 | Mac 实包 WebViewer | 通过主页动作、中央/两侧网页、访客隔离、历史导航、笔记拖放替换网页、用户脚本文件/URL 导入、自动更新/权限审阅、工作区恢复与正常退出 |
-| 隔离预览入口 | `npm run preview:material`；临时 profile 与示例 Vault，关闭后删除；脚本语法检查通过 |
+| 隔离预览入口 | `npm run preview:material` 已启动 Mac 预览；临时 profile 与示例 Vault，健康检查 200/ok；脚本语法检查通过，关闭后由入口脚本清理 |
 
 浏览器使用本机已有 Chrome，以 arm64 包装脚本启动；universal Chrome 直接启动曾使 harness 初始化超时，强制原生架构后专项约 6 秒、完整相关回归约 28 秒。
 
