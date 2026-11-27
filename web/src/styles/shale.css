@@ -454,7 +454,8 @@ html[data-desktop-titlebar][data-desktop-fullscreen] .tab-bar { padding-left: 0;
 .tab .dot { color: var(--text-muted); font-size: 9px; }
 /* Split group: the main tab and the side pane share one active tab shell; the
    focused pane is the raised segment, like a browser split-screen tab group. */
-.tab-split-group { display: flex; align-items: stretch; gap: 2px; flex: 0 1 auto; position: relative; min-width: 0;
+/* Keep the shell at least as wide as its members; the outer strip owns overflow. */
+.tab-split-group { display: flex; align-items: stretch; gap: 2px; flex: 0 1 auto; position: relative; min-width: min-content;
   padding: 3px 3px 3px 6px; background: var(--tab-active-bg); border-radius: 8px 8px 0 0; }
 .tab-split-group::before, .tab-split-group::after { content: ''; pointer-events: none; position: absolute; bottom: 0; width: 8px; height: 8px; }
 .tab-split-group::before { right: 100%; border-radius: 0 0 8px 0; box-shadow: 4px 0 0 var(--tab-active-bg); }

@@ -168,6 +168,44 @@ test('Mac uses physical Control, Windows has no group binding, and Option focus 
   }
 });
 
+test('split tab shells contain both members and keep the new-tab button after the scrolling strip', async ({ page }, info) => {
+  await page.evaluate(async () => {
+    const s = (window as any).groupFixture.store.getState();
+    await s.showTab('a.md'); await s.openToSide('b.md');
+  });
+  for (const direction of ['right', 'down']) {
+    await page.evaluate(async direction => {
+      const s = (window as any).groupFixture.store.getState();
+      await s.showTab('a.md'); await s.openToSide('b.md', direction);
+    }, direction);
+    for (const parked of [false, true]) {
+      await page.evaluate(async parked => {
+        await (window as any).groupFixture.store.getState().showTab(parked ? 'c.md' : 'a.md');
+      }, parked);
+      if (direction === 'down') await expect(page.locator('.tab-split-group')).toHaveClass(/is-down/);
+      else await expect(page.locator('.tab-split-group')).not.toHaveClass(/is-down/);
+      for (const width of [1480, 800, 480, 320]) {
+        await page.setViewportSize({ width, height: 780 });
+        const layout = await page.locator('.tab-bar').evaluate(bar => {
+          const group = bar.querySelector('.tab-split-group')!, strip = bar.querySelector('.tab-scroll')!;
+          const bounds = group.getBoundingClientRect(), scroll = strip.getBoundingClientRect();
+          const members = [...group.querySelectorAll('.tab')].map(tab => tab.getBoundingClientRect());
+          const plus = bar.querySelector('[aria-label="新建中央标签页"]')!.getBoundingClientRect();
+          return { groupRight: bounds.right, membersRight: Math.max(...members.map(box => box.right)),
+            plusLeft: plus.left, plusRight: plus.right, stripRight: scroll.right, viewport: innerWidth };
+        });
+        expect(layout.membersRight, `${direction}, parked=${parked}, width=${width}: members overflow their shell`).toBeLessThanOrEqual(layout.groupRight + 1);
+        expect(layout.plusLeft).toBeGreaterThanOrEqual(layout.stripRight - 1);
+        expect(layout.plusRight).toBeLessThanOrEqual(layout.viewport);
+      }
+    }
+  }
+  await page.locator('.tab-bar').screenshot({ path: info.outputPath('split-tabs-narrow.png') });
+  await page.getByRole('button', { name: '新建中央标签页', exact: true }).click();
+  await expect(page.locator('.tab-split-group')).toHaveClass(/is-parked/);
+  await expect(page.locator('.workspace-launcher')).toBeVisible();
+});
+
 test('physical Control group shortcut works in actual Vim Normal Visual and Insert modes', async ({ page }) => {
   test.skip(process.platform !== 'darwin', 'Windows intentionally has no group shortcut');
   await page.evaluate(async () => {
