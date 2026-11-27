@@ -4,6 +4,7 @@ import { parseWebViewerUrl, webViewerPartition } from '../../../desktop/src/webV
 import { activateNavigation } from '../lib/activeEditor';
 import { openWebViewer, updateCentralWebViewer } from '../lib/openWebViewer';
 import { useStore } from '../lib/store';
+import { useActivePage } from '../lib/useActivePage';
 import { sharedApp } from '../lib/plugins';
 import Icon from './Icon';
 
@@ -24,6 +25,9 @@ export default function WebViewerTab({ id, url, active, sidebar = false }: { id:
   const [controls, setControls] = useState({ ready: false, back: false, forward: false });
   if (active) opened.current = true;
   const mountGuest = opened.current && !!url;
+  const splitPath = useStore(state => state.panes.split.path);
+  const selectedView = useActivePage().viewId;
+  const selected = active && selectedView === (sidebar ? 'sidebar:' + id : splitPath === id ? 'split' : 'main');
   const viewId = () => sidebar ? 'sidebar:' + id : useStore.getState().panes.split.path === id ? 'split' : 'main';
   const select = () => activateNavigation(viewId());
   const updateTab = (address: string, title: string) => {
@@ -108,6 +112,16 @@ export default function WebViewerTab({ id, url, active, sidebar = false }: { id:
       loaded.current = '';
     };
   }, [mountGuest, id, sidebar]);
+
+  useEffect(() => {
+    const view = guest.current;
+    if (!view) return;
+    // Mark the selected guest for native accessibility clients. The browser
+    // exposes the committed document URL independently of the address input.
+    if (selected) view.id = 'shale-active-webviewer';
+    else view.removeAttribute('id');
+    view.setAttribute('aria-label', selected ? '当前网页内容' : '网页内容');
+  }, [mountGuest, id, sidebar, selected]);
 
   useEffect(() => {
     if (!guest.current || !parseWebViewerUrl(url) || loaded.current === url) return;

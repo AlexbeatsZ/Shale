@@ -29,7 +29,12 @@ const backgroundTest = !!customProfile && app.commandLine.hasSwitch('use-mock-ke
 if (backgroundTest && process.platform === 'darwin') app.setActivationPolicy('accessory');
 app.setPath('userData', customProfile ? path.resolve(customProfile) : path.join(app.getPath('appData'), 'Shale'));
 app.setPath('sessionData', app.getPath('userData'));
-if (process.platform === 'win32') app.setAppUserModelId('io.github.alexbeatsz.shale');
+if (process.platform === 'win32') {
+  app.setAppUserModelId('io.github.alexbeatsz.shale');
+  // Expose the WebViewer document tree through the native Windows UIA provider.
+  const enabled = app.commandLine.getSwitchValue('enable-features').split(',').filter(Boolean);
+  if (!enabled.includes('UiaProvider')) app.commandLine.appendSwitch('enable-features', [...enabled, 'UiaProvider'].join(','));
+}
 
 const CONFIG_FILE = () => path.join(app.getPath('userData'), 'desktop-config.json');
 const DATA_DIR = () => path.join(app.getPath('userData'), 'server-data');

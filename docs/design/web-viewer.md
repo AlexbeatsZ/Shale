@@ -20,6 +20,8 @@
 
 ## 隔离与所有权
 
+选中的可见 WebViewer 复用工作区的活动栏位，将原有访客元素标记为 `shale-active-webviewer`，辅助功能名称为「当前网页内容」。切换到其他网页时移动标记，离开网页时清除标记。Dayweave 复用这个标记读取主文档的已提交网址和页面标题。Windows 在首次挂载网页访客时启用 Chromium UI Automation，macOS 使用现有原生辅助功能树。网页实例、导航和现有浏览器进程隔离保持原所有者。
+
 主进程 `configureWebViewer` 持有网页访客的附加规则、独立 Chromium 会话、地址限制和弹窗路由。访客强制沙箱、上下文隔离、Web 安全和关闭 Node 集成。网页和脚本网络均经该会话，Shale 本地运行时端口经会话拦截。随包的专用 guest preload 只负责用户脚本，与应用主 frame 的 preload 各自打包。用户脚本 IPC 检查已登记的访客主 frame、文档 token 与已批准权限。
 
 工作区在中央 `tabs` 保存 `webviewer://<uuid>` 身份及 `webUrl`，侧栏沿用 `rightTabs` 的 `webviewer` 类型和 `state.url`。两边都由同一个 WebViewer 组件挂载访客，网页导航使用各访客自己的历史。Windows、macOS 和 Linux 桌面可恢复两种位置的标签，Android 跳过浏览器标签。

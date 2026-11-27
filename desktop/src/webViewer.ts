@@ -1,4 +1,4 @@
-import { session, type Session, type WebContents } from 'electron';
+import { app, session, type Session, type WebContents } from 'electron';
 import path from 'node:path';
 import { parseWebViewerUrl, webViewerPartition } from './webViewerAddress';
 import { eventHotkey, hotkeySignature } from '../../packages/search-core/src/hotkeys';
@@ -60,6 +60,10 @@ export function configureWebViewer(host: WebContents, runtimePort: () => number,
   const mac = process.platform === 'darwin';
 
   host.on('did-attach-webview', (_event, guest) => {
+    // Enable the native tree once a Windows user actually opens a web guest.
+    if (process.platform === 'win32' && !app.isAccessibilitySupportEnabled()) {
+      app.setAccessibilitySupportEnabled(true);
+    }
     attachScripts(guest);
     guest.on('before-input-event', (event, input) => {
       if (input.type !== 'keyDown' || input.isComposing || host.isDestroyed()) return;

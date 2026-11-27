@@ -89,6 +89,7 @@ try {
   const address = right.getByRole('textbox', { name: '网页地址' });
   const refresh = right.getByRole('button', { name: '刷新网页' });
   const tabs = page.getByRole('tablist', { name: '右侧标签页' });
+  const capturedGuest = page.locator('webview#shale-active-webviewer');
   const open = async (url, area = right) => {
     const field = area.getByRole('textbox', { name: '网页地址' });
     await field.fill(url);
@@ -109,6 +110,8 @@ try {
   await expect(mainAddress).toBeFocused();
   await expect(tabs.getByRole('tab')).toHaveCount(0);
   await open(origin + '/central', main);
+  await expect(capturedGuest).toHaveCount(1);
+  await expect(main.locator('webview#shale-active-webviewer')).toHaveCount(1);
   const centralTab = mainTabs.getByRole('tab', { name: /Fixture \/central/ });
   await expect(centralTab).toBeVisible();
   await expect(centralHomepages).toHaveCount(0);
@@ -145,6 +148,7 @@ try {
   await launcher.getByRole('button', { name: /打开文件/ }).click();
   await pickFile('Note');
   await expect(main.locator('.cm-content')).toContainText('WebViewer fixture');
+  await expect(capturedGuest).toHaveCount(0);
   await expect(centralHomepages).toHaveCount(0);
   await expect(mainTabs.getByRole('tab')).toHaveCount(2);
   // Selecting an already open file reuses its existing tab and consumes the launcher.
@@ -228,6 +232,8 @@ try {
   await page.getByRole('button', { name: '新建左侧标签页' }).click();
   await browserButton(left).click();
   await open(origin + '/left', left);
+  await expect(left.locator('webview#shale-active-webviewer')).toHaveCount(1);
+  await expect(capturedGuest).toHaveCount(1);
   await expect(left.getByRole('tab', { name: 'Fixture /left', exact: true })).toBeVisible();
   await expect(left.getByRole('tab', { name: 'Homepage', exact: true })).toHaveCount(0);
   await left.getByRole('tab', { name: 'Fixture /left', exact: true }).press('Delete');
