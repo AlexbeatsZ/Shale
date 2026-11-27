@@ -33,10 +33,10 @@ node sync-server/server.mjs --help
 
 ## Git 备份(可选)
 
-服务端可以作为唯一的 Git 备份写入方:按清单版本把整个工作区快照提交到备份仓库并推送。它只读取 `state.json` 和 `blobs/`,不修改同步数据。在配置文件中加入:
+服务端可以作为唯一的 Git 备份写入方:按清单版本把整个工作区快照提交到备份仓库并推送。它只读取 `state.json` 和 `blobs/`,不修改同步数据。在配置文件中加入 `gitBackup`（独立于 DR 的 `backup`）:
 
 ```json
-"backup": {
+"gitBackup": {
   "repository": "C:/Users/Meta/AppData/Local/ShaleSync/backup",
   "remote": "https://github.com/<owner>/<vault>.git",
   "branch": "main",
@@ -76,12 +76,12 @@ ROG 当前最外层入口为 KeePass 的 `shared-gateway.mjs`，它继续导入�
 
 1. 先在独立临时目录解压并核对 `BUILD-INFO.json` 中的服务版本、源提交和核心提交。不要覆盖私有配置或数据。
 2. 保留当前任务定义、启动命令、运行身份、工作目录和本次回退代码。确认配置 `dataDir` 指向原根，并记下原 workspaceId/revision。
-3. 在维护窗口停止唯一后端进程，确认其已退出；整体备份原数据根，包括 `state.json`、可能存在的 `manifest.json`、`blobs/`、`history/` 和全部 receipts。不要单独复制/重建清单。
+3. 在维护窗口停止唯一后端进程，确认其已退出；普通代码升级运行 upgrade-prepare 保留旧程序/配置；仅数据迁移才制作一致性正式数据快照。不要单独复制/重建清单。
 4. 仅替换运行代码。旧部署 `shale-sync/sync-server/` 下需同步更新 `server.mjs`、`cli.mjs`、`protocol.mjs`、`gateway-route.mjs`、`shared-gateway.mjs`、`package.json`、`core-source.json`，以及包内 `node_modules/@alexbeatsz/file-sync-core/`；`BUILD-INFO.json` 放部署根。私有 `.local/native-sync/` 及原数据根保持原位。
 5. 用原身份、原配置、原端口重新启动；认证 GET manifest 核对 workspaceId/revision。验证客户端读取后再执行已授权的写入验收。网关只有在确需加载新模块时由协调部署统一重启；Sakura/Tailscale 不因本包升级而重启。
 6. 若需回退，先停止新唯一写入者，恢复原代码和任务入口后启动。v1 state/receipt 格式未改变，正常升级不修改已有有效 state，也不需要降级数据迁移。保留已完成的新同步写入；不以旧备份覆盖前进后的数据。
 
-本包不会自动安装任务、迁移数据、清理历史或重置身份。状态、回执、删除标记和冲突属于持久数据，不能作为旧版本构建产物删除。
+本包不会自动安装任务、迁移正式数据或重置身份；历史按生命周期策略回收。状态、回执、删除标记和冲突属于持久数据，不能作为旧版本构建产物删除。
 
 ## 开发与独立发行
 
@@ -106,5 +106,27 @@ npm --workspace @shale/sync-server run test:client
 - Git 定时备份推送到每设备 `shale-backups/<设备标识>`，避免多个设备争用一个远端分支。不会自动 pull、强推或覆盖远端历史。
 - 不同步 `.git`、其他 Shale 配置、回收站、临时文件；只同步原生 `.shale/` 配置。拒绝 Syncthing 管理目录和符号链接/联接。
 - 空目录不同步；大小写别名、文件/目录结构冲突会停止并保留本机内容，需要用户明确处理，不能通过覆盖绕过。
-- 历史、回执与附件目前保留不自动回收；容量管理必须同时考虑离线客户端，不能只删除“当前清单未引用”的文件。
+- 历史、回执与附件按下方生命周期策略回收，保留当前版本、有限历史和活跃传输；离线客户端通过全清单及原 CAS 恢复。
 - 核心在启动回收死 PID 锁时使用短期 `server.lock.claim/` 排除并发回收，成功启动前即删除。若进程恰在该阶段中断而遗留 claim，先确认没有写入者，再由运维人工移除该目录；不要在服务运行时删除锁或 claim 来绕过单写者检查。
+
+
+## 服务器生命周期管理
+
+正式状态、同步历史、DR 与升级回滚分别管理，完整策略见 `docs/design/server-data-lifecycle.md`。顶层 `backup` 是灾难恢复轮换（默认 04:00、7 日/4 周/3 月、压缩验证、20 GiB）；历史最多 100 份且 30 天，GC 每 24 小时，上传宽限 24 小时。配置省略时采用默认值，保留原 dataRoot/dataDir 和 token。备份默认放在 `<正式数据根>-backups`，升级回滚放 `<正式数据根>-upgrades`；两者不可与正式数据嵌套。压缩对象独立存储，无变化不重复创建快照；超限不能清理最新/手动点时记录失败并告警。
+
+```
+node admin.mjs CONFIG status
+node admin.mjs CONFIG cleanup                 # dry-run
+node admin.mjs CONFIG backup                  # dry-run
+node admin.mjs CONFIG backup --apply
+node admin.mjs CONFIG cleanup --apply
+node admin.mjs CONFIG backup-list
+node admin.mjs CONFIG restore ID --destination NEW_EMPTY_DIRECTORY
+node admin.mjs CONFIG upgrade-prepare --current PROGRAM_DIRECTORY
+node admin.mjs CONFIG upgrade-verified UPGRADE_DIRECTORY
+node admin.mjs CONFIG upgrade-prune           # dry-run；--apply 才实际删除
+```
+
+普通代码更新：先通过原任务停止并确认唯一写入者退出，再运行 upgrade-prepare（只复制旧程序和私有配置），替换代码并用原任务启动。通过 manifest 身份/当前版本、核心 API 和数据验证后标记 upgrade-verified，自动保留最近 1 份且最多 7 天；过期后最后一份也删除。只有确实迁移数据时使用 `--migration schema|format|full`，不把例行程序更新当数据迁移。回退只恢复旧程序/必要配置，保留后来已确认写入。
+
+恢复先到新目录完成完整性验证，确认身份、数据版本和以后写入范围后再停服务并按事故恢复操作切换；不覆盖当前数据试验。清理与提交共用队列，保护活跃传输和分页快照，最近上传宽限保留。过期增量返回 410，客户端改读当前全清单；旧 CAS 不能覆盖较新数据。同步冲突和客户端正式笔记不是缓存。

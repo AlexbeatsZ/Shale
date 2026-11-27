@@ -73,6 +73,34 @@ afterEach(async () => {
 
 // Real disk and Git fixtures share I/O with the 12 MiB transfer cases; match the packaged runner limit.
 describe('native file synchronization', { timeout: 30000 }, () => {
+  it('replans superseded downloads after an old blob has been garbage collected', async () => {
+    const sender = await client('sender'), receiver = await client('receiver');
+    await sender.write('note.md', 'old remote content'); await sender.engine.run();
+    const original = globalThis.fetch, oldHash = digest('old remote content');
+    const spy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, options) => {
+      if (String(url).endsWith('/blobs/' + oldHash) && !options?.method) throw new Error('offline download');
+      return original(url, options);
+    });
+    expect((await receiver.engine.run()).pendingIncoming).toBe(1);
+    await sender.write('note.md', 'current remote content'); await sender.engine.run();
+    await fs.unlink(path.join(directory, 'hub/blobs', oldHash));
+    spy.mockRestore();
+    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
+    expect(await fs.readFile(path.join(receiver.root, 'note.md'), 'utf8')).toBe('current remote content');
+  });
+
+  it('reclaims only old unreferenced transfer cache while retaining the acknowledged base', async () => {
+    const sender = await client('cache-prune');
+    const orphan = digest('obsolete cached version');
+    await fs.mkdir(path.join(sender.state, 'blobs'), { recursive: true });
+    const file = path.join(sender.state, 'blobs', orphan);
+    await fs.writeFile(file, 'obsolete cached version');
+    const old = new Date(Date.now() - 48 * 3600000); await fs.utimes(file, old, old);
+    await sender.write('keep.md', 'current local content');
+    expect(await sender.engine.run()).toMatchObject({ phase: 'idle' });
+    await expect(fs.stat(file)).rejects.toMatchObject({ code: 'ENOENT' });
+    expect(await fs.readFile(path.join(sender.state, 'blobs', digest('current local content')), 'utf8')).toBe('current local content');
+  });
   it('matches the shared TypeScript, Kotlin and C# per-path planning traces', () => {
     const { traces } = createRequire(import.meta.url)('@alexbeatsz/file-sync-core/sync-golden-traces.json');
     for (const trace of traces) for (const { event, expected } of trace.steps) {

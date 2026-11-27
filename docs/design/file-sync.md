@@ -78,8 +78,7 @@ events identify dirty paths, which are rehashed even if timestamps are unchanged
 Idle passes do not walk the Vault again. Restart scans durable files once. Renames are an atomic
 manifest addition/deletion; identical blob content is reused. Empty directories are not
 synchronized. Case-only aliases and file/directory shape conflicts stop for explicit
-handling instead of deleting existing directories. Per-file limit is 1 GiB. Server
-history/blobs/receipts have no automatic GC.
+handling instead of deleting existing directories. Per-file limit is 1 GiB. Server history/blobs/receipts follow the bounded lifecycle in server-data-lifecycle.md.
 
 Only .shale is included from .shale; plugin state, workspace layouts,
 .git, .trash, Syncthing metadata and temporary files are excluded. Application sync
@@ -245,3 +244,12 @@ Use temporary Vaults for all protocol, binary, failover, offline, retry, conflic
 recovery tests. Source/build checks are not live Sakura, physical device or deployed
 client acceptance. Installing a ROG startup task or changing its shared gateway requires
 explicit approval; preserve the existing task XML and do not restart SakuraFrpService.
+
+
+## Bounded server history and client transfer cache (2026-11-26)
+
+Server history is independent of current CAS versions/tombstones and DR backups. An expired delta base resnapshots. A queued, not-yet-applied dependency group whose remote entries have been superseded is removed from the incoming queue and replanned from the latest manifest; its local files/base are unchanged. This prevents an old queued digest collected by server GC from stalling indefinitely. A missing old merge ancestor returns to explicit conflict review, preserving both current versions.
+
+Client blob/partial cache is swept at most daily with a 24-hour grace. Keep hashes used by acknowledged bases, current local signatures, outgoing operations, incoming/review groups and partial discovery. Do not delete formal files, recovery copies, conflict snapshots or journals. Persist the current checkpoint before cache cleanup.
+
+The server's Git archival config is `gitBackup`; `backup` now owns independent compressed disaster recovery. Git archive work is routed through the same storage lease as GC. It stays non-forcing and is not rewritten or expired implicitly by the DR rotation.

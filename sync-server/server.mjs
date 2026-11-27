@@ -5,9 +5,9 @@ import { createFileSyncServer } from '@alexbeatsz/file-sync-core';
 import { prefix, validPath, validateManifest } from './protocol.mjs';
 import { runCli } from './cli.mjs';
 
-export async function createSyncServer({ root, token, maxBlobBytes = 1024 * 1024 * 1024 }) {
+export async function createSyncServer({ root, token, maxBlobBytes = 1024 * 1024 * 1024, lifecycle, maintenanceActions }) {
   const service = await createFileSyncServer({
-    root, token, maxBlobBytes, routePrefix: prefix, validPath, validateManifest,
+    root, token, maxBlobBytes, routePrefix: prefix, validPath, validateManifest, lifecycle, maintenanceActions,
     validateToken(value) {
       if (typeof value !== 'string' || !/^[\x21-\x7e]{32,512}$/.test(value)) {
         throw new Error('SHALE_SYNC_TOKEN must contain 32-512 printable ASCII characters');

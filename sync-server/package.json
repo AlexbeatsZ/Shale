@@ -1,6 +1,6 @@
 {
   "name": "@shale/sync-server",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "Standalone Shale file synchronization server",
@@ -12,7 +12,7 @@
     "test:client": "node scripts/test-client.mjs"
   },
   "dependencies": {
-    "@alexbeatsz/file-sync-core": "https://github.com/AlexbeatsZ/file-sync-core/releases/download/v0.2.0/alexbeatsz-file-sync-core-0.2.0.tgz"
+    "@alexbeatsz/file-sync-core": "https://github.com/AlexbeatsZ/file-sync-core/releases/download/v0.3.3/alexbeatsz-file-sync-core-0.3.3.tgz"
   },
   "engines": {
     "node": ">=22"

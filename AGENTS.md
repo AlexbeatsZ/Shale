@@ -110,3 +110,5 @@
 - `docs/design/`:模块设计文档。Callout 颜色/图标 → `callout-styles.md`;Callout 布局 → `callout-lists.md`;源码展开语法灰色 → `source-reveal.md`;`\\( \\)`/`\\[ \\]` 公式 → `native-math.md`;内容引用与嵌入控件 → `content-references.md`;公式编号、嵌入实例与引用编号解析 → `native-equations.md`。
 - `docs/log/`:按月工作记录。
 - 虚拟文档 → `docs/design/virtual-documents.md`；真实资料原生验收 → `tests/desktop-virtual-documents.mjs`。
+
+- 服务器数据生命周期：`docs/design/server-data-lifecycle.md`；正式数据、历史、DR 与升级回滚独立，普通升级不复制数据。新服务器版本的部署结果以当月日志为准。

@@ -268,13 +268,13 @@ export async function runBackup({ dataRoot, options, dryRun = false }) {
 }
 
 /** Periodic in-process backups; runs never overlap and close() waits for the active one. */
-export function startBackupSchedule({ dataRoot, options, log = console }) {
+export function startBackupSchedule({ dataRoot, options, log = console, run = () => runBackup({ dataRoot, options }) }) {
   let active = Promise.resolve(), closed = false;
   const tick = () => {
     active = active.then(async () => {
       if (closed) return;
       try {
-        const result = await runBackup({ dataRoot, options });
+        const result = await run();
         if (result.status !== 'unchanged') log.log(`Shale sync backup ${result.status}: revision ${result.revision}`);
       } catch (error) { log.error('Shale sync backup failed:', error.message); }
     });

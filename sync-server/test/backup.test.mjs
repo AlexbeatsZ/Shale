@@ -142,11 +142,15 @@ test('CLI runs a dry-run backup and the server stops its backup schedule on clos
   await hub.close();
   const config = path.join(data.directory, 'server.json');
   await writeFile(config, JSON.stringify({ dataDir: hub.root, token, host: '127.0.0.1', port: 0,
-    backup: { repository: options.repository, remote: options.remote, intervalSec: 60 } }));
+    gitBackup: { repository: options.repository, remote: options.remote, intervalSec: 60 } }));
   const { runCli } = await import('../cli.mjs'); const { createSyncServer } = await import('../server.mjs');
+  const service = await runCli(createSyncServer, [config]);
+  t.after(() => service.close());
+  const liveConfig = JSON.parse(await readFile(config, 'utf8'));
+  liveConfig.port = service.server.address().port;
+  await writeFile(config, JSON.stringify(liveConfig));
   const result = await runCli(createSyncServer, ['--backup-dry-run', config]);
   assert.deepEqual([result.status, result.added], ['dry-run', 1]);
-  const service = await runCli(createSyncServer, [config]);
   await service.close();
   await assert.rejects(access(path.join(hub.root, 'server.lock')));
 });

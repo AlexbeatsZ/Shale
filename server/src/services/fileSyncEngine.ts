@@ -66,6 +66,7 @@ export class FileSyncEngine {
   private readonly blobs: string;
   private readonly filename: string;
   private resolutions: Resolution[] = [];
+  private lastCachePrune = 0;
 
   constructor(readonly root: string, readonly directory: string, readonly preferences: FileSyncPreferences, private readonly hooks: Hooks) {
     this.root = path.resolve(root);
@@ -157,6 +158,18 @@ export class FileSyncEngine {
       manifest = await this.discover(transport);
       this.snapshot.activeEndpoint = transport.selected;
     }
+    // An offline queued download can outlive the server's bounded history. Replan an
+    // unapplied dependency group from the current manifest, retaining the local base/bytes.
+    if (this.state.incoming?.length) {
+      const superseded = new Set(groupIncoming(this.state.incoming).filter(group => group.some(item =>
+        !item.ready && (manifest.files[item.path]?.version !== item.entry.version || manifest.files[item.path]?.hash !== item.entry.hash)))
+        .flatMap(group => group.map(item => item.path)));
+      if (superseded.size) {
+        const next = { ...this.state, incoming: this.state.incoming.filter(item => !superseded.has(item.path)) };
+        if (!next.incoming.length) delete (next as Checkpoint).incoming;
+        await this.saveState(next);
+      }
+    }
     const changes: SyncOperation['changes'] = [];
     const downloads: Incoming[] = []; const conflicts: Incoming[] = [];
     const acknowledgements: Record<string, SyncEntry> = {};
@@ -223,6 +236,7 @@ export class FileSyncEngine {
     if (!this.state.incoming?.length && !this.state.outbox && !this.state.conflict && this.state.queuedThrough === this.state.revision)
       this.state.lastSuccess = this.state.lastProgress;
     await this.persist();
+    await this.pruneBlobCache();
     this.snapshot.lastSuccess = this.state.lastSuccess; this.snapshot.phase = 'idle';
     this.snapshot.message = automatic.length ? this.automaticMessage(automatic) : '同步完成';
     if (this.state.queuedThrough < this.state.revision) this.snapshot.message = '部分文件已同步，下一轮继续入队';
@@ -292,7 +306,13 @@ export class FileSyncEngine {
     const base = this.state.base[item.path]; const local = item.expected; const remote = item.entry.hash;
     let kind: Resolution['kind'] | null = null; let content: string | undefined;
     if (base?.hash && local && remote && textExtension(item.path)) {
-      const [ancestor, ours, theirs] = [await this.blobText(transport, base.hash), await this.blobText(transport, local), await this.blobText(transport, remote)];
+      let ancestor: string | null;
+      try { ancestor = await this.blobText(transport, base.hash); }
+      catch (error) {
+        if (error instanceof SyncHttpError && error.status === 404) return null;
+        throw error;
+      }
+      const [ours, theirs] = [await this.blobText(transport, local), await this.blobText(transport, remote)];
       if (ancestor === null || ours === null || theirs === null) return null;
       // Same line-hunk three-way merge that MCP review recovery uses.
       const merged = mergeReview(ancestor, ours, theirs);
@@ -309,6 +329,33 @@ export class FileSyncEngine {
     }
     return { incoming: content && content !== remote ? { ...item, content } : item,
       record: { at: new Date().toISOString(), path: item.path, kind, local, remote, content: content ?? remote, recovery } };
+  }
+
+  private async pruneBlobCache(): Promise<void> {
+    const now = Date.now(), grace = 24 * 60 * 60 * 1000;
+    if (now - this.lastCachePrune < grace) return;
+    this.lastCachePrune = now;
+    const keep = new Set<string>();
+    const add = (value?: string | null) => { if (value) keep.add(value); };
+    for (const entry of Object.values(this.state.base)) add(entry.hash);
+    for (const entry of Object.values(this.state.cache)) add(entry.hash);
+    for (const value of this.files.values()) add(value);
+    for (const change of this.state.outbox?.changes ?? []) add(change.hash);
+    for (const item of [...(this.state.incoming ?? []), ...(this.state.conflict?.changes ?? [])]) {
+      add(item.entry.hash); add(item.expected); add(item.previousHash); add(item.content);
+    }
+    for (const value of Object.values(this.state.conflict?.local ?? {})) add(value);
+    for (const entry of Object.values(this.state.discovery?.files ?? {})) add(entry.hash);
+    try {
+      for (const file of await fs.readdir(this.blobs, { withFileTypes: true })) {
+        const digest = /^([a-f0-9]{64})(?:\.part)?$/.exec(file.name)?.[1];
+        if (!file.isFile() || !digest || keep.has(digest)) continue;
+        const filename = path.join(this.blobs, file.name);
+        if (now - (await fs.stat(filename)).mtimeMs > grace) await fs.unlink(filename);
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') console.error('Sync cache cleanup failed:', (error as NodeJS.ErrnoException).code ?? 'Error');
+    }
   }
 
   private async recordResolutions(items: Resolution[]): Promise<void> {
