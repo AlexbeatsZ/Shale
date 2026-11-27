@@ -21,7 +21,7 @@ Dry-run and actual maintenance both found0expired blobs/manifests under the curr
 
 ## Shale client0.1.103
 
-Published desktop v0.1.103 (7 assets/latest) and android-v0.1.103 (non-debuggable arm64/original signer). Mac fixed certificate/identifier/certificate leaf/deep/strict and installed healthz passed. OMEN/ROG silently updated in Interactive tasks and left closed, versions0.1.103.0. K70 installed103 with original2026-11-23 firstInstallTime; tablet adb install returnedSuccess, then went offline before version/startup readback. Device physical interactions/full-vault convergence are not claimed. OMEN's pre-existing paused real-sync/conflict boundary remains unchanged.
+Published desktop v0.1.103 (7 assets/latest) and android-v0.1.103 (non-debuggable arm64/original signer). Mac fixed certificate/identifier/certificate leaf/deep/strict and installed healthz passed. OMEN/ROG silently updated in Interactive tasks and left closed, versions0.1.103.0. K70 installed103 with original2026-11-23 firstInstallTime; tablet adb install returnedSuccess, then went offline; it later returned with parallel-work Shale0.1.104 installed, same firstInstallTime, which was retained. Device physical interactions/full-vault convergence are not claimed. OMEN's pre-existing paused real-sync/conflict boundary remains unchanged.
 
 Changes bound orphan transfer caches while retaining baseline, outbox, incoming and conflict hashes. A superseded unapplied download dependency group is replanned against the current manifest after old server history expires; local originals/bases remain unchanged. Missing optional text merge ancestry enters review rather than blocking all work.
 
@@ -41,3 +41,8 @@ Run product admin status/storage, cleanup/backup without `--apply` for dry-run, 
 ## Final concurrency patch
 
 Shared core0.3.4, Shale Server0.5.1 and Mojian Server0.3.1 serialize initial page creation with commit/GC, including the async historical-boundary read. This closes the race where GC could capture active-page pins before an already-started page had registered its snapshot. Final core38tests and both consumer service/package checks passed. The second production cutover uses authenticated draining shutdown rather than stopping an old task; no formal data backup copy is made for this code-only patch.
+
+
+## Mojian client final delivery
+
+v0.7.45 contains Windows EXE166,187,988B and production Android APK17,290,733B. The 37 real C# sync scenarios all passed on Windows (including expired ancestor + independent page), and Android full JVM348tests/0failures/2skips plus release assembly/lint passed. OMEN current EXE and ROG installed EXE were replaced with version0.7.45 while closed. Pad6Pro reconnected and was updated in place to0.7.45/code49, retaining firstInstallTime2026-11-16. K70 went offline before this Mojian installation and remains pending; it had already received Shale0.1.103. No user notes, existing sync conflicts or identity were replaced. Unrelated UI/macOS working-tree changes were preserved.
