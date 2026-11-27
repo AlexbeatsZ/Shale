@@ -31,8 +31,17 @@ query parsing, search refresh notifications and the render child lifecycle. It
 does not execute note content or create another search index/parser/watcher.
 Returned titles/snippets are text nodes; abort and teardown prevent stale output.
 
-This is a deliberately partial query implementation: one search word, tag include/
-exclude filters (including descendants), and a relative `path:` token. Path searches
+This is a deliberately partial query implementation: one search word, a complete
+callout marker such as `[!question]` (also quoted), tag include/exclude filters
+(including descendants), and a relative `path:` token. Callout marker recognition
+lives in search-core and is shared with QmdEngine. Markers match continuous,
+case-insensitive source including both brackets and `!`, including custom type
+names with letters, digits, `_` and `-`. The existing MiniSearch index selects
+candidates; QmdEngine verifies the selected source fields in bounded batches
+before sorting/limiting. It does not enable fuzzy/prefix/pinyin substitutions for
+markers or scan the entire Vault. Ordinary `question` and malformed markers do
+not match `[!question]`. Existing body indexing limits still apply.
+Path searches
 retain the application's existing tokenization/fuzzy/prefix semantics; the UI says
 so. Multiword, phrase, OR/grouping, regex and property searches are explicitly
 unsupported rather than silently executed with different meanings. Full Shale

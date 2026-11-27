@@ -4,7 +4,12 @@
 > Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong.
 > Cập nhật file này **mỗi khi** một mục thay đổi trạng thái.
 
-Cập nhật lần cuối: 2026-11-26 (独立就绪组提前落盘)
+Cập nhật lần cuối: 2026-11-26 (query 搜索 callout 标记)
+
+### query 搜索 callout 标记（PRD 1.74）
+
+- [x] 复现并修复 `[!question]` 被 query 前置校验拒绝及全文搜索丢失标点的问题，覆盖完整原文、标签筛选和结果限额；680 单元、45 query 与13异步处理器浏览器通过。
+- [~] 正式包验证，发布 0.1.102 并原位更新现有设备。
 
 ### 原生同步恢复与依赖隔离
 
@@ -837,6 +842,8 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
       `desktop/release`.
 
 ### Nhật ký tiến độ
+
+- 2026-11-26: 开始修复 query 对 `[!question]` 等 callout 标记的拒绝和全文索引标点丢失。
 
 - 2026-11-26: PRD1.71删除全部旧格式兼容并迁移STEM图片/配置；672单元、123浏览器通过，未构建。
 

@@ -49,6 +49,12 @@ const surfaceTableSource = polymerTable + '\n\nend';
 await fs.copyFile(new URL('./fixtures/personal-merged-table.js', import.meta.url), path.join(native, 'blocks/merged-table.js'));
 await fs.writeFile(path.join(vault, 'surface-table.md'), surfaceTableSource);
 await fs.writeFile(path.join(vault, '化学实验.md'), '# 化学实验\n\n反应记录 #实验/化学\n');
+await fs.writeFile(path.join(vault, 'CalloutNote.md'), '---\ntags: [query-fixture]\n---\n> [!question] Complete marker\n');
+await fs.writeFile(path.join(vault, 'FoldedNote.md'), '---\ntags: [query-fixture, old]\n---\n> [!QUESTION]- Folded marker\n');
+await fs.writeFile(path.join(vault, 'QuestionWord.md'), '---\ntags: [query-fixture]\n---\nquestion [question] !question [! question] [!questionnaire]\n');
+const calloutQuery = '[!question] #query-fixture -#old';
+const querySource = `# Query fixture\n\n\x60\x60\x60query\n${calloutQuery}\n\x60\x60\x60\n\nAfter\n`;
+await fs.writeFile(path.join(vault, 'query-fixture.md'), querySource);
 const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=', 'base64');
 await fs.writeFile(path.join(vault, 'used.png'), pixel);
 await fs.writeFile(path.join(vault, 'unused.png'), pixel);
@@ -246,6 +252,26 @@ try {
   assert.equal(await fs.readFile(path.join(vault, 'surface-table.md'), 'utf8'), surfaceTableSource);
   assert.deepEqual(errors, [], 'No renderer errors during generated table theme checks');
   checkpoint('personal merged table has uniform header surfaces in dark/light live/reading, source unchanged');
+  const callouts = await api.get('/api/search?q=' + encodeURIComponent(calloutQuery) + '&mode=pinyin');
+  assert.equal(callouts.status(), 200);
+  assert.deepEqual((await callouts.json()).hits.map(hit => hit.path), ['CalloutNote.md']);
+  await page.keyboard.press(`${primary}+o`);
+  await page.locator('.palette-input').fill('query-fixture');
+  await page.keyboard.press('Enter');
+  for (const mode of ['实时预览', '阅读视图']) {
+    await page.locator('.view-mode-trigger').click();
+    await page.getByRole('menuitemcheckbox', { name: mode, exact: true }).click();
+    if (mode === '实时预览') {
+      await page.locator('.main-pane .cm-content').first().focus();
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
+    }
+    const output = page.locator('.main-pane .block-language-query');
+    await expect(output.locator('[role="status"]')).toHaveText('1 个结果');
+    await expect(output.locator('a')).toHaveText(['CalloutNote']);
+  }
+  assert.equal(await fs.readFile(path.join(vault, 'query-fixture.md'), 'utf8'), querySource);
+  assert.deepEqual(errors, [], 'No renderer errors during literal callout queries');
+  checkpoint('literal callout query, exact punctuation, tag filters and live/reading production processors');
   passed = true;
   console.log('Packaged startup passed: production entry/local access/Vault identity/edit/save, native snippet, command-backed template, JS widget, custom block, equation reference, body title, reading/source modes, pinyin search, configured menu, attachment preview/protection and right tabs.');
 } catch (error) {

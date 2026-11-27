@@ -1,4 +1,4 @@
-import { parseSearchQuery } from '@shale/search-core';
+import { isCalloutSearchText, parseSearchQuery } from '@shale/search-core';
 import { api } from './api';
 import { subscribeSearch } from './search';
 import { linkIntent } from './fragmentNavigation';
@@ -12,15 +12,17 @@ export function installQueryBlocks(): () => void {
   registerCodeProcessor(owner, 'query', (source, element, context: CodeBlockContext) => {
     const query = source.trim(), parsed = parseSearchQuery(query);
     const pathQuery = parsed.fields.length === 1 && parsed.fields[0] === 'path';
+    const calloutQuery = !parsed.fields.length && isCalloutSearchText(parsed.filterText);
+    const supportedText = !parsed.filterText || calloutQuery ||
+      ((pathQuery ? /^[\p{L}\p{M}\p{N}_./-]+$/u : /^[\p{L}\p{M}\p{N}]+$/u).test(parsed.filterText) &&
+        !parsed.filterText.startsWith('/') && !/^(?:AND|OR|NOT)$/i.test(parsed.filterText));
     const status = element.ownerDocument.createElement('div');
     status.setAttribute('role', 'status');
     element.append(status);
     if (!query || (!parsed.filterText && !parsed.include.length && !parsed.exclude.length) ||
       parsed.fields.some(field => field !== 'path') ||
-      (parsed.filterText && (!(pathQuery ? /^[\p{L}\p{M}\p{N}_./-]+$/u : /^[\p{L}\p{M}\p{N}]+$/u).test(parsed.filterText) ||
-        parsed.filterText.startsWith('/') ||
-        /^(?:AND|OR|NOT)$/i.test(parsed.filterText))) || /["'()\[\]]/.test(parsed.text)) {
-      status.textContent = '此 query 表达式暂不支持。支持单个字词或 path:相对路径（含 / . _ -），以及 tag:标签 / -tag:标签（也可用 #标签 / -#标签）组合；匹配沿用搜索设置。暂不支持多词、短语、OR、分组、正则、属性、带标点的普通搜索词和其他操作符。';
+      !supportedText || (!calloutQuery && /["'()\[\]]/.test(parsed.text))) {
+      status.textContent = '此 query 表达式暂不支持。支持单个字词、[!question] 等完整 callout 标记或 path:相对路径（含 / . _ -），以及 tag:标签 / -tag:标签（也可用 #标签 / -#标签）组合；callout 标记按完整原文匹配，其他匹配沿用搜索设置。暂不支持多词、短语、OR、分组、正则、属性、其他带标点的普通搜索词和操作符。';
       return;
     }
     if (pathQuery) {

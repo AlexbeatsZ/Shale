@@ -25,6 +25,10 @@ test.beforeAll(async () => {
     'Old.md': '---\ntags: [chemistry, old]\n---\n# Old\n\natom legacy',
     'Physics.md': '---\ntags: [physics]\n---\n# Physics\n\nwave',
     '目录/sub_dir/file-name.md': '# Path fixture\n\npath punctuation fixture',
+    'Callout.md': '---\ntags: [callouts]\n---\n# Callout\n\n> [!question] A real question',
+    'Folded.md': '---\ntags: [callouts, old]\n---\n# Folded\n\n> [!QUESTION]- A folded question',
+    'Plain.md': '# Plain\n\nquestion [question] !question [! question] [!questionnaire]',
+    'Custom.md': '# Custom\n\n> [!my-question] A custom callout',
   })) {
     await fs.mkdir(path.dirname(path.join(process.env.VAULT_PATH, name)), { recursive: true });
     await fs.writeFile(path.join(process.env.VAULT_PATH, name), source);
@@ -68,6 +72,7 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/**', route => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/api/vault-identity' || pathname === '/api/writing') return route.fallback();
+    if (pathname === '/api/settings' || pathname === '/api/settings/') return route.fulfill({ json: {} });
     return route.fulfill({ status: 501, json: { error: `Unmocked isolated fixture request: ${pathname}` } });
   });
   await page.route('**/api/search?*', async route => {
@@ -226,6 +231,23 @@ for (const [query, expected] of [
       await reading.getByRole('link', { name: 'Chemistry', exact: true }).click();
       expect(await page.evaluate(() => window.renderHarness.links)).toContain('1:Chemistry.md');
       await page.screenshot({ path: testInfo.outputPath('query-results.png') });
+    }
+  });
+}
+
+for (const [query, expected] of [
+  ['[!question] #callouts -#old', ['Callout']],
+  ['"[!question]" #callouts -#old', ['Callout']],
+  ['[!my-question]', ['Custom']],
+  ['[!missing]', []],
+] as const) {
+  test(`native query matches complete callout source for ${query}`, async ({ page }) => {
+    await reset(page, `Before\n\n\x60\x60\x60query\n${query}\n\x60\x60\x60\n\nAfter`);
+    await privateContexts(page);
+    for (const slot of [0, 1]) {
+      const output = page.locator(`[data-slot="${slot}"] .block-language-query`);
+      await expect(output.locator('[role="status"]')).toHaveText(expected.length ? `${expected.length} 个结果` : '没有搜索结果');
+      await expect(output.locator('a')).toHaveText([...expected]);
     }
   });
 }

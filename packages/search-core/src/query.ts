@@ -1,4 +1,8 @@
 /** Shared query syntax for the file picker, body search and tag actions. */
+/** A complete callout marker is literal text, not a bracketed query operator. */
+export function isCalloutSearchText(value: string): boolean {
+  return /^\[![\p{L}\p{M}\p{N}_-]+\]$/u.test(value);
+}
 export function tagName(value: string): string { return value.trim().replace(/^#+/, '').normalize('NFC'); }
 export function tagKey(value: string): string { return tagName(value).toLowerCase(); }
 export function validTag(value: string): boolean {

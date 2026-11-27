@@ -4,7 +4,7 @@ import { getSettings } from './settings.js';
 import { INDEX_FILE, config, runtimeCapabilities } from '../config.js';
 import { readFileText } from './vaultFile.js';
 import { catalog as activeCatalog, VaultCatalog, CORE_LIST_PROPS, CATALOG_SCHEMA_VERSION } from './catalog.js';
-import { matchesTagFilters } from '@shale/search-core';
+import { isCalloutSearchText, matchesTagFilters } from '@shale/search-core';
 import {
   findText,
   phoneticTokens,
@@ -152,12 +152,13 @@ export class QmdEngine {
     const tagFilters = parseSearchQuery(query);
     const { filterText, fields } = tagFilters;
     const q = filterText.trim();
+    const literalCallout = isCalloutSearchText(q);
     const selected = fields.length ? fields : [...FIELDS];
     const results = q
       ? this.mini.search(q, {
           fields: selected,
-          prefix: s.search.prefix,
-          fuzzy: s.search.fuzzy,
+          prefix: literalCallout ? false : s.search.prefix,
+          fuzzy: literalCallout ? false : s.search.fuzzy,
           boost: { title: 4, headings: 2, tags: 3 },
         })
       : [];
@@ -168,20 +169,46 @@ export class QmdEngine {
         hits.set(record.path, { path: record.path, title: record.title, score: 1,
           tags: record.tags, snippet: record.snippet, matchedField: 'tags', matchKind: 'literal' });
       }
+    // MiniSearch strips punctuation. Verify complete markers before limiting;
+    // ordinary words, near spellings and broken markers are only candidates.
+    const verified = new Map<string, { field: string; snippet: string }>();
+    if (literalCallout) for (let at = 0; at < results.length; at += 4)
+      await Promise.all(results.slice(at, at + 4).map(async result => {
+        const record = this.catalog.notes.get(result.id);
+        if (!record || !matchesTagFilters(record.tags, tagFilters)) return;
+        const values: Record<string, string> = {
+          title: record.title, headings: record.headings.join(' '),
+          tags: record.tags.join(' '), path: record.path,
+        };
+        for (const field of selected) {
+          if (field === 'body') {
+            try { values.body = parseNote(record.path, await readFileText(record.path)).body.slice(0, MAX_BODY); }
+            catch { continue; }
+          }
+          const value = values[field] ?? '';
+          const start = value.toLowerCase().indexOf(q.toLowerCase());
+          if (start < 0) continue;
+          verified.set(record.path, { field, snippet: value.slice(Math.max(0, start - 32), start + q.length + 32) });
+          return;
+        }
+      }));
     for (const result of results) {
       const record = this.catalog.notes.get(result.id);
       if (!record || !matchesTagFilters(record.tags, tagFilters)) continue;
+      const match = verified.get(record.path);
+      if (literalCallout && !match) continue;
       hits.set(record.path, {
         path: record.path,
         title: record.title,
         score: result.score,
         tags: record.tags,
-        snippet: record.snippet,
+        snippet: match?.snippet ?? record.snippet,
+        ...(match ? { matchedField: match.field } : {}),
         matchKind: 'literal',
       });
     }
     const options = s.search.chinese;
-    if (mode === 'pinyin' && options.enabled && /[a-z]{2}|[a-z].*[a-z]/i.test(q)) {
+    if (!literalCallout && mode === 'pinyin' && options.enabled && /[a-z]{2}|[a-z].*[a-z]/i.test(q)) {
       const tokens = options.fuzzyRules.length ? ['han'] : candidateTokens(q);
       const candidates = this.mini.search(tokens.join(' '), {
         fields: selected.map((f) => 'py_' + f),
@@ -282,7 +309,8 @@ export class QmdEngine {
         raw.push({ start: i, len: n.length });
       }
     }
-    if (opts.pinyin && /[a-z].*[a-z]/i.test(opts.pinyinQuery ?? terms.join(''))) {
+    if (opts.pinyin && !isCalloutSearchText(opts.pinyinQuery ?? terms.join('')) &&
+      /[a-z].*[a-z]/i.test(opts.pinyinQuery ?? terms.join(''))) {
       for (const match of findText(opts.pinyinQuery ?? terms.join(''), body, {
         ...opts.pinyin,
         caseSensitive: opts.caseSensitive,

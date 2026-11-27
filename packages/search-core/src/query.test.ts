@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { fileTitleError, matchesTagFilters, parseSearchQuery, parseTagFilters, withTagFilter } from './query.js';
+import { fileTitleError, isCalloutSearchText, matchesTagFilters, parseSearchQuery, parseTagFilters, withTagFilter } from './query.js';
 
 describe('one file/body tag query grammar', () => {
+  it('recognizes complete literal callout markers without admitting properties or partial syntax', () => {
+    for (const text of ['[!question]', '[!QUESTION]', '[!my-question]', '[!问题_2]']) {
+      expect(isCalloutSearchText(text)).toBe(true);
+      expect(parseSearchQuery(`"${text}" #study`).filterText).toBe(text);
+    }
+    for (const text of ['[status:Draft]', '[question]', '[! question]', '[!question', '[!]', '[!question] OR atom'])
+      expect(isCalloutSearchText(text)).toBe(false);
+  });
   it('ANDs multiple tags and excludes descendants without matching sibling prefixes', () => {
     const filters = parseSearchQuery('量子 #150化学 #笔记 -#150化学/旧版');
     expect(filters.filterText).toBe('量子');
