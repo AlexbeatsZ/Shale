@@ -43,6 +43,7 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
+- `codex/active-webviewer` 提供 Dayweave 自动记录所需的前台网页标记和 Windows UI Automation 接入。桌面 0.1.106 与 Dayweave 0.5.21 一起交付。用户已授权发布和桌面原位更新，实装回读待完成。
 - 0.1.100 的 Mac/OMEN 旧 math、虚拟文档与图片格式迁移已执行。K70 两份生产配置已进入待接收队列，真实路径仍为旧格式；平板未做实库前台检查。新版严格拒绝旧 math `migration` 字段，其他旧数据的适用边界见正式包与部署报告。
 - 2026-11-26 同步 P0 源码：冲突选择和待收日志同检查点保存，按依赖组和脏文档路径拦截，缺同路径基线的首连差异留审阅。验收环境使用隔离库，设备既有冲突继续保留。设计和用例见 `docs/design/file-sync.md`、当月日志。
 - 【暂停，用户 2026-11-26 要求仅记录设备故障】OMEN 同步检查点总 revision 445，部分已选配置的基线版本 469 导致重启拒载；两份 CSS 冲突保留，无 incoming/outbox。0.1.100 已发布检查点加载修复并更新 OMEN 应用，真实库现场恢复仍未执行。见 2026-11 日志。
