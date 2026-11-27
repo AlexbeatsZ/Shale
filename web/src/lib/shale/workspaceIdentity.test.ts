@@ -8,10 +8,14 @@ const host = vi.hoisted(() => ({
   active: null as EditorView | null,
   navigationId: 'main',
   entries: [] as { cm: EditorView; info: { file: { path: string } } }[],
+  hidden: new Set<EditorView>(),
   state: { activePath: 'same.md', splitPath: 'same.md' as string | null, rightTabs: [] as SidebarTab[] },
 }));
 vi.mock('../store', () => ({ useStore: { getState: () => ({ ...host.state, currentPath: () => host.state.activePath, currentViewId: () => host.navigationId }) } }));
-vi.mock('../activeEditor', () => ({ getActiveEditor: () => host.active }));
+vi.mock('../activeEditor', () => ({
+  getActiveEditor: () => host.active,
+  isEditorAvailable: (view: EditorView) => !host.hidden.has(view),
+}));
 vi.mock('./editor', () => ({
   Editor: class { constructor(public cm: EditorView) {} },
   editorEntries: () => host.entries,
@@ -26,6 +30,7 @@ beforeEach(() => {
   host.active = null;
   host.navigationId = 'main';
   host.entries = [];
+  host.hidden.clear();
   host.state.activePath = 'same.md';
   host.state.splitPath = 'same.md';
   host.state.rightTabs = [];
@@ -104,6 +109,15 @@ describe('workspace Markdown host identity', () => {
     const ws = workspace();
     expect(ws.markdown('main')?.file).toBe(main.info.file);
     expect(ws.markdown('split')?.file).toBe(split.info.file);
+  });
+
+  it('ignores a retained central view when resolving the visible pane', () => {
+    const hidden = mounted('main', false, 'parked.md');
+    host.hidden.add(hidden.cm);
+    const visible = mounted('main', false, 'visible.md');
+    const ws = workspace();
+    expect(ws.markdown('main')?.editor.cm).toBe(visible.cm);
+    expect(ws.getActiveViewOfType(MarkdownView)?.editor.cm).toBe(visible.cm);
   });
 
   it('uses sidebar navigation IDs for both docks even when all four editors share a document', () => {

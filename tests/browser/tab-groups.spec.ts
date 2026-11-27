@@ -9,7 +9,10 @@ async function groupStep(page: Page, key: string) {
 test.beforeEach(async ({ page }) => {
   let persisted: Record<string, unknown> = {};
   const paragraphs = Array.from({ length: 240 }, (_, i) => `Row ${i} with enough text to select in the editor.\n`).join('\n');
-  const contents: Record<string, string> = { 'a.md': '# A\n\nDraft A\n\n' + paragraphs, 'b.md': '# B\n\n' + paragraphs, 'c.md': '# C' };
+  const contents: Record<string, string> = {
+    'a.md': '# A\n\nDraft A', 'b.md': '# B', 'c.md': '# C',
+    'long-a.md': '# Long A\n\n' + paragraphs, 'long-b.md': '# Long B\n\n' + paragraphs,
+  };
   await page.route('**/api/**', async route => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/vault-identity' || url.pathname === '/api/writing') return route.fallback();
@@ -72,35 +75,39 @@ test('central notes retain separate scroll and selection through single tabs and
       return [view.state.selection.main.anchor - from, view.state.selection.main.head - from];
     }, { path, line })).toEqual([0, 5]);
   };
-  await noteTab('a.md').click();
-  const original = await remember('main', 'a.md', 130);
+  await page.evaluate(async () => {
+    const { store } = (window as any).groupFixture;
+    await store.getState().openFile('long-b.md');
+    await store.getState().openFile('long-a.md');
+  });
+  const original = await remember('main', 'long-a.md', 130);
   const editor = await pane('main').elementHandle();
-  await noteTab('b.md').click();
-  await noteTab('a.md').click();
-  await check('main', original, 'a.md', 130);
+  await noteTab('long-b.md').click();
+  await noteTab('long-a.md').click();
+  await check('main', original, 'long-a.md', 130);
   expect(await pane('main').evaluate((current, previous) => current === previous, editor)).toBe(true);
   await editor?.dispose();
 
-  await noteTab('a.md').click({ button: 'right' });
+  await noteTab('long-a.md').click({ button: 'right' });
   await page.getByRole('menuitem', { name: '复制标签页', exact: true }).click();
-  const copy = page.locator('.tab[data-tab-path="a.md"]').last();
+  const copy = page.locator('.tab[data-tab-path="long-a.md"]').last();
   await expect(copy).toHaveClass(/active/);
-  const duplicate = await remember('main', 'a.md', 240);
-  await noteTab('a.md').click();
-  await check('main', original, 'a.md', 130);
+  const duplicate = await remember('main', 'long-a.md', 240);
+  await noteTab('long-a.md').click();
+  await check('main', original, 'long-a.md', 130);
   await copy.click();
-  await check('main', duplicate, 'a.md', 240);
+  await check('main', duplicate, 'long-a.md', 240);
 
-  await noteTab('a.md').click();
-  await page.evaluate(() => (window as any).groupFixture.store.getState().openToSide('b.md', 'down'));
-  const main = await remember('main', 'a.md', 170);
-  const split = await remember('split', 'b.md', 200);
+  await noteTab('long-a.md').click();
+  await page.evaluate(() => (window as any).groupFixture.store.getState().openToSide('long-b.md', 'down'));
+  const main = await remember('main', 'long-a.md', 170);
+  const split = await remember('split', 'long-b.md', 200);
   await noteTab('c.md').click();
   await expect(pane('split')).toHaveCount(0);
-  await noteTab('b.md').click();
-  await check('main', main, 'a.md', 170);
-  await check('split', split, 'b.md', 200);
-  await expect(noteTab('b.md')).toHaveClass(/is-focused/);
+  await noteTab('long-b.md').click();
+  await check('main', main, 'long-a.md', 170);
+  await check('split', split, 'long-b.md', 200);
+  await expect(noteTab('long-b.md')).toHaveClass(/is-focused/);
 });
 
 test('restoring a split waits for both documents and publishes both panes together', async ({ page }) => {
@@ -191,13 +198,13 @@ test('real configured group commands uses fixed join order, wraps and leaves the
 
 test('focused split pane brings its neighbor forward even when that neighbor is already in the main pane', async ({ page }) => {
   await page.evaluate(async () => { const s = (window as any).groupFixture.store.getState(); s.setTabGroup(['a.md','b.md','c.md'], 'red'); await s.showTab('a.md'); await s.openToSide('b.md'); });
-  const main = page.locator('.workspace .main-pane .cm-content'), side = page.locator('.workspace .split-pane .cm-content');
+  const main = page.locator('.workspace .main-pane [data-document-id]'), side = page.locator('.workspace .split-pane .cm-content');
   await expect(side).toContainText('# B');
   await side.click();
   for (const [key, text] of [['Z','Draft A'],['Z','# C'],['X','Draft A']]) {
     await groupStep(page, key);
     await expect(side).toContainText(text);
-    await expect(main).toContainText('# B');
+    await expect(main).toHaveAttribute('data-document-id', 'b.md');
   }
 });
 

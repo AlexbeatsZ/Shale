@@ -12,6 +12,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-27 PRD1.77 / 0.1.105（运行源码161cb96）已发布：中央 Markdown 标签保留滚动、光标、选区与折叠，暂存分屏两栏同时恢复。683 单元、Mac 60/Windows 10 浏览器、两端正式包启动与 WebViewer/生命周期通过；旧版实包复现网页先全宽。Mac/OMEN/ROG/平板已更新，K70 尾网在线但 ADB 不可达。见 `tests/reports/tab-restore-20261127.md`。
 - 2026-11-26 服务器数据生命周期：独立服务0.5.1/core0.3.4已发布并部署ROG，有限历史/GC与独立压缩DR、升级代码回滚均启用；真实恢复revision653/13302项通过。客户端0.1.103已发布，Mac/OMEN/ROG/K70已确认；平板安装Success后离线，回读未完成。682单元/14服务/2解包通过；原Windows拖放与Mac packaged-startup基线失败保留。见 `tests/reports/server-data-lifecycle-20261126.md`。
 - 2026-11-26 PRD1.76 / 0.1.104（运行源码0dd3447）已发布/latest并更新五设备：修复分屏标签组压缩后成员越界和「+」排位错误；Mac54/Windows8浏览器、Mac后台及Windows Session1完整WebViewer/生命周期通过。Mac健康及工作区保留，Windows保持原停止状态，Android首装时间保留。用户已撤回多分组需求，保留每标签单颜色组。见 `tests/reports/tab-layout-20261126.md`。
 - 2026-11-26 PRD1.74 / 0.1.102（运行源码0f26235）：query 支持完整 `[!question]` 等 callout 标记（含引号与标签组合），QmdEngine 用原索引候选按完整原文核验，再排序/限额；标记搜索与高亮不做模糊/前缀/拼音替换。680 单元、58 浏览器及 Mac/Windows 正式包生产资源回归通过。v0.1.102/latest 七资产与 android-v0.1.102 已发布，五设备原位更新；Mac 实库返回42篇且摘要均含完整标记。Windows 保持原停止状态、Android 首装时间保留，OMEN 真实同步恢复仍暂停。见 `tests/reports/query-callouts-20261126.md`。

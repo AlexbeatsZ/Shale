@@ -21,6 +21,12 @@ await fs.writeFile(path.join(vault,'.shale/hotkeys.jsonc'),JSON.stringify({versi
   'workspace:swap-group-previous':[{modifiers:[groupModifier,'Shift'],key:'Z'}], 'workspace:swap-group-next':[{modifiers:[groupModifier,'Shift'],key:'X'}]
 }}));
 await fs.writeFile(path.join(profile, 'desktop-config.json'), JSON.stringify({ vaultPath: vault }));
+const initialHomepage = 'home://lifecycle-start';
+const serverData = path.join(profile, 'server-data');
+await fs.mkdir(serverData);
+await fs.writeFile(path.join(serverData, 'uistate.json'), JSON.stringify({
+  tabs: [{ path: initialHomepage, title: 'Homepage' }], activePath: initialHomepage,
+}));
 const loads = new Map();
 const server = createServer((req, res) => {
   loads.set(req.url, (loads.get(req.url) ?? 0) + 1);
@@ -44,6 +50,8 @@ try {
   };
   await assertBackground();
   const tabs = page.getByRole('tablist', { name: '已打开的文件' });
+  // A launcher is visible before the application has restored its workspace.
+  await expect(tabs.locator(`[data-tab-path="${initialHomepage}"]`)).toBeVisible({ timeout: 60000 });
   const identities = new Map();
   const guests = () => page.locator('.workspace webview');
   const inspect = async element => {
@@ -53,7 +61,7 @@ try {
     return { id, ...state };
   };
   for (const name of ['one', 'two', 'three']) {
-    await page.getByRole('button', { name: '新建中央标签页' }).click();
+    if (name !== 'one') await page.getByRole('button', { name: '新建中央标签页' }).click();
     await page.locator('.workspace').getByRole('button', { name: '打开网页浏览器', exact: true }).click();
     const address = page.locator('.workspace .main-pane').getByRole('textbox', { name: '网页地址' });
     await address.fill(origin + '/' + name); await address.press('Enter');
