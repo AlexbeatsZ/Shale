@@ -25,7 +25,11 @@ function fixture(platform = 'win32', switches: string[] = []) {
     quit: vi.fn(),
     isPackaged: false,
     getPath: () => 'C:/fixture/profile', setPath: vi.fn(), setName: vi.fn(), setAppUserModelId: vi.fn(),
-    commandLine: { getSwitchValue: () => 'C:/fixture/profile', hasSwitch: (name: string) => switches.includes(name) },
+    commandLine: {
+      getSwitchValue: (name: string) => name === 'user-data-dir' ? 'C:/fixture/profile' : '',
+      hasSwitch: (name: string) => switches.includes(name),
+      appendSwitch: vi.fn(),
+    },
     setActivationPolicy: vi.fn(),
     getVersion: () => '0.1.67',
   });

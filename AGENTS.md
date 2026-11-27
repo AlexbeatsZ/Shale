@@ -12,7 +12,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-27 PRD1.78 / 0.1.107：中央两栏使用同一 Pane 与 DocumentSession，编辑模式、工具栏按标签身份。格式化与批量标签跟随聚焦真实来源；普通/连续文档共用编辑器审阅、分页与大纲。三处标签共用文件动作、排序与邻居关闭。恢复分屏用显式网格轨道。正式发布和设备状态以当月日志为准。
+- 2026-11-27 PRD1.78 / 0.1.107 已发布并原位更新 Mac、OMEN、ROG、K70、平板。中央两栏使用同一 Pane 和共享文档会话，编辑模式、工具栏按标签身份。格式化与批量标签跟随聚焦真实来源。普通与连续文档共用编辑审阅、分页和大纲，三处标签共用文件动作、排序与相邻关闭。恢复分屏使用独立网格轨道，Mac 与 ROG 正式包验证网页首帧尺寸及访客保留。Android 验收至安装和启动，详见当月日志。
 - 2026-11-27 桌面 0.1.106（分支 `codex/active-webviewer`）已发布并原位更新 Mac/OMEN/ROG。与 Dayweave 0.5.21 配合，Mac 安装版通过隔离采集回读并保留实际 Vault 与工作区，Windows 正式包 UIA 读取与安装回读通过。Windows 解锁后的完整记录待自然使用验收。
 - 2026-11-27 PRD1.77 / 0.1.105（运行源码161cb96）已发布：中央 Markdown 标签保留滚动、光标、选区与折叠，暂存分屏两栏同时恢复。683 单元、Mac 60/Windows 10 浏览器、两端正式包启动与 WebViewer/生命周期通过；旧版实包复现网页先全宽。Mac/OMEN/ROG/平板已更新，K70 尾网在线但 ADB 不可达。见 `tests/reports/tab-restore-20261127.md`。
 - 2026-11-26 服务器数据生命周期：独立服务0.5.1/core0.3.4已发布并部署ROG，有限历史/GC与独立压缩DR、升级代码回滚均启用；真实恢复revision653/13302项通过。客户端0.1.103已发布，Mac/OMEN/ROG/K70已确认；平板安装Success后离线，回读未完成。682单元/14服务/2解包通过；原Windows拖放与Mac packaged-startup基线失败保留。见 `tests/reports/server-data-lifecycle-20261126.md`。
@@ -45,7 +45,6 @@
 - 日常 Android 仅用非调试 release/tabletRelease。两变体 debuggable/JNI/BuildConfig.DEBUG 均为 false，WebView 调试关闭；Android 1024MiB 堆，跳过全文 JSON 缓存。原签名密钥在 OMEN，更换 applicationId 后需要迁移私有数据与权限，不可当原位 APK 更新。
 
 ## Active Work
-- PRD1.78 / 0.1.107 包装及原生设备验收进行中。
 - 0.1.100 的 Mac/OMEN 旧 math、虚拟文档与图片格式迁移已执行。K70 两份生产配置已进入待接收队列，真实路径仍为旧格式；平板未做实库前台检查。新版严格拒绝旧 math `migration` 字段，其他旧数据的适用边界见正式包与部署报告。
 - 2026-11-26 同步 P0 源码：冲突选择和待收日志同检查点保存，按依赖组和脏文档路径拦截，缺同路径基线的首连差异留审阅。验收环境使用隔离库，设备既有冲突继续保留。设计和用例见 `docs/design/file-sync.md`、当月日志。
 - 【暂停，用户 2026-11-26 要求仅记录设备故障】OMEN 同步检查点总 revision 445，部分已选配置的基线版本 469 导致重启拒载；两份 CSS 冲突保留，无 incoming/outbox。0.1.100 已发布检查点加载修复并更新 OMEN 应用，真实库现场恢复仍未执行。见 2026-11 日志。
@@ -84,7 +83,7 @@
 - Node 26 下 `extract-zip` 在解压 tunnel zip 时 Promise 永不 resolve,进程以 13(unsettled top-level await)退出,且只解出部分文件。处理:用系统 `unzip` 解到 `desktop/.gen/tunnel/<arch>/`,`chmod 755 tunnel-client`,拷贝 licenses 为 `THIRD-PARTY-LICENSES.txt`,写 `version.txt`(内容为 TUNNEL_VERSION),之后 build/before-pack 会直接跳过。CI 用 Node 20 不受影响。
 - OMEN Windows 构建：常规仓库 `C:\Users\Meta\source\repos\Shale` 常有未提交改动，只 `git fetch`,用 `git archive <commit>` 导出到 `%TEMP%\.agents\shale-build-<ver>` 隔离构建(`npm ci`→`npm run build`→`desktop: node scripts/build.mjs`→`electron-builder --win nsis --x64 --publish never`)。OMEN 上 `npm ci` 的 Electron 下载会无限挂起：设 `ELECTRON_SKIP_BINARY_DOWNLOAD=1`,electron-builder 会用 `%LOCALAPPDATA%\electron\Cache` 里已有的 zip;tunnel 下载会超时：把常规仓库 `desktop/.gen/tunnel-downloads/tunnel-client-v0.0.19-windows-amd64*` 复制进隔离目录同一路径。PowerShell 5.1 脚本不要用 `$ErrorActionPreference='Stop'`(git 的 stderr 进度会被当成错误),改看 `$LASTEXITCODE`。
 - 浏览器回归直接用 `RENDER_TEST_BROWSER='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'`；已有核心 dist 时设 `RENDER_TEST_SKIP_CORE_BUILD=1`。2026-11-06 本轮 160 个相关浏览器/集成、546 个单元全部通过，旧的 16 个已知失败已经修复；不再视为允许忽略的基线失败。全单元用 `npx vitest run --testTimeout=30000`，Git 子进程测试需这个超时。临时撤下代码后必须先 `npm run build:core`，不能沿用旧 dist。
-- 发版时上传大文件常遇 GitHub HTTP 500/502,`gh release create` 带文件失败会删掉整个草稿。做法:先 `--draft` 建空 Release,逐个 `gh release upload --clobber` 并重试,用 API 按 release id 核对大小(草稿按 tag 查不到),再 `gh release edit --draft=false --latest`。主检出有其他任务改动时，用 `git worktree add --detach /tmp/.agents/shale-release-<ver> <sha>` 隔离构建，复制主检出当前平台所需的 `desktop/.gen/tunnel/arm64` 跳过 tunnel 下载（Mac只保留arm64）。
+- 发版先检查远程标签及同名 Release。草稿与正式 Release 可同时同名，`gh release upload --clobber` 按标签可能覆盖正式资产。先创建空草稿，按 Release ID 校验草稿状态、标签和目标提交，通过 `uploads.github.com/.../releases/<id>/assets` 上传。大文件遇到 500/502 时按同一 ID 重试，核对资产名称、大小和 `uploaded` 状态后按 ID 发布。主检出有其他任务改动时，用隔离源码构建，复用相应平台 tunnel 缓存（Mac 只保留 arm64）。
 - 渲染 harness(`/__render-test`):slot 0 实时预览、slot 1 阅读；`reset` 后光标在 0，测首行嵌入控件前先移到文末。快捷键测试按目标语义发真实按键：Mac 主快捷键用 `Meta`（Command）、实体 Control 用 `Control`，Windows 主快捷键用 `Control`；Shift+Z 应发大写 `Z`。脚注跳转是异步任务，用 `expect.poll` 等待位置完成。
 - 测试源码里用 JS `String.replace` 插入 `$$…$$` 时替换参数必须用函数(`() => '…'`),字符串里的 `$$` 会被当成一个 `$`,公式变成行内数学，看起来像编号丢失。
 - zsh 默认 noclobber,`>` 覆盖已有日志会失败导致命令未执行;构建链放进 `bash -c` 或用 `>|`。

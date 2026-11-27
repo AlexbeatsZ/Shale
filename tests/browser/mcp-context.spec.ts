@@ -99,6 +99,9 @@ test('native workspace omits webpage commands, settings and application URL acti
 });
 
 test('an open clean document refreshes native sync only after the workspace lease releases', async ({ page, backend }) => {
+  // The fixture opens the MCP panel. Commit that layout before sync holds the workspace lease.
+  const storePath = '/src/lib/store.ts';
+  await page.evaluate(async path => { await (await import(path)).flushWorkspaceState(); }, storePath);
   const token = 'fixture-only-browser-sync-token-0123456789';
   const load = new Function('url', 'return import(url)') as (url: string) => Promise<typeof import('../../sync-server/server.mjs')>;
   const { createSyncServer } = await load(pathToFileURL(path.resolve('sync-server/server.mjs')).href);

@@ -285,9 +285,9 @@ test('PowerPoint members read inline between PDFs with slide titles, outline and
   const outline=host.getByRole('navigation',{name:'连续文档大纲'});
   await expect(outline.locator(`[data-outline-source="${folder}/课件 02 形状.pptx"]`)).toContainText('预设形状库');
   const legacy=host.locator(`[data-virtual-source="${folder}/课件 03 旧版.ppt"]`);
-  await legacy.scrollIntoViewIfNeeded();
+  await index.getByRole('link',{name:'课件 03 旧版',exact:true}).click();
   await expect(legacy.locator('.pdf-page-slot')).toHaveCount(2);
-  await expect(legacy.locator('.pdf-page-surface.is-ready').first()).toBeVisible();
+  await expect(legacy.locator('.pdf-page-surface.is-ready').first()).toBeInViewport();
   await page.evaluate(()=>(window as any).virtualPptStore.getState().setRightPanel('minimap'));
   await index.page().locator('.virtual-thumbnail-sources').getByRole('button',{name:'课件 02 形状'}).click();
   await expect(host.locator('.virtual-thumbnail-preview canvas').first()).toBeVisible();
