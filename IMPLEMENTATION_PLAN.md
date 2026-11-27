@@ -9,7 +9,7 @@ Cập nhật lần cuối: 2026-11-26 (query 搜索 callout 标记)
 ### query 搜索 callout 标记（PRD 1.74）
 
 - [x] 复现并修复 `[!question]` 被 query 前置校验拒绝及全文搜索丢失标点的问题，覆盖完整原文、标签筛选和结果限额；680 单元、45 query 与13异步处理器浏览器通过。
-- [~] 正式包验证，发布 0.1.102 并原位更新现有设备。
+- [x] Mac/Windows 正式包生产资源与 query 实时预览/阅读验证通过；v0.1.102/latest 与 android-v0.1.102 发布并原位更新五设备，Mac 实库返回42篇。
 
 ### 原生同步恢复与依赖隔离
 
@@ -843,7 +843,7 @@ boundary requested by the owner. Loaded plugins are not a claim of complete pari
 
 ### Nhật ký tiến độ
 
-- 2026-11-26: 开始修复 query 对 `[!question]` 等 callout 标记的拒绝和全文索引标点丢失。
+- 2026-11-26: PRD1.74修复 query 对完整 callout 标记的拒绝与索引标点丢失，680单元、58浏览器、Mac/Windows正式包生产资源通过；0.1.102发布并原位更新五设备，Mac真实库 `[!question]` 返回42篇。
 
 - 2026-11-26: PRD1.71删除全部旧格式兼容并迁移STEM图片/配置；672单元、123浏览器通过，未构建。
 

@@ -12,7 +12,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
-- 2026-11-26 PRD1.74 / 0.1.102 源码：query 支持完整 `[!question]` 等 callout 标记（含引号与标签组合），QmdEngine 用原索引候选按完整原文核验，再排序/限额；标记搜索与高亮不做模糊/前缀/拼音替换。680 单元、45 query 浏览器与13异步处理器回归通过，正式包/发布/部署进行中。见 `tests/reports/query-callouts-20261126.md`。
+- 2026-11-26 PRD1.74 / 0.1.102（运行源码0f26235）：query 支持完整 `[!question]` 等 callout 标记（含引号与标签组合），QmdEngine 用原索引候选按完整原文核验，再排序/限额；标记搜索与高亮不做模糊/前缀/拼音替换。680 单元、58 浏览器及 Mac/Windows 正式包生产资源回归通过。v0.1.102/latest 七资产与 android-v0.1.102 已发布，五设备原位更新；Mac 实库返回42篇且摘要均含完整标记。Windows 保持原停止状态、Android 首装时间保留，OMEN 真实同步恢复仍暂停。见 `tests/reports/query-callouts-20261126.md`。
 - 2026-11-26 PRD1.73 / 客户端 0.1.101（e712fa3）：先验证本机缓存，再有限并发下载，独立就绪组先应用，沿用同组原子恢复、脏文档闸门与冲突副本。已发布 v0.1.101 / android-v0.1.101 并部署 Mac、OMEN、ROG、K70、平板。K70 两份 Mac 新格式样本已经正常同步落盘，附件目录改名约 1 分钟追平到只剩 4 个下载中的 PPTX；这 4 项最终落盘与全库哈希比对待补验。真实 OMEN 同步恢复仍按原边界暂停。见 [部署报告](tests/reports/central-sync-deployment-20261126.md)。
 - 2026-11-26 PRD1.72 / 应用 0.1.100（8f1c016）与独立同步服务 0.4.0（d2b5ca2）已正式发布并部署至 Mac、OMEN、ROG、K70 和小米平板 6 Pro。Mac 真实库正常同步（28 连续文档、0 配置错误），OMEN 备份后等价迁移 73 个文件并用隔离库验收双向同步，真实同步现场保持暂停。ROG 客户端保持未选 Vault，独立服务生产快照（13,302 项）、增量、Range 和旧回执通过。K70 原生服务与真实库可打开，12,662/12,666 待接收项已就绪，两份已下载生产样本仍待应用到真实路径；平板仅启动验证。见 [部署报告](tests/reports/central-sync-deployment-20261126.md) 与 [正式包报告](tests/reports/central-sync-20261126.md)。
 - 2026-11-26 PRD1.71（源码，未构建）：删除全部旧格式兼容与一次性迁移代码（插件时代导入、`migration`/`imported`/`replacementSyntax` 字段、Linter 旧替换语法、Templater 别名、第三方命令 ID、旧图片 `|300`/`#dark`、旧 UI 状态、身份迁移与钥匙串助手）。STEM 41 篇笔记 344 处图片已改写并逐图核对等价，hotkeys/writing 配置已删旧字段。保留插件运行时、Obsidian 核心命令 ID、GM 旧式 API、搜索语法与同步协议。报告 `tests/reports/legacy-removal-20261126.md`。

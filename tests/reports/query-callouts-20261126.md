@@ -18,4 +18,13 @@
 
 ## 正式包与部署
 
-0.1.102 正式包构建、发布和现有设备原位更新进行中。OMEN 真实库同步恢复沿用原暂停边界。
+发行源码 `0f2623520bdea7b27720dfd23059a49459159d84`。Mac arm64 在本机打包，Windows x64 在 ROG 隔离目录构建，Android arm64 在 OMEN 隔离目录构建。两台远端常规检出未改动，临时源码目录和源码压缩包已清理；Android `.signing` 临时副本由构建 finally 清理并再次确认不存在。
+
+- Mac/Windows：从最终包的 Resources 启动真实生产 server 和 renderer，使用隔离 Vault/profile 与现有 Chrome，全部生产启动检查通过。新增实际 query 检查覆盖精确标点、标签包含/排除和实时预览/阅读模式；原文文件不变，renderer 错误0。这是最终包生产资源验收，不扩大为 Windows 原生焦点或真机输入验收。
+- Mac：固定证书 `Local Development Code Signing`，identifier `io.github.alexbeatsz.shale`，指定要求含 `certificate leaf`，deep/strict 通过。正常退出日用应用后原位替换并重启，真实库健康、Vault 选择保留。`[!question]` + mode=pinyin 返回42篇，42条摘要全部含完整标记。
+- Windows：OMEN/ROG 均通过一次性交互计划任务静默原位安装，安装器退出0；`0.1.101.0 → 0.1.102.0`，原有 Vault 选择保留。两台安装前均未运行，因此保持停止；OMEN 真实同步恢复没有执行。
+- Android：release assemble/lint通过，arm64、非调试，APK发行签名与0.1.101一致。使用 `adb install -r --user current` 原位升级K70/平板至0.1.102/code102。K70首次安装时间仍为2026-11-23 23:30:54，平板仍为2026-11-23 23:32:04；本轮不新增前台、触摸和实库query验收。
+
+`v0.1.102`（Release ID460029513）正式发布/latest，含Mac DMG/ZIP/ZIP blockmap/latest-mac与Windows NSIS/blockmap/latest，共7资产。`android-v0.1.102`（ID460029519）预发布，含135,824,404字节的生产APK。API按发行ID核对资产名称/大小、uploaded状态、完整源码目标与发布状态通过。既有历史Release保留，本机只保留0.1.102构建版本。
+
+设备回执、发布大小记录及正式包证据保留在Mac `/tmp/.agents/shale-query-20261126/`；ROG/OMEN临时任务目录同名，仅保留脚本、回执和验收证据。
