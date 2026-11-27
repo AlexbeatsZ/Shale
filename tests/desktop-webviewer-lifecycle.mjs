@@ -236,9 +236,13 @@ try {
     const main = element.querySelector(':scope > .main-pane');
     const split = element.querySelector(':scope > .split-pane');
     const before = main.clientWidth;
+    const inline = element.style.cssText;
+    element.style.removeProperty('--split-main');
+    element.style.removeProperty('--split-side');
     split.style.setProperty('display', 'none', 'important');
     const during = main.clientWidth;
     split.style.removeProperty('display');
+    element.style.cssText = inline;
     return { before, during };
   });
   assert.deepEqual(independentTracks.during, independentTracks.before, JSON.stringify(independentTracks));

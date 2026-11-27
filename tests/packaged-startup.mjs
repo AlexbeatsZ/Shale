@@ -222,6 +222,9 @@ try {
   assert.equal(await page.getByRole('button', { name: /Daily note/i }).count(), 0);
   assert.deepEqual(errors, [], 'No renderer errors during production load/edit/save');
   checkpoint('right Homepage tab, fixed ribbon and zero renderer errors');
+  // Opening the side Homepage deliberately gives the sidebar the file-picker
+  // target. This section examines the central renderer, so refocus it first.
+  await main.locator('.cm-content').first().focus();
   await page.keyboard.press(`${primary}+o`);
   await page.locator('.palette-input').fill('surface-table');
   await page.keyboard.press('Enter');
