@@ -11,7 +11,7 @@ Cập nhật lần cuối: 2026-11-26 (Material 3 Expressive 实验前端)
 - [x] 建立独立实验分支，落实 Google M3 语义 Token、字阶、Material Symbols 与 Expressive 几何加载。
 - [x] 重做主页、导航、标签、设置与公共组件，并保留现有行为。
 - [x] 22 浏览器、三端类型/生产构建、Mac 固定签名与完整后台 WebViewer 回归通过，提供临时示例库预览入口。
-- [~] 提交推送并发布 Mac 0.2.0-expressive.1 独立预览 ZIP（非 latest），日用安装保持现状。
+- [x] 提交推送并发布 Mac 0.2.0-expressive.1 独立预览 ZIP（非 latest）；发行ID460125095，资产165851251字节，latest仍v0.1.104，日用安装保持现状。
 
 ### 服务器数据生命周期（PRD 1.75）
 

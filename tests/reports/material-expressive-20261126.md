@@ -50,4 +50,8 @@ WebViewer 第一次实包运行在旧的固定 25% 横向坐标等待拖放指�
 
 ## 发布
 
-预览发行标签为 `v0.2.0-expressive.1`，Mac arm64 ZIP；标记 prerelease、非 latest。发布结果及资产核对在完成上传后补记。
+已发布 `v0.2.0-expressive.1`，发行 ID `460125095`，源码目标 `5fdb4610bfcab2fe3b2a98275b38003eb921e185`。唯一资产 `Shale-0.2.0-expressive.1-mac-arm64.zip` 为 165,851,251 字节，GitHub API 核对 `state=uploaded`。标记 `prerelease=true`、`draft=false`，正式 latest 仍为 `v0.1.104`。最终 ZIP 对应的固定签名应用完整重跑 WebViewer 再次通过。
+
+发行页：https://github.com/AlexbeatsZ/Shale/releases/tag/v0.2.0-expressive.1 。
+
+本机包：`desktop/release/0.2.0-expressive.1/mac-arm64/Shale.app`；ZIP 位于同一版本目录。隔离预览命令为 `npm run preview:material`。
