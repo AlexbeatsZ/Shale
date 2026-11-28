@@ -31,6 +31,14 @@ export class SyncHttpError extends Error {
 }
 
 const unavailable = (error: unknown) => error instanceof TypeError || ['TimeoutError', 'AbortError'].includes((error as Error)?.name);
+/** Why one address failed, in words, e.g. `ECONNREFUSED` or `超时`; fetch hides the system code in `cause`. */
+function unavailableReason(error: unknown): string {
+  const failure = error as Error & { cause?: { code?: string; message?: string } };
+  if (['TimeoutError', 'AbortError'].includes(failure?.name)) return '连接超时';
+  const code = failure?.cause?.code;
+  const blocked = code && ['EPERM', 'EACCES', 'ENETUNREACH', 'ENETDOWN', 'EHOSTUNREACH'].includes(code);
+  return blocked ? `${code}，网络被系统阻止或不可达；手机/平板锁屏或在后台时系统会暂停联网，打开应用后自动重试` : code ?? failure?.cause?.message ?? failure?.message ?? '未知错误';
+}
 
 export async function syncJson(response: Response): Promise<unknown> {
   if (!response.body) throw new Error('同步服务未返回数据');
@@ -66,16 +74,17 @@ export class OrderedSyncTransport {
   async selectResource<T extends SyncManifest>(resources: { resource: string; decode(value: unknown): T; skip?(error: SyncHttpError): boolean }[],
     expected?: { workspaceId: string; revision: number }): Promise<T> {
     this.selected = null;
+    const reasons: string[] = [];
     endpointLoop: for (const endpoint of this.endpoints) {
       for (const { resource, decode, skip } of resources) {
         let payload: unknown;
         let response: Response;
         try {
           response = await fetch(`${endpoint}${resource}`, { redirect: 'error', headers: { Authorization: `Bearer ${this.token}` }, signal: AbortSignal.timeout(this.probeTimeoutMs) });
-          if ([502, 503, 504].includes(response.status)) { await response.body?.cancel(); continue endpointLoop; }
+          if ([502, 503, 504].includes(response.status)) { await response.body?.cancel(); reasons.push(`${endpoint} HTTP ${response.status}`); continue endpointLoop; }
           payload = await (response.ok ? syncJson(response) : errorJson(response));
         } catch (error) {
-          if (unavailable(error)) continue endpointLoop;
+          if (unavailable(error)) { reasons.push(`${endpoint} ${unavailableReason(error)}`); continue endpointLoop; }
           throw error;
         }
         if (!response.ok) {
@@ -90,7 +99,7 @@ export class OrderedSyncTransport {
         return result;
       }
     }
-    throw new Error('所有同步地址均不可用；本机修改已保留');
+    throw new Error(`所有同步地址均不可用（${reasons.join('；')}）；本机修改已保留`);
   }
 
   async fetchJson(resource: string): Promise<unknown> {
