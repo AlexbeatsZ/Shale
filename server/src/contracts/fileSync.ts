@@ -17,6 +17,8 @@ export type FileSyncStatus = {
   message: string; lastSuccess: string | null; conflictDirectory: string | null; conflictBranches: string[];
   conflictCount: number;
   seen?: number; queuedThrough?: number; pendingIncoming?: number; pendingOutgoing?: number; lastProgress?: string | null;
+  /** First pending incoming paths and local files deferred because they were still being written. */
+  pendingPaths?: string[]; deferredPaths?: string[];
   /** Differences this device resolved without asking, newest first. */
   recentResolutions: { at: string; path: string; kind: 'fast-forward' | 'deleted' | 'merged' }[];
 };

@@ -1362,6 +1362,7 @@ div.section-head { cursor: default; }
 .sync-changes-folder { margin-left: 6px; color: var(--text-faint); font-size: var(--font-ui-smaller); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .native-sync-button.is-conflict { color: rgb(var(--color-yellow-rgb)); }
 .native-sync-button.is-error, .native-sync-button.is-recovery { color: rgb(var(--color-red-rgb)); }
+.native-sync-message { max-width: min(42vw, 420px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sync-conflict-view { display: flex; flex-direction: column; height: 100%; min-height: 0; }
 .sync-conflict-panel { flex: 0 1 auto; max-height: 55%; display: flex; flex-direction: column; gap: 8px; padding: 8px 12px 10px; overflow: hidden;
   border-bottom: 1px solid var(--background-modifier-border); background: var(--background-primary); }
@@ -1575,10 +1576,11 @@ div.section-head { cursor: default; }
   .markdown-preview { padding: 18px 14px 40vh; }
   .markdown-preview .preview-inner { max-width: 100%; }
 
-  /* Keep the view selector reachable on phones without crowding it with counters. */
+  /* The full status bar stays visible on touch layouts: sync state and errors live here.
+     Narrow screens scroll it horizontally instead of hiding items. */
   .app.mobile .status-bar { display: flex; height: calc(36px + env(safe-area-inset-bottom));
-    padding: 0 8px env(safe-area-inset-bottom); }
-  .app.mobile .status-bar > :not(.view-mode-control) { display: none; }
+    padding: 0 8px env(safe-area-inset-bottom); max-width: 100%; overflow-x: auto; overflow-y: hidden; white-space: nowrap; scrollbar-width: none; }
+  .app.mobile .status-bar > * { flex-shrink: 0; }
   .app.mobile .view-mode-trigger { width: 36px; }
   .app.mobile .view-mode-menu .context-item { min-height: 36px; }
 
@@ -1636,7 +1638,7 @@ div.section-head { cursor: default; }
   }
   .settings-nav::-webkit-scrollbar { display: none; }
   .settings-nav-group { display: contents; }
-  .settings-nav-label { display: none; }
+  .settings-nav-label { flex: 0 0 auto; align-self: center; margin: 0; padding: 0 4px 0 8px; white-space: nowrap; }
   .settings-search { flex: 0 0 170px; }
   .settings-nav button { width: auto; flex: 0 0 auto; white-space: nowrap; }
   .settings-content { padding: 16px 16px calc(24px + env(safe-area-inset-bottom)); }

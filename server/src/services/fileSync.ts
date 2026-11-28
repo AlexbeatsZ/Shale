@@ -34,7 +34,7 @@ export async function fileSyncEngine(): Promise<FileSyncEngine> {
         return work(blocked);
       }, { unattended: true, syncPaths: paths });
     },
-    changed: async (relative, deleted) => { await queueFileUpdate(relative, deleted ? 'unlink' : 'change'); },
+    changed: async (relative, deleted, directory) => { await queueFileUpdate(relative, deleted ? directory ? 'unlinkDir' : 'unlink' : 'change'); },
     conflict: async snapshot => {
       if (!(await gitPreferences()).enabled) return [];
       const { recordSyncConflict } = await import('./git.js');

@@ -7,7 +7,7 @@ import { validPath, validateManifest, hashPattern, idPattern } from '../../../sy
 import type { FileSyncPreferences, FileSyncStatus, SyncEntry, SyncManifest, SyncOperation } from '../contracts/fileSync.js';
 import { resolveVaultPath, vaultPathKey } from './vaultFile.js';
 import { hashFile, writeFileFromSource } from './textFile.js';
-import { atomicSyncJson, fileSignature, stageLocalFile, stageSyncBlob, withSyncLock } from './syncStorage.js';
+import { atomicSyncJson, errorAtPath, fileSignature, stageLocalFile, stageSyncBlob, SyncFileBusyError, withSyncLock } from './syncStorage.js';
 import { OrderedSyncTransport, SyncHttpError } from './syncTransport.js';
 import { mergeReview } from '@shale/markdown-core';
 import { decodeText, describeChange, textExtension, type DiffBlock } from './syncMerge.js';
@@ -51,7 +51,7 @@ export type ConflictFile = {
 const imagePattern = /\.(png|jpe?g|gif|webp|svg|bmp|avif|ico)$/i;
 type Hooks = {
   publish<T>(work: (blocked?: ReadonlySet<string>) => Promise<T>, paths: string[]): Promise<T>;
-  changed(relative: string, deleted: boolean): Promise<void>;
+  changed(relative: string, deleted: boolean, directory?: boolean): Promise<void>;
   conflict?(snapshot: ConflictSnapshot): Promise<string[]>;
 };
 
@@ -61,6 +61,8 @@ export class FileSyncEngine {
   private scanned = false;
   private files = new Map<string, string>();
   private dirty = new Set<string>();
+  /** Local files that changed while being hashed or applied; retried next pass without stopping others. */
+  private deferred = new Set<string>();
   private running: Promise<FileSyncStatus> | null = null;
   private snapshot: FileSyncStatus;
   private readonly blobs: string;
@@ -81,6 +83,8 @@ export class FileSyncEngine {
       seen: this.state?.revision ?? 0, queuedThrough: this.state?.queuedThrough ?? 0,
       pendingIncoming: this.state?.incoming?.length ?? 0, pendingOutgoing: this.state?.outbox?.changes.length ?? 0,
       lastProgress: this.state?.lastProgress ?? null,
+      pendingPaths: (this.state?.incoming ?? []).slice(0, 20).map(item => item.path),
+      deferredPaths: [...this.deferred].slice(0, 20),
       recentResolutions: this.resolutions.slice(-20).reverse().map(({ at, path: name, kind }) => ({ at, path: name, kind })) };
   }
   get busy(): boolean { return this.running !== null; }
@@ -233,13 +237,14 @@ export class FileSyncEngine {
       this.snapshot.message = next.message; return this.status();
     }
     this.state.lastProgress = new Date().toISOString();
-    if (!this.state.incoming?.length && !this.state.outbox && !this.state.conflict && this.state.queuedThrough === this.state.revision)
+    if (!this.state.incoming?.length && !this.state.outbox && !this.state.conflict && !this.deferred.size && this.state.queuedThrough === this.state.revision)
       this.state.lastSuccess = this.state.lastProgress;
     await this.persist();
     await this.pruneBlobCache();
     this.snapshot.lastSuccess = this.state.lastSuccess; this.snapshot.phase = 'idle';
     this.snapshot.message = automatic.length ? this.automaticMessage(automatic) : '同步完成';
     if (this.state.queuedThrough < this.state.revision) this.snapshot.message = '部分文件已同步，下一轮继续入队';
+    if (this.deferred.size) this.snapshot.message = `其他文件已同步；${this.deferred.size} 个文件仍在写入，下一轮重试：${[...this.deferred][0]}`;
     if (this.state.conflict) {
       this.setConflictStatus();
       this.snapshot.message = `其他文件已同步；${this.state.conflict.changes.length} 个冲突文件待处理，两版均已保留`;
@@ -418,7 +423,14 @@ export class FileSyncEngine {
       const signature = fileSignature(info);
       const previous = this.state.cache[relative];
       const cached = !this.scanned && previous?.signature === signature && await fs.access(path.join(this.blobs, previous.hash)).then(() => true, () => false);
-      const digest = cached ? previous.hash : await stageLocalFile(absolute, this.blobs, signature);
+      let digest: string;
+      try { digest = cached ? previous.hash : await stageLocalFile(absolute, this.blobs, signature); }
+      catch (error) {
+        if (!(error instanceof SyncFileBusyError)) throw errorAtPath(error, relative);
+        // Keep the last known identity so a half-written file is neither uploaded nor treated as deleted.
+        this.deferred.add(relative); this.dirty.add(relative); return;
+      }
+      this.deferred.delete(relative);
       this.state.cache[relative] = { signature, hash: digest }; this.files.set(relative, digest);
     };
     try { for (const relative of requested) await inspect(relative); this.scanned = true; }
@@ -535,7 +547,7 @@ export class FileSyncEngine {
           pending.push(...group);
           continue;
         }
-        await this.applyIncomingGroup(next, group, conflicted);
+        if (!await this.applyIncomingGroup(next, group, conflicted)) pending.push(...group);
       }
       if (pending.length) next.incoming = pending;
       else delete next.incoming;
@@ -553,7 +565,19 @@ export class FileSyncEngine {
     return groups.map(group => group.flatMap(({ path }) => entries.get(path) ?? [])).filter(group => group.length);
   }
 
-  private async applyIncomingGroup(next: Checkpoint, group: Incoming[], conflicted: Incoming[]): Promise<void> {
+  /** Returns false when a local file is still being written; the group then stays journaled for the next pass. */
+  private async applyIncomingGroup(next: Checkpoint, group: Incoming[], conflicted: Incoming[]): Promise<boolean> {
+    try { await this.applyIncomingGroupNow(next, group, conflicted); }
+    catch (error) {
+      if (!(error instanceof SyncFileBusyError)) throw error;
+      for (const item of group) this.deferred.add(item.path);
+      return false;
+    }
+    for (const item of group) this.deferred.delete(item.path);
+    return true;
+  }
+
+  private async applyIncomingGroupNow(next: Checkpoint, group: Incoming[], conflicted: Incoming[]): Promise<void> {
     const prepared = await Promise.all(group.map(async item => {
       const absolute = await resolveVaultPath(this.root, item.path, true);
       const info = await fs.lstat(absolute).catch((error: NodeJS.ErrnoException) => {
@@ -574,27 +598,46 @@ export class FileSyncEngine {
     }
     if (prepared.some(({ item, absolute, directory, actual, target }) =>
       (directory && target && !folders.has(absolute)) || (actual !== target && actual !== item.expected))) {
+      const retained: Incoming[] = [];
       for (const { item, absolute, actual } of prepared) {
         if (actual) {
           const digest = await stageLocalFile(absolute, this.blobs, fileSignature(await fs.stat(absolute)));
-          if (digest !== actual) throw new Error('本机文件仍在修改，已暂停恢复');
+          if (digest !== actual) throw new SyncFileBusyError();
         }
-        conflicted.push({ ...item, expected: actual });
+        retained.push({ ...item, expected: actual });
       }
+      conflicted.push(...retained);
       return;
     }
     for (const { target } of prepared) {
       if (target && await hashFile(path.join(this.blobs, target)) !== target) throw new Error('待恢复附件不完整，未修改笔记');
     }
+    const emptied = new Set<string>();
     for (const { item, absolute, actual, target } of prepared.sort((a, b) => Number(a.target !== null) - Number(b.target !== null))) {
       for (const folder of folders.get(absolute) ?? []) await fs.rmdir(folder);
-      if (actual !== target) await writeFileFromSource(absolute, target ? path.join(this.blobs, target) : null, item.expected);
+      try { if (actual !== target) await writeFileFromSource(absolute, target ? path.join(this.blobs, target) : null, item.expected); }
+      catch (error) { throw errorAtPath(error, item.path); }
+      if (!target) emptied.add(path.dirname(absolute));
       next.base[item.path] = item.entry;
       if (target) {
         this.files.set(item.path, target);
         this.state.cache[item.path] = { signature: fileSignature(await fs.stat(absolute)), hash: target };
       } else { this.files.delete(item.path); delete this.state.cache[item.path]; }
       await this.hooks.changed(item.path, target === null);
+    }
+    // Empty directories are not synchronized, so a remote deletion or folder rename must not leave the old
+    // folder behind as an empty shell. Remove only parents this deletion emptied, never the Vault root.
+    for (const folder of emptied) await this.removeEmptyParents(folder);
+  }
+
+  private async removeEmptyParents(folder: string): Promise<void> {
+    for (let current = folder; current !== this.root && current.startsWith(this.root + path.sep); current = path.dirname(current)) {
+      try { await fs.rmdir(current); }
+      catch (error) {
+        if (['ENOTEMPTY', 'EEXIST', 'ENOENT', 'ENOTDIR', 'EBUSY', 'EPERM', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) return;
+        throw error;
+      }
+      await this.hooks.changed(path.relative(this.root, current).split(path.sep).join('/'), true, true);
     }
   }
 

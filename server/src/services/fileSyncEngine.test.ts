@@ -14,6 +14,14 @@ import { prefix, validPath } from '../../../sync-server/protocol.mjs';
 import { normalizeHotkeyPreferences, resolveHotkeys, hotkeyLabel } from '@shale/search-core';
 import type { FileSyncPreferences } from '../contracts/fileSync.js';
 
+const busyFiles = vi.hoisted(() => new Set<string>());
+vi.mock('./syncStorage.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./syncStorage.js')>();
+  return { ...actual, stageLocalFile: async (filename: string, ...rest: [string, string]) => {
+    if (busyFiles.has(filename)) throw new actual.SyncFileBusyError();
+    return actual.stageLocalFile(filename, ...rest);
+  } };
+});
 const token = 'fixture-only-token-not-a-live-credential-123456';
 let directory: string;
 let closes: (() => Promise<void>)[];
@@ -73,6 +81,39 @@ afterEach(async () => {
 
 // Real disk and Git fixtures share I/O with the 12 MiB transfer cases; match the packaged runner limit.
 describe('native file synchronization', { timeout: 30000 }, () => {
+  it('removes folders emptied by remote deletions and renames, keeping local folders and non-empty parents', async () => {
+    const sender = await client('prune-sender'), receiver = await client('prune-receiver');
+    await sender.write('Old/Deep/a.md', 'a'); await sender.write('Old/b.md', 'b'); await sender.write('Keep/c.md', 'c');
+    await sender.engine.run();
+    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle' });
+    await fs.mkdir(path.join(receiver.root, 'Local only'));
+    await fs.rm(path.join(sender.root, 'Old'), { recursive: true }); sender.engine.noteChanged('Old');
+    await fs.rename(path.join(sender.root, 'Keep/c.md'), path.join(sender.root, 'Moved.md'));
+    sender.engine.noteChanged('Keep/c.md'); sender.engine.noteChanged('Moved.md');
+    expect(await sender.engine.run()).toMatchObject({ phase: 'idle' });
+    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
+    expect((await fs.readdir(receiver.root)).sort()).toEqual(['Local only', 'Moved.md']);
+    expect(receiver.changed).toHaveBeenCalledWith('Old', true, true);
+  });
+
+  it('defers a file still being written during the scan and keeps synchronizing the others', async () => {
+    const sender = await client('busy-sender'), receiver = await client('busy-receiver');
+    await sender.write('free.md', 'from sender'); await sender.engine.run();
+    await receiver.write('busy.md', 'half written'); await receiver.write('ready.md', 'complete');
+    busyFiles.add(path.join(receiver.root, 'busy.md'));
+    const status = await receiver.engine.run();
+    expect(status).toMatchObject({ phase: 'idle', deferredPaths: ['busy.md'] });
+    expect(status.message).toContain('busy.md');
+    expect(await fs.readFile(path.join(receiver.root, 'free.md'), 'utf8')).toBe('from sender');
+    expect(await sender.engine.run()).toMatchObject({ phase: 'idle' });
+    expect(await fs.readFile(path.join(sender.root, 'ready.md'), 'utf8')).toBe('complete');
+    await expect(fs.access(path.join(sender.root, 'busy.md'))).rejects.toThrow();
+    busyFiles.clear();
+    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle', deferredPaths: [] });
+    await sender.engine.run();
+    expect(await fs.readFile(path.join(sender.root, 'busy.md'), 'utf8')).toBe('half written');
+  });
+
   it('replans superseded downloads after an old blob has been garbage collected', async () => {
     const sender = await client('sender'), receiver = await client('receiver');
     await sender.write('note.md', 'old remote content'); await sender.engine.run();

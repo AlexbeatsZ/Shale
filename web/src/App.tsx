@@ -4,7 +4,7 @@ import { desktopCommands } from '../../desktop/src/bridge';
 import { ensureWriting, writingFileChanged, watchExternalWritingSources } from './lib/writing/config';
 import { bindWritingNavigation } from './lib/writing/commands';
 import { refreshSearch, refreshHotkeys, searchSettings } from './lib/search';
-import { clearSyncConflicts, refreshSyncConflicts, runFileSync } from './lib/syncConflicts';
+import { clearSyncConflicts, refreshSyncConflicts, runFileSync, syncProblem } from './lib/syncConflicts';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { api, invalidateVaultRequests } from './lib/api';
 import { useStore, flushWorkspaceState, saveWorkspaceBeforeExit, workspaceHasUnsavedChanges } from './lib/store';
@@ -125,7 +125,7 @@ export default function App() {
     const stopPropertyTypes = initializePropertyTypes(error => useStore.getState().notify(String(error)));
     let treeTimer: number | undefined;
     let indexTimer: number | undefined;
-    let syncSeen: { conflict: string; resolution: string } | undefined;
+    let syncSeen: { conflict: string; resolution: string; problem: string } | undefined;
     const receive = async (ev: MessageEvent) => {
       try {
         const msg = JSON.parse(ev.data);
@@ -183,7 +183,10 @@ export default function App() {
             useStore.getState().notify(`同步冲突 ${msg.conflictCount} 个，已在文件列表标出`, 8000);
           else if (syncSeen && msg.phase === 'idle' && resolution && resolution !== syncSeen.resolution)
             useStore.getState().notify(msg.message, 6000);
-          syncSeen = { conflict, resolution };
+          // Background failures must be visible: announce each new problem once; the status bar keeps showing it.
+          const problem = syncProblem(msg);
+          if (problem && problem !== syncSeen?.problem) useStore.getState().notify(`同步未完成：${problem}`, 10000);
+          syncSeen = { conflict, resolution, problem: msg.phase === 'syncing' ? syncSeen?.problem ?? '' : problem };
         } else if (msg.type === 'uistate') {
           // another tab/device changed the workspace → sync live
           useStore.getState().applyRemoteState(msg.state, msg.originId);

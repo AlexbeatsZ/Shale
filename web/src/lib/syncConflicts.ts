@@ -34,6 +34,13 @@ export async function resolveAllSyncConflicts(choice: 'local' | 'remote'): Promi
   await refreshSyncConflicts();
 }
 
+/** Text shown next to the label whenever sync did not fully succeed; never hover-only, touch screens have no hover. */
+export function syncProblem(status: FileSyncStatus): string {
+  if (!status.enabled || status.phase === 'syncing' || status.phase === 'conflict') return '';
+  if (status.phase === 'error' || status.phase === 'recovery') return status.message || '同步未完成，原因未知';
+  return status.deferredPaths?.length ? status.message : '';
+}
+
 export async function runFileSync(): Promise<FileSyncStatus> {
   const status = await request<FileSyncStatus>('/api/file-sync/run', { method: 'POST', body: '{}' });
   await refreshSyncConflicts();

@@ -77,7 +77,9 @@ as text. Local metadata signatures reuse staged blobs on restart; existing watch
 events identify dirty paths, which are rehashed even if timestamps are unchanged.
 Idle passes do not walk the Vault again. Restart scans durable files once. Renames are an atomic
 manifest addition/deletion; identical blob content is reused. Empty directories are not
-synchronized. Case-only aliases and file/directory shape conflicts stop for explicit
+synchronized, so applying a remote deletion removes the parent folders it emptied, up to but
+never including the Vault root; a folder renamed on another device therefore does not stay behind
+as an empty shell. Folders that were already empty or are local-only are left alone. Case-only aliases and file/directory shape conflicts stop for explicit
 handling instead of deleting existing directories. Per-file limit is 1 GiB. Server history/blobs/receipts follow the bounded lifecycle in server-data-lifecycle.md.
 
 Only .shale is included from .shale; plugin state, workspace layouts,
@@ -185,6 +187,21 @@ Mature tools (Syncthing, Dropbox, Obsidian Sync, Dayweave's own hub) isolate pro
 - Reviewing one conflict appends its incoming choice to existing journal work. The incoming path's
   acknowledged base is set after application. The checkpoint keeps the seen revision separately
   from the revision of fully queued work. Partial progress is distinct from last complete sync.
+
+## Visible failures (2026-11-27)
+
+Failure that triggered this: the tablet showed a file tree very different from the Mac. Every file
+matched the server, but 154 folders deleted or renamed on the Mac stayed as empty folders on the
+tablet. Four incoming configuration files stayed pending for two days with
+"文件仍在写入，稍后重试同步", but the reason only existed in the sync button's hover `title`, and the
+mobile layout hid every status bar item except the view selector. Rules now:
+- A file whose signature changes while it is hashed (scan) or applied (conflict capture) is deferred
+  on its own: it keeps its last known identity, stays dirty and is listed in `deferredPaths`. The rest
+  of the pass continues; `lastSuccess` is not advanced while any path is deferred.
+- Errors name the Vault path that failed. Status carries the first 20 `pendingPaths` and `deferredPaths`.
+- Any error, recovery or deferral is shown as text next to the sync button and announced once as a
+  toast for each new problem. Nothing is hover-only. The mobile layout shows the full status bar and
+  scrolls it horizontally instead of hiding items.
 
 ## Server-side Git backup (sync-server)
 

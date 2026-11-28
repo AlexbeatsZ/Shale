@@ -43,8 +43,20 @@ export async function stageSyncBlob(source: Readable, directory: string, expecte
 
 export async function stageLocalFile(filename: string, directory: string, expectedSignature: string): Promise<string> {
   const hash = await stageSyncBlob(createReadStream(filename), directory);
-  if (fileSignature(await fs.stat(filename)) !== expectedSignature) throw new Error('文件仍在写入，稍后重试同步');
+  if (fileSignature(await fs.stat(filename)) !== expectedSignature) throw new SyncFileBusyError();
   return hash;
+}
+
+/** The file changed while it was being hashed. Callers defer only that path to the next pass. */
+export class SyncFileBusyError extends Error {
+  readonly code = 'SYNC_FILE_BUSY';
+  constructor() { super('文件仍在写入，稍后重试同步'); }
+}
+
+/** Name the Vault path in an error so the status bar and toasts say which file failed. */
+export function errorAtPath(error: unknown, relative: string): unknown {
+  if (error instanceof Error && relative && !error.message.includes(relative)) error.message = `${error.message}：${relative}`;
+  return error;
 }
 
 const embeddedSyncLocks = new Set<string>();

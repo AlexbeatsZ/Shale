@@ -12,6 +12,7 @@
 - 用户于 2026-11-15 明确要求本项目的 `AGENTS.md`、`docs/design/`、`docs/log/` 及验收记录一起提交并推送 GitHub。个人 fork 的日志不因 fork 身份而排除；临时文件与密钥继续留在忽略范围。
 
 ## Current State
+- 2026-11-27 PRD1.79 / 0.1.108（源码，构建中）：平板与 Mac 差距大的根因是远端删除/改名后留下 154 个空文件夹，同步报错只在悬停提示且移动布局隐藏状态栏。引擎现会清理变空的父目录、只推迟写入中的单个文件；错误带路径并常驻显示于状态栏。平板 4 个 `.shale` 配置待收项待新版落盘复查。
 - 2026-11-27 PRD1.78 / 0.1.107 已发布并原位更新 Mac、OMEN、ROG、K70、平板。中央两栏使用同一 Pane 和共享文档会话，编辑模式、工具栏按标签身份。格式化与批量标签跟随聚焦真实来源。普通与连续文档共用编辑审阅、分页和大纲，三处标签共用文件动作、排序与相邻关闭。恢复分屏使用独立网格轨道，Mac 与 ROG 正式包验证网页首帧尺寸及访客保留。Android 验收至安装和启动，详见当月日志。
 - 2026-11-27 桌面 0.1.106（分支 `codex/active-webviewer`）已发布并原位更新 Mac/OMEN/ROG。与 Dayweave 0.5.21 配合，Mac 安装版通过隔离采集回读并保留实际 Vault 与工作区，Windows 正式包 UIA 读取与安装回读通过。Windows 解锁后的完整记录待自然使用验收。
 - 2026-11-27 PRD1.77 / 0.1.105（运行源码161cb96）已发布：中央 Markdown 标签保留滚动、光标、选区与折叠，暂存分屏两栏同时恢复。683 单元、Mac 60/Windows 10 浏览器、两端正式包启动与 WebViewer/生命周期通过；旧版实包复现网页先全宽。Mac/OMEN/ROG/平板已更新，K70 尾网在线但 ADB 不可达。见 `tests/reports/tab-restore-20261127.md`。
@@ -71,6 +72,7 @@
 - Windows 安装在 Session1 进行(一次性 Interactive 计划任务):先 `CloseMainWindow` 正常关闭，再 `Shale-<ver>-win-x64-setup.exe /S`。Android 从 OMEN `git archive` 隔离目录构建时需把 Mac 已解压的 `android/.runtime`(nodejs-mobile)放入，并临时复制 `Shale/android/.signing`,构建后删除。
 
 ## Durable Lessons
+- 任何界面元素不得在某种布局里永久 `display:none`（用户 2026-11-27：要永久隐藏就不如不加入）；同步/后台错误必须有常驻可见文字并带出文件路径，不能只放 hover `title`（触屏没有悬停）。
 - 同步/后台任务不能依赖渲染器 WebSocket 存活：Android WebView 和睡眠桌面会静默断开。任何“需要窗口确认”的闸门必须有零窗口策略，客户端套接字必须重连并在重连后重读错过的事件；一个文件的冲突或闸门拒绝不得中止整轮同步(查平板状态：`adb forward tcp:<端口> tcp:<端口>` 后 `GET /api/file-sync`，端口从 `/proc/net/tcp` 的 127.0.0.1 LISTEN 找)。
 - Electron33 的 role 菜单在 accelerator 为 null/undefined 时仍补默认键，须显式空字符串；Mac role 原生 selector 还可能先于 click 执行，同目录动作必须移除 role 再转发。reload 须复用 saveWorkspaceBeforeExit 保存布局与文档，仅保存文档会被 beforeunload 的布局脏状态阻止。
 - 仅副作用导入的上游 Worker 包装可能被 package sideEffects 树摇删除，须使用真实打包入口。Electron33 Worker 请求不继承页面 User-Agent 标记，课件本地 blob 内联也受 connect-src 限制，原生包必须覆盖实际 Worker 与图片页。
