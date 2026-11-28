@@ -159,10 +159,17 @@ test('rejects malformed/oversize commits, missing blobs, path aliases and wrong 
   assert.equal((await hub.request('commit', { method: 'POST', body: ' '.repeat(4 * 1024 * 1024 + 1) })).status, 413);
   assert.equal((await commit(hub, operation(randomUUID(), [{ path: 'x', hash: null, expectedVersion: 0 }]))).status, 409);
   assert.equal((await commit(hub, operation(initial.workspaceId, [{ path: 'x', hash: digest('missing'), expectedVersion: 0 }]))).status, 422);
-  assert.equal((await commit(hub, operation(initial.workspaceId, [
-    { path: 'Case.md', hash: null, expectedVersion: 0 }, { path: 'case.md', hash: null, expectedVersion: 0 },
-  ]))).status, 400);
+  const folder = (path, expectedVersion = 0) => ({ path, hash: null, expectedVersion, directory: true });
+  assert.equal((await commit(hub, operation(initial.workspaceId, [folder('Case'), folder('case')]))).status, 400);
   assert.deepEqual(await (await hub.request('manifest')).json(), initial);
-  assert.equal((await commit(hub, operation(initial.workspaceId, [{ path: 'Case.md', hash: null, expectedVersion: 0 }]))).status, 200);
-  assert.equal((await commit(hub, operation(initial.workspaceId, [{ path: 'case.md', hash: null, expectedVersion: 0 }]))).status, 400);
+  assert.equal((await commit(hub, operation(initial.workspaceId, [folder('Case')]))).status, 200);
+  assert.equal((await commit(hub, operation(initial.workspaceId, [folder('case')]))).status, 400);
+  // Case-only rename: retire the old spelling and create the new one in one batch.
+  const renamed = await commit(hub, operation(initial.workspaceId, [{ path: 'Case', hash: null, expectedVersion: 1 }, folder('case')]));
+  assert.equal(renamed.status, 200);
+  assert.deepEqual((await renamed.json()).files, { Case: { hash: null, version: 2 }, case: { hash: null, version: 2, directory: true } });
+  // A file cannot contain other items.
+  const bytes = Buffer.from('file');
+  assert.equal((await hub.request(`blobs/${digest(bytes)}`, { method: 'PUT', body: bytes })).status, 200);
+  assert.equal((await commit(hub, operation(initial.workspaceId, [{ path: 'note.md', hash: digest(bytes), expectedVersion: 0 }, folder('note.md/inner')]))).status, 400);
 });

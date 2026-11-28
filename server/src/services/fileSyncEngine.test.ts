@@ -81,19 +81,90 @@ afterEach(async () => {
 
 // Real disk and Git fixtures share I/O with the 12 MiB transfer cases; match the packaged runner limit.
 describe('native file synchronization', { timeout: 30000 }, () => {
-  it('removes folders emptied by remote deletions and renames, keeping local folders and non-empty parents', async () => {
-    const sender = await client('prune-sender'), receiver = await client('prune-receiver');
-    await sender.write('Old/Deep/a.md', 'a'); await sender.write('Old/b.md', 'b'); await sender.write('Keep/c.md', 'c');
-    await sender.engine.run();
-    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle' });
-    await fs.mkdir(path.join(receiver.root, 'Local only'));
-    await fs.rm(path.join(sender.root, 'Old'), { recursive: true }); sender.engine.noteChanged('Old');
-    await fs.rename(path.join(sender.root, 'Keep/c.md'), path.join(sender.root, 'Moved.md'));
-    sender.engine.noteChanged('Keep/c.md'); sender.engine.noteChanged('Moved.md');
+  it('replicates folders as items: empty folders, folder renames and folder deletions', async () => {
+    const sender = await client('folder-sender'), receiver = await client('folder-receiver');
+    await fs.mkdir(path.join(sender.root, 'Empty/Inner'), { recursive: true }); sender.engine.noteChanged('Empty');
+    await sender.write('Old/Deep/a.md', 'a'); await sender.write('Old/b.md', 'b');
     expect(await sender.engine.run()).toMatchObject({ phase: 'idle' });
     expect(await receiver.engine.run()).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
-    expect((await fs.readdir(receiver.root)).sort()).toEqual(['Local only', 'Moved.md']);
+    expect((await fs.stat(path.join(receiver.root, 'Empty/Inner'))).isDirectory()).toBe(true);
+    // A folder created only on the receiver travels back like any other item.
+    await fs.mkdir(path.join(receiver.root, 'Local only')); receiver.engine.noteChanged('Local only');
+    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle' });
+    await fs.rename(path.join(sender.root, 'Old'), path.join(sender.root, 'New'));
+    sender.engine.noteChanged('Old'); sender.engine.noteChanged('New');
+    await fs.rm(path.join(sender.root, 'Empty'), { recursive: true }); sender.engine.noteChanged('Empty');
+    expect(await sender.engine.run()).toMatchObject({ phase: 'idle' });
+    expect((await fs.readdir(sender.root)).sort()).toEqual(['Local only', 'New']);
+    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
+    expect((await fs.readdir(receiver.root)).sort()).toEqual(['Local only', 'New']);
+    expect(await fs.readFile(path.join(receiver.root, 'New/Deep/a.md'), 'utf8')).toBe('a');
     expect(receiver.changed).toHaveBeenCalledWith('Old', true, true);
+  });
+
+  it('keeps a remotely deleted folder that gained local content and uploads it again', async () => {
+    const sender = await client('keep-sender'), receiver = await client('keep-receiver');
+    await sender.write('Shared/a.md', 'a'); await sender.engine.run(); await receiver.engine.run();
+    await receiver.write('Shared/new.md', 'written offline');
+    await fs.rm(path.join(sender.root, 'Shared'), { recursive: true }); sender.engine.noteChanged('Shared');
+    await sender.engine.run();
+    const status = await receiver.engine.run();
+    expect(status.phase).toBe('idle');
+    await expect(fs.access(path.join(receiver.root, 'Shared/a.md'))).rejects.toThrow();
+    expect(await fs.readFile(path.join(receiver.root, 'Shared/new.md'), 'utf8')).toBe('written offline');
+    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle', failedPaths: [] });
+    await sender.engine.run();
+    expect(await fs.readFile(path.join(sender.root, 'Shared/new.md'), 'utf8')).toBe('written offline');
+  });
+
+  it('applies case-only renames of files and folders without losing content', async () => {
+    const sender = await client('case-sender'), receiver = await client('case-receiver');
+    await sender.write('Note.md', 'note body'); await sender.write('Folder/Child.md', 'child body');
+    await sender.engine.run(); await receiver.engine.run();
+    await fs.rename(path.join(sender.root, 'Note.md'), path.join(sender.root, 'note.md'));
+    await fs.rename(path.join(sender.root, 'Folder'), path.join(sender.root, 'folder'));
+    for (const name of ['Note.md', 'note.md', 'Folder', 'folder']) sender.engine.noteChanged(name);
+    expect(await sender.engine.run()).toMatchObject({ phase: 'idle', failedPaths: [] });
+    expect(await receiver.engine.run()).toMatchObject({ phase: 'idle', pendingIncoming: 0 });
+    expect((await fs.readdir(receiver.root)).sort()).toEqual(['folder', 'note.md']);
+    expect(await fs.readFile(path.join(receiver.root, 'note.md'), 'utf8')).toBe('note body');
+    expect(await fs.readFile(path.join(receiver.root, 'folder/Child.md'), 'utf8')).toBe('child body');
+    expect(await sender.engine.run()).toMatchObject({ phase: 'idle' });
+    expect((await fs.readdir(sender.root)).sort()).toEqual(['folder', 'note.md']);
+  });
+
+  it('skips a symlink as a failed item and keeps synchronizing everything else', async () => {
+    const sender = await client('link-sender'), receiver = await client('link-receiver');
+    await sender.write('target.md', 'target');
+    await fs.symlink(path.join(sender.root, 'target.md'), path.join(sender.root, 'link.md')); sender.engine.noteChanged('link.md');
+    const status = await sender.engine.run();
+    expect(status).toMatchObject({ phase: 'idle', failedPaths: [{ path: 'link.md', message: expect.stringContaining('符号链接') }] });
+    expect(status.message).toContain('link.md');
+    expect(status.lastSuccess).toBeNull();
+    await receiver.engine.run();
+    expect(await fs.readFile(path.join(receiver.root, 'target.md'), 'utf8')).toBe('target');
+    await expect(fs.access(path.join(receiver.root, 'link.md'))).rejects.toThrow();
+  });
+
+  it('uploads a large change set in server-sized batches without asking the user to split it', async () => {
+    const root = path.join(directory, 'batch'); await fs.mkdir(root);
+    for (let i = 0; i < 7; i++) await fs.writeFile(path.join(root, `note-${i}.md`), `body ${i}`);
+    const engine = new FileSyncEngine(root, path.join(directory, 'batch-state'), { enabled: true, endpoints: [endpoint], token, intervalSec: 15 },
+      { publish: async work => work(), changed: async () => {} }, 3);
+    expect(await engine.run()).toMatchObject({ phase: 'idle' });
+    const manifest = await new OrderedSyncTransport([endpoint], token).select();
+    expect(Object.keys(manifest.files).filter(name => name.startsWith('note-'))).toHaveLength(7);
+  });
+
+  it('rescans the whole Vault on request, catching changes made while the app was closed', async () => {
+    const sender = await client('rescan-sender'), receiver = await client('rescan-receiver');
+    await sender.write('seen.md', 'one'); await sender.engine.run();
+    await fs.writeFile(path.join(sender.root, 'unwatched.md'), 'edited by another app');
+    await sender.engine.run(); await receiver.engine.run();
+    await expect(fs.access(path.join(receiver.root, 'unwatched.md'))).rejects.toThrow();
+    sender.engine.requestFullScan();
+    await sender.engine.run(); await receiver.engine.run();
+    expect(await fs.readFile(path.join(receiver.root, 'unwatched.md'), 'utf8')).toBe('edited by another app');
   });
 
   it('defers a file still being written during the scan and keeps synchronizing the others', async () => {
@@ -717,7 +788,7 @@ describe('native file synchronization', { timeout: 30000 }, () => {
     await first.write('.shale/snippets/theme.css', 'native'); await first.write('note.md', 'allowed');
     expect((await first.engine.run()).phase).toBe('idle');
     const manifest = await new OrderedSyncTransport([endpoint], token).select();
-    expect(Object.keys(manifest.files).sort()).toEqual(['.shale/snippets/theme.css', 'note.md']);
+    expect(Object.keys(manifest.files).sort()).toEqual(['.shale', '.shale/snippets', '.shale/snippets/theme.css', 'note.md']);
     await fs.writeFile(path.join(first.root, '.stfolder'), ''); expect((await first.engine.run()).message).toContain('Syncthing');
     const disabled = new FileSyncEngine(first.root, first.state, { ...first.preferences, enabled: false }, { publish: async work => work(), changed: async () => {} });
     await expect(disabled.recover()).resolves.toBeUndefined();

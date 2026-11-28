@@ -4,7 +4,7 @@ import { desktopCommands } from '../../desktop/src/bridge';
 import { ensureWriting, writingFileChanged, watchExternalWritingSources } from './lib/writing/config';
 import { bindWritingNavigation } from './lib/writing/commands';
 import { refreshSearch, refreshHotkeys, searchSettings } from './lib/search';
-import { clearSyncConflicts, refreshSyncConflicts, runFileSync, syncProblem } from './lib/syncConflicts';
+import { clearSyncConflicts, refreshSyncConflicts, syncProblem } from './lib/syncConflicts';
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { api, invalidateVaultRequests } from './lib/api';
 import { useStore, flushWorkspaceState, saveWorkspaceBeforeExit, workspaceHasUnsavedChanges } from './lib/store';
@@ -204,7 +204,6 @@ export default function App() {
     let opened = false;
     let retryTimer: number | undefined;
     let retryDelay = 500;
-    let lastForegroundSync = 0;
     const resynchronize = () => {
       // Filesystem events sent while disconnected were lost: reread the tree and every open document.
       loadTree();
@@ -231,12 +230,8 @@ export default function App() {
     };
     const revive = () => {
       if (disposed || document.visibilityState === 'hidden') return;
+      // Only the socket is revived. Sync keeps its own interval; switching apps or unlocking starts no extra pass.
       if (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) { retryDelay = 500; connect(); }
-      // Back in the foreground: exchange now instead of waiting for the next interval.
-      if (Date.now() - lastForegroundSync > 5000) {
-        lastForegroundSync = Date.now();
-        void runFileSync().catch(() => {});
-      }
     };
     connect();
     document.addEventListener('visibilitychange', revive);

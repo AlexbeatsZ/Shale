@@ -3,7 +3,7 @@ import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 import { Readable } from 'node:stream';
 import { z } from 'zod';
-import { validPath, validateManifest, hashPattern, idPattern } from '../../../sync-server/protocol.mjs';
+import { excludedPath, validPath, validateManifest, hashPattern, idPattern } from '../../../sync-server/protocol.mjs';
 import type { FileSyncPreferences, FileSyncStatus, SyncEntry, SyncManifest, SyncOperation } from '../contracts/fileSync.js';
 import { resolveVaultPath, vaultPathKey } from './vaultFile.js';
 import { hashFile, writeFileFromSource } from './textFile.js';
@@ -11,17 +11,20 @@ import { atomicSyncJson, errorAtPath, fileSignature, stageLocalFile, stageSyncBl
 import { OrderedSyncTransport, SyncHttpError } from './syncTransport.js';
 import { mergeReview } from '@shale/markdown-core';
 import { decodeText, describeChange, textExtension, type DiffBlock } from './syncMerge.js';
-import { groupIncoming, planSyncPath, indexRelatedPaths } from './fileSyncGroups.js';
+import { DIRECTORY, groupIncoming, identityOf, planSyncPath, indexRelatedPaths } from './fileSyncGroups.js';
 import { discoveryReset, nextDiscoveryPage, selectDiscovery } from './syncDiscovery.js';
 import { downloadSyncBlob, uploadSyncBlob } from './syncTransfer.js';
 
 const hash = z.string().regex(hashPattern);
 const identifier = z.string().regex(idPattern);
-const entry = z.object({ hash: hash.nullable(), version: z.number().int().positive().safe() });
-const change = z.object({ path: z.string().refine(validPath), hash: hash.nullable(), expectedVersion: z.number().int().nonnegative().safe() });
+const entry = z.object({ hash: hash.nullable(), version: z.number().int().positive().safe(), directory: z.literal(true).optional() });
+const change = z.object({ path: z.string().refine(validPath), hash: hash.nullable(), expectedVersion: z.number().int().nonnegative().safe(),
+  directory: z.literal(true).optional() });
+/** A local item identity: a file digest or the directory marker. */
+const identity = z.union([hash, z.literal(DIRECTORY)]);
 // `content` is the bytes to publish when they differ from the acknowledged remote entry (a merge result).
-const incoming = z.object({ path: z.string().refine(validPath), expected: hash.nullable(), entry,
-  previousHash: hash.nullable().optional(), content: hash.optional(), ready: z.boolean().optional() });
+const incoming = z.object({ path: z.string().refine(validPath), expected: identity.nullable(), entry,
+  previousHash: identity.nullable().optional(), content: hash.optional(), ready: z.boolean().optional() });
 const revisionNumber = z.number().int().nonnegative().safe();
 const discoveryFiles = z.object({ revision: revisionNumber, files: z.record(entry) });
 const checkpoint = z.object({
@@ -33,7 +36,7 @@ const checkpoint = z.object({
   lastProgress: z.string().nullable().default(null),
   outbox: z.object({ workspaceId: identifier, deviceId: identifier, operationId: identifier, changes: z.array(change).min(1).max(20000) }).optional(),
   incoming: z.array(incoming).optional(),
-  conflict: z.object({ id: identifier, changes: z.array(incoming), local: z.record(hash.nullable()), branches: z.array(z.string()) }).optional(),
+  conflict: z.object({ id: identifier, changes: z.array(incoming), local: z.record(identity.nullable()), branches: z.array(z.string()) }).optional(),
 });
 type Checkpoint = z.infer<typeof checkpoint>;
 /** 'merged' keeps the current local file (a reviewed mix of both versions) on top of the remote base. */
@@ -49,6 +52,14 @@ export type ConflictFile = {
   localSize: number | null; remoteSize: number | null; image: boolean; text: boolean; diff: DiffBlock[] | null; truncated: boolean;
 };
 const imagePattern = /\.(png|jpe?g|gif|webp|svg|bmp|avif|ico)$/i;
+/** Folder creations first, then files, then folder deletions deepest first, so parents exist and empty last. */
+function orderForApplication(groups: Incoming[][]): Incoming[][] {
+  const kind = (group: Incoming[]) => group.some(item => item.entry.directory) ? 0
+    : group.every(item => item.expected === DIRECTORY && identityOf(item.entry) === null) ? 2 : 1;
+  const depth = (group: Incoming[]) => Math.max(...group.map(item => item.path.split('/').length));
+  return [...groups].sort((a, b) => kind(a) - kind(b) || (kind(a) === 2 ? depth(b) - depth(a) : 0));
+}
+const isLiveChange = (change: { hash: string | null; directory?: true }) => change.hash !== null || change.directory === true;
 type Hooks = {
   publish<T>(work: (blocked?: ReadonlySet<string>) => Promise<T>, paths: string[]): Promise<T>;
   changed(relative: string, deleted: boolean, directory?: boolean): Promise<void>;
@@ -63,6 +74,11 @@ export class FileSyncEngine {
   private dirty = new Set<string>();
   /** Local files that changed while being hashed or applied; retried next pass without stopping others. */
   private deferred = new Set<string>();
+  /** Items the scan could not synchronize (symlinks, Syncthing folders, names); held until rescanned. */
+  private scanFailures = new Map<string, string>();
+  /** Every item skipped in the latest pass with its reason, shown like Syncthing's failed items. */
+  private failures = new Map<string, string>();
+  private fullScanRequested = false;
   private running: Promise<FileSyncStatus> | null = null;
   private snapshot: FileSyncStatus;
   private readonly blobs: string;
@@ -70,7 +86,8 @@ export class FileSyncEngine {
   private resolutions: Resolution[] = [];
   private lastCachePrune = 0;
 
-  constructor(readonly root: string, readonly directory: string, readonly preferences: FileSyncPreferences, private readonly hooks: Hooks) {
+  constructor(readonly root: string, readonly directory: string, readonly preferences: FileSyncPreferences, private readonly hooks: Hooks,
+    private readonly batchLimit = 20000) {
     this.root = path.resolve(root);
     this.blobs = path.join(directory, 'blobs'); this.filename = path.join(directory, 'checkpoint.json');
     this.snapshot = { enabled: preferences.enabled, endpoints: [...preferences.endpoints], hasToken: !!preferences.token,
@@ -85,10 +102,13 @@ export class FileSyncEngine {
       lastProgress: this.state?.lastProgress ?? null,
       pendingPaths: (this.state?.incoming ?? []).slice(0, 20).map(item => item.path),
       deferredPaths: [...this.deferred].slice(0, 20),
+      failedPaths: [...this.failures].slice(0, 20).map(([name, message]) => ({ path: name, message })),
       recentResolutions: this.resolutions.slice(-20).reverse().map(({ at, path: name, kind }) => ({ at, path: name, kind })) };
   }
   get busy(): boolean { return this.running !== null; }
   noteChanged(relative: string): void { this.dirty.add(relative); }
+  /** Walk the whole Vault on the next pass: the app only syncs while open, so changes made while closed are unwatched. */
+  requestFullScan(): void { this.fullScanRequested = true; }
 
   async load(): Promise<void> {
     if (this.loaded) return;
@@ -166,7 +186,7 @@ export class FileSyncEngine {
     // unapplied dependency group from the current manifest, retaining the local base/bytes.
     if (this.state.incoming?.length) {
       const superseded = new Set(groupIncoming(this.state.incoming).filter(group => group.some(item =>
-        !item.ready && (manifest.files[item.path]?.version !== item.entry.version || manifest.files[item.path]?.hash !== item.entry.hash)))
+        !item.ready && (manifest.files[item.path]?.version !== item.entry.version || identityOf(manifest.files[item.path]) !== identityOf(item.entry))))
         .flatMap(group => group.map(item => item.path)));
       if (superseded.size) {
         const next = { ...this.state, incoming: this.state.incoming.filter(item => !superseded.has(item.path)) };
@@ -178,26 +198,35 @@ export class FileSyncEngine {
     const downloads: Incoming[] = []; const conflicts: Incoming[] = [];
     const acknowledgements: Record<string, SyncEntry> = {};
     // A conflicted or still-journaled path is held back on its own; every other path keeps synchronizing.
+    const failures = new Map(this.scanFailures);
+    // Two live local names that differ only by case cannot coexist on the server or on other devices.
+    const spellings = new Map<string, string[]>();
+    for (const name of this.files.keys()) spellings.set(name.toLowerCase(), [...(spellings.get(name.toLowerCase()) ?? []), name]);
+    for (const names of spellings.values()) if (names.length > 1)
+      for (const name of names) failures.set(name, `与 ${names.filter(other => other !== name).join('、')} 只差大小写，其他设备无法同时保存`);
     const held = new Map([...(this.state.incoming ?? []), ...(this.state.conflict?.changes ?? [])].map(item => [item.path, item.entry]));
-    const isHeld = indexRelatedPaths(held.keys());
+    // Failed items stay as they are on both sides until fixed; nothing is uploaded or downloaded for them.
+    const isHeld = indexRelatedPaths([...held.keys(), ...failures.keys()]);
     let allRemoteChangesQueued = true;
     for (const name of new Set([...this.files.keys(), ...Object.keys(this.state.base), ...Object.keys(manifest.files)])) {
       const local = this.files.get(name) ?? null;
       const base = this.state.base[name];
       const remote = Object.hasOwn(manifest.files, name) ? manifest.files[name] : { hash: null, version: 0 };
       if (remote.version < (this.state.base[name]?.version ?? 0)) throw new Error('远端文件版本回退，已停止同步');
-      if (this.state.base[name]?.version === remote.version && this.state.base[name].hash !== remote.hash)
+      if (this.state.base[name]?.version === remote.version && identityOf(this.state.base[name]) !== identityOf(remote))
         throw new Error('远端文件内容与已确认版本不一致，已停止同步');
       const blocked = isHeld(name);
       const queued = held.get(name);
-      if (blocked && remote.version !== base?.version && (queued?.version !== remote.version || queued.hash !== remote.hash)) allRemoteChangesQueued = false;
+      if (blocked && remote.version !== base?.version && (queued?.version !== remote.version || identityOf(queued) !== identityOf(remote))) allRemoteChangesQueued = false;
       const plan = planSyncPath(base ?? null, local, remote.version ? remote : null, blocked);
-      const transfer = { path: name, expected: local, previousHash: base?.hash ?? null, entry: remote };
+      const transfer = { path: name, expected: local, previousHash: identityOf(base), entry: remote };
       switch (plan.decision) {
         case 'adopt': acknowledgements[name] = remote; break;
         case 'download': downloads.push(transfer); break;
-        case 'upload': changes.push({ path: name, expectedVersion: plan.expectedVersion, hash: local }); break;
+        case 'upload': changes.push(local === DIRECTORY ? { path: name, expectedVersion: plan.expectedVersion, hash: null, directory: true }
+          : { path: name, expectedVersion: plan.expectedVersion, hash: local }); break;
         case 'conflict': conflicts.push(transfer); break;
+        case 'failed': failures.set(name, plan.message); break;
       }
     }
     const automatic: Resolution[] = []; const unresolved: Incoming[] = [];
@@ -220,9 +249,15 @@ export class FileSyncEngine {
     if (allRemoteChangesQueued) this.state.queuedThrough = manifest.revision;
     if (independentDownloads.length) this.state.incoming = [...(this.state.incoming ?? []),
       ...independentDownloads.map(item => ({ ...item, ready: !!item.content || !item.entry.hash }))];
+    this.failures = failures;
+    // Large imports go up in server-sized batches; the remaining changes are replanned by the follow-up pass.
+    // Deletions go first so a file replaced by a folder (or the reverse) never collides inside a batch.
+    let truncated = false;
     if (changes.length) {
-      if (changes.length > 20000) throw new Error('单批同步超过 20000 个文件，请分批导入');
-      this.state.outbox = { workspaceId: manifest.workspaceId, deviceId: this.state.deviceId, operationId: randomUUID(), changes };
+      changes.sort((a, b) => Number(isLiveChange(a)) - Number(isLiveChange(b)));
+      truncated = changes.length > this.batchLimit;
+      this.state.outbox = { workspaceId: manifest.workspaceId, deviceId: this.state.deviceId, operationId: randomUUID(),
+        changes: changes.slice(0, this.batchLimit) };
     }
     await this.persist();
     if (automatic.length) await this.recordResolutions(automatic);
@@ -230,14 +265,15 @@ export class FileSyncEngine {
     if (this.state.outbox && !await this.submit(transport)) throw new Error('远端已有新修改，本机内容已保留，下次同步重新比较');
     await this.receiveIncoming(transport);
     // A merge result is now the local file on top of the remote base; the next pass uploads it.
-    if ((automatic.some(item => item.kind === 'merged' && item.content !== item.remote) ||
+    if ((automatic.some(item => item.kind === 'merged' && item.content !== item.remote) || truncated ||
       this.state.queuedThrough < this.state.revision && !this.state.conflict) && followUp < 2) {
       const next = await this.pass(followUp + 1);
       if (automatic.length && next.phase === 'idle') next.message = this.automaticMessage(automatic);
       this.snapshot.message = next.message; return this.status();
     }
     this.state.lastProgress = new Date().toISOString();
-    if (!this.state.incoming?.length && !this.state.outbox && !this.state.conflict && !this.deferred.size && this.state.queuedThrough === this.state.revision)
+    if (!this.state.incoming?.length && !this.state.outbox && !this.state.conflict && !this.deferred.size && !this.failures.size &&
+      this.state.queuedThrough === this.state.revision)
       this.state.lastSuccess = this.state.lastProgress;
     await this.persist();
     await this.pruneBlobCache();
@@ -245,6 +281,10 @@ export class FileSyncEngine {
     this.snapshot.message = automatic.length ? this.automaticMessage(automatic) : '同步完成';
     if (this.state.queuedThrough < this.state.revision) this.snapshot.message = '部分文件已同步，下一轮继续入队';
     if (this.deferred.size) this.snapshot.message = `其他文件已同步；${this.deferred.size} 个文件仍在写入，下一轮重试：${[...this.deferred][0]}`;
+    if (this.failures.size) {
+      const [name, reason] = [...this.failures][0];
+      this.snapshot.message = `其他文件已同步；${this.failures.size} 项无法同步：${name}（${reason}）`;
+    }
     if (this.state.conflict) {
       this.setConflictStatus();
       this.snapshot.message = `其他文件已同步；${this.state.conflict.changes.length} 个冲突文件待处理，两版均已保留`;
@@ -399,42 +439,91 @@ export class FileSyncEngine {
   }
 
   private async scan(): Promise<void> {
-    const requested = this.scanned ? [...this.dirty] : ['']; this.dirty.clear();
-    const inspect = async (relative: string): Promise<void> => {
-      if (relative && relative !== '.shale' && !validPath(relative)) return;
-      const absolute = relative ? await resolveVaultPath(this.root, relative, true) : this.root;
+    // Shale syncs only while open, so the whole Vault is walked once when it opens (catching edits made while it
+    // was closed) and on an explicit manual sync. Returning to the foreground only exchanges watcher-reported paths.
+    const full = !this.scanned || this.fullScanRequested;
+    const requested = full ? [''] : [...this.dirty]; this.dirty.clear();
+    const previous = this.files;
+    if (full) { this.files = new Map(); this.scanFailures.clear(); }
+    const listings = new Map<string, Set<string>>();
+    // Case-insensitive file systems resolve `Note.md` for `note.md`; only the exact on-disk spelling exists.
+    const exactPath = async (relative: string): Promise<boolean> => {
+      let parent = this.root;
+      for (const part of relative.split('/')) {
+        let names = listings.get(parent);
+        if (!names) {
+          try { names = new Set(await fs.readdir(parent)); } catch { return false; }
+          listings.set(parent, names);
+        }
+        if (!names.has(part)) return false;
+        parent = path.join(parent, part);
+      }
+      return true;
+    };
+    const forget = (relative: string) => {
+      for (const name of [...this.files.keys()]) if (name === relative || name.startsWith(`${relative}/`)) { this.files.delete(name); delete this.state.cache[name]; }
+      for (const name of [...this.scanFailures.keys()]) if (name === relative || name.startsWith(`${relative}/`)) this.scanFailures.delete(name);
+    };
+    // A skipped item keeps its last known identity so it is neither uploaded as new nor treated as deleted.
+    const hold = (relative: string, reason: string) => {
+      for (const [name, value] of previous) if (name === relative || name.startsWith(`${relative}/`)) this.files.set(name, value);
+      this.scanFailures.set(relative, reason);
+    };
+    const inspect = async (relative: string, listed: boolean): Promise<void> => {
+      if (relative && relative !== '.shale' && !validPath(relative)) {
+        if (!excludedPath(relative) && (listed || await exactPath(relative))) this.scanFailures.set(relative, '名称含有 \\ : * ? " < > | 或以空格、句点结尾，其他设备无法保存');
+        return;
+      }
+      let absolute: string;
+      // A link anywhere on the path (or one pointing outside the Vault) affects only this item.
+      try { absolute = relative ? await resolveVaultPath(this.root, relative, true) : this.root; }
+      catch (error) { if (!relative) throw error; hold(relative, '符号链接或联接不同步，已跳过'); return; }
       let info;
       try { info = await fs.lstat(absolute); }
       catch (error) {
-        if (!['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error;
-        for (const name of this.files.keys()) if (name === relative || name.startsWith(`${relative}/`)) { this.files.delete(name); delete this.state.cache[name]; }
-        return;
+        if (!['ENOENT', 'ENOTDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) throw errorAtPath(error, relative);
+        info = null;
       }
-      if (info.isSymbolicLink()) throw new Error('同步目录包含符号链接或联接，请移出后重试');
+      if (!info || relative && !listed && !await exactPath(relative)) { forget(relative); return; }
+      if (relative) this.scanFailures.delete(relative);
+      if (info.isSymbolicLink()) { hold(relative, '符号链接或联接不同步，已跳过'); return; }
       if (info.isDirectory()) {
-        this.files.delete(relative); delete this.state.cache[relative];
+        delete this.state.cache[relative];
         const names = await fs.readdir(absolute);
-        if (names.includes('.stfolder')) throw new Error('同步目录包含 Syncthing 管理的文件夹');
-        for (const name of names) await inspect(relative ? `${relative}/${name}` : name);
+        if (relative && names.includes('.stfolder')) { hold(relative, '此文件夹由 Syncthing 管理，已跳过'); return; }
+        if (relative) {
+          for (const name of [...this.files.keys()]) if (name.startsWith(`${relative}/`) && !names.includes(name.slice(relative.length + 1).split('/')[0])) forget(name);
+          this.files.set(relative, DIRECTORY);
+        }
+        listings.set(absolute, new Set(names));
+        for (const name of names) await inspect(relative ? `${relative}/${name}` : name, true);
         return;
       }
-      if (!info.isFile()) throw new Error('同步仅支持普通文件');
-      for (const name of this.files.keys()) if (name.startsWith(`${relative}/`)) { this.files.delete(name); delete this.state.cache[name]; }
+      if (!info.isFile()) { hold(relative, '不是普通文件，已跳过'); return; }
+      for (const name of [...this.files.keys()]) if (name.startsWith(`${relative}/`)) forget(name);
       const signature = fileSignature(info);
-      const previous = this.state.cache[relative];
-      const cached = !this.scanned && previous?.signature === signature && await fs.access(path.join(this.blobs, previous.hash)).then(() => true, () => false);
+      const cachedEntry = this.state.cache[relative];
+      const cached = full && cachedEntry?.signature === signature && await fs.access(path.join(this.blobs, cachedEntry.hash)).then(() => true, () => false);
       let digest: string;
-      try { digest = cached ? previous.hash : await stageLocalFile(absolute, this.blobs, signature); }
+      try { digest = cached ? cachedEntry.hash : await stageLocalFile(absolute, this.blobs, signature); }
       catch (error) {
         if (!(error instanceof SyncFileBusyError)) throw errorAtPath(error, relative);
         // Keep the last known identity so a half-written file is neither uploaded nor treated as deleted.
+        const known = previous.get(relative); if (known) this.files.set(relative, known);
         this.deferred.add(relative); this.dirty.add(relative); return;
       }
       this.deferred.delete(relative);
       this.state.cache[relative] = { signature, hash: digest }; this.files.set(relative, digest);
     };
-    try { for (const relative of requested) await inspect(relative); this.scanned = true; }
-    catch (error) { for (const relative of requested) this.dirty.add(relative); throw error; }
+    try {
+      for (const relative of requested) await inspect(relative, false);
+      if (full) this.fullScanRequested = false;
+      this.scanned = true;
+    } catch (error) {
+      if (full) this.files = previous;
+      for (const relative of requested) this.dirty.add(relative);
+      throw error;
+    }
   }
 
   private async download(transport: OrderedSyncTransport, digest: string): Promise<void> {
@@ -540,7 +629,7 @@ export class FileSyncEngine {
       const isBlocked = indexRelatedPaths(blocked);
       const next = { ...this.state, base: Object.assign(Object.create(null), this.state.base) as Checkpoint['base'] };
       const pending: Incoming[] = [];
-      for (const group of groups) {
+      for (const group of orderForApplication(groups)) {
         if (group.some(item => item.ready === false)) { pending.push(...group); continue; }
         if (group.some(item => isBlocked(item.path))) {
           blockedByEditor = true;
@@ -578,26 +667,32 @@ export class FileSyncEngine {
   }
 
   private async applyIncomingGroupNow(next: Checkpoint, group: Incoming[], conflicted: Incoming[]): Promise<void> {
+    const listings = new Map<string, Set<string>>();
     const prepared = await Promise.all(group.map(async item => {
       const absolute = await resolveVaultPath(this.root, item.path, true);
       const info = await fs.lstat(absolute).catch((error: NodeJS.ErrnoException) => {
         if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return null;
         throw error;
       });
-      const directory = info?.isDirectory() === true;
-      const actual = info && !directory ? await hashFile(absolute) : null;
-      return { item, absolute, actual, directory, target: item.content ?? item.entry.hash };
+      // On a case-insensitive disk `Note.md` resolves for `note.md`; only the exact spelling is this item.
+      const present = !!info && await this.exactPath(item.path, listings);
+      const directory = present && info!.isDirectory();
+      const actual = !present ? null : directory ? DIRECTORY : await hashFile(absolute);
+      return { item, absolute, actual, directory, target: item.content ?? identityOf(item.entry) };
     }));
     const deletions = new Set(prepared.filter(item => item.target === null).map(item => item.absolute));
     const folders = new Map<string, string[]>();
     for (const { absolute, directory, target } of prepared) {
-      if (directory && target) {
+      if (directory && target && target !== DIRECTORY) {
         const emptyAfterDeletion = await this.emptiedDirectories(absolute, deletions);
         if (emptyAfterDeletion) folders.set(absolute, emptyAfterDeletion);
       }
     }
     if (prepared.some(({ item, absolute, directory, actual, target }) =>
-      (directory && target && !folders.has(absolute)) || (actual !== target && actual !== item.expected))) {
+      (directory && target && target !== DIRECTORY && !folders.has(absolute)) || (actual !== target && actual !== item.expected))) {
+      // A directory has no content to review: replan it next pass instead of retaining a conflict.
+      if (prepared.some(({ item, actual, target }) => actual === DIRECTORY || target === DIRECTORY || item.expected === DIRECTORY))
+        throw new SyncFileBusyError();
       const retained: Incoming[] = [];
       for (const { item, absolute, actual } of prepared) {
         if (actual) {
@@ -610,35 +705,94 @@ export class FileSyncEngine {
       return;
     }
     for (const { target } of prepared) {
-      if (target && await hashFile(path.join(this.blobs, target)) !== target) throw new Error('待恢复附件不完整，未修改笔记');
+      if (target && target !== DIRECTORY && await hashFile(path.join(this.blobs, target)) !== target) throw new Error('待恢复附件不完整，未修改笔记');
     }
-    const emptied = new Set<string>();
-    for (const { item, absolute, actual, target } of prepared.sort((a, b) => Number(a.target !== null) - Number(b.target !== null))) {
-      for (const folder of folders.get(absolute) ?? []) await fs.rmdir(folder);
-      try { if (actual !== target) await writeFileFromSource(absolute, target ? path.join(this.blobs, target) : null, item.expected); }
-      catch (error) { throw errorAtPath(error, item.path); }
-      if (!target) emptied.add(path.dirname(absolute));
+    // Case-only rename: move the old spelling instead of deleting it, because on a case-insensitive disk both
+    // spellings are the same file and delete-then-create would lose it.
+    for (const old of prepared) {
+      if (old.target !== null || old.actual === null) continue;
+      const renamed = prepared.find(item => item !== old && item.target !== null && item.actual === null &&
+        item.item.path.toLowerCase() === old.item.path.toLowerCase());
+      if (!renamed) continue;
+      const temporary = `${old.absolute}.tmp-case-${randomUUID()}`;
+      await fs.rename(old.absolute, temporary);
+      await fs.rename(temporary, renamed.absolute);
+      renamed.actual = old.actual; renamed.item = { ...renamed.item, expected: old.actual };
+      old.actual = null;
+    }
+    // Deletions deepest first, then folders shallowest first, then files.
+    const rank = (target: string | null) => target === null ? 0 : target === DIRECTORY ? 1 : 2;
+    const depth = (name: string) => name.split('/').length;
+    prepared.sort((a, b) => rank(a.target) - rank(b.target) ||
+      (a.target === null ? depth(b.item.path) - depth(a.item.path) : depth(a.item.path) - depth(b.item.path)));
+    for (const { item, absolute, actual, target } of prepared) {
+      for (const folder of folders.get(absolute) ?? []) await fs.rmdir(folder).catch((error: NodeJS.ErrnoException) => { if (error.code !== 'ENOENT') throw error; });
+      try {
+        if (actual !== target) {
+          if (target === DIRECTORY) {
+            if (actual !== null) await writeFileFromSource(absolute, null, item.expected);
+            await fs.mkdir(absolute, { recursive: true });
+          } else if (actual === DIRECTORY && target === null) {
+            if (!await this.removeDirectory(absolute, item.path)) {
+              // Local content the deletion never saw keeps the folder (Syncthing): it is uploaded again next pass.
+              next.base[item.path] = item.entry;
+              this.failures.set(item.path, '文件夹里有本机新增的内容，已保留并重新上传');
+              continue;
+            }
+          } else {
+            // A folder replaced by a file was already emptied and removed above.
+            const expected = item.expected === DIRECTORY ? null : item.expected;
+            await writeFileFromSource(absolute, target ? path.join(this.blobs, target) : null, expected);
+          }
+        }
+      } catch (error) { throw errorAtPath(error, item.path); }
       next.base[item.path] = item.entry;
-      if (target) {
+      if (target === DIRECTORY) { this.files.set(item.path, DIRECTORY); delete this.state.cache[item.path]; }
+      else if (target) {
         this.files.set(item.path, target);
         this.state.cache[item.path] = { signature: fileSignature(await fs.stat(absolute)), hash: target };
       } else { this.files.delete(item.path); delete this.state.cache[item.path]; }
-      await this.hooks.changed(item.path, target === null);
+      await this.hooks.changed(item.path, target === null, target === DIRECTORY || actual === DIRECTORY);
     }
-    // Empty directories are not synchronized, so a remote deletion or folder rename must not leave the old
-    // folder behind as an empty shell. Remove only parents this deletion emptied, never the Vault root.
-    for (const folder of emptied) await this.removeEmptyParents(folder);
   }
 
-  private async removeEmptyParents(folder: string): Promise<void> {
-    for (let current = folder; current !== this.root && current.startsWith(this.root + path.sep); current = path.dirname(current)) {
-      try { await fs.rmdir(current); }
-      catch (error) {
-        if (['ENOTEMPTY', 'EEXIST', 'ENOENT', 'ENOTDIR', 'EBUSY', 'EPERM', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) return;
-        throw error;
+  /** Exact on-disk spelling of every component below the Vault root. */
+  private async exactPath(relative: string, listings: Map<string, Set<string>>): Promise<boolean> {
+    let parent = this.root;
+    for (const part of relative.split('/')) {
+      let names = listings.get(parent);
+      if (!names) {
+        try { names = new Set(await fs.readdir(parent)); } catch { return false; }
+        listings.set(parent, names);
       }
-      await this.hooks.changed(path.relative(this.root, current).split(path.sep).join('/'), true, true);
+      if (!names.has(part)) return false;
+      parent = path.join(parent, part);
     }
+    return true;
+  }
+
+  /**
+   * Remove a folder deleted remotely. Returns false when it holds local content the deletion did not cover.
+   * Content still journaled for deletion defers the folder to a later pass instead.
+   */
+  private async removeDirectory(absolute: string, relative: string): Promise<boolean> {
+    try { await fs.rmdir(absolute); return true; }
+    catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT') return true;
+      if (code !== 'ENOTEMPTY' && code !== 'EEXIST') throw error;
+    }
+    const journaled = new Set((this.state.incoming ?? []).filter(item => identityOf(item.entry) === null && !item.content).map(item => item.path));
+    const onlyJournaled = async (folder: string, name: string): Promise<boolean> => {
+      for (const child of await fs.readdir(folder, { withFileTypes: true })) {
+        const childName = `${name}/${child.name}`;
+        if (!journaled.has(childName)) return false;
+        if (child.isDirectory() && !await onlyJournaled(path.join(folder, child.name), childName)) return false;
+      }
+      return true;
+    };
+    if (await onlyJournaled(absolute, relative)) throw new SyncFileBusyError();
+    return false;
   }
 
   private async emptiedDirectories(folder: string, deletions: ReadonlySet<string>): Promise<string[] | null> {

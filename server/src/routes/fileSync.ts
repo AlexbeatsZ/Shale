@@ -14,7 +14,7 @@ fileSyncRouter.get('/', asyncHandler(async (_request, response) => {
 fileSyncRouter.put('/', asyncHandler(async (request, response) => {
   await saveFileSyncPreferences(request.body); response.json({ ok: true });
 }));
-fileSyncRouter.post('/run', asyncHandler(async (_request, response) => { response.json(await runFileSync()); }));
+fileSyncRouter.post('/run', asyncHandler(async (request, response) => { response.json(await runFileSync({ rescan: request.body?.rescan === true })); }));
 fileSyncRouter.get('/conflict', asyncHandler(async (_request, response) => {
   response.setHeader('Cache-Control', 'no-store');
   response.json({ conflict: await (await fileSyncEngine()).conflictDetails() });

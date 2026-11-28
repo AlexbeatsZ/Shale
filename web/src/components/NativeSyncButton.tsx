@@ -12,6 +12,7 @@ function syncLabel(status: FileSyncStatus, busy: boolean) {
   if (status.phase === 'recovery') return status.pendingIncoming ? `待接收 ${status.pendingIncoming}，未完成` : '等待恢复';
   if (status.pendingIncoming) return `待接收 ${status.pendingIncoming}`;
   if (status.pendingOutgoing) return `待发送 ${status.pendingOutgoing}`;
+  if (status.failedPaths?.length) return `${status.failedPaths.length} 项未同步`;
   if (status.deferredPaths?.length) return `${status.deferredPaths.length} 个文件待重试`;
   if ((status.queuedThrough ?? 0) < (status.seen ?? 0)) return '待继续同步';
   return status.lastSuccess ? '已同步' : '等待首次同步';
@@ -39,7 +40,7 @@ export default function NativeSyncButton() {
   const sync = async () => {
     setRunning(true);
     try {
-      const next = await runFileSync(); setStatus(next as FileSyncStatus); await useStore.getState().loadTree();
+      const next = await runFileSync({ rescan: true }); setStatus(next as FileSyncStatus); await useStore.getState().loadTree();
       const problem = syncProblem(next);
       if (problem) useStore.getState().notify(`同步未完成：${problem}`, 10000);
     }

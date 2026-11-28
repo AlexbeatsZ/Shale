@@ -7,9 +7,10 @@ export const FileSyncPreferencesSchema = z.object({
   intervalSec: z.number().int().min(5).max(3600).default(15),
 });
 export type FileSyncPreferences = z.infer<typeof FileSyncPreferencesSchema>;
-export type SyncEntry = { hash: string | null; version: number };
+/** File (`hash`), directory (`directory: true`, null hash) or tombstone (null hash). */
+export type SyncEntry = { hash: string | null; version: number; directory?: true };
 export type SyncManifest = { workspaceId: string; revision: number; files: Record<string, SyncEntry> };
-export type SyncChange = { path: string; hash: string | null; expectedVersion: number };
+export type SyncChange = { path: string; hash: string | null; expectedVersion: number; directory?: true };
 export type SyncOperation = { workspaceId: string; deviceId: string; operationId: string; changes: SyncChange[] };
 export type FileSyncStatus = {
   enabled: boolean; endpoints: string[]; hasToken: boolean; activeEndpoint: string | null;
@@ -19,6 +20,8 @@ export type FileSyncStatus = {
   seen?: number; queuedThrough?: number; pendingIncoming?: number; pendingOutgoing?: number; lastProgress?: string | null;
   /** First pending incoming paths and local files deferred because they were still being written. */
   pendingPaths?: string[]; deferredPaths?: string[];
+  /** Items skipped this pass with their reason (Syncthing's failed items); every other item keeps syncing. */
+  failedPaths?: { path: string; message: string }[];
   /** Differences this device resolved without asking, newest first. */
   recentResolutions: { at: string; path: string; kind: 'fast-forward' | 'deleted' | 'merged' }[];
 };

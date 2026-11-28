@@ -38,11 +38,12 @@ export async function resolveAllSyncConflicts(choice: 'local' | 'remote'): Promi
 export function syncProblem(status: FileSyncStatus): string {
   if (!status.enabled || status.phase === 'syncing' || status.phase === 'conflict') return '';
   if (status.phase === 'error' || status.phase === 'recovery') return status.message || '同步未完成，原因未知';
-  return status.deferredPaths?.length ? status.message : '';
+  return status.deferredPaths?.length || status.failedPaths?.length ? status.message : '';
 }
 
-export async function runFileSync(): Promise<FileSyncStatus> {
-  const status = await request<FileSyncStatus>('/api/file-sync/run', { method: 'POST', body: '{}' });
+/** `rescan` (the manual sync button) also walks the whole Vault for changes the file watcher did not report. */
+export async function runFileSync(options: { rescan?: boolean } = {}): Promise<FileSyncStatus> {
+  const status = await request<FileSyncStatus>('/api/file-sync/run', { method: 'POST', body: JSON.stringify({ rescan: options.rescan === true }) });
   await refreshSyncConflicts();
   return status;
 }

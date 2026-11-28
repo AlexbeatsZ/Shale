@@ -75,20 +75,16 @@ Reuse Mojian's immutable SHA-256 blobs, exact-version CAS, retained tombstones a
 idempotent operation receipts. Uploads/downloads stream to disk, never decode attachments
 as text. Local metadata signatures reuse staged blobs on restart; existing watcher
 events identify dirty paths, which are rehashed even if timestamps are unchanged.
-Idle passes do not walk the Vault again. Restart scans durable files once. Renames are an atomic
-manifest addition/deletion; identical blob content is reused. Empty directories are not
-synchronized, so applying a remote deletion removes the parent folders it emptied, up to but
-never including the Vault root; a folder renamed on another device therefore does not stay behind
-as an empty shell. Folders that were already empty or are local-only are left alone. Case-only aliases and file/directory shape conflicts stop for explicit
-handling instead of deleting existing directories. Per-file limit is 1 GiB. Server history/blobs/receipts follow the bounded lifecycle in server-data-lifecycle.md.
+Renames are an atomic manifest addition/deletion; identical blob content is reused. Folders are
+synchronized items (protocol v2, see below). Per-file limit is 1 GiB. Server history/blobs/receipts follow the bounded lifecycle in server-data-lifecycle.md.
 
 Only .shale is included from .shale; plugin state, workspace layouts,
 .git, .trash, Syncthing metadata and temporary files are excluded. Application sync
 credentials intentionally travel with the Vault configuration: use a private Vault
 repository and grant access only to trusted devices. General settings and connection
 responses never expose the plaintext token; the dedicated password field returns a mask.
-User-authored files are not scanned for secrets. Reject
-links and Syncthing-managed roots instead of enabling two file writers over one library.
+User-authored files are not scanned for secrets. A link or Syncthing-managed Vault root is refused,
+because two writers would own one library; inside the Vault they are failed items (see v2).
 No automatic live-Vault selection, migration or seed choice. Configured Vault files
 propagate through the same native file transport; no separate configuration channel.
 
@@ -183,7 +179,7 @@ Mature tools (Syncthing, Dropbox, Obsidian Sync, Dayweave's own hub) isolate pro
   A dirty path defers its whole group. A local edit after planning retains both sides of the group
   in the same checkpoint transition that retires its journal entries. Unrelated groups can continue.
   Replacing a directory with a file checks that the journal accounts for every child before removing
-  empty directories. Case-only aliases still require explicit handling under the existing v1 contract.
+  empty directories. Case-only renames are applied as renames (v2).
 - Reviewing one conflict appends its incoming choice to existing journal work. The incoming path's
   acknowledged base is set after application. The checkpoint keeps the seen revision separately
   from the revision of fully queued work. Partial progress is distinct from last complete sync.
@@ -202,6 +198,34 @@ mobile layout hid every status bar item except the view selector. Rules now:
 - Any error, recovery or deferral is shown as text next to the sync button and announced once as a
   toast for each new problem. Nothing is hover-only. The mobile layout shows the full status bar and
   scrolls it horizontally instead of hiding items.
+
+## Protocol v2: folders and per-item failures (2026-11-27)
+
+Design reference: Syncthing. The single-file model was copied from Mojian on 2026-10-29 without a user
+requirement; Mojian keeps structure in `library.json`, Shale's folders are the user-visible structure.
+- Folders are versioned items `{hash:null, directory:true}` (file-sync-core 0.4.0, server 0.6.0). Empty
+  folders, folder creation, deletion and renames replicate. Planning compares identities: a digest,
+  `directory`, or absent. A folder has no content to lose, so it wins over a deletion on the other side;
+  a file on one side and a folder on the other is a failed item, never guessed.
+- Application order: folder creations, files, then folder deletions deepest first. A remotely deleted
+  folder that gained local content is kept and uploaded again; content still journaled for deletion
+  defers it. Only a file/folder shape change binds descendants into one group.
+- Case-insensitive uniqueness applies to live items only, so a case-only rename is a tombstone plus a
+  live item in one batch. Scans and application check the exact on-disk spelling of every component;
+  the receiver renames through a temporary name instead of delete-then-create, which would lose the
+  file on a case-insensitive disk. Two live local names differing only by case are failed items.
+- Symlinks, nested `.stfolder` trees, non-regular files and names other devices cannot store are failed
+  items: they keep their last known identity, are held in both directions and are listed in
+  `failedPaths`. Every other item keeps synchronizing; `lastSuccess` waits until none remain.
+- More than 20,000 changes upload in server-sized batches (deletions first); the follow-up pass continues.
+- Shale is not resident like Syncthing: it syncs only while open. The whole Vault is walked once when
+  the app opens (catching edits made while closed) and when the user presses sync. Returning to the
+  foreground, unlocking or switching apps starts no walk and no extra pass; the regular interval
+  continues (measured: a full walk of the tablet's 6,634 items over FUSE takes about 2 s of I/O).
+- Format change without compatibility code: existing checkpoints simply gain folder items on the
+  first v2 scan. Upgrade the server first; v1 clients reject manifests containing a case-only rename,
+  so every active device moves to v2 together. Stale empty folders on peers are removed before their
+  first v2 scan, otherwise they would be uploaded as folders.
 
 ## Server-side Git backup (sync-server)
 

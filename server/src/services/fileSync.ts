@@ -34,7 +34,9 @@ export async function fileSyncEngine(): Promise<FileSyncEngine> {
         return work(blocked);
       }, { unattended: true, syncPaths: paths });
     },
-    changed: async (relative, deleted, directory) => { await queueFileUpdate(relative, deleted ? directory ? 'unlinkDir' : 'unlink' : 'change'); },
+    changed: async (relative, deleted, directory) => {
+      await queueFileUpdate(relative, deleted ? directory ? 'unlinkDir' : 'unlink' : directory ? 'addDir' : 'change');
+    },
     conflict: async snapshot => {
       if (!(await gitPreferences()).enabled) return [];
       const { recordSyncConflict } = await import('./git.js');
@@ -60,8 +62,10 @@ export async function saveFileSyncPreferences(value: unknown): Promise<void> {
   current = undefined;
 }
 
-export async function runFileSync() {
+/** `rescan` walks the whole Vault first; only the explicit sync button asks for it. */
+export async function runFileSync(options: { rescan?: boolean } = {}) {
   const engine = await fileSyncEngine(); lastAttempt = Date.now();
+  if (options.rescan) engine.requestFullScan();
   const status = await engine.run(); broadcast({ type: 'file-sync', ...status }); return status;
 }
 

@@ -114,6 +114,7 @@ export class OrderedSyncTransport {
     validateManifest(receipt);
     if ((receipt as { operationId?: string }).operationId !== operation.operationId || receipt.workspaceId !== operation.workspaceId ||
         Object.keys(receipt.files).length !== operation.changes.length || operation.changes.some(change => receipt.files[change.path]?.hash !== change.hash ||
+          !!receipt.files[change.path]?.directory !== !!change.directory ||
           receipt.files[change.path]?.version !== receipt.revision || receipt.files[change.path].version <= change.expectedVersion))
       throw new Error('同步提交回执与本机请求不一致');
     return receipt as SyncManifest & { operationId: string };
